@@ -9,6 +9,8 @@ class Form(Form):
 
 
 class ModelForm(ModelForm):
+    TARGET = 'class'
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         self.parent = kwargs.pop('parent', None)
@@ -19,6 +21,8 @@ class ModelForm(ModelForm):
 
 
 class InstanceForm(ModelForm):
+    TARGET = 'instance'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,6 +31,8 @@ class InstanceForm(ModelForm):
 
 
 class QuerySetForm(InstanceForm):
+    TARGET = 'queryset'
+
     def __init__(self, *args, **kwargs):
         if 'instances' in kwargs:
             self.instances = kwargs.pop('instances')

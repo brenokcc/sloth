@@ -1,5 +1,5 @@
-from dms2.db import models
-from dms2.decorators import meta, allow
+from django.db import models
+from dms2.db.models.decorators import meta
 
 
 class Estado(models.Model):
@@ -37,8 +37,7 @@ class Endereco(models.Model):
 
 class ServidorSet(models.QuerySet):
 
-    @meta('Todos')
-    @allow('AtivarServidor')
+    @meta('Todos', actions='AtivarServidor')
     def all(self):
         super().all()
 
@@ -46,7 +45,7 @@ class ServidorSet(models.QuerySet):
     def com_endereco(self):
         return self.filter(endereco__isnull=False)
 
-    @allow('InativarServidores')
+    @meta('Sem Endereço', actions='InativarServidores')
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
 
@@ -81,12 +80,11 @@ class Servidor(models.Model):
     def can_view_nome(self, **kwargs):
         return self.pk is not None
 
-    @meta('Dados Gerais', primary=True)
+    @meta('Dados Gerais', primary=True, actions='CorrigirNome')
     def get_dados_gerais(self):
         return self.values('nome', 'cpf')
 
-    @meta('Endereço')
-    @allow('InformarEndereco', 'EditarEndereco', 'ExcluirEndereco')
+    @meta('Endereço', actions=('InformarEndereco', 'EditarEndereco', 'ExcluirEndereco'))
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
@@ -99,14 +97,20 @@ class Servidor(models.Model):
     def get_frequencias(self):
         return self.frequencia_set.paginate(5)
 
-    @meta('Férias', auxiliary=True)
-    @allow('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
+    @meta('Férias', auxiliary=True, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
     def get_ferias(self):
         return self.ferias_set.all()
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
         return self.values('get_frequencias', 'get_ferias', 'get_endereco')
+
+
+class FeriasSet(models.QuerySet):
+
+    @meta('Ferias', actions='EditarFerias')
+    def all(self):
+        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula', 'servidor__nome').filters('servidor', 'ano').ordering('inicio', 'fim')
 
 
 class Ferias(models.Model):
@@ -118,6 +122,14 @@ class Ferias(models.Model):
     class Meta:
         verbose_name = 'Férias'
         verbose_name_plural = 'Férias'
+
+    @meta('Período')
+    def get_periodo(self):
+        return 'de {} a {}'.format(self.inicio, self.fim)
+
+    @meta('Período')
+    def get_periodo2(self):
+        return self.values('inicio', 'fim')
 
 
 class Frequencia(models.Model):

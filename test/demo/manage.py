@@ -8,6 +8,7 @@ def main():
     """Run administrative tasks."""
     sys.path.append('/Users/breno/Documents/Workspace/dms2')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
+    __import__('dms2')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

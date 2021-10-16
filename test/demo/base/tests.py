@@ -4,12 +4,18 @@ from django.test import TestCase
 
 from dms2.utils import scan
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
+from django.contrib.auth.models import Group
 
 
 class DefaultTestCase(TestCase):
 
+    def __init__(self, *args, **kwargs):
+        self.debug = True
+        super().__init__(*args, **kwargs)
+
     def log(self, data):
-        print(json.dumps(data, indent=4, ensure_ascii=False))
+        if self.debug:
+            print(json.dumps(data, indent=4, ensure_ascii=False))
 
     def test_queryset(self):
         Estado.objects.create(sigla='RN')
@@ -33,9 +39,18 @@ class DefaultTestCase(TestCase):
         self.assertEqual(Servidor.objects.com_endereco().count(), 1)
         self.assertEqual(Servidor.objects.sem_endereco().count(), 0)
 
-        self.log(servidor.serialize())
+        group = Group.objects.create(name='Administrador')
+
+        # self.log(group.serialize())
+        # self.log(Group.objects.serialize())
+        # self.log(Ferias.objects.all().serialize())
+        # self.log(servidor.serialize())
+        self.log(servidor.serialize('dados_gerais'))
         # self.log(servidor.serialize('dados_recursos_humanos'))
         # self.log(servidor.serialize('endereco'))
-        self.log(Servidor.objects.serialize())
-        self.log(Servidor.objects.serialize('com_endereco'))
+        # self.log(Servidor.objects.serialize())
+        # self.log(Servidor.objects.serialize('com_endereco'))
+
         # self.log(scan())
+        # import pdb; pdb.set_trace()
+

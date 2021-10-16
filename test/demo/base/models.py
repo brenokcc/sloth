@@ -39,15 +39,19 @@ class ServidorSet(models.QuerySet):
 
     @meta('Todos', actions='AtivarServidor')
     def all(self):
-        return super().all()
+        return super().all().display('matricula', 'nome', 'ativo')
 
     @meta('Com Endereço')
     def com_endereco(self):
         return self.filter(endereco__isnull=False)
 
-    @meta('Sem Endereço', actions='InativarServidores')
+    @meta('Sem Endereço')
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
+
+    @meta('Ativos', actions='InativarServidores')
+    def ativos(self):
+        return self.filter(ativo=True)
 
     @meta('Inativos')
     def inativos(self):
@@ -99,7 +103,7 @@ class Servidor(models.Model):
 
     @meta('Férias', auxiliary=False, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
     def get_ferias(self):
-        return self.ferias_set.all()
+        return self.ferias_set.all().display('ano', 'inicio', 'fim')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):

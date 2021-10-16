@@ -17,10 +17,12 @@ class ServerTestCase(StaticLiveServerTestCase):
             return {'Authorization': self.authorization}
         return None
 
-    def log(self, method, url, response):
+    def log(self, method, url, data, response):
         if self.debug:
             print('{}: {}'.format(method, url))
-            print(json.dumps(response.json(), indent=4, ensure_ascii=False))
+            if data:
+                print('Input:\n{}'.format(json.dumps(data, indent=4, ensure_ascii=False)))
+            print('Output:\n{}'.format(json.dumps(response.json(), indent=4, ensure_ascii=False)))
             print('\n')
 
     def url(self, path):
@@ -31,28 +33,28 @@ class ServerTestCase(StaticLiveServerTestCase):
     def get(self, path, data=None, status_code=200):
         url = self.url(path)
         response = requests.get(url, data=data, headers=self.headers())
-        self.log('GET', url, response)
+        self.log('GET', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def post(self, path, data=None, status_code=200):
         url = self.url(path)
         response = requests.post(url, data=data, headers=self.headers())
-        self.log('POST', url, response)
+        self.log('POST', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def put(self, path, data=None, status_code=200):
         url = self.url(path)
         response = requests.put(url, data=data, headers=self.headers())
-        self.log('PUT', url, response)
+        self.log('PUT', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def delete(self, path, data=None, status_code=200):
         url = self.url(path)
         response = requests.delete(url, data=data, headers=self.headers())
-        self.log('DELETE', url, response)
+        self.log('DELETE', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 

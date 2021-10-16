@@ -49,11 +49,24 @@ class ApiTestCase(ServerTestCase):
 
     def test(self):
         loaddata()
-        self.debug = False
-        self.get('/api/base/servidor/1/')
-        self.get('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/')
-        self.get('/api/base/servidor/1/get_ferias/')
-        self.get('/api/base/servidor/1/get_ferias/1-2/alterarferias/')
+        self.debug = True
+        self.get('/api/auth/group/add/')
+        self.post('/api/auth/group/add/', data=dict(name='Operador'))
+        self.get('/api/auth/group/1/edit/')
+        self.post('/api/auth/group/1/edit/', data=dict(name='Gerente'))
+        self.get('/api/auth/group/1/delete/')
+        self.post('/api/auth/group/1/delete/')
+
+        self.get('/api/auth/group/')
         self.get('/api/base/servidor/')
-        self.get('/api/base/servidor/sem_endereco/')
-        self.get('/api/base/servidor/com_endereco/1/ativarservidor/')
+        self.get('/api/base/servidor/ativos/')
+        self.post('/api/base/servidor/ativos/1/inativarservidores/')
+        self.get('/api/base/servidor/ativos/')
+
+        self.get('/api/base/servidor/1/')
+        self.get('/api/base/servidor/1/get_dados_gerais/')
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/', dict(nome='Emanoel'))
+        self.get('/api/base/servidor/1/get_dados_gerais/')
+        self.get('/api/base/servidor/1/get_ferias/')
+        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
+        self.get('/api/base/servidor/1/get_ferias/')

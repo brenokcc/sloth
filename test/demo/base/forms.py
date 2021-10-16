@@ -33,6 +33,10 @@ class InativarServidores(forms.QuerySetForm):
         model = Servidor
         fields = ()
 
+    def save(self):
+        self.instance.ativo = False
+        super().save()
+
 
 class InformarEndereco(forms.ModelForm):
     class Meta:
@@ -65,7 +69,7 @@ class AlterarFerias(forms.QuerySetForm):
     class Meta:
         name = 'Alterar'
         model = Ferias
-        exclude = ()
+        fields = 'inicio', 'fim'
 
 
 class ExcluirFerias(forms.QuerySetForm):

@@ -145,13 +145,14 @@ class ModelMixin:
     def serialize(self, *names):
         data = {}
         primary = self.cached_data('primary')
-        auxiliary = self.cached_data('auxiliary')
-        if names:
+        if primary:
             data.update(self.values(*primary))
+        if names:
             data.update(self.values(*names))
         else:
             data.update(self.view())
         output = dict(type='object', name=str(self), data=data)
+        auxiliary = self.cached_data('auxiliary')
         if auxiliary:
             output.update(auxiliary=self.values(*auxiliary))
         return output

@@ -2,14 +2,25 @@ from django.apps import apps
 from django.http import JsonResponse
 
 
+def load_form(app_label, action):
+    config = apps.get_app_config(app_label)
+    forms = __import__(
+        '{}.forms'.format(config.module.__package__),
+        fromlist=config.module.__package__.split()
+    )
+    for name in dir(forms):
+        if name.lower() == action:
+            return getattr(forms, name)
+    return None
+
+
 def api_list(request, app_label, model_name, method=None, pks=None, action=None):
     model = apps.get_model(app_label, model_name)
     qs = model.objects.all()
     if method:
         attr = getattr(qs, method)
         if pks:
-            pks = pks.split('-')
-            print(attr().filter(pk__in=pks), attr.allow, action)
+            print(attr().filter(pk__in=pks.split('-')), load_form(app_label, action))
             response = {}
         else:
             response = attr().serialize()
@@ -23,13 +34,11 @@ def api_view(request, app_label, model_name, pk, method=None, pks=None, action=N
     obj = model.objects.get(pk=pk)
     if method:
         if pks:
-            pks = pks.split('-')
-            if pks[0].isdigit():  # queryset action
+            if pks.split('-')[0].isdigit():  # queryset action
                 attr = getattr(obj, method)
-                print(attr().filter(pk__in=pks), attr.allow, action)
-            else:  # obj action
-                attr = getattr(obj, method)
-                print(obj)
+                print(attr().filter(pk__in=pks.split('-')), load_form(app_label, action))
+            else:  # pks is obj action
+                print(obj, load_form(app_label, pks))
             response = {}
         else:
             response = obj.serialize(method)

@@ -49,8 +49,9 @@ class ApiTestCase(ServerTestCase):
 
     def test(self):
         loaddata()
-        self.debug = True
+        self.debug = False
         self.get('/api/base/servidor/1/')
+        self.get('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/')
         self.get('/api/base/servidor/1/get_ferias/')
         self.get('/api/base/servidor/1/get_ferias/1-2/alterarferias/')
         self.get('/api/base/servidor/')

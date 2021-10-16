@@ -68,18 +68,22 @@ def to_action(app_label, form_name, path=None):
         fromlist=config.module.__package__.split()
     )
     form_cls = getattr(forms, form_name)
-    metadata = getattr(form_cls, 'Meta')
-    if metadata:
-        name = getattr(metadata, 'name', form_name)
-        icon = getattr(metadata, 'icon', None)
-        style = getattr(metadata, 'style', None)
-        action.update(name=name, type=form_cls.TARGET, icon=icon, style=style)
-    else:
-        action.update(name=form_name, type=form_cls.TARGET, icon=None, style='primary')
-    if form_cls.TARGET in ('instance', 'queryset'):
+    if hasattr(form_cls, 'instances'):
+        action.update(target='queryset')
         path = '{}{{id}}/{}/'.format(path, form_name.lower())
     else:
+        action.update(target='model')
         path = '{}{}/'.format(path, form_name.lower())
+    meta = getattr(form_cls, 'Meta', None)
+    if meta:
+        name = getattr(meta, 'name', form_name)
+        icon = getattr(meta, 'icon', 'action')
+        style = getattr(meta, 'style', 'primary')
+        action.update(name=name, icon=icon, style=style)
+        if getattr(meta, 'batch', False):
+            action.update(batch=True)
+    else:
+        action.update(name=form_name, icon=None, style='primary')
     action.update(path=path)
     return action
 

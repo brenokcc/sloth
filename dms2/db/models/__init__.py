@@ -144,7 +144,6 @@ class ModelMixin:
 
     def serialize(self, *names):
         data = {}
-        names = ['get_{}'.format(name) for name in names]
         primary = self.cached_data('primary')
         auxiliary = self.cached_data('auxiliary')
         if names:

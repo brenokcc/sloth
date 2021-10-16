@@ -39,7 +39,7 @@ class ServidorSet(models.QuerySet):
 
     @meta('Todos', actions='AtivarServidor')
     def all(self):
-        super().all()
+        return super().all()
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -49,7 +49,7 @@ class ServidorSet(models.QuerySet):
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
 
-    @meta('Sem Endereço')
+    @meta('Inativos')
     def inativos(self):
         return self.filter(ativo=False)
 
@@ -80,11 +80,11 @@ class Servidor(models.Model):
     def can_view_nome(self, **kwargs):
         return self.pk is not None
 
-    @meta('Dados Gerais', primary=True, actions='CorrigirNome')
+    @meta('Dados Gerais', primary=False, actions=('CorrigirNomeServidor', 'FazerAlgumaCoisa'))
     def get_dados_gerais(self):
         return self.values('nome', 'cpf')
 
-    @meta('Endereço', actions=('InformarEndereco', 'EditarEndereco', 'ExcluirEndereco'))
+    @meta('Endereço', actions=('InformarEndereco', 'ExcluirEndereco'))
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
@@ -97,7 +97,7 @@ class Servidor(models.Model):
     def get_frequencias(self):
         return self.frequencia_set.paginate(5)
 
-    @meta('Férias', auxiliary=True, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
+    @meta('Férias', auxiliary=False, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
     def get_ferias(self):
         return self.ferias_set.all()
 

@@ -1,21 +1,26 @@
 from dms2 import forms
-from .models import Servidor, Endereco, Ferias
+from .models import Servidor, Ferias
 
 
-class CorrigirNome(forms.ModelForm):
+class CorrigirNomeServidor(forms.ModelForm):
     class Meta:
+        name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
-class EditarFerias(forms.InstanceForm):
+class FazerAlgumaCoisa(forms.Form):
+    pass
+
+
+class EditarFerias(forms.QuerySetForm):
     class Meta:
         name = 'Editar'
         model = Ferias
         exclude = ()
 
 
-class AtivarServidor(forms.InstanceForm):
+class AtivarServidor(forms.QuerySetForm):
     class Meta:
         name = 'Ativar'
         model = Servidor
@@ -31,25 +36,22 @@ class InativarServidores(forms.QuerySetForm):
 
 class InformarEndereco(forms.ModelForm):
     class Meta:
-        model = Endereco
-        exclude = ()
+        model = Servidor
+        field = 'endereco'
         name = 'Informar'
         icon = 'address'
         style = 'success'
+        fields = 'endereco',
 
 
-class EditarEndereco(forms.InstanceForm):
-    class Meta:
-        name = 'Editar'
-        model = Endereco
-        exclude = ()
-
-
-class ExcluirEndereco(forms.InstanceForm):
+class ExcluirEndereco(forms.ModelForm):
     class Meta:
         name = 'Excluir'
-        model = Endereco
-        exclude = ()
+        model = Servidor
+        fields = ()
+
+    def submit(self):
+        self.instance.endereco.delete()
 
 
 class CadastrarFerias(forms.ModelForm):
@@ -59,7 +61,7 @@ class CadastrarFerias(forms.ModelForm):
         exclude = ()
 
 
-class AlterarFerias(forms.InstanceForm):
+class AlterarFerias(forms.QuerySetForm):
     class Meta:
         name = 'Alterar'
         model = Ferias
@@ -71,3 +73,4 @@ class ExcluirFerias(forms.QuerySetForm):
         name = 'Excluir'
         model = Ferias
         exclude = ()
+        batch = True

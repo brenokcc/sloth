@@ -41,12 +41,12 @@ def try_except(func):
             if is_authenticated(request):
                 return JsonResponse(func(request, *args, **kwargs))
             else:
-                return JsonResponse(dict(error='Usuário não autenticado'))
+                return JsonResponse(dict(type='message', text='Usuário não autenticado', style='warning'))
         except PermissionDenied:
-            return JsonResponse(dict(error='Usuário não autorizado'))
+            return JsonResponse(dict(type='message', text='Usuário não autorizado', style='warning'))
         except BaseException as e:
             traceback.print_exc()
-            return JsonResponse(dict(error=str(e)))
+            return JsonResponse(dict(type='message', text=str(e), style='error'))
     return decorate
 
 
@@ -71,7 +71,7 @@ def add_view(request, app_label, model_name):
     if form.has_add_permission(request.user):
         if form.is_valid():
             obj = form.save()
-            return obj.serialize()
+            return form.get_message(next=obj.get_absolute_url())
         return form.serialize()
     raise PermissionDenied()
 
@@ -85,7 +85,7 @@ def edit_view(request, app_label, model_name, pk):
     if form.has_edit_permission(request.user):
         if form.is_valid():
             obj = form.process()
-            return obj.serialize()
+            return form.get_message(next=obj.get_absolute_url())
         return form.serialize()
     raise PermissionDenied()
 
@@ -99,7 +99,7 @@ def delete_view(request, app_label, model_name, pk):
     if form.has_delete_permission(request.user):
         if form.is_valid():
             form.instance.delete()
-            return {}
+            return form.get_message()
         return form.serialize()
     raise PermissionDenied()
 
@@ -118,7 +118,10 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
             form = form_cls(request=request, data=data, instances=instances)
             if form.has_permission(request.user):
                 if form.is_valid():
-                    form.process()
+                    result = form.process()
+                    if result is None:
+                        return form.get_message()
+                    return result.serialize()
                 return {}
             raise PermissionDenied()
         else:
@@ -142,8 +145,11 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                 form = form_cls(request=request, data=data, instances=instances)
                 if form.has_permission(request.user):
                     if form.is_valid():
-                        form.process()
-                    return {}
+                        result = form.process()
+                        if result is None:
+                            return form.get_message()
+                        return result.serialize()
+                    form.serialize()
                 raise PermissionDenied()
             else:  # pks is obj action
                 form_cls = actionform_factory(app_label, pks)
@@ -151,8 +157,11 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                 form = form_cls(request=request, data=data, instance=obj)
                 if form.has_permission(request.user):
                     if form.is_valid():
-                        form.process()
-                    return {}
+                        result = form.process()
+                        if result is None:
+                            return dict(message='Ação realizada com sucesso')
+                        return result.serialize()
+                    return form.serialize()
                 raise PermissionDenied()
         else:
             if obj.has_attr_view_permission(request.user, method):

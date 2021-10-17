@@ -173,5 +173,8 @@ class ModelMixin:
             output.update(auxiliary=self.values(*auxiliary))
         return output
 
+    def get_absolute_url(self, prefix=''):
+        return '{}/{}/{}/{}/'.format(prefix, self._meta.app_label, self._meta.model_name, self.pk)
+
     def __str__(self):
-        return '{} #{}'.format(self._meta.verbose_name, self.id)
+        return '{} #{}'.format(self._meta.verbose_name, self.pk)

@@ -5,10 +5,52 @@ from django.forms import *
 class FormMixin:
 
     def serialize(self):
-        data = {}
+        data = dict(type='form')
+        form_fields = {}
         for field_name in self.fields:
-            data[field_name] = self.data.get(field_name)
+            field = self.fields[field_name]
+            form_fields[field_name] = dict(
+                label=field.label,
+                name=field_name,
+                type=type(field).__name__.replace('Field', '').lower(),
+                required=field.required,
+                value=self.data.get(field_name)
+            )
+        data.update(self.get_metadata())
+        data.update(fields=form_fields)
         return data
+
+    @classmethod
+    def get_metadata(cls, path=None):
+        metadata = {}
+        form_name = cls.__name__
+        meta = getattr(cls, 'Meta', None)
+        if meta:
+            name = getattr(meta, 'name', form_name)
+            icon = getattr(meta, 'icon', None)
+            style = getattr(meta, 'style', 'primary')
+            method = getattr(meta, 'method', 'post')
+            metadata.update(name=name, icon=icon, style=style, method=method)
+            if getattr(meta, 'batch', False):
+                metadata.update(batch=True)
+        else:
+            metadata.update(name=form_name, icon=None, style='primary', method='get')
+        if path:
+            if hasattr(cls, 'instances'):
+                target = 'queryset'
+                path = '{}{{id}}/{}/'.format(path, form_name.lower())
+            else:
+                target = 'model'
+                path = '{}{}/'.format(path, form_name.lower())
+            metadata.update(target=target, path=path)
+        return metadata
+
+    def get_method(self):
+        meta = getattr(self, 'Meta', None)
+        return getattr(meta, 'method', 'post') if meta else 'post'
+
+    def get_message(self, style='sucess', **kwargs):
+        return dict(type='message', text=self.message, style=style, **kwargs)
 
     def has_permission(self, user):
         return self and user.is_superuser
@@ -26,6 +68,7 @@ class FormMixin:
 class Form(Form, FormMixin):
     def __init__(self, *args, **kwargs):
         self.instance = None
+        self.message = 'Ação realizada com sucesso'
         self.related = kwargs.pop('related', None)
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
@@ -34,6 +77,7 @@ class Form(Form, FormMixin):
 class ModelForm(ModelForm, FormMixin):
 
     def __init__(self, *args, **kwargs):
+        self.message = 'Ação realizada com sucesso'
         self.request = kwargs.pop('request', None)
         self.related = kwargs.pop('related', None)
         super().__init__(*args, **kwargs)

@@ -61,31 +61,13 @@ def serialize(obj):
 
 
 def to_action(app_label, form_name, path=None):
-    action = {}
     config = apps.get_app_config(app_label)
     forms = __import__(
         '{}.forms'.format(config.module.__package__),
         fromlist=config.module.__package__.split()
     )
     form_cls = getattr(forms, form_name)
-    if hasattr(form_cls, 'instances'):
-        action.update(target='queryset')
-        path = '{}{{id}}/{}/'.format(path, form_name.lower())
-    else:
-        action.update(target='model')
-        path = '{}{}/'.format(path, form_name.lower())
-    meta = getattr(form_cls, 'Meta', None)
-    if meta:
-        name = getattr(meta, 'name', form_name)
-        icon = getattr(meta, 'icon', 'action')
-        style = getattr(meta, 'style', 'primary')
-        action.update(name=name, icon=icon, style=style)
-        if getattr(meta, 'batch', False):
-            action.update(batch=True)
-    else:
-        action.update(name=form_name, icon=None, style='primary')
-    action.update(path=path)
-    return action
+    return form_cls.get_metadata(path)
 
 
 def get_field(cls, lookup):

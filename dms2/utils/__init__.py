@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 from decimal import Decimal
+
 from django.apps import apps
-from django.db.models.fields.files import FieldFile
 from django.core.exceptions import FieldDoesNotExist
+from django.db.models.fields.files import FieldFile
 
 
 def getattrr(obj, args):
@@ -91,7 +94,7 @@ def to_verbose_name(cls, lookup):
     if field:
         return str(field.verbose_name), True
     attr = getattr(cls, lookup)
-    return attr.verbose_name if hasattr(attr, 'verbose_name') else lookup, False
+    return getattr(attr, 'verbose_name', lookup), False
 
 
 def to_display(cls, lookups, verbose=False):
@@ -114,7 +117,8 @@ def to_filters(cls, lookups, verbose=False):
             filter_type = 'datetime'
         elif 'Date' in field_type_name:
             filter_type = 'date'
-        filters[str(field.verbose_name) if verbose else lookup] = dict(key=lookup, name=field.verbose_name, type=filter_type)
+        filters[str(field.verbose_name) if verbose else lookup] = dict(key=lookup, name=field.verbose_name,
+                                                                       type=filter_type)
     return filters
 
 

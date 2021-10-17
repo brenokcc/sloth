@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import json
 from datetime import date, datetime
+
+from django.contrib.auth.models import Group
 from django.test import TestCase
+from oauth2_provider.generators import generate_client_id
+
 from dms2.test import ServerTestCase
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
-from django.contrib.auth.models import Group
 
 
 def loaddata():
@@ -54,15 +59,17 @@ class ApiTestCase(ServerTestCase):
         self.create_user('admin', '123', True)
 
         # not authenticated
-        self.get('/api/auth/group/add/')
+        self.get('/api/auth/group/add/', status_code=403)
 
         # not authorized
         self.login('user', '123')
-        self.get('/api/auth/group/add/')
-        self.get('/api/base/servidor/1/')
-        self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/', dict(nome='Emanoel'))
-        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
+        self.get('/api/auth/group/add/', status_code=401)
+        self.get('/api/base/servidor/1/', status_code=401)
+        self.get('/api/base/servidor/1/get_dados_gerais/', status_code=401)
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
+                  dict(nome='Emanoel'), status_code=401)
+        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/',
+                  dict(inicio='01/06/2020', fim='01/07/2020'), status_code=401)
 
         # authenticated and authorized
         self.login('admin', '123')
@@ -86,3 +93,38 @@ class ApiTestCase(ServerTestCase):
         self.get('/api/base/servidor/1/get_ferias/')
         self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
         self.get('/api/base/servidor/1/get_ferias/')
+
+
+class Oauth2TestCase(ServerTestCase):
+
+    def test_scopes(self):
+        self.debug = True
+        Estado.objects.create(sigla='RN')
+        Estado.objects.create(sigla='PB')
+        admin = self.create_user('admin', '123', True)
+        self.login('admin', '123')
+        data = dict(name='public', description='Publica Data')
+        self.post('/api/dms2/scope/add/', data=data)
+        data = dict(
+            redirect_uris='', client_type='confidential',
+            authorization_grant_type='password', name='App01',
+            skip_authorization=True, user=admin.pk, client_id=generate_client_id(),
+            default_scopes=[1], available_scopes=[1]
+        )
+        self.get('/api/dms2/application/')
+        self.post('/api/dms2/application/add/', data=data)
+        app = self.get('/api/dms2/application/1/')
+        self.logout()
+
+        data = dict(
+            client_id=app['data']['access_data']['client_id'],
+            client_secret=app['data']['access_data']['client_secret'],
+            grant_type=app['data']['access_data']['authorization_grant_type'],
+            username=admin.username,
+            password='123',
+            scope='public'
+        )
+        self.get('/api/base/estado/', status_code=403)
+        response = self.post('/o/token/', data=data)
+        self.authorize(response['access_token'])
+        self.get('/api/base/estado/')

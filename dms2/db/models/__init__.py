@@ -1,11 +1,20 @@
+# -*- coding: utf-8 -*-
+
 import json
-from dms2.utils import getattrr, to_action, serialize, to_display, to_filters, to_ordering, to_verbose_name
+
+from django.apps import apps
 from django.db import models
 from django.db.models import manager
+from django.forms.models import modelform_factory
+
+from dms2.forms import ModelForm
+from dms2.threading import tls
+from dms2.utils import getattrr, to_action, serialize, to_display, to_filters, to_ordering, to_verbose_name
 
 
 class ValueSet(dict):
-    def __init__(self, instance, names, wrap=True, verbose=True):
+    def __init__(self, instance, names, wrap=None):
+        wrap = getattr(tls, 'wrap', False) if wrap is None else wrap
         self.instance = instance
         self.names = []
         for name in names:
@@ -17,10 +26,10 @@ class ValueSet(dict):
                 attr, value = getattrr(instance, name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, name)
                 if isinstance(value, QuerySet):
-                    value = value.to_dict(name=attr.verbose_name, path=path) if wrap else value.to_list()
+                    value = value.to_dict(name=getattr(attr, 'verbose_name', name), path=path) if wrap else value.to_list()
                 elif isinstance(value, ValueSet):
                     value = dict(
-                        type=value.get_type(), name=attr.verbose_name, key=name, actions=[], data=value, path=path
+                        type=value.get_type(), name=getattr(attr, 'verbose_name', name), key=name, actions=[], data=value, path=path
                     ) if wrap else value
                 else:
                     value = serialize(value)
@@ -30,10 +39,10 @@ class ValueSet(dict):
                         value['actions'].append(
                             to_action(metadata.app_label, form_name, path)
                         )
-                if verbose:
+                if wrap:
                     self[to_verbose_name(type(instance), name)[0]] = value
                 else:
-                    self[name[4:] if name.startswith('get_') else name] = value
+                    self[name] = value
         else:
             self['id'] = instance.id
             self[type(instance).__name__.lower()] = str(instance)
@@ -86,7 +95,7 @@ class QuerySet(models.QuerySet):
         if name:
             path = '{}{}/'.format(path, name)
         if hasattr(attr, 'verbose_name'):
-            output.update(name=attr.verbose_name)
+            output.update(name=getattr(attr, 'verbose_name', name))
         if hasattr(attr, 'allow'):
             for form_name in attr.allow:
                 output['actions'].append(to_action(metadata.app_label, form_name, path))
@@ -141,7 +150,7 @@ class ModelMixin:
     def has_delete_permission(self, user):
         return self and user.is_superuser
 
-    def values(self, *names, wrap=True):
+    def values(self, *names, wrap=None):
         return ValueSet(self, names, wrap=wrap)
 
     def view(self):
@@ -178,3 +187,27 @@ class ModelMixin:
 
     def __str__(self):
         return '{} #{}'.format(self._meta.verbose_name, self.pk)
+
+    @classmethod
+    def action_form_cls(cls, action):
+        config = apps.get_app_config(cls._meta.app_label)
+        forms = __import__(
+            '{}.forms'.format(config.module.__package__),
+            fromlist=config.module.__package__.split()
+        )
+        for name in dir(forms):
+            if name.lower() == action:
+                return getattr(forms, name)
+        return None
+
+    @classmethod
+    def add_form_cls(cls):
+        return modelform_factory(cls, form=ModelForm, exclude=())
+
+    @classmethod
+    def edit_form_cls(cls):
+        return modelform_factory(cls, form=ModelForm, exclude=())
+
+    @classmethod
+    def delete_form_cls(cls):
+        return modelform_factory(cls, form=ModelForm, fields=())

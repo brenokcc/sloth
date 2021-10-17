@@ -1,6 +1,9 @@
-from dms2.db.models import ModelMixin, QuerySet, BaseManager, Manager
+from .db.models import ModelMixin, QuerySet, BaseManager, Manager
+from .forms import Form, ModelForm, QuerySetForm
+from django import forms
 from django.db import models
 from django.db.models import base
+
 old = base.ModelBase.__new__
 
 
@@ -42,5 +45,8 @@ models.Manager = Manager
 models.CharField = CharField
 models.ForeignKey = ForeignKey
 models.OneToOneField = OneToOneField
+forms.Form = Form
+forms.ModelForm = ModelForm
+forms.QuerySetForm = QuerySetForm
 
 

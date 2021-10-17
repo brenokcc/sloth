@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import json
-import requests
+
 import base64
+import json
+
+import requests
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
@@ -63,6 +65,12 @@ class ServerTestCase(StaticLiveServerTestCase):
         self.authorization = 'Basic {}'.format(
             base64.b64encode('{}:{}'.format(username, password).encode()).decode()
         )
+
+    def authorize(self, access_token):
+        self.authorization = '{} {}'.format('Bearer', access_token)
+
+    def logout(self):
+        self.authorization = None
 
     @staticmethod
     def create_user(username, password, is_superuser=False):

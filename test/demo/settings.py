@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'oauth2_provider',
+    'dms2',
     'base',
 ]
 
@@ -121,3 +123,8 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'dms2.Application'
+OAUTH2_PROVIDER = {
+    'SCOPES_BACKEND_CLASS': 'dms2.backends.Scopes'
+}

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 
 def meta(verbose_name, primary=False, auxiliary=False, actions=()):
     def decorate(func):
@@ -7,4 +9,5 @@ def meta(verbose_name, primary=False, auxiliary=False, actions=()):
         setattr(func, 'auxiliary', auxiliary)
         setattr(func, 'allow', (actions,) if isinstance(actions, str) else actions)
         return func
+
     return decorate

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from django.forms import *
 
 
@@ -17,7 +18,7 @@ class FormMixin:
                 value=self.data.get(field_name)
             )
         data.update(self.get_metadata())
-        data.update(fields=form_fields)
+        data.update(fields=form_fields, errors=self.errors)
         return data
 
     @classmethod
@@ -84,7 +85,7 @@ class ModelForm(ModelForm, FormMixin):
 
     def process(self):
         return self.save()
-    
+
 
 class QuerySetForm(ModelForm):
     instances = []

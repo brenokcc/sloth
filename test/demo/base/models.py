@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from django.db import models
+
 from dms2.db.models.decorators import meta
 
 
@@ -105,7 +108,10 @@ class FeriasSet(models.QuerySet):
 
     @meta('Ferias', actions='EditarFerias')
     def all(self):
-        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula', 'servidor__nome').filters('servidor', 'ano').ordering('inicio', 'fim')
+        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula',
+                                                                               'servidor__nome').filters('servidor',
+                                                                                                         'ano').ordering(
+            'inicio', 'fim')
 
 
 class Ferias(models.Model):

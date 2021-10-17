@@ -13,7 +13,8 @@ def __new__(mcs, name, bases, attrs, **kwargs):
             queryset_class = getattr(module, '{}Set'.format(name))
             attrs.update(objects=BaseManager.from_queryset(queryset_class)())
         if 'objects' not in attrs:
-            attrs.update(objects=BaseManager.from_queryset(QuerySet)())
+            if not all(['objects' in dir(cls) for cls in bases]):
+                attrs.update(objects=BaseManager.from_queryset(QuerySet)())
 
     if bases == (base.Model,):
         bases = base.Model, ModelMixin

@@ -2,6 +2,7 @@
 import json
 import requests
 import base64
+from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
 
@@ -63,3 +64,10 @@ class ServerTestCase(StaticLiveServerTestCase):
             base64.b64encode('{}:{}'.format(username, password).encode()).decode()
         )
 
+    @staticmethod
+    def create_user(username, password, is_superuser=False):
+        user = User.objects.create(username=username)
+        user.set_password(password)
+        user.is_superuser = is_superuser
+        user.save()
+        return user

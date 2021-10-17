@@ -50,6 +50,22 @@ class ApiTestCase(ServerTestCase):
     def test(self):
         loaddata()
         self.debug = True
+        self.create_user('user', '123')
+        self.create_user('admin', '123', True)
+
+        # not authenticated
+        self.get('/api/auth/group/add/')
+
+        # not authorized
+        self.login('user', '123')
+        self.get('/api/auth/group/add/')
+        self.get('/api/base/servidor/1/')
+        self.get('/api/base/servidor/1/get_dados_gerais/')
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/', dict(nome='Emanoel'))
+        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
+
+        # authenticated and authorized
+        self.login('admin', '123')
         self.get('/api/auth/group/add/')
         self.post('/api/auth/group/add/', data=dict(name='Operador'))
         self.get('/api/auth/group/1/edit/')

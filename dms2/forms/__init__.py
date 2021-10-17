@@ -2,7 +2,7 @@
 from django.forms import *
 
 
-class SerializableFormMixin:
+class FormMixin:
 
     def serialize(self):
         data = {}
@@ -10,14 +10,28 @@ class SerializableFormMixin:
             data[field_name] = self.data.get(field_name)
         return data
 
+    def has_permission(self, user):
+        return self and user.is_superuser
 
-class Form(Form, SerializableFormMixin):
+    def has_add_permission(self, user):
+        return self.instance and self.instance.has_add_permission(user)
+
+    def has_edit_permission(self, user):
+        return self.instance and self.instance.has_edit_permission(user)
+
+    def has_delete_permission(self, user):
+        return self.instance and self.instance.has_add_permission(user)
+
+
+class Form(Form, FormMixin):
     def __init__(self, *args, **kwargs):
+        self.instance = None
+        self.related = kwargs.pop('related', None)
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
 
 
-class ModelForm(ModelForm, SerializableFormMixin):
+class ModelForm(ModelForm, FormMixin):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -26,7 +40,7 @@ class ModelForm(ModelForm, SerializableFormMixin):
 
     def process(self):
         return self.save()
-
+    
 
 class QuerySetForm(ModelForm):
     instances = []

@@ -72,17 +72,8 @@ class Servidor(models.Model):
     def __str__(self):
         return self.nome
 
-    def add(self):
-        self.save()
-
-    def edit(self):
-        self.save()
-
-    def remove(self):
-        self.delete()
-
-    def can_view_nome(self, **kwargs):
-        return self.pk is not None
+    def has_get_dados_gerais_permission(self, user):
+        return self and user.is_superuser
 
     @meta('Dados Gerais', primary=False, actions=('CorrigirNomeServidor', 'FazerAlgumaCoisa'))
     def get_dados_gerais(self):

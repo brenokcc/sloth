@@ -125,6 +125,22 @@ class Manager(BaseManager.from_queryset(QuerySet)):
 
 class ModelMixin:
 
+    def has_view_permission(self, user):
+        return self and user.is_superuser
+
+    def has_attr_view_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        return attr is None or attr(user)
+
+    def has_add_permission(self, user):
+        return self and user.is_superuser
+
+    def has_edit_permission(self, user):
+        return self and user.is_superuser
+
+    def has_delete_permission(self, user):
+        return self and user.is_superuser
+
     def values(self, *names, wrap=True):
         return ValueSet(self, names, wrap=wrap)
 

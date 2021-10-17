@@ -132,7 +132,40 @@ class Manager(BaseManager.from_queryset(QuerySet)):
     pass
 
 
-class ModelMixin:
+class ModelSerializer(object):
+
+    def __init__(self, instance, *attrs):
+        self.instance = instance
+        self.attrs = attrs
+
+    def cached_data(self, data_type):
+        attr_name = '_{}_'.format(data_type)
+        if hasattr(type(self.instance), attr_name):
+            getattr(type(self.instance), attr_name)
+        data = []
+        for k, v in type(self.instance).__dict__.items():
+            if hasattr(v, data_type) and getattr(v, data_type):
+                data.append(k)
+        setattr(type(self.instance), attr_name, data)
+        return data
+
+    def serialize(self):
+        data = {}
+        primary = self.cached_data('primary')
+        if primary:
+            data.update(self.instance.values(*primary))
+        if self.attrs:
+            data.update(self.instance.values(*self.attrs))
+        else:
+            data.update(self.instance.view())
+        output = dict(type='object', name=str(self.instance), data=data)
+        auxiliary = self.cached_data('auxiliary')
+        if auxiliary:
+            output.update(auxiliary=self.instance.values(*auxiliary))
+        return output
+
+
+class ModelMixin(object):
 
     def has_view_permission(self, user):
         return self and user.is_superuser
@@ -156,31 +189,11 @@ class ModelMixin:
     def view(self):
         return self.values()
 
-    def cached_data(self, data_type):
-        attr_name = '_{}_'.format(data_type)
-        if hasattr(type(self), attr_name):
-            getattr(type(self), attr_name)
-        data = []
-        for k, v in type(self).__dict__.items():
-            if hasattr(v, data_type) and getattr(v, data_type):
-                data.append(k)
-        setattr(type(self), attr_name, data)
-        return data
+    def serializer(self, *names):
+        return ModelSerializer(self, *names)
 
     def serialize(self, *names):
-        data = {}
-        primary = self.cached_data('primary')
-        if primary:
-            data.update(self.values(*primary))
-        if names:
-            data.update(self.values(*names))
-        else:
-            data.update(self.view())
-        output = dict(type='object', name=str(self), data=data)
-        auxiliary = self.cached_data('auxiliary')
-        if auxiliary:
-            output.update(auxiliary=self.values(*auxiliary))
-        return output
+        return self.serializer(*names).serialize()
 
     def get_absolute_url(self, prefix=''):
         return '{}/{}/{}/{}/'.format(prefix, self._meta.app_label, self._meta.model_name, self.pk)

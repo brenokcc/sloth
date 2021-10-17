@@ -6,6 +6,8 @@ from django.forms import *
 class FormMixin:
 
     def serialize(self):
+        if self.message:
+            return self.message
         data = dict(type='form')
         form_fields = {}
         for field_name in self.fields:
@@ -50,9 +52,6 @@ class FormMixin:
         meta = getattr(self, 'Meta', None)
         return getattr(meta, 'method', 'post') if meta else 'post'
 
-    def get_message(self, style='sucess', **kwargs):
-        return dict(type='message', text=self.message, style=style, **kwargs)
-
     def has_permission(self, user):
         return self and user.is_superuser
 
@@ -78,13 +77,16 @@ class Form(Form, FormMixin):
 class ModelForm(ModelForm, FormMixin):
 
     def __init__(self, *args, **kwargs):
-        self.message = 'Ação realizada com sucesso'
+        self.message = None
         self.request = kwargs.pop('request', None)
         self.related = kwargs.pop('related', None)
         super().__init__(*args, **kwargs)
 
     def process(self):
         return self.save()
+
+    def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):
+        self.message = dict(type='message', text=text, style=style, **kwargs)
 
 
 class QuerySetForm(ModelForm):

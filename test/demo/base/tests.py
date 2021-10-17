@@ -97,7 +97,7 @@ class ApiTestCase(ServerTestCase):
 
 class Oauth2TestCase(ServerTestCase):
 
-    def test_scopes(self):
+    def test(self):
         self.debug = True
         Estado.objects.create(sigla='RN')
         Estado.objects.create(sigla='PB')

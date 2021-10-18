@@ -99,7 +99,7 @@ def to_verbose_name(cls, lookup):
 
 def to_display(cls, lookups, verbose=False):
     display = {}
-    for lookup in lookups or [field.name for field in getattr(cls, '_meta').fields[0:5]]:
+    for lookup in lookups:
         verbose_name, sort = to_verbose_name(cls, lookup)
         display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name, sort=sort)
     return display

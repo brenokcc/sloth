@@ -1,0 +1,234 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+<script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.6.0/dist/umd/popper.min.js" integrity="sha384-KsvD1yqQ1/1+IA7gi3P0tyJcT3vR+NdBTt13hSJ2lnve8agRGXTTyNaBYmCR/Nwi" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js" integrity="sha384-nsg8ua9HAw1y0W1btsyWgBklPnCUAFLuTMS2G72MMONqmOymq585AcH49TLBQObG" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<style>
+    @keyframes page-load {
+        from {
+            width:0;
+        }
+        to {
+            width:100%;
+        }
+    }
+    a.btn, button.btn, input[type="button"], input[type="reset"], input[type="submit"], .deletelink, button {
+        border: 0 none;
+        border-radius: 25px;
+        color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 100%;
+        padding: 8px 14px;
+        white-space: nowrap;
+        text-decoration: none;
+        padding: 10px;
+    }
+    .action-bar-container .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+    .action-bar li{
+        list-style-type: none !important;
+    }
+    .page-loading::before {
+        content:" ";
+        display:block;
+        position:fixed;
+        z-index:10;
+        height:2px;
+        width:100%;
+        top:0;
+        left:0;
+        background-color:#347b3e;
+        animation: page-load ease-out 3s;
+    }
+    .search-and-filters {
+        background-color: #f6f6f6;
+        border-radius: 5px;
+        clear: both;
+        display: flex;
+        align-items: flex-end;
+        flex-direction: row;
+        flex-wrap: wrap;
+        float: none;
+        margin: 4px 0 10px;
+        padding: 20px 10px 5px;
+        position: relative;
+        width: 100%;
+    }
+    .search-and-filters::before {
+        color: #292929;
+        content: "FILTROS:";
+        font-size: 85%;
+        font-weight: 300;
+        left: 20px;
+        position: absolute;
+        top: -5px;
+    }
+    .search-and-filters label {
+        color: #666;
+    }
+    .search-and-filters .select2-container{
+        width: 210px !important;
+    }
+    .search-and-filters .select2-container--default .select2-selection--single{
+        height: 35px !important;
+    }
+    .search-and-filters input[type=text]{
+        height: 34px;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+    }
+    .search-and-filters form>div {
+        display: inline;
+        float: left;
+        width: auto;
+    }
+    .search-and-filters .filter {
+        flex-basis: 210px;
+        flex-grow: 1;
+        float: left;
+        margin: 0 10px 15px;
+        max-width: 210px;
+        min-width: 160px;
+        padding: 0;
+        width: auto;
+    }
+    .search-and-filters .filter .fa-calendar{
+        position: relative;
+        left: -75px;
+        bottom: -27px;
+        color: #DDD;
+    }
+    .search-and-filters .submit-button {
+        flex-basis: 100px;
+        flex-grow: 1;
+        margin: 15px 10px;
+    }
+    .search-and-filters input[type="text"] {
+        max-width: 100%;
+        width: 100%;
+    }
+    .select2-selection__clear span{
+        position: relative;
+        color: #CCC;
+        top: -8px;
+    }
+    .datatable-application {
+        clear: both;
+    }
+    .pagination {
+        display: inline-block;
+        margin: 20px 0 5px;
+        padding: 0;
+        width: 100%;
+    }
+    .pagination li {
+        float: left;
+        list-style: none;
+        margin: 0 10px 0 0;
+    }
+    .pagination ul {
+        padding: 0;
+    }
+    .tabs {
+        border-bottom: 1px solid #666;
+        margin-bottom: 15px;
+        margin-top: 10px;
+        width: 100%;
+        clear: both;
+        display: inline-block;
+        padding: 0;
+    }
+    .tabs li.active {
+        background-color: #fff;
+        border-bottom: 1px solid #fff;
+        border-left: 1px solid #999;
+        border-right: 1px solid #999;
+        border-top: 1px solid #999;
+        font-weight: 900;
+        position: relative;
+        z-index: 2;
+    }
+    .tabs li {
+        background-color: #f6f6f6;
+        border: 1px solid #fff;
+        border-bottom-color: #666;
+        border-radius: 10px 10px 0 0;
+        float: left;
+        line-height: 1.2em;
+        margin: 5px 5px -1px 0;
+        padding: 10px;
+        list-style-type: none;
+    }
+
+    table.info{
+        width: 100%;
+    }
+
+    table.info tr:nth-child(even) td {
+        background-color: #f6f6f6;
+    }
+
+    table.info td:nth-child(odd) {
+        color: #666;
+        font-weight: 900;
+        text-align: left;
+    }
+
+    a{
+        text-decoration: none;
+    }
+
+    main{
+        margin:20px;
+    }
+</style>
+
+<script>
+    replaceAddAnotherLinks = function () {
+        let links = jQuery('.popup');
+        for (let i = 0; i < links.length; i++) {
+            let link = links[i];
+            link.onclick = function (e) {
+                e.preventDefault();
+                let first_char = '?';
+                if (this.href.indexOf('?') > 0) {
+                    first_char = '&';
+                }
+                let url = this.href + first_char + 'modal=1&_popup=1';
+                if (link.host !== window.location.host){
+                    window.location = link.href;
+                    return;
+                }
+                $.fancybox.open({
+                    src  : url,
+                    type : 'iframe',
+                    opts : {
+                        afterClose: function( instance, current ) {
+
+                        }
+                    }
+                });
+            };
+        }
+    }
+    close_fancybox = function () {
+        jQuery.fancybox.close();
+    }
+    close_fancybox_noreload = function () {
+        jQuery.fancybox.getInstance().noreload=true;
+        jQuery.fancybox.close();
+    }
+    $( document ).ready(function() {
+        replaceAddAnotherLinks();
+    });
+</script>

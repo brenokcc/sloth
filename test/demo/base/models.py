@@ -42,7 +42,7 @@ class ServidorSet(models.QuerySet):
 
     @meta('Todos', actions='AtivarServidor')
     def all(self):
-        return super().all().display('matricula', 'nome', 'ativo')
+        return super().all().display('get_dados_gerais', 'ativo')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -78,7 +78,7 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Dados Gerais', primary=False, actions=('CorrigirNomeServidor', 'FazerAlgumaCoisa'))
+    @meta('Dados Gerais', primary=True, actions=('CorrigirNomeServidor', 'FazerAlgumaCoisa'))
     def get_dados_gerais(self):
         return self.values('nome', 'cpf')
 
@@ -95,7 +95,7 @@ class Servidor(models.Model):
     def get_frequencias(self):
         return self.frequencia_set.paginate(5)
 
-    @meta('Férias', auxiliary=False, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
+    @meta('Férias', auxiliary=True, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
     def get_ferias(self):
         return self.ferias_set.all().display('ano', 'inicio', 'fim')
 

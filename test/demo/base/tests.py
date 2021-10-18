@@ -38,16 +38,19 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
-        servidor = Servidor.objects.first()
+
         self.log(Group.objects.first().serialize())
-        self.log(Group.objects.serialize())
+        self.log(Group.objects.all().serialize())
         self.log(Ferias.objects.all().serialize())
+
+        servidor = Servidor.objects.first()
         self.log(servidor.serialize())
         self.log(servidor.serialize('get_dados_gerais'))
         self.log(servidor.serialize('get_dados_recursos_humanos'))
         self.log(servidor.serialize('get_endereco'))
         self.log(Servidor.objects.serialize())
-        self.log(Servidor.objects.serialize('com_endereco'))
+        self.log(Servidor.objects.com_endereco().serialize())
+        self.log(Servidor.objects.sem_endereco().serialize())
 
 
 class ApiTestCase(ServerTestCase):
@@ -66,21 +69,26 @@ class ApiTestCase(ServerTestCase):
         self.get('/api/auth/group/add/', status_code=401)
         self.get('/api/base/servidor/1/', status_code=401)
         self.get('/api/base/servidor/1/get_dados_gerais/', status_code=401)
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
-                  dict(nome='Emanoel'), status_code=401)
-        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/',
-                  dict(inicio='01/06/2020', fim='01/07/2020'), status_code=401)
+        self.post(
+            '/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
+            dict(nome='Emanoel'), status_code=401
+        )
+        self.post(
+            '/api/base/servidor/1/get_ferias/1-2/alterarferias/',
+            dict(inicio='01/06/2020', fim='01/07/2020'), status_code=401
+        )
 
         # authenticated and authorized
         self.login('admin', '123')
-        self.get('/api/auth/group/add/')
+
+        self.get('/api/auth/group/')
         self.post('/api/auth/group/add/', data=dict(name='Operador'))
+        self.get('/api/auth/group/1/')
         self.get('/api/auth/group/1/edit/')
         self.post('/api/auth/group/1/edit/', data=dict(name='Gerente'))
         self.get('/api/auth/group/1/delete/')
         self.post('/api/auth/group/1/delete/')
 
-        self.get('/api/auth/group/')
         self.get('/api/base/servidor/')
         self.get('/api/base/servidor/ativos/')
         self.post('/api/base/servidor/ativos/1/inativarservidores/')
@@ -117,9 +125,9 @@ class Oauth2TestCase(ServerTestCase):
         self.logout()
 
         data = dict(
-            client_id=app['data']['access_data']['client_id'],
-            client_secret=app['data']['access_data']['client_secret'],
-            grant_type=app['data']['access_data']['authorization_grant_type'],
+            client_id=app['access_data']['client_id'],
+            client_secret=app['access_data']['client_secret'],
+            grant_type=app['access_data']['authorization_grant_type'],
             username=admin.username,
             password='123',
             scope='public'

@@ -11,7 +11,7 @@ from dms2.threading import tls
 
 
 def is_authenticated(request):
-    tls.wrap = False
+    tls.wrap = True
     request.access_token = None
     if request.method != 'OPTIONS' and not request.user.is_authenticated:
         if 'Authorization' in request.headers:
@@ -110,11 +110,8 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                 form = form_cls(request=request, data=data, instances=instances)
                 if form.has_permission(request.user):
                     if form.is_valid():
-                        result = form.process()
-                        if result is None:
-                            form.notify()
-                        else:
-                            return result
+                        form.process()
+                        form.notify()
                     return form
                 raise PermissionDenied()
             else:  # pks is obj action
@@ -123,20 +120,17 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                 form = form_cls(request=request, data=data, instance=obj)
                 if form.has_permission(request.user):
                     if form.is_valid():
-                        result = form.process()
-                        if result is None:
-                            form.notify()
-                        else:
-                            return result
+                        form.process()
+                        form.notify()
                     return form
                 raise PermissionDenied()
         else:
             if obj.has_attr_view_permission(request.user, method):
-                return obj.serializer(method)
+                return obj.values(method)
             raise PermissionDenied()
     else:
         if obj.has_view_permission(request.user):
-            return obj.serializer()
+            return obj.view()
         raise PermissionDenied()
 
 

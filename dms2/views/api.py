@@ -13,7 +13,8 @@ def api_view(func):
     def decorate(request, *args, **kwargs):
         try:
             if views.is_authenticated(request):
-                return JsonResponse(func(request, *args, **kwargs).serialize())
+                data = func(request, *args, **kwargs)
+                return JsonResponse(data.serialize(wrap=False, verbose=False), safe=False)
             else:
                 return JsonResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403

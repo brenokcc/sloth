@@ -17,29 +17,34 @@ def login(request, username):
 
 
 def index(request):
-    return render(request, ['index.html'], dict())
+    return render(request, ['adm/index.html'], dict())
 
 
 def add_view(request, app_label, model_name):
-    data = views.add_view(request, app_label, model_name)
-    return render(request, ['add.html'], dict(data=data))
+    form = views.add_view(request, app_label, model_name)
+    return render(request, ['adm/add.html'], dict(form=form))
 
 
 def edit_view(request, app_label, model_name, pk):
-    data = views.edit_view(request, app_label, model_name, pk)
-    return render(request, ['edit.html'], dict(data=data))
+    form = views.edit_view(request, app_label, model_name, pk)
+    print(form.serialize())
+    if form.message:
+        pass
+    return render(request, ['adm/add.html'], dict(form=form))
 
 
 def delete_view(request, app_label, model_name, pk):
     data = views.delete_view(request, app_label, model_name, pk)
-    return render(request, ['delete.html'], dict(data=data))
+    return render(request, ['adm/delete.html'], dict(data=data))
 
 
 def list_view(request, app_label, model_name, method=None, pks=None, action=None):
     data = views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
-    return render(request, ['list.html'], dict(data=data))
+    print(data.serialize())
+    return render(request, ['adm/list.html'], dict(data=data))
 
 
 def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
     data = views.obj_view(request, app_label, model_name, pk, method=method, pks=pks, action=action)
-    return render(request, ['view.html'], dict(data=data))
+    print(data.serialize())
+    return render(request, ['adm/view.html'], dict(data=data))

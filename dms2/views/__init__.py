@@ -7,11 +7,8 @@ from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
-from dms2.threading import tls
-
 
 def is_authenticated(request):
-    tls.wrap = True
     request.access_token = None
     if request.method != 'OPTIONS' and not request.user.is_authenticated:
         if 'Authorization' in request.headers:

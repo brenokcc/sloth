@@ -5,6 +5,9 @@ from django.urls import path
 from ..views import api
 
 urlpatterns = [
+    path('', api.index),
+    path('docs/', api.index),
+
     path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/<str:pks>/<str:action>/', api.obj_view),
     path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/<str:pks>/', api.obj_view),
     path('<str:app_label>/<str:model_name>/<int:pk>/edit/', api.edit_view),

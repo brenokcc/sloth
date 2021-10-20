@@ -8,7 +8,7 @@ from django.db.models import manager
 from django.forms.models import modelform_factory
 
 from dms2.forms import ModelForm
-from dms2.utils import getattrr, to_action, serialize, to_display, to_filters, to_ordering, to_verbose_name
+from dms2.utils import getattrr, serialize, to_display, to_filters, to_ordering, to_verbose_name
 from dms2.db.models.decorators import meta
 
 
@@ -17,38 +17,44 @@ class ValueSet(dict):
         self.model = type(instance)
         self.instance = instance
         self.names = []
+        self.actions = []
         for attr_name in names:
             self.names.extend(attr_name) if isinstance(attr_name, tuple) else self.names.append(attr_name)
         super().__init__()
 
-    def loaddata(self, wrap=False, verbose=False):
+    def allow(self, *names):
+        self.actions = list(names)
+        return self
+
+    def load(self, wrap=False, verbose=False):
         if self.names:
             metadata = getattr(self.instance, '_meta')
             for attr_name in self.names:
                 attr, value = getattrr(self.instance, attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 if isinstance(value, QuerySet):
+                    actions = getattr(value, 'metadata')['actions']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap, verbose=verbose)
                     if wrap:
                         value['name'] = verbose_name
                 elif isinstance(value, ValueSet):
+                    actions = getattr(value, 'actions')
                     key = attr_name
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    if attr_name == 'default_fieldset':
+                    if attr_name == 'fieldset':
                         key = None
                         path = None
-                    value.loaddata(wrap=wrap, verbose=verbose)
-                    value = dict(
-                        type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path
-                    ) if wrap else value
+                    value.load(wrap=wrap, verbose=verbose)
+                    value = dict(type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
                 else:
+                    actions = []
                     value = serialize(value)
 
-                if wrap and hasattr(attr, 'allow'):
-                    for form_name in attr.allow:
+                if wrap:
+                    for form_name in actions:
                         value['actions'].append(
-                            to_action(metadata.app_label, form_name, path)
+                            self.instance.action_form_cls(form_name).get_metadata(path)
                         )
 
                 if verbose:
@@ -80,20 +86,20 @@ class ValueSet(dict):
         return data
 
     def serialize(self, wrap=False, verbose=False):
-        self.loaddata(wrap=wrap, verbose=verbose)
+        self.load(wrap=wrap, verbose=verbose)
         if wrap:
             data = {}
             names = self.cached_data('primary')
             if names:
                 extra = self.instance.values(*names)
-                extra.loaddata(wrap=wrap, verbose=verbose)
+                extra.load(wrap=wrap, verbose=verbose)
                 data.update(extra)
             data.update(self)
             output = dict(type='object', name=str(self.instance), data=data)
             names = self.cached_data('auxiliary')
             if names:
                 extra = self.instance.values(*names)
-                extra.loaddata(wrap=wrap, verbose=verbose)
+                extra.load(wrap=wrap, verbose=verbose)
                 output.update(auxiliary=extra)
             return output
         else:
@@ -106,7 +112,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], paginate=15
+            display=[], filters={}, search=[], ordering=[], paginate=15, actions=[]
         )
 
     def _clone(self):
@@ -151,10 +157,11 @@ class QuerySet(models.QuerySet):
             if att_name:
                 path = '{}{}/'.format(path, att_name)
 
-            if 'actions' in data and hasattr(attr, 'allow'):
-                for form_name in attr.allow:
-                    data['actions'].append(to_action(metadata.app_label, form_name, path))
-                data.update(path=path)
+            for form_name in self.metadata['actions']:
+                data['actions'].append(
+                    self.model.action_form_cls(form_name).get_metadata(path)
+                )
+            data.update(path=path)
             return data
         return self.to_list()
 
@@ -178,6 +185,10 @@ class QuerySet(models.QuerySet):
         self.metadata['paginate'] = size
         return self
 
+    def allow(self, *names):
+        self.metadata['actions'] = list(names)
+        return self
+
 
 class BaseManager(manager.BaseManager):
     def get_queryset(self):
@@ -189,6 +200,12 @@ class Manager(BaseManager.from_queryset(QuerySet)):
 
 
 class ModelMixin(object):
+
+    def init_one_to_one_fields(self):
+        for field in getattr(self, '_meta').fields:
+            if isinstance(field, models.OneToOneField):
+                if getattr(self, '{}_id'.format(field.name)) is None:
+                    setattr(self, field.name, field.related_model())
 
     def has_view_permission(self, user):
         return self and user.is_superuser
@@ -207,21 +224,19 @@ class ModelMixin(object):
         return self and user.is_superuser
 
     def values(self, *names):
-        if not names:
-            names = 'default_fieldset',
         return ValueSet(self, names)
 
     @meta('Dados Gerais')
-    def default_fieldset(self):
+    def fieldset(self):
         model = type(self)
         names = [field.name for field in getattr(model, '_meta').fields[0:5]]
         return self.values(*names)
 
     def view(self):
-        return self.values()
+        return self.values('fieldset')
 
-    def serialize(self, name=None, wrap=False, verbose=False):
-        return (self.values(name) if name else self.values()).serialize(wrap=wrap, verbose=verbose)
+    def serialize(self, wrap=True, verbose=True):
+        return self.view().serialize(wrap=wrap, verbose=verbose)
 
     def get_absolute_url(self, prefix=''):
         return '{}/{}/{}/{}/'.format(prefix, self._meta.app_label, self._meta.model_name, self.pk)
@@ -254,11 +269,46 @@ class ModelMixin(object):
         return None
 
     @classmethod
-    def all_form_cls(cls):
-        classes = []
-        for attr in cls.__dict__.values():
-            if hasattr(attr, 'allow'):
-                for name in attr.allow:
-                    form_cls = cls.action_form_cls(name)
-                    classes.append(form_cls)
-        return classes
+    def get_api_paths(cls):
+        instance = cls()
+        instance.init_one_to_one_fields()
+        url = '/api/{}/{}/'.format(cls._meta.app_label, cls._meta.model_name)
+
+        info = dict()
+        info[url] = [('get', 'List', 'List objects', {'type': 'string'})]
+        info['{}{{id}}/'.format(url)] = [
+            ('get', 'View', 'View object', {'type': 'string'}),
+            ('post', 'Add', 'Add object', {'type': 'string'}),
+            ('put', 'Edit', 'Edit object', {'type': 'string'}),
+        ]
+        for name, attr in cls.__dict__.items():
+            if hasattr(attr, 'decorated'):
+                v = getattr(instance, name)()
+                info['{}{{id}}/{}/'.format(url, name)] = [
+                    ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}),
+                ]
+                if isinstance(v, ValueSet):
+                    for action in v.actions:
+                        info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}),
+                        ]
+                elif isinstance(v, QuerySet):
+                    for action in v.metadata['actions']:
+                        info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}),
+                        ]
+
+        paths = {}
+        for url, data in info.items():
+            paths[url] = {}
+            for method, summary, description, schema in data:
+                paths[url][method] = {
+                    'summary': summary,
+                    'description': description,
+                    'responses': {
+                        '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
+                    },
+                    'tags': [cls._meta.app_label],
+                    'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
+                }
+        return paths

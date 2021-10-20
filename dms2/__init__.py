@@ -4,7 +4,7 @@ from django import forms
 from django.db import models
 from django.db.models import base
 
-old = base.ModelBase.__new__
+new = base.ModelBase.__new__
 
 
 def __new__(mcs, name, bases, attrs, **kwargs):
@@ -21,7 +21,8 @@ def __new__(mcs, name, bases, attrs, **kwargs):
 
     if bases == (base.Model,):
         bases = base.Model, ModelMixin
-    return old(mcs, name, bases, attrs, **kwargs)
+    cls = new(mcs, name, bases, attrs, **kwargs)
+    return cls
 
 
 class CharField(models.CharField):

@@ -63,16 +63,6 @@ def serialize(obj):
     return None
 
 
-def to_action(app_label, form_name, path=None):
-    config = apps.get_app_config(app_label)
-    forms = __import__(
-        '{}.forms'.format(config.module.__package__),
-        fromlist=config.module.__package__.split()
-    )
-    form_cls = getattr(forms, form_name)
-    return form_cls.get_metadata(path)
-
-
 def get_field(cls, lookup):
     model = cls
     attrs = lookup.split('__')
@@ -129,37 +119,3 @@ def to_ordering(cls, lookups, verbose=False):
         ordering[str(field.verbose_name) if verbose else lookup] = dict(key=lookup, name=field.verbose_name)
     return ordering
 
-
-def scan():
-    tree = {}
-    for model in apps.get_models():
-        metadata = getattr(model, '_meta')
-        app_label = metadata.app_label
-        model_name = metadata.model_name
-        for cls in (model, model.objects):
-            if hasattr(cls, '_queryset_class'):
-                queryset_class = getattr(cls, '_queryset_class')
-            else:
-                queryset_class = None
-            for attr_name, v in (queryset_class or cls).__dict__.items():
-                if hasattr(v, 'decorated'):
-                    if app_label not in tree:
-                        tree[app_label] = {}
-                    if model_name not in tree[app_label]:
-                        tree[app_label][model_name] = {}
-                    if queryset_class:
-                        if attr_name not in tree[app_label][model_name]:
-                            tree[app_label][model_name][attr_name] = {}
-                        if hasattr(v, 'allow'):
-                            for form_name in getattr(v, 'allow'):
-                                if form_name not in tree[app_label][model_name][attr_name]:
-                                    tree[app_label][model_name][attr_name][form_name] = {}
-                    else:
-                        if '{id}' not in tree[app_label][model_name]:
-                            tree[app_label][model_name]['{id}'] = {}
-                        tree[app_label][model_name]['{id}'][attr_name] = {}
-                        if hasattr(v, 'allow'):
-                            for form_name in getattr(v, 'allow'):
-                                if form_name not in tree[app_label][model_name]['{id}'][attr_name]:
-                                    tree[app_label][model_name]['{id}'][attr_name][form_name] = {}
-    return tree

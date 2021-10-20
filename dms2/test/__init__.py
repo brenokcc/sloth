@@ -23,9 +23,13 @@ class ServerTestCase(StaticLiveServerTestCase):
     def log(self, method, url, data, response):
         if self.debug:
             print('{}: {}'.format(method, url))
-            if data:
-                print('Input:\n{}'.format(json.dumps(data, indent=4, ensure_ascii=False)))
-            print('Output:\n{}'.format(json.dumps(response.json(), indent=4, ensure_ascii=False)))
+            try:
+                if data:
+                    print('Input:\n{}'.format(json.dumps(data, indent=4, ensure_ascii=False)))
+                print('Output:\n{}'.format(json.dumps(response.json(), indent=4, ensure_ascii=False)))
+            except:
+                print(data)
+                import pdb; pdb.set_trace()
             print('\n')
 
     def url(self, path):

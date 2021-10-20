@@ -48,25 +48,7 @@ class OpenApi(dict):
                 if self.request.GET.get('model') and self.request.GET['model'] != model_name:
                     continue
                 api_models.append((model_name, verbose_name))
-                url = '/api/{}/{}'.format(app_label, model_name)
-                self['paths'][url] = {
-                    'get': {
-                        'summary': 'Returns a list of users.',
-                        'description': 'Optional extended description in CommonMark or HTML.',
-                        'responses': {
-                            '200': {
-                                'description': 'OK',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {'type': 'array', 'items': {'type': 'string'}}
-                                    }
-                                }
-                            }
-                        },
-                        'tags': [app_label],
-                        'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
-                    }
-                }
+                self['paths'].update(model.get_api_paths())
             if api_models:
                 self['tags'].append(dict(name=app_label))
                 self.apps[app_label] = api_models

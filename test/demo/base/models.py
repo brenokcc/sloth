@@ -40,9 +40,9 @@ class Endereco(models.Model):
 
 class ServidorSet(models.QuerySet):
 
-    @meta('Todos', actions='AtivarServidor')
+    @meta('Todos')
     def all(self):
-        return super().all().display('get_dados_gerais', 'ativo')
+        return super().all().display('get_dados_gerais', 'ativo').allow('AtivarServidor')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -52,9 +52,9 @@ class ServidorSet(models.QuerySet):
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
 
-    @meta('Ativos', actions='InativarServidores')
+    @meta('Ativos')
     def ativos(self):
-        return self.filter(ativo=True)
+        return self.filter(ativo=True).allow('InativarServidores')
 
     @meta('Inativos')
     def inativos(self):
@@ -65,7 +65,7 @@ class Servidor(models.Model):
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
     cpf = models.CharField('CPF')
-    endereco = models.OneToOneField(Endereco, verbose_name='Endereço')
+    endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True)
     ativo = models.BooleanField('Ativo', default=True)
 
     class Meta:
@@ -78,15 +78,15 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Dados Gerais', primary=True, actions=('CorrigirNomeServidor', 'FazerAlgumaCoisa'))
+    @meta('Dados Gerais', primary=True)
     def get_dados_gerais(self):
-        return self.values('nome', 'cpf')
+        return self.values('nome', 'cpf').allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
-    @meta('Endereço', actions=('InformarEndereco', 'ExcluirEndereco'))
+    @meta('Endereço')
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
-        )
+        ).allow('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
         return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos')
@@ -95,9 +95,9 @@ class Servidor(models.Model):
     def get_frequencias(self):
         return self.frequencia_set.paginate(5)
 
-    @meta('Férias', auxiliary=True, actions=('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias'))
+    @meta('Férias', auxiliary=True)
     def get_ferias(self):
-        return self.ferias_set.all().display('ano', 'inicio', 'fim')
+        return self.ferias_set.all().display('ano', 'inicio', 'fim').allow('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
@@ -106,12 +106,9 @@ class Servidor(models.Model):
 
 class FeriasSet(models.QuerySet):
 
-    @meta('Ferias', actions='EditarFerias')
+    @meta('Ferias')
     def all(self):
-        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula',
-                                                                               'servidor__nome').filters('servidor',
-                                                                                                         'ano').ordering(
-            'inicio', 'fim')
+        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula','servidor__nome').filters('servidor','ano').ordering('inicio', 'fim').allow('EditarFerias')
 
 
 class Ferias(models.Model):

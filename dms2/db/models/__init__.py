@@ -230,18 +230,6 @@ class ModelMixin(object):
         return '{} #{}'.format(self._meta.verbose_name, self.pk)
 
     @classmethod
-    def action_form_cls(cls, action):
-        config = apps.get_app_config(cls._meta.app_label)
-        forms = __import__(
-            '{}.forms'.format(config.module.__package__),
-            fromlist=config.module.__package__.split()
-        )
-        for name in dir(forms):
-            if name.lower() == action:
-                return getattr(forms, name)
-        return None
-
-    @classmethod
     def add_form_cls(cls):
         return modelform_factory(cls, form=ModelForm, exclude=())
 
@@ -252,3 +240,25 @@ class ModelMixin(object):
     @classmethod
     def delete_form_cls(cls):
         return modelform_factory(cls, form=ModelForm, fields=())
+
+    @classmethod
+    def action_form_cls(cls, action):
+        config = apps.get_app_config(cls._meta.app_label)
+        forms = __import__(
+            '{}.forms'.format(config.module.__package__),
+            fromlist=config.module.__package__.split()
+        )
+        for name in dir(forms):
+            if name.lower() == action.lower():
+                return getattr(forms, name)
+        return None
+
+    @classmethod
+    def all_form_cls(cls):
+        classes = []
+        for attr in cls.__dict__.values():
+            if hasattr(attr, 'allow'):
+                for name in attr.allow:
+                    form_cls = cls.action_form_cls(name)
+                    classes.append(form_cls)
+        return classes

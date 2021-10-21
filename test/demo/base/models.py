@@ -42,7 +42,13 @@ class ServidorSet(models.QuerySet):
 
     @meta('Todos')
     def all(self):
-        return super().all().display('get_dados_gerais', 'ativo').allow('AtivarServidor')
+        return super().all().display(
+            'get_dados_gerais', 'ativo', 'naturalidade'
+        ).filters(
+            'data_nascimento', 'ativo', 'naturalidade'
+        ).search('nome').allow('AtivarServidor').ordering(
+            'nome', 'ativo', 'data_nascimento'
+        )
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -65,8 +71,10 @@ class Servidor(models.Model):
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
     cpf = models.CharField('CPF')
+    data_nascimento = models.DateField('Data de Nascimento', null=True)
     endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True)
     ativo = models.BooleanField('Ativo', default=True)
+    naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
 
     class Meta:
         verbose_name = 'Servidor'
@@ -80,7 +88,7 @@ class Servidor(models.Model):
 
     @meta('Dados Gerais', primary=True)
     def get_dados_gerais(self):
-        return self.values('nome', 'cpf').allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        return self.values('nome', 'cpf', 'data_nascimento').allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Endereço')
     def get_endereco(self):

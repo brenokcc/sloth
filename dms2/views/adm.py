@@ -1,10 +1,31 @@
 # -*- coding: utf-8 -*-
+import traceback
 
 from django.apps import apps
 from django.contrib import auth
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render
 from .. import views
+from ..exceptions import ReadyResponseException
+
+
+def view(func):
+    def decorate(request, *args, **kwargs):
+        try:
+            if views.is_authenticated(request):
+                return func(request, *args, **kwargs)
+            else:
+                return HttpResponseForbidden()
+        except ReadyResponseException as e:
+            return JsonResponse(e.data)
+        except PermissionDenied:
+            return HttpResponseForbidden()
+        except BaseException as e:
+            raise e
+
+    return decorate
 
 
 def login(request, username):
@@ -38,9 +59,9 @@ def delete_view(request, app_label, model_name, pk):
     return render(request, ['adm/delete.html'], dict(data=data))
 
 
+@view
 def list_view(request, app_label, model_name, method=None, pks=None, action=None):
     data = views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
-    print(data.serialize())
     return render(request, ['adm/list.html'], dict(data=data))
 
 

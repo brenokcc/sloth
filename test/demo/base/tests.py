@@ -18,7 +18,9 @@ def loaddata():
         logradouro='Centro', numero=1, municipio=natal
     )
     servidor = Servidor.objects.create(
-        matricula='1799479', nome='Breno Silva', cpf='047.704.024-14', endereco=endereco
+        matricula='1799479', nome='Breno Silva',
+        cpf='047.704.024-14', data_nascimento=date(1984, 8, 27),
+        endereco=endereco, naturalidade=natal
     )
     Ferias.objects.create(servidor=servidor, ano=2020, inicio=date(2020, 1, 1), fim=date(2020, 1, 31))
     Ferias.objects.create(servidor=servidor, ano=2021, inicio=date(2021, 8, 1), fim=date(2021, 8, 31))
@@ -38,6 +40,8 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
+
+        self.log(Servidor.objects.serialize(wrap=True, verbose=True))
 
         self.log(Group.objects.first().serialize())
         self.log(Group.objects.all().serialize())

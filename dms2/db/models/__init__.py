@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
+from uuid import uuid1
 
+import math
 import json
+import operator
 
+from django.core.exceptions import FieldDoesNotExist
+from django.db.models import Q
+from functools import reduce
 from django.apps import apps
 from django.db import models
 from django.db.models import manager
 from django.forms.models import modelform_factory
+from django.template.loader import render_to_string
 
+from dms2.exceptions import ReadyResponseException
 from dms2.forms import ModelForm
-from dms2.utils import getattrr, serialize, to_display, to_filters, to_ordering, to_verbose_name
+from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
 
 
@@ -58,7 +66,7 @@ class ValueSet(dict):
                         )
 
                 if verbose:
-                    self[to_verbose_name(self.model, attr_name)[0]] = value
+                    self[self.model.get_attr_verbose_name(attr_name)[0]] = value
                 else:
                     self[attr_name] = value
         else:
@@ -120,9 +128,14 @@ class QuerySet(models.QuerySet):
         clone.metadata = self.metadata
         return clone
 
+    def _get_list_search(self):
+        return self.metadata['search']
+
     def _get_list_display(self):
         if not self.metadata['display']:
-            self.metadata['display'] = [field.name for field in getattr(self.model, '_meta').fields[0:5]]
+            self.metadata['display'] = [
+                field.name for field in getattr(self.model, '_meta').fields[0:5]
+            ]
         return self.metadata['display']
 
     def _get_list_filter(self):
@@ -131,11 +144,69 @@ class QuerySet(models.QuerySet):
     def _get_list_ordering(self):
         return self.metadata['ordering']
 
-    def to_list(self):
+    def _get_search(self, verbose=False):
+        display = {}
+        for lookup in self._get_list_search():
+            verbose_name, _ = self.model.get_attr_verbose_name(lookup)
+            display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
+        return display
+
+    def _get_display(self, verbose=False):
+        display = {}
+        for lookup in self._get_list_display():
+            verbose_name, sort = self.model.get_attr_verbose_name(lookup)
+            display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name, sort=sort)
+        return display
+
+    def _get_filters(self, verbose=False):
+        filters = {}
+        for lookup in self._get_list_filter():
+            field = self.model.get_field(lookup)
+            field_type_name = type(field).__name__
+            filter_type = 'choices'
+            if 'Boolean' in field_type_name:
+                filter_type = 'boolean'
+            elif 'DateTime' in field_type_name:
+                filter_type = 'datetime'
+            elif 'Date' in field_type_name:
+                filter_type = 'date'
+            filters[
+                str(field.verbose_name) if verbose else lookup
+            ] = dict(key=lookup, name=field.verbose_name, type=filter_type, choices=None)
+
+        ordering = []
+        for lookup in self._get_list_ordering():
+            field = self.model.get_field(lookup)
+            ordering.append(dict(id=lookup, text=field.verbose_name))
+        if ordering:
+            filters['Ordernação'] = dict(
+                key='ordering', name='Ordenação', type='choices', choices=ordering
+            )
+        return filters
+
+    def to_list(self, verbose=False):
         data = []
         for obj in self:
-            data.append(obj.values(*self._get_list_display()).serialize())
+            data.append(obj.values(*self._get_list_display()).serialize(verbose=verbose))
         return data
+
+    def choices(self, filter_lookup, q=None):
+        items = []
+        related_model = getattrr(self.model, filter_lookup)[0].field.related_model
+        ids = self.values_list(filter_lookup, flat=True).order_by(filter_lookup).distinct()
+        qs = related_model.objects.filter(id__in=ids)
+        if q:
+            lookups = []
+            for search_field in ['nome']:
+                lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
+            qs = qs.filter(reduce(operator.__or__, lookups))
+        total = qs.count()
+        for obj in qs[0:25]:
+            items.append(dict(id=obj.id, text=str(obj)))
+        return dict(
+            total=total, page=1, pages=math.ceil((1.0 * total) / 25),
+            q=q, items=items
+        )
 
     def serialize(self, att_name=None, path=None, wrap=False, verbose=True):
         if wrap:
@@ -144,13 +215,14 @@ class QuerySet(models.QuerySet):
                 verbose_name = getattr(attr, 'verbose_name', att_name)
             else:
                 verbose_name = str(getattr(self.model, '_meta').verbose_name)
-            display = to_display(self.model, self._get_list_display(), verbose)
-            filters = to_filters(self.model, self._get_list_filter(), verbose)
-            ordering = to_ordering(self.model, self._get_list_ordering(), verbose)
+            search = self._get_search(verbose)
+            display = self._get_display(verbose)
+            filters = self._get_filters(verbose)
             data = dict(
+                uuid=uuid1().hex,
                 type='queryset', name=verbose_name, count=self.count(), actions=[],
-                metadata=dict(display=display, filters=filters, ordering=ordering),
-                data=self.to_list(), path=path
+                metadata=dict(search=search, display=display, filters=filters),
+                data=self.to_list(verbose=verbose), path=path
             )
             metadata = getattr(self.model, '_meta')
             path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
@@ -187,6 +259,17 @@ class QuerySet(models.QuerySet):
 
     def allow(self, *names):
         self.metadata['actions'] = list(names)
+        return self
+
+    def html(self):
+        data = self.serialize(wrap=True, verbose=True)
+        return render_to_string('adm/queryset.html', dict(data=data))
+
+    def contextualize(self, request):
+        if 'choices' in request.GET:
+            raise ReadyResponseException(
+                self.choices(request.GET['choices'])
+            )
         return self
 
 
@@ -267,6 +350,30 @@ class ModelMixin(object):
             if name.lower() == action.lower():
                 return getattr(forms, name)
         return None
+
+    @classmethod
+    def get_field(cls, lookup):
+        model = cls
+        attrs = lookup.split('__')
+        while attrs:
+            attr_name = attrs.pop(0)
+            if attrs:  # go deeper
+                field = getattr(model, '_meta').get_field(attr_name)
+                model = field.related_model
+            else:
+                try:
+                    return getattr(model, '_meta').get_field(attr_name)
+                except FieldDoesNotExist:
+                    pass
+        return None
+
+    @classmethod
+    def get_attr_verbose_name(cls, lookup):
+        field = cls.get_field(lookup)
+        if field:
+            return str(field.verbose_name), True
+        attr = getattr(cls, lookup)
+        return getattr(attr, 'verbose_name', lookup), False
 
     @classmethod
     def get_api_paths(cls):

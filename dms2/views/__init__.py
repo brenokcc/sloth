@@ -71,7 +71,7 @@ def delete_view(request, app_label, model_name, pk):
 
 def list_view(request, app_label, model_name, method=None, pks=None, action=None):
     model = apps.get_model(app_label, model_name)
-    qs = model.objects.all()
+    qs = model.objects.contextualize(request)
     if method:
         attr = getattr(qs, method)
         if pks:

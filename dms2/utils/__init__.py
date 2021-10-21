@@ -3,7 +3,6 @@
 import datetime
 from decimal import Decimal
 
-from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.files import FieldFile
 
@@ -63,59 +62,5 @@ def serialize(obj):
     return None
 
 
-def get_field(cls, lookup):
-    model = cls
-    attrs = lookup.split('__')
-    while attrs:
-        attr_name = attrs.pop(0)
-        if attrs:  # go deeper
-            field = getattr(model, '_meta').get_field(attr_name)
-            model = field.related_model
-        else:
-            try:
-                return getattr(model, '_meta').get_field(attr_name)
-            except FieldDoesNotExist:
-                pass
-    return None
 
-
-def to_verbose_name(cls, lookup):
-    field = get_field(cls, lookup)
-    if field:
-        return str(field.verbose_name), True
-    attr = getattr(cls, lookup)
-    return getattr(attr, 'verbose_name', lookup), False
-
-
-def to_display(cls, lookups, verbose=False):
-    display = {}
-    for lookup in lookups:
-        verbose_name, sort = to_verbose_name(cls, lookup)
-        display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name, sort=sort)
-    return display
-
-
-def to_filters(cls, lookups, verbose=False):
-    filters = {}
-    for lookup in lookups:
-        field = get_field(cls, lookup)
-        field_type_name = type(field).__name__
-        filter_type = 'choices'
-        if 'Boolean' in field_type_name:
-            filter_type = 'boolean'
-        elif 'DateTime' in field_type_name:
-            filter_type = 'datetime'
-        elif 'Date' in field_type_name:
-            filter_type = 'date'
-        filters[str(field.verbose_name) if verbose else lookup] = dict(key=lookup, name=field.verbose_name,
-                                                                       type=filter_type)
-    return filters
-
-
-def to_ordering(cls, lookups, verbose=False):
-    ordering = {}
-    for lookup in lookups:
-        field = get_field(cls, lookup)
-        ordering[str(field.verbose_name) if verbose else lookup] = dict(key=lookup, name=field.verbose_name)
-    return ordering
 

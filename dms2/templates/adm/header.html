@@ -29,14 +29,9 @@
         text-decoration: none;
         padding: 10px;
     }
-    .action-bar-container .action-bar {
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: row;
-        justify-content: flex-end;
-    }
-    .action-bar li{
-        list-style-type: none !important;
+    .queryset .action-bar-container {
+        padding: 10px;
+        float: right;
     }
     .page-loading::before {
         content:" ";
@@ -51,7 +46,7 @@
         animation: page-load ease-out 3s;
     }
     .search-and-filters {
-        background-color: #f6f6f6;
+        background-color: #f8f9fa;
         border-radius: 5px;
         clear: both;
         display: flex;
@@ -116,6 +111,9 @@
     .search-and-filters input[type="text"] {
         max-width: 100%;
         width: 100%;
+    }
+    .search-and-filters .submit-panel{
+        padding-top: 15px;
     }
     .select2-selection__clear span{
         position: relative;

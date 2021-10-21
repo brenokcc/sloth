@@ -1,0 +1,14 @@
+<div class="action-container" id="{{ type }}-{{ id }}">
+    <div class="dropdown" id="action">
+        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+           data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
+        <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
+            <li><a class="dropdown-item" href="#">Action</a></li><li>
+        </ul>
+    </div>
+    <script>
+        document.getElementById('{{ type }}-{{ id }}').addEventListener('show.bs.dropdown', function () {
+            $(this).find('ul').append('<a class="dropdown-item disabled" href="#">Another action</a></li><li><a class="dropdown-item" href="#">Something else here</a></li>');
+        });
+    </script>
+</div>

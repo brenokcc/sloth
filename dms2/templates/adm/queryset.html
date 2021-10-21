@@ -1,0 +1,137 @@
+{% load tags %}
+
+
+<div class="queryset">
+    <div class="action-bar-container">
+        {% include "adm/actions.html" with type="model-actions" id=data.uuid %}
+    </div>
+    <div class="search-and-filters">
+        <form method="get" id="{{ data.uuid }}" action="{{ base_url }}{{ data.url|default:'' }}">
+            <input type="hidden" name="page" class="p-{{ data.uuid }}" value="{{ request.GET.page|default:1 }}">
+            {% if data.metadata.search %}
+            <div class="filter">
+                <label>Busca:</label>
+                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres">
+            </div>
+            {% endif %}
+            {% for name, metadata in data.metadata.filters.items %}
+            <div class="filter">
+                <label>{{ name }}:</label>
+                {% if metadata.type == "choices" %}
+                <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
+                    {% if metadata.choices %}
+                        <option value=""></option>
+                        {% for choice in metadata.choices %}
+                            <option value="{{ choice.id }}">{{ choice.text }}</option>
+                        {% endfor %}
+                    {% else %}
+                        {% if metadata.value %}
+                            <option selected value="{{ value }}">{{ metadata.value }}</option>
+                        {% endif %}
+                    {% endif %}
+                </select>
+                <script>
+                       $('.{{ metadata.key }}-{{ data.uuid }}').select2({
+                        width: 'resolve',
+                          language: 'pt-BR',
+                          allowClear: true,
+                          placeholder: 'Selecione uma opção',
+                          {% if metadata.choices is None %}
+                          ajax: {
+                            url: "/adm{{ data.path }}?choices={{ metadata.key }}",
+                            dataType: 'json',
+                            delay: 250,
+                            minimumInputLength: 3,
+                            data: function (params) {
+                              return { term: params.term };
+                            },
+                            processResults: function (data) {
+                              return { results: data.items };
+                            },
+                            templateResult: function (data) {
+                                return data.html || 'Buscando...';
+                            },
+                            templateSelection: function (data) {
+                                return data.text;
+                            }
+                          }
+                          {% endif %}
+                       });
+                </script>
+                {% endif %}
+                {% if metadata.type == "boolean" %}
+                <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
+                    <option></option>
+                    <option {% if metadata.value == True %}selected{% endif %} value="1">Sim</option>
+                    <option {% if metadata.value == False %}selected{% endif %} value="0">Não</option>
+                </select>
+                <script>
+                       $('.{{ metadata.key }}-{{ data.uuid }}').select2({
+                        language: 'pt-BR',
+                        allowClear: true,
+                        placeholder: 'Selecione uma opção',
+                       });
+                </script>
+                {% endif %}
+                {% if metadata.type == "date" or metadata.type == "datetime" %}
+                <!--<i class="fa fa-calendar"></i>-->
+                <input type="text" name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}"
+                       placeholder="Informe um data" style="padding-left:10px">
+                <script>
+                        $(function() {
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker();
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "dateFormat", 'dd/mm/yy');
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "width", '');
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker("option", $.datepicker.regional['pt-BR']);
+                        });
+
+                </script>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="submit-panel">
+                <button type="button" class="btn btn-primary" onclick="reload{{ data.uuid }}()">Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function reload{{ data.uuid }}(){
+            var data = $('#{{ data.uuid }}').serialize();
+            console.log(data);
+        }
+    </script>
+
+    <div>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">
+                    <input type="checkbox">
+                </th>
+                {% for label, display in data.metadata.display.items %}
+                <th scope="col">{{ display.name }}</th>
+                {% endfor %}
+                <th scope="col">
+                    Ações
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in data.data %}
+            <tr>
+                <th scope="col" class="align-middle">
+                    <input type="checkbox">
+                </th>
+                {% for k, v in row.items %}
+                <td class="align-middle">{{ v|format }}</td>
+                {% endfor %}
+                <td class="align-middle">
+                    {% include "adm/actions.html" with type="queryset-actions" id=data.uuid  %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

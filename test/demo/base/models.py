@@ -46,9 +46,11 @@ class ServidorSet(models.QuerySet):
             'get_dados_gerais', 'ativo', 'naturalidade'
         ).filters(
             'data_nascimento', 'ativo', 'naturalidade'
-        ).search('nome').allow('AtivarServidor').ordering(
+        ).search('nome').ordering(
             'nome', 'ativo', 'data_nascimento'
-        )
+        ).subsets(
+            'com_endereco', 'sem_endereco', 'ativos', 'inativos'
+        ).allow('AtivarServidor', 'InativarServidores', 'CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Com Endereço')
     def com_endereco(self):

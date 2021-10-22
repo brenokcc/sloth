@@ -5,10 +5,10 @@ from django.apps import apps
 from django.contrib import auth
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render
 from .. import views
-from ..exceptions import ReadyResponseException
+from ..exceptions import ReadyResponseException, HtmlReadyResponseException
 
 
 def view(func):
@@ -20,6 +20,8 @@ def view(func):
                 return HttpResponseForbidden()
         except ReadyResponseException as e:
             return JsonResponse(e.data)
+        except HtmlReadyResponseException as e:
+            return HttpResponse(e.html)
         except PermissionDenied:
             return HttpResponseForbidden()
         except BaseException as e:

@@ -4,6 +4,7 @@ from uuid import uuid1
 import math
 import json
 import operator
+import datetime
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
@@ -14,7 +15,7 @@ from django.db.models import manager
 from django.forms.models import modelform_factory
 from django.template.loader import render_to_string
 
-from dms2.exceptions import ReadyResponseException
+from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
 from dms2.forms import ModelForm
 from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
@@ -120,7 +121,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], paginate=15, actions=[]
+            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], subsets=[]
         )
 
     def _clone(self):
@@ -182,12 +183,32 @@ class QuerySet(models.QuerySet):
             filters['Ordernação'] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
+        pagination = []
+        for page in range(0, self.count()//self.metadata['limit'] + 1):
+            start = page * self.metadata['limit']
+            end = start + self.metadata['limit']
+            pagination.append(dict(id=page+1, text='{} - {}'.format(start + 1, end)))
+        filters['Paginação'] = dict(
+            key='pagination', name='Paginação', type='choices', choices=pagination
+        )
         return filters
 
-    def to_list(self, verbose=False):
+    def _get_subsets(self, verbose=False):
+        subsets = {}
+        if self.metadata['subsets'] and not self.query.is_sliced:
+            for i, name in enumerate(['all'] + self.metadata['subsets']):
+                attr = getattr(self, name)
+                verbose_name = getattr(attr, 'verbose_name', name)
+                subsets[verbose_name if verbose else name] = dict(
+                    name=verbose_name, key=name, count=attr().count(), active=i==0
+                )
+        return subsets
+
+    def to_list(self, wrap=False, verbose=False):
         data = []
         for obj in self:
-            data.append(obj.values(*self._get_list_display()).serialize(verbose=verbose))
+            item = obj.values(*self._get_list_display()).serialize(verbose=verbose)
+            data.append([obj.id, item] if wrap else item)
         return data
 
     def choices(self, filter_lookup, q=None):
@@ -196,10 +217,7 @@ class QuerySet(models.QuerySet):
         ids = self.values_list(filter_lookup, flat=True).order_by(filter_lookup).distinct()
         qs = related_model.objects.filter(id__in=ids)
         if q:
-            lookups = []
-            for search_field in ['nome']:
-                lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
-            qs = qs.filter(reduce(operator.__or__, lookups))
+            self.search(q=q)
         total = qs.count()
         for obj in qs[0:25]:
             items.append(dict(id=obj.id, text=str(obj)))
@@ -218,12 +236,16 @@ class QuerySet(models.QuerySet):
             search = self._get_search(verbose)
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
+            subsets = self._get_subsets(verbose)
             data = dict(
                 uuid=uuid1().hex,
                 type='queryset', name=verbose_name, count=self.count(), actions=[],
                 metadata=dict(search=search, display=display, filters=filters),
-                data=self.to_list(verbose=verbose), path=path
+                data=self.paginate().to_list(wrap=wrap, verbose=verbose)
             )
+            if subsets:
+                data.update(subsets=subsets)
+            data.update(path=path)
             metadata = getattr(self.model, '_meta')
             path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
             if att_name:
@@ -241,7 +263,12 @@ class QuerySet(models.QuerySet):
         self.metadata['display'] = list(names)
         return self
 
-    def search(self, *names):
+    def search(self, *names, q=None):
+        if q:
+            lookups = []
+            for search_field in self._get_list_search() or ['nome']:
+                lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
+            return self.filter(reduce(operator.__or__, lookups))
         self.metadata['search'] = list(names)
         return self
 
@@ -253,24 +280,63 @@ class QuerySet(models.QuerySet):
         self.metadata['ordering'] = list(names)
         return self
 
-    def paginate(self, size):
-        self.metadata['paginate'] = size
+    def limit(self, size):
+        self.metadata['limit'] = size
+        return self
+
+    def subsets(self, *names):
+        self.metadata['subsets'] = list(names)
         return self
 
     def allow(self, *names):
         self.metadata['actions'] = list(names)
         return self
 
-    def html(self):
+    def html(self, uuid=None):
         data = self.serialize(wrap=True, verbose=True)
-        return render_to_string('adm/queryset.html', dict(data=data))
+        if uuid:
+            data['uuid'] = uuid
+        return render_to_string('adm/queryset.html', dict(data=data, uuid=uuid))
 
     def contextualize(self, request):
         if 'choices' in request.GET:
             raise ReadyResponseException(
                 self.choices(request.GET['choices'])
             )
+        if 'uuid' in request.GET:
+            raise HtmlReadyResponseException(
+                self.process_params(request).html(uuid=request.GET['uuid'])
+            )
         return self
+
+    def paginate(self, page=1):
+        start = (page - 1) * self.metadata['limit']
+        end = start + self.metadata['limit']
+        return self[start:end]
+
+    def process_params(self, request):
+        page = 1
+        q = request.GET['q']
+        subset = request.GET['subset']
+        if subset != 'all' and subset not in self.metadata['subsets']:
+            raise ValueError('"{}" is an invalid subset.'.format(subset))
+        qs = getattr(self, subset)()
+        for item in self._get_filters().values():
+            value = request.GET.get(item['key'])
+            if value:
+                if item['key'] == 'ordering':
+                    qs = qs.order_by(value)
+                elif item['key'] == 'pagination':
+                    page = int(value)
+                else:
+                    if item['type'] == 'date':
+                        value = datetime.datetime.strptime(value, '%d/%m/%Y')
+                    if item['type'] == 'boolean':
+                        value = bool(int(value))
+                    qs = qs.filter(**{item['key']: value})
+        if q:
+            qs = qs.search(q=q)
+        return qs.paginate(page)
 
 
 class BaseManager(manager.BaseManager):

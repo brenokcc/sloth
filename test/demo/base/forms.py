@@ -34,6 +34,7 @@ class InativarServidores(forms.QuerySetForm):
     class Meta:
         title = 'Inativar'
         model = Servidor
+        batch = True
         fields = ()
 
     def save(self):

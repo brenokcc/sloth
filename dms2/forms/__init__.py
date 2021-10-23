@@ -36,14 +36,16 @@ class FormMixin:
         icon = None
         style = 'primary'
         method = 'get'
+        batch = False
         if meta:
             name = getattr(meta, 'name', form_name)
             icon = getattr(meta, 'icon', None)
             style = getattr(meta, 'style', 'primary')
             method = getattr(meta, 'method', 'post')
+            batch = getattr(meta, 'batch', False)
         if path:
             if hasattr(cls, 'instances'):
-                target = 'instance'
+                target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, form_name.lower())
             else:
                 path = '{}{}/'.format(path, form_name.lower())

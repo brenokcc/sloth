@@ -40,7 +40,6 @@ class Endereco(models.Model):
 
 class ServidorSet(models.QuerySet):
 
-    @meta('Todos')
     def all(self):
         return super().all().display(
             'get_dados_gerais', 'ativo', 'naturalidade'

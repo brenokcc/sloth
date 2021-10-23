@@ -1,28 +1,18 @@
-<div class="action-container" id="{{ target }}-{{ data.uuid }}">
+{% if actions %}
+<div class="action-container" id="{{ target }}-{{ uuid }}">
     <div class="dropdown">
-        <a class="btn btn-primary dropdown-toggle {% if batch %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
+        <a class="btn btn-primary dropdown-toggle {{ target }}" href="#" role="button" id="dropdownMenuLink"
            data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
         <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
-            {% for action in data.actions %}
-                {% if target == "instance" %}
-                    {% if batch and action.batch %}
-                        <li><a class="dropdown-item action-button batch" href="#">{{ action.name }}</a></li>
-                    {% endif %}
-                    {% if not batch and not action.batch %}
-                        <li><a class="dropdown-item action-button" href="#">{{ action.name }}</a></li>
-                    {% endif %}
-                {% endif %}
-                {% if target == "model" %}
-                    {% if action.target == "model" %}
-                        <li><a class="dropdown-item action-button" href="#">{{ action.name }}</a></li>
-                    {% endif %}
-                {% endif %}
+            {% for action in actions %}
+                <li><a class="dropdown-item action-button" href="#">{{ action.name }}</a></li>
             {% endfor %}
         </ul>
     </div>
     <script>
-        //document.getElementById('{{ target }}-{{ data.uuid }}').addEventListener('show.bs.dropdown', function () {
+        //document.getElementById('{{ target }}-{{ uuid }}').addEventListener('show.bs.dropdown', function () {
         //    $(this).find('ul').append('');
         //});
     </script>
 </div>
+{% endif %}

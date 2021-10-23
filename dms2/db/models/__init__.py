@@ -26,7 +26,7 @@ class ValueSet(dict):
         self.model = type(instance)
         self.instance = instance
         self.names = []
-        self.actions = []
+        self.actions = {}
         for attr_name in names:
             self.names.extend(attr_name) if isinstance(attr_name, tuple) else self.names.append(attr_name)
         super().__init__()
@@ -47,6 +47,9 @@ class ValueSet(dict):
                     value = value.serialize(path=path, wrap=wrap, verbose=verbose)
                     if wrap:
                         value['name'] = verbose_name
+                        for form_name in actions:
+                            action = self.instance.action_form_cls(form_name).get_metadata(path)
+                            value['actions'][action['target']] = action
                 elif isinstance(value, ValueSet):
                     actions = getattr(value, 'actions')
                     key = attr_name
@@ -56,15 +59,12 @@ class ValueSet(dict):
                         path = None
                     value.load(wrap=wrap, verbose=verbose)
                     value = dict(type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
+                    if wrap:
+                        for form_name in actions:
+                            action = self.instance.action_form_cls(form_name).get_metadata(path)
+                            value['actions'].append(action)
                 else:
-                    actions = []
                     value = serialize(value)
-
-                if wrap:
-                    for form_name in actions:
-                        value['actions'].append(
-                            self.instance.action_form_cls(form_name).get_metadata(path)
-                        )
 
                 if verbose:
                     self[self.model.get_attr_verbose_name(attr_name)[0]] = value
@@ -126,7 +126,7 @@ class QuerySet(models.QuerySet):
 
     def _clone(self):
         clone = super()._clone()
-        clone.metadata = self.metadata
+        clone.metadata = dict(self.metadata)
         return clone
 
     def _get_list_search(self):
@@ -199,6 +199,8 @@ class QuerySet(models.QuerySet):
             for i, name in enumerate(['all'] + self.metadata['subsets']):
                 attr = getattr(self, name)
                 verbose_name = getattr(attr, 'verbose_name', name)
+                if verbose_name == 'all':
+                    verbose_name = 'Tudo'
                 subsets[verbose_name if verbose else name] = dict(
                     name=verbose_name, key=name, count=attr().count(), active=i==0
                 )
@@ -232,14 +234,15 @@ class QuerySet(models.QuerySet):
             if hasattr(attr, 'verbose_name'):
                 verbose_name = getattr(attr, 'verbose_name', att_name)
             else:
-                verbose_name = str(getattr(self.model, '_meta').verbose_name)
+                verbose_name = str(getattr(self.model, '_meta').verbose_name_plural)
             search = self._get_search(verbose)
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             subsets = self._get_subsets(verbose)
             data = dict(
                 uuid=uuid1().hex,
-                type='queryset', name=verbose_name, count=self.count(), actions=[],
+                type='queryset', name=verbose_name, count=self.count(),
+                actions=dict(model=[], instance=[], queryset=[]),
                 metadata=dict(search=search, display=display, filters=filters),
                 data=self.paginate().to_list(wrap=wrap, verbose=verbose)
             )
@@ -252,9 +255,8 @@ class QuerySet(models.QuerySet):
                 path = '{}{}/'.format(path, att_name)
 
             for form_name in self.metadata['actions']:
-                data['actions'].append(
-                    self.model.action_form_cls(form_name).get_metadata(path)
-                )
+                action = self.model.action_form_cls(form_name).get_metadata(path)
+                data['actions'][action['target']].append(action)
             data.update(path=path)
             return data
         return self.to_list()

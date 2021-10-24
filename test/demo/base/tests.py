@@ -42,8 +42,6 @@ class ModelTestCase(TestCase):
         loaddata()
 
         servidor = Servidor.objects.first()
-        self.log(servidor.serialize(wrap=True, verbose=True))
-
         self.log(Servidor.objects.com_endereco().serialize(wrap=True, verbose=True))
 
         self.log(Group.objects.first().serialize())

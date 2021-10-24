@@ -1,0 +1,27 @@
+{% load tags %}
+{% if fieldset.type == 'fieldset' %}
+  <div class="card">
+    <div class="card-body">
+      <div class="fieldset-title">
+        <h5>{{ fieldset.name }}</h5>
+      </div>
+      <div class="fielset-action-bar">
+          {% if fieldset.actions %}
+              {% include "adm/actions.html" with uuid=data.uuid target="model" actions=fieldset.actions   %}
+          {% endif %}
+      </div>
+      <div class="card-text">
+          {% for k, v in fieldset.data.items %}
+            <div class="fieldset-field"><b>{{ k }}</b><br>{{ v|format }}</div>
+          {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% if fieldset.type == 'queryset' %}
+    <div class="card">
+        <div class="card-body">
+        {% include 'adm/queryset.html' with data=fieldset %}
+        </div>
+    </div>
+{% endif %}

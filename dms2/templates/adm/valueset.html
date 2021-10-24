@@ -1,0 +1,55 @@
+<div class="fieldset-title">
+    {% if name %}
+        <h2>{{ name }}</h2>
+    {% endif %}
+</div>
+<div class="fielset-action-bar" style="margin-right:18px">
+      {% if actions %}
+          {% include "adm/actions.html" with uuid=uuid target="model" actions=actions   %}
+      {% endif %}
+</div>
+
+{% for name, item in data.items %}
+    <div class="fieldset">
+        {% if item.type == 'fieldsets' %}
+            <div class="fieldset-title">
+                <h5>{{ item.name }}</h5>
+            </div>
+            <div class="fielset-action-bar" style="margin-right:18px">
+                  {% if item.actions %}
+                      {% include "adm/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
+                  {% endif %}
+            </div>
+            <ul class="nav nav-tabs fieldset-tabs" id="fieldset-tabs-{{ item.uuid }}">
+              {% for name, fieldset in item.data.items %}
+                  <li class="nav-item">
+                    <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page" href="javascript:" onclick="reloadTab{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">{{ name }}</a>
+                  </li>
+              {% endfor %}
+            </ul>
+            <script>
+                function reloadTab{{ item.uuid }}(tab, path){
+                    $.ajax({
+                        url:'/adm'+path,
+                        data:{},
+                        success:function( html ) {
+                            $('#fieldset-tab').html(html);
+                            $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link').removeClass('active');
+                            $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
+                        }
+                    });
+                }
+             </script>
+            <div class="fieldset-tab" id="fieldset-tab">
+            {% for fieldset in item.data.values %}
+                {% if forloop.first %}
+                    {% include 'adm/fieldset.html' with fieldset=fieldset %}
+                {% endif %}
+            {% endfor %}
+            </div>
+        {% else %}
+            {% include 'adm/fieldset.html' with fieldset=item %}
+        {% endif %}
+    </div>
+{% endfor %}
+

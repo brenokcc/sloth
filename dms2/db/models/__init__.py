@@ -23,17 +23,18 @@ from dms2.db.models.decorators import meta
 
 class ValueSet(dict):
     def __init__(self, instance, names):
-        self.model = type(instance)
         self.instance = instance
-        self.names = []
-        self.actions = []
         self.request = None
+        self.metadata = dict(model=type(instance), names=[], actions=[])
         for attr_name in names:
-            self.names.extend(attr_name) if isinstance(attr_name, tuple) else self.names.append(attr_name)
+            if isinstance(attr_name, tuple):
+                self.metadata['names'].extend(attr_name)
+            else:
+                self.metadata['names'].append(attr_name)
         super().__init__()
 
     def allow(self, *names):
-        self.actions = list(names)
+        self.metadata['actions'] = list(names)
         return self
 
     def contextualize(self, request):
@@ -45,25 +46,20 @@ class ValueSet(dict):
         return self
 
     def load(self, wrap=False, verbose=False):
-        if self.names:
+        if self.metadata['names']:
             metadata = getattr(self.instance, '_meta')
-            for attr_name in self.names:
+            for attr_name in self.metadata['names']:
                 attr, value = getattrr(self.instance, attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 if isinstance(value, QuerySet):
                     value.contextualize(self.request)
-                    actions = getattr(value, 'metadata')['actions']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap, verbose=verbose)
                     if wrap:
                         value['name'] = verbose_name
-                        # for form_name in actions:
-                        #     action = self.instance.action_form_cls(form_name).get_metadata(path)
-                        #     value['actions'][action['target']].append(action)
-                        # value['path'] = path
                 elif isinstance(value, ValueSet):
-                    actions = getattr(value, 'actions')
                     key = attr_name
+                    actions = getattr(value, 'metadata')['actions']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     if attr_name == 'fieldset':
                         key = None
@@ -79,12 +75,12 @@ class ValueSet(dict):
                     value = serialize(value)
 
                 if verbose:
-                    self[self.model.get_attr_verbose_name(attr_name)[0]] = value
+                    self[self.metadata['model'].get_attr_verbose_name(attr_name)[0]] = value
                 else:
                     self[attr_name] = value
         else:
             self['id'] = self.instance.id
-            self[self.model.__name__.lower()] = str(self.instance)
+            self[self.metadata['model'].__name__.lower()] = str(self.instance)
         return self
 
     def __str__(self):
@@ -119,17 +115,17 @@ class ValueSet(dict):
             auxiliary = self.cached_data('auxiliary')
             if auxiliary:
                 output.update(auxiliary=self.instance.values(*auxiliary).load(wrap=wrap, verbose=verbose))
-            if self.actions:
+            if self.metadata['actions']:
                 output['actions'] = []
                 metadata = getattr(self.instance, '_meta')
-                for form_name in self.actions:
+                for form_name in self.metadata['actions']:
                     path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
                     action = self.instance.action_form_cls(form_name).get_metadata(path)
                     output['actions'].append(action)
             return output
         else:
-            if len(self.names) == 1:
-                return self[self.names[0]]
+            if len(self.metadata['names']) == 1:
+                return self[self.metadata['names'][0]]
             return self
 
     def html(self, uuid=None, partial=False):
@@ -500,7 +496,7 @@ class ModelMixin(object):
                     ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}),
                 ]
                 if isinstance(v, ValueSet):
-                    for action in v.actions:
+                    for action in v.metadata['actions']:
                         info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
                             ('post', action, 'Execute {}'.format(action), {'type': 'string'}),
                         ]

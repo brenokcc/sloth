@@ -84,7 +84,7 @@ class FormMixin:
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
-        self.instance = None
+        self.instance = kwargs.pop('instance', None)
         self.message = 'Ação realizada com sucesso'
         self.related = kwargs.pop('related', None)
         self.request = kwargs.pop('request', None)

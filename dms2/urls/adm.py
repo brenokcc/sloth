@@ -7,6 +7,7 @@ from ..views import adm
 
 urlpatterns = [
     path('', adm.index),
+    path('icons/', adm.icons),
     path('login/<str:username>/', adm.login),
 
     path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/<str:pks>/<str:action>/', adm.obj_view),

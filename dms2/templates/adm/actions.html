@@ -1,7 +1,8 @@
 {% if actions %}
 <div class="action-container" id="{{ target }}-{{ uuid }}">
+    {% if 0 %}
     <div class="dropdown">
-        <a class="btn btn-primary dropdown-toggle {{ target }}" href="#" role="button" id="dropdownMenuLink"
+        <a class="btn btn-outline-primary dropdown-toggle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
            data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
         <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
@@ -10,9 +11,14 @@
         </ul>
     </div>
     <script>
-        //document.getElementById('{{ target }}-{{ uuid }}').addEventListener('show.bs.dropdown', function () {
-        //    $(this).find('ul').append('');
-        //});
+        //document.getElementById('{{ target }}-{{ uuid }}').addEventListener('show.bs.dropdown', function () { $(this).find('ul').append(''); });
     </script>
+    {% else %}
+        {% for action in actions %}
+            <a href="/adm{{ action.path }}" class="btn btn-outline-primary {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
+                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %} {{ action.name }}
+            </a>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endif %}

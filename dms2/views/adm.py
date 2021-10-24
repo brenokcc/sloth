@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render
 from .. import views
+from ..forms import FormMixin
+from ..utils.icons import bootstrap
 from ..exceptions import ReadyResponseException, HtmlReadyResponseException
 
 
@@ -15,7 +17,9 @@ def view(func):
     def decorate(request, *args, **kwargs):
         try:
             if views.is_authenticated(request):
-                return func(request, *args, **kwargs)
+                response = func(request, *args, **kwargs)
+                response["X-Frame-Options"] = "SAMEORIGIN"
+                return response
             else:
                 return HttpResponseForbidden()
         except ReadyResponseException as e:
@@ -28,6 +32,11 @@ def view(func):
             raise e
 
     return decorate
+
+
+@view
+def icons(request):
+    return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
 
 def login(request, username):
@@ -43,11 +52,13 @@ def index(request):
     return render(request, ['adm/index.html'], dict())
 
 
+@view
 def add_view(request, app_label, model_name):
     form = views.add_view(request, app_label, model_name)
     return render(request, ['adm/add.html'], dict(form=form))
 
 
+@view
 def edit_view(request, app_label, model_name, pk):
     form = views.edit_view(request, app_label, model_name, pk)
     print(form.serialize())
@@ -56,6 +67,7 @@ def edit_view(request, app_label, model_name, pk):
     return render(request, ['adm/add.html'], dict(form=form))
 
 
+@view
 def delete_view(request, app_label, model_name, pk):
     data = views.delete_view(request, app_label, model_name, pk)
     return render(request, ['adm/delete.html'], dict(data=data))
@@ -67,7 +79,12 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
     return render(request, ['adm/list.html'], dict(data=data))
 
 
+@view
 def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
+    context = {}
     data = views.obj_view(request, app_label, model_name, pk, method=method, pks=pks, action=action)
-    print(data.serialize())
-    return render(request, ['adm/view.html'], dict(data=data))
+    if isinstance(data, FormMixin):
+        context.update(form=data)
+    else:
+        context.update(data=data)
+    return render(request, ['adm/view.html'], context)

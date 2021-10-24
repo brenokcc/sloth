@@ -49,7 +49,7 @@ class ServidorSet(models.QuerySet):
             'nome', 'ativo', 'data_nascimento'
         ).subsets(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
-        ).allow('AtivarServidor', 'InativarServidores', 'CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        ).allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -65,7 +65,7 @@ class ServidorSet(models.QuerySet):
 
     @meta('Inativos')
     def inativos(self):
-        return self.filter(ativo=False)
+        return self.filter(ativo=False).allow('AtivarServidor')
 
 
 class Servidor(models.Model):
@@ -98,7 +98,7 @@ class Servidor(models.Model):
         ).allow('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos')
+        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').allow('InformarEndereco')
 
     @meta('Frequências')
     def get_frequencias(self):
@@ -110,7 +110,7 @@ class Servidor(models.Model):
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
-        return self.values('get_frequencias', 'get_ferias', 'get_endereco')
+        return self.values('get_endereco', 'get_ferias', 'get_frequencias').allow('FazerAlgumaCoisa')
 
 
 class FeriasSet(models.QuerySet):

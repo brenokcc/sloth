@@ -1,17 +1,18 @@
 {% load tags %}
+
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
-    <div>
-        <div class="queryset-title">
-            <h2>{{ data.name }}</h2>
-        </div>
-        <div class="queryset-action-bar">
-            {% if data.actions.model %}
-                {% include "adm/actions.html" with uuid=data.uuid target="model" actions=data.actions.model  %}
-            {% endif %}
-        </div>
+    {% if inner %}
+        <div class="card"><div class="card-body">
+    {% endif %}
+    <div class="queryset-title">
+        <h2>{{ data.name }}</h2>
     </div>
-
+    <div class="queryset-action-bar">
+        {% if data.actions.model %}
+            {% include "adm/actions.html" with uuid=data.uuid target="model" actions=data.actions.model  %}
+        {% endif %}
+    </div>
     <div class="search-and-filters">
         <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
             <input type="hidden" name="uuid" value="{{ data.uuid }}">
@@ -104,11 +105,9 @@
     </div>
 
     <script>
-        console.log("{{ data.uuid }}");
         function reloadQueryset{{ data.uuid }}(subset){
             if(subset==null) subset = 'all';
             $('#subset-{{ data.uuid }}').val(subset);
-            console.log($('#subset-{{ data.uuid }}'));
             $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).addClass('active').find('.badge').removeClass('text-white').removeClass('bg-primary').addClass('bg-white').addClass('text-primary');
             var data = $('#form-{{ data.uuid }}').serialize();
@@ -124,12 +123,14 @@
             if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
             if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
                 $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').removeClass('disabled');
-                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model').addClass('disabled');
-                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance, .dropdown-toggle.model').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.queryset').removeClass('disabled');
             } else {
                 $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').addClass('disabled');
-                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model').removeClass('disabled');
-                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model, .dropdown-toggle.instance').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.queryset').addClass('disabled');
             }
         }
     </script>
@@ -155,9 +156,11 @@
             <table class="table" style="overflow-x:auto">
                 <thead>
                 <tr>
+                    {% if data.actions.queryset %}
                     <th scope="col">
                         <input type="checkbox" class="action-checkbox form-check-input" onclick="toggleActions{{ data.uuid }}(this)">
                     </th>
+                    {% endif %}
                     {% for label, display in data.metadata.display.items %}
                     <th scope="col">{{ display.name }}</th>
                     {% endfor %}
@@ -169,9 +172,11 @@
                 <tbody>
                 {% for id, row in data.data %}
                 <tr>
+                    {% if data.actions.queryset %}
                     <th scope="col" class="align-middle">
                         <input type="checkbox" class="action-checkbox form-check-input" value="{{ id }}" onclick="toggleActions{{ data.uuid }}(this)">
                     </th>
+                    {% endif %}
                     {% for k, v in row.items %}
                     <td class="align-middle">{{ v|format }}</td>
                     {% endfor %}
@@ -194,6 +199,8 @@
         {% endif %}
 {% if uuid is None %}
     </div>
-
+    {% if inner %}
+        </div></div>
+    {% endif %}
 </div>
 {% endif %}

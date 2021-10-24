@@ -123,7 +123,8 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                 raise PermissionDenied()
         else:
             if obj.has_attr_view_permission(request.user, method):
-                return obj.values(method)
+                output = obj.values(method).contextualize(request)
+                return output
             raise PermissionDenied()
     else:
         if obj.has_view_permission(request.user):

@@ -26,13 +26,22 @@ class ValueSet(dict):
         self.model = type(instance)
         self.instance = instance
         self.names = []
-        self.actions = {}
+        self.actions = []
+        self.request = None
         for attr_name in names:
             self.names.extend(attr_name) if isinstance(attr_name, tuple) else self.names.append(attr_name)
         super().__init__()
 
     def allow(self, *names):
         self.actions = list(names)
+        return self
+
+    def contextualize(self, request):
+        self.request = request
+        if request.is_ajax():
+            raise HtmlReadyResponseException(
+                self.html(partial=True)
+            )
         return self
 
     def load(self, wrap=False, verbose=False):
@@ -42,14 +51,16 @@ class ValueSet(dict):
                 attr, value = getattrr(self.instance, attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 if isinstance(value, QuerySet):
+                    value.contextualize(self.request)
                     actions = getattr(value, 'metadata')['actions']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap, verbose=verbose)
                     if wrap:
                         value['name'] = verbose_name
-                        for form_name in actions:
-                            action = self.instance.action_form_cls(form_name).get_metadata(path)
-                            value['actions'][action['target']] = action
+                        # for form_name in actions:
+                        #     action = self.instance.action_form_cls(form_name).get_metadata(path)
+                        #     value['actions'][action['target']].append(action)
+                        # value['path'] = path
                 elif isinstance(value, ValueSet):
                     actions = getattr(value, 'actions')
                     key = attr_name
@@ -58,11 +69,12 @@ class ValueSet(dict):
                         key = None
                         path = None
                     value.load(wrap=wrap, verbose=verbose)
-                    value = dict(type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
+                    value = dict(uuid=uuid1().hex, type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
                     if wrap:
                         for form_name in actions:
                             action = self.instance.action_form_cls(form_name).get_metadata(path)
                             value['actions'].append(action)
+                        value['path'] = path
                 else:
                     value = serialize(value)
 
@@ -73,6 +85,7 @@ class ValueSet(dict):
         else:
             self['id'] = self.instance.id
             self[self.model.__name__.lower()] = str(self.instance)
+        return self
 
     def __str__(self):
         return json.dumps(self, indent=4, ensure_ascii=False)
@@ -98,23 +111,40 @@ class ValueSet(dict):
         self.load(wrap=wrap, verbose=verbose)
         if wrap:
             data = {}
-            names = self.cached_data('primary')
-            if names:
-                extra = self.instance.values(*names)
-                extra.load(wrap=wrap, verbose=verbose)
-                data.update(extra)
+            primary = self.cached_data('primary')
+            if primary:
+                data.update(self.instance.values(*primary).load(wrap=wrap, verbose=verbose))
             data.update(self)
-            output = dict(type='object', name=str(self.instance), data=data)
-            names = self.cached_data('auxiliary')
-            if names:
-                extra = self.instance.values(*names)
-                extra.load(wrap=wrap, verbose=verbose)
-                output.update(auxiliary=extra)
+            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), data=data)
+            auxiliary = self.cached_data('auxiliary')
+            if auxiliary:
+                output.update(auxiliary=self.instance.values(*auxiliary).load(wrap=wrap, verbose=verbose))
+            if self.actions:
+                output['actions'] = []
+                metadata = getattr(self.instance, '_meta')
+                for form_name in self.actions:
+                    path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
+                    action = self.instance.action_form_cls(form_name).get_metadata(path)
+                    output['actions'].append(action)
             return output
         else:
             if len(self.names) == 1:
                 return self[self.names[0]]
             return self
+
+    def html(self, uuid=None, partial=False):
+        if partial:
+            name = None
+            actions = []
+            data = self.load(wrap=True, verbose=True)
+        else:
+            serialized = self.serialize(wrap=True, verbose=True)
+            name = serialized['name']
+            data = serialized['data']
+            actions = serialized['actions']
+        if uuid:
+            data['uuid'] = uuid
+        return render_to_string('adm/valueset.html', dict(uuid=uuid, name=name, data=data, actions=actions))
 
 
 class QuerySet(models.QuerySet):
@@ -214,15 +244,17 @@ class QuerySet(models.QuerySet):
         return data
 
     def choices(self, filter_lookup, q=None):
-        items = []
-        related_model = getattrr(self.model, filter_lookup)[0].field.related_model
-        ids = self.values_list(filter_lookup, flat=True).order_by(filter_lookup).distinct()
-        qs = related_model.objects.filter(id__in=ids)
-        if q:
-            self.search(q=q)
-        total = qs.count()
-        for obj in qs[0:25]:
-            items.append(dict(id=obj.id, text=str(obj)))
+        field = getattrr(self.model, filter_lookup)[0].field
+        values = self.values_list(
+            filter_lookup, flat=True
+        ).order_by(filter_lookup).distinct()
+        total = values.count()
+        if field.related_model:
+            qs = field.related_model.objects.filter(id__in=values)
+            qs = qs.search(q=q) if q else qs
+            items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
+        else:
+            items = [dict(id=value, text=str(value)) for value in values]
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items
@@ -294,21 +326,26 @@ class QuerySet(models.QuerySet):
         self.metadata['actions'] = list(names)
         return self
 
-    def html(self, uuid=None):
+    def html(self, uuid=None, inner=False):
         data = self.serialize(wrap=True, verbose=True)
         if uuid:
             data['uuid'] = uuid
-        return render_to_string('adm/queryset.html', dict(data=data, uuid=uuid))
+        return render_to_string('adm/queryset.html', dict(data=data, uuid=uuid, inner=inner))
 
     def contextualize(self, request):
-        if 'choices' in request.GET:
-            raise ReadyResponseException(
-                self.choices(request.GET['choices'])
-            )
-        if 'uuid' in request.GET:
-            raise HtmlReadyResponseException(
-                self.process_params(request).html(uuid=request.GET['uuid'])
-            )
+        if request:
+            if 'choices' in request.GET:
+                raise ReadyResponseException(
+                    self.choices(request.GET['choices'])
+                )
+            if 'uuid' in request.GET:
+                raise HtmlReadyResponseException(
+                    self.process_params(request).html(
+                        uuid=request.GET['uuid']
+                    )
+                )
+            if request.is_ajax():
+                raise HtmlReadyResponseException(self.html(inner=True))
         return self
 
     def paginate(self, page=1):

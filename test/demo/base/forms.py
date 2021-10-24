@@ -13,7 +13,7 @@ class CorrigirNomeServidor(forms.ModelForm):
 
 
 class FazerAlgumaCoisa(forms.Form):
-    pass
+    mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
 
 
 class EditarFerias(forms.QuerySetForm):
@@ -47,7 +47,7 @@ class InformarEndereco(forms.ModelForm):
         model = Servidor
         field = 'endereco'
         name = 'Informar'
-        icon = 'address'
+        icon = 'archive'
         style = 'success'
         fields = 'endereco',
 

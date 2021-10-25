@@ -19,6 +19,12 @@ from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
 from dms2.forms import ModelForm
 from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
+from django.db.models import options
+
+
+setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
+    'icon', 'display', 'search', 'limit', 'filters'
+))
 
 
 class ValueSet(dict):
@@ -33,7 +39,7 @@ class ValueSet(dict):
                 self.metadata['names'].append(attr_name)
         super().__init__()
 
-    def allow(self, *names):
+    def actions(self, *names):
         self.metadata['actions'] = list(names)
         return self
 
@@ -111,13 +117,13 @@ class ValueSet(dict):
             if primary:
                 data.update(self.instance.values(*primary).load(wrap=wrap, verbose=verbose))
             data.update(self)
-            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), data=data)
+            metadata = getattr(self.instance, '_meta')
+            icon = getattr(metadata, 'icon', None)
+            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), icon=icon, data=data, actions=[])
             auxiliary = self.cached_data('auxiliary')
             if auxiliary:
                 output.update(auxiliary=self.instance.values(*auxiliary).load(wrap=wrap, verbose=verbose))
             if self.metadata['actions']:
-                output['actions'] = []
-                metadata = getattr(self.instance, '_meta')
                 for form_name in self.metadata['actions']:
                     path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
                     action = self.instance.action_form_cls(form_name).get_metadata(path)
@@ -130,17 +136,22 @@ class ValueSet(dict):
 
     def html(self, uuid=None, partial=False):
         if partial:
+            icon = None
             name = None
             actions = []
             data = self.load(wrap=True, verbose=True)
         else:
             serialized = self.serialize(wrap=True, verbose=True)
+            icon = serialized['icon']
             name = serialized['name']
             data = serialized['data']
             actions = serialized['actions']
         if uuid:
             data['uuid'] = uuid
-        return render_to_string('adm/valueset.html', dict(uuid=uuid, name=name, data=data, actions=actions))
+        return render_to_string(
+            'adm/valueset.html',
+            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions)
+        )
 
 
 class QuerySet(models.QuerySet):
@@ -259,17 +270,19 @@ class QuerySet(models.QuerySet):
     def serialize(self, att_name=None, path=None, wrap=False, verbose=True):
         if wrap:
             attr = getattr(self, att_name or 'all')
+            metadata = getattr(self.model, '_meta')
             if hasattr(attr, 'verbose_name'):
                 verbose_name = getattr(attr, 'verbose_name', att_name)
             else:
                 verbose_name = str(getattr(self.model, '_meta').verbose_name_plural)
+            icon = getattr(metadata, 'icon', None)
             search = self._get_search(verbose)
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             subsets = self._get_subsets(verbose)
             data = dict(
-                uuid=uuid1().hex,
-                type='queryset', name=verbose_name, count=self.count(),
+                uuid=uuid1().hex, type='queryset',
+                name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
                 metadata=dict(search=search, display=display, filters=filters),
                 data=self.paginate().to_list(wrap=wrap, verbose=verbose)
@@ -277,7 +290,6 @@ class QuerySet(models.QuerySet):
             if subsets:
                 data.update(subsets=subsets)
             data.update(path=path)
-            metadata = getattr(self.model, '_meta')
             path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
             if att_name:
                 path = '{}{}/'.format(path, att_name)
@@ -318,7 +330,7 @@ class QuerySet(models.QuerySet):
         self.metadata['subsets'] = list(names)
         return self
 
-    def allow(self, *names):
+    def actions(self, *names):
         self.metadata['actions'] = list(names)
         return self
 

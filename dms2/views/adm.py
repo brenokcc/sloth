@@ -75,8 +75,13 @@ def delete_view(request, app_label, model_name, pk):
 
 @view
 def list_view(request, app_label, model_name, method=None, pks=None, action=None):
+    context = {}
     data = views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
-    return render(request, ['adm/list.html'], dict(data=data))
+    if isinstance(data, FormMixin):
+        context.update(form=data)
+    else:
+        context.update(data=data)
+    return render(request, ['adm/list.html'], context)
 
 
 @view

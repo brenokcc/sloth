@@ -73,23 +73,29 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
     model = apps.get_model(app_label, model_name)
     qs = model.objects.contextualize(request)
     if method:
-        attr = getattr(qs, method)
-        if pks:
-            form_cls = model.action_form_cls(action)
-            instances = attr().filter(pk__in=pks.split('-'))
-            data = request.POST if not form_cls.base_fields else request.POST or None
-            form = form_cls(request=request, data=data, instances=instances)
-            if form.has_permission(request.user):
-                if form.is_valid():
-                    result = form.process()
-                    if result is None:
-                        form.notify()
-                    else:
-                        return result
-                return form
-            raise PermissionDenied()
+        attr = getattr(qs, method, None)
+        if attr:
+            if pks:
+                form_cls = model.action_form_cls(action)
+                instances = attr().filter(pk__in=pks.split('-'))
+                data = request.POST if not form_cls.base_fields else request.POST or None
+                form = form_cls(request=request, data=data, instances=instances)
+                if form.has_permission(request.user):
+                    if form.is_valid():
+                        result = form.process()
+                        if result is None:
+                            form.notify()
+                        else:
+                            return result
+                    return form
+                raise PermissionDenied()
+            else:
+                return attr()
         else:
-            return attr()
+            form_cls = model.action_form_cls(method)
+            data = request.POST if not form_cls.base_fields else request.POST or None
+            form = form_cls(request=request, data=data)
+            return form
     else:
         return qs
 

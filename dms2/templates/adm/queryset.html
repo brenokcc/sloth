@@ -6,7 +6,12 @@
         <div class="card"><div class="card-body">
     {% endif %}
     <div class="queryset-title">
-        <h2>{{ data.name }}</h2>
+        <h2>
+            {% if data.icon %}
+                <i class="bi bi-{{ data.icon }}"></i>
+            {% endif %}
+            {{ data.name }}
+        </h2>
     </div>
     <div class="queryset-action-bar">
         {% if data.actions.model %}
@@ -161,6 +166,7 @@
                         <input type="checkbox" class="action-checkbox form-check-input" onclick="toggleActions{{ data.uuid }}(this)">
                     </th>
                     {% endif %}
+                    <td scope="col"></td>
                     {% for label, display in data.metadata.display.items %}
                     <th scope="col">{{ display.name }}</th>
                     {% endfor %}
@@ -177,6 +183,11 @@
                         <input type="checkbox" class="action-checkbox form-check-input" value="{{ id }}" onclick="toggleActions{{ data.uuid }}(this)">
                     </th>
                     {% endif %}
+                    <td class="align-middle">
+                        <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ id }}/">
+                            <i class="bi bi-search"></i>
+                        </a>
+                    </td>
                     {% for k, v in row.items %}
                     <td class="align-middle">{{ v|format }}</td>
                     {% endfor %}

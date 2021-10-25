@@ -1,6 +1,11 @@
 <div class="fieldset-title">
     {% if name %}
-        <h2>{{ name }}</h2>
+        <h2>
+            {% if icon %}
+                <i class="bi bi-{{ icon }}"></i>
+            {% endif %}
+            {{ name }}
+        </h2>
     {% endif %}
 </div>
 <div class="fielset-action-bar" style="margin-right:18px">

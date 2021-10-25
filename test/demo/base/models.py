@@ -49,11 +49,11 @@ class ServidorSet(models.QuerySet):
             'nome', 'ativo', 'data_nascimento'
         ).subsets(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
-        ).allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Com Endereço')
     def com_endereco(self):
-        return self.filter(endereco__isnull=False)
+        return self.filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     @meta('Sem Endereço')
     def sem_endereco(self):
@@ -61,11 +61,11 @@ class ServidorSet(models.QuerySet):
 
     @meta('Ativos')
     def ativos(self):
-        return self.filter(ativo=True).allow('InativarServidores')
+        return self.filter(ativo=True).actions('InativarServidores')
 
     @meta('Inativos')
     def inativos(self):
-        return self.filter(ativo=False).allow('AtivarServidor')
+        return self.filter(ativo=False).actions('AtivarServidor')
 
 
 class Servidor(models.Model):
@@ -78,6 +78,7 @@ class Servidor(models.Model):
     naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
 
     class Meta:
+        icon = 'file-earmark-person'
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
 
@@ -89,16 +90,16 @@ class Servidor(models.Model):
 
     @meta('Dados Gerais', primary=True)
     def get_dados_gerais(self):
-        return self.values('nome', 'cpf', 'data_nascimento').allow('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        return self.values('nome', 'cpf', 'data_nascimento').actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Endereço')
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
-        ).allow('InformarEndereco', 'ExcluirEndereco')
+        ).actions('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').allow('InformarEndereco')
+        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco')
 
     @meta('Frequências')
     def get_frequencias(self):
@@ -106,18 +107,18 @@ class Servidor(models.Model):
 
     @meta('Férias', auxiliary=True)
     def get_ferias(self):
-        return self.ferias_set.all().display('ano', 'inicio', 'fim').allow('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
+        return self.ferias_set.all().display('ano', 'inicio', 'fim').actions('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
-        return self.values('get_endereco', 'get_ferias', 'get_frequencias').allow('FazerAlgumaCoisa')
+        return self.values('get_endereco', 'get_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
 
 
 class FeriasSet(models.QuerySet):
 
     @meta('Ferias')
     def all(self):
-        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula','servidor__nome').filters('servidor','ano').ordering('inicio', 'fim').allow('EditarFerias')
+        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula','servidor__nome').filters('servidor','ano').ordering('inicio', 'fim').actions('EditarFerias')
 
 
 class Ferias(models.Model):

@@ -46,9 +46,9 @@ class FormMixin:
         if path:
             if hasattr(cls, 'instances'):
                 target = 'queryset' if batch else 'instance'
-                path = '{}{{id}}/{}/'.format(path, form_name.lower())
+                path = '{}{{id}}/{}/'.format(path, form_name)
             else:
-                path = '{}{}/'.format(path, form_name.lower())
+                path = '{}{}/'.format(path, form_name)
         metadata = dict(name=name, target=target)
         if getattr(meta, 'batch', False):
             metadata.update(batch=True)
@@ -110,7 +110,7 @@ class QuerySetForm(ModelForm):
     instances = []
 
     def __init__(self, *args, **kwargs):
-        self.instances = kwargs.pop('instances')
+        self.instances = kwargs.pop('instances', ())
         super().__init__(*args, **kwargs)
 
     def process(self):

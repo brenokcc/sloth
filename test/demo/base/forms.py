@@ -5,7 +5,7 @@ from django import forms
 from .models import Servidor, Ferias
 
 
-class CorrigirNomeServidor(forms.ModelForm):
+class CorrigirNomeServidor(forms.QuerySetForm):
     class Meta:
         name = 'Corrigir Nome'
         model = Servidor

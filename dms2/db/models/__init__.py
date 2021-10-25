@@ -5,6 +5,7 @@ import math
 import json
 import operator
 import datetime
+from decimal import Decimal
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
@@ -13,6 +14,7 @@ from django.apps import apps
 from django.db import models
 from django.db.models import manager
 from django.template.loader import render_to_string
+from django.db.models.aggregates import Sum, Count
 
 from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
 from dms2.forms import ModelForm, QuerySetForm
@@ -30,7 +32,7 @@ class ValueSet(dict):
     def __init__(self, instance, names):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names=[], actions=[], attach=[])
+        self.metadata = dict(model=type(instance), names=[], actions=[], attach=[], append=[])
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 self.metadata['names'].extend(attr_name)
@@ -40,6 +42,10 @@ class ValueSet(dict):
 
     def actions(self, *names):
         self.metadata['actions'] = list(names)
+        return self
+
+    def append(self, *names):
+        self.metadata['append'] = list(names)
         return self
 
     def attach(self, *names):
@@ -101,31 +107,17 @@ class ValueSet(dict):
                 return 'fieldsets'
         return 'fieldset'
 
-    def cached_data(self, data_type):
-        attr_name = '_{}_'.format(data_type)
-        if hasattr(type(self.instance), attr_name):
-            getattr(type(self.instance), attr_name)
-        data = []
-        for k, v in type(self.instance).__dict__.items():
-            if hasattr(v, data_type) and getattr(v, data_type):
-                data.append(k)
-        setattr(type(self.instance), attr_name, data)
-        return data
-
     def serialize(self, wrap=False, verbose=False):
         self.load(wrap=wrap, verbose=verbose)
         if wrap:
             data = {}
-            primary = self.cached_data('primary')
-            if primary:
-                data.update(self.instance.values(*primary).load(wrap=wrap, verbose=verbose))
             data.update(self)
             metadata = getattr(self.instance, '_meta')
             icon = getattr(metadata, 'icon', None)
-            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), icon=icon, data=data, actions=[], attach=[])
-            auxiliary = self.cached_data('auxiliary')
-            if auxiliary:
-                output.update(auxiliary=self.instance.values(*auxiliary).load(wrap=wrap, verbose=verbose))
+            output = dict(
+                uuid=uuid1().hex, type='object', name=str(self.instance),
+                icon=icon, data=data, actions=[], attach=[], append={}
+            )
             for form_name in self.metadata['actions']:
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
                 action = self.instance.action_form_cls(form_name).get_metadata(path)
@@ -134,6 +126,8 @@ class ValueSet(dict):
                 name = getattr(getattr(self.instance, attr_name), 'verbose_name', attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 output['attach'].append(dict(name=name, path=path))
+            for attr_name in self.metadata['append']:
+                output['append'].update(self.instance.values(attr_name).load(wrap=wrap, verbose=verbose))
             return output
         else:
             if len(self.metadata['names']) == 1:
@@ -146,7 +140,7 @@ class ValueSet(dict):
             name = None
             actions = []
             attach = []
-            auxiliary = []
+            append = []
             data = self.load(wrap=True, verbose=True)
         else:
             serialized = self.serialize(wrap=True, verbose=True)
@@ -155,15 +149,12 @@ class ValueSet(dict):
             data = serialized['data']
             actions = serialized['actions']
             attach = serialized['attach']
-            if 'auxiliary' in serialized:
-                auxiliary = serialized['auxiliary']
-            else:
-                auxiliary = []
+            append = serialized['append']
         if uuid:
             data['uuid'] = uuid
         return render_to_string(
             'adm/valueset.html',
-            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, auxiliary=auxiliary)
+            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append)
         )
 
 
@@ -403,6 +394,135 @@ class QuerySet(models.QuerySet):
         if q:
             qs = qs.search(q=q)
         return qs.paginate(page)
+
+    def count(self, x=None, y=None):
+        return QuerySetStatistic(self, x, y=y) if x else super().count()
+
+    def sum(self, x, y=None, z=None):
+        if y:
+            return QuerySetStatistic(self, x, y=y, func=Sum, z=z)
+        else:
+            return QuerySetStatistic(self, x, func=Sum, z=z)
+
+
+class QuerySetStatistic(object):
+    MONTHS = ('JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ')
+
+    def __init__(self, qs, x, y=None, func=None, z='id'):
+        self.qs = qs
+        self.x = x
+        self.y = y
+        self.func = func or Count
+        self.z = z
+        self._xfield = None
+        self._yfield = None
+        self._xdict = {}
+        self._ydict = {}
+        self._values_dict = None
+
+        if '__month' in x:
+            self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistic.MONTHS)}
+        if y and '__month' in y:
+            self._ydict = {i + 1: month for i, month in enumerate(QuerySetStatistic.MONTHS)}
+
+    def _calc(self):
+        if self._values_dict is None:
+            self.calc()
+
+    def _xfield_display_value(self, value):
+        if hasattr(self._xfield, 'choices') and self._xfield.choices:
+            for choice in self._xfield.choices:
+                if choice[0] == value:
+                    return choice[1]
+        return value
+
+    def _yfield_display_value(self, value):
+        if hasattr(self._yfield, 'choices') and self._yfield.choices:
+            for choice in self._yfield.choices:
+                if choice[0] == value:
+                    return choice[1]
+        return value
+
+    def _clear(self):
+        self._xfield = None
+        self._yfield = None
+        self._xdict = {}
+        self._ydict = {}
+        self._values_dict = None
+
+    def calc(self):
+        self._values_dict = {}
+        values_list = self.qs.values_list(self.x, self.y).annotate(
+            self.func(self.z)) if self.y else self.qs.values_list(self.x).annotate(self.func(self.z))
+
+        self._xfield = self.qs.model.get_field(self.x.replace('__year', '').replace('__month', ''))
+        if self._xdict == {}:
+            xvalues = self.qs.values_list(self.x, flat=True).order_by(self.x).distinct()
+            if self._xfield.related_model:
+                self._xdict = {
+                    obj.pk: str(obj) for obj in self._xfield.related_model.objects.filter(pk__in=xvalues)
+                }
+            else:
+                self._xdict = {
+                    value: value for value in self.qs.values_list(self.x, flat=True)
+                }
+            if None in xvalues:
+                self._xdict[None] = 'Não-Informado'
+        if self.y:
+            self._yfield = self.qs.model.get_field(self.y.replace('__year', '').replace('__month', ''))
+            yvalues = self.qs.values_list(self.y, flat=True).order_by(self.y).distinct()
+            if self._ydict == {}:
+                if self._yfield.related_model:
+                    self._ydict = {
+                        obj.pk: str(obj) for obj in self._yfield.related_model.objects.filter(pk__in=yvalues)
+                    }
+                else:
+                    self._ydict = {
+                        value: value for value in yvalues
+                    }
+            self._values_dict = {(vx, vy): calc for vx, vy, calc in values_list}
+            if None in yvalues:
+                self._ydict[None] = 'Não-Informado'
+        else:
+            self._ydict = {}
+            self._values_dict = {(vx, None): calc for vx, calc in values_list}
+
+    def filter(self, **kwargs):
+        self._clear()
+        self.qs = self.qs.filter(**kwargs)
+        return self
+
+    def apply_lookups(self, user, lookups=None):
+        self._clear()
+        self.qs = self.qs.apply_lookups(user, lookups=lookups)
+        return self
+
+    def serialize(self, name=None):
+        self._calc()
+        series = dict()
+        formatter = {True: 'Sim', False: 'Não', None: ''}
+
+        def format_value(value):
+            return isinstance(value, Decimal) and '{0:.2f}'.format(value) or value
+
+        if self._ydict:
+
+            for i, (yk, yv) in enumerate(self._ydict.items()):
+                data = []
+                for j, (xk, xv) in enumerate(self._xdict.items()):
+                    data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, yk), 0)), '#EEE'])
+                series.update(**{formatter.get(yv, str(yv)): data})
+        else:
+            data = list()
+            for j, (xk, xv) in enumerate(self._xdict.items()):
+                data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, None), 0)), '#EEE'])
+            series['default'] = data
+
+        return dict(
+            type='statistic',
+            name=name,
+            series=series
+        )
 
 
 class BaseManager(manager.BaseManager):

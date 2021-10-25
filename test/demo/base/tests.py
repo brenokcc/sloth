@@ -40,8 +40,11 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
-        self.log(Servidor.objects.serialize(wrap=True, verbose=True))
         servidor = Servidor.objects.first()
+        self.log(Servidor.objects.count('naturalidade').serialize())
+        self.log(Servidor.objects.count('naturalidade', 'ativo').serialize())
+        self.log(Servidor.objects.serialize(wrap=True, verbose=True))
+        self.log(servidor.get_ferias().count('ano').serialize())
         self.log(servidor.serialize(wrap=True, verbose=True))
         self.log(Servidor.objects.com_endereco().serialize(wrap=True, verbose=True))
         self.log(Group.objects.first().serialize())

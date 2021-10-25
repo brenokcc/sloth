@@ -88,18 +88,18 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Dados Gerais', primary=True)
+    @meta('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('nome', 'cpf', 'data_nascimento').actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
-    @meta('Endereço', auxiliary=True)
+    @meta('Endereço')
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
         ).actions('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco').attach('get_ferias')
+        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco').attach('get_ferias').append('get_endereco')
 
     @meta('Frequências')
     def get_frequencias(self):

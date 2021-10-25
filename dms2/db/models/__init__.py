@@ -162,7 +162,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], subsets=[]
+            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], attach=[]
         )
 
     def _clone(self):
@@ -234,18 +234,18 @@ class QuerySet(models.QuerySet):
         )
         return filters
 
-    def _get_subsets(self, verbose=False):
-        subsets = {}
-        if self.metadata['subsets'] and not self.query.is_sliced:
-            for i, name in enumerate(['all'] + self.metadata['subsets']):
+    def _get_attach(self, verbose=False):
+        attach = {}
+        if self.metadata['attach'] and not self.query.is_sliced:
+            for i, name in enumerate(['all'] + self.metadata['attach']):
                 attr = getattr(self, name)
                 verbose_name = getattr(attr, 'verbose_name', name)
                 if verbose_name == 'all':
                     verbose_name = 'Tudo'
-                subsets[verbose_name if verbose else name] = dict(
+                attach[verbose_name if verbose else name] = dict(
                     name=verbose_name, key=name, count=attr().count(), active=i==0
                 )
-        return subsets
+        return attach
 
     def to_list(self, wrap=False, verbose=False):
         data = []
@@ -283,7 +283,7 @@ class QuerySet(models.QuerySet):
             search = self._get_search(verbose)
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
-            subsets = self._get_subsets(verbose)
+            attach = self._get_attach(verbose)
             data = dict(
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
@@ -291,8 +291,8 @@ class QuerySet(models.QuerySet):
                 metadata=dict(search=search, display=display, filters=filters),
                 data=self.paginate().to_list(wrap=wrap, verbose=verbose)
             )
-            if subsets:
-                data.update(subsets=subsets)
+            if attach:
+                data.update(attach=attach)
             data.update(path=path)
             path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
             if att_name:
@@ -330,8 +330,8 @@ class QuerySet(models.QuerySet):
         self.metadata['limit'] = size
         return self
 
-    def subsets(self, *names):
-        self.metadata['subsets'] = list(names)
+    def attach(self, *names):
+        self.metadata['attach'] = list(names)
         return self
 
     def actions(self, *names):
@@ -372,8 +372,8 @@ class QuerySet(models.QuerySet):
         page = 1
         q = request.GET['q']
         subset = request.GET['subset']
-        if subset != 'all' and subset not in self.metadata['subsets']:
-            raise ValueError('"{}" is an invalid subset.'.format(subset))
+        if subset != 'all' and subset not in self.metadata['attach']:
+            raise ValueError('"{}" is an invalid attach.'.format(subset))
         if subset == 'all':
             qs = self.actions()
         else:

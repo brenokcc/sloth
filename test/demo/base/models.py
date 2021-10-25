@@ -47,7 +47,7 @@ class ServidorSet(models.QuerySet):
             'data_nascimento', 'ativo', 'naturalidade'
         ).search('nome').ordering(
             'nome', 'ativo', 'data_nascimento'
-        ).subsets(
+        ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
         ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 

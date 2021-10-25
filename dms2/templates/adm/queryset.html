@@ -140,10 +140,10 @@
         }
     </script>
 
-    {% if data.subsets %}
+    {% if data.attach %}
     <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
         <ul class="nav nav-pills">
-            {% for subset in data.subsets.values %}
+            {% for subset in data.attach.values %}
           <li class="nav-item">
             <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('.pagination-{{ data.uuid }}').val('').trigger('change');reloadQueryset{{ data.uuid }}('{{ subset.key }}')">
                 {{ subset.name }}

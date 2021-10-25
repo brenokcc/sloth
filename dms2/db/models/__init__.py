@@ -12,11 +12,10 @@ from functools import reduce
 from django.apps import apps
 from django.db import models
 from django.db.models import manager
-from django.forms.models import modelform_factory
 from django.template.loader import render_to_string
 
 from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
-from dms2.forms import ModelForm
+from dms2.forms import ModelForm, QuerySetForm
 from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
 from django.db.models import options
@@ -31,7 +30,7 @@ class ValueSet(dict):
     def __init__(self, instance, names):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names=[], actions=[])
+        self.metadata = dict(model=type(instance), names=[], actions=[], attach=[])
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 self.metadata['names'].extend(attr_name)
@@ -41,6 +40,10 @@ class ValueSet(dict):
 
     def actions(self, *names):
         self.metadata['actions'] = list(names)
+        return self
+
+    def attach(self, *names):
+        self.metadata['attach'] = list(names)
         return self
 
     def contextualize(self, request):
@@ -119,15 +122,18 @@ class ValueSet(dict):
             data.update(self)
             metadata = getattr(self.instance, '_meta')
             icon = getattr(metadata, 'icon', None)
-            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), icon=icon, data=data, actions=[])
+            output = dict(uuid=uuid1().hex, type='object', name=str(self.instance), icon=icon, data=data, actions=[], attach=[])
             auxiliary = self.cached_data('auxiliary')
             if auxiliary:
                 output.update(auxiliary=self.instance.values(*auxiliary).load(wrap=wrap, verbose=verbose))
-            if self.metadata['actions']:
-                for form_name in self.metadata['actions']:
-                    path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
-                    action = self.instance.action_form_cls(form_name).get_metadata(path)
-                    output['actions'].append(action)
+            for form_name in self.metadata['actions']:
+                path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
+                action = self.instance.action_form_cls(form_name).get_metadata(path)
+                output['actions'].append(action)
+            for attr_name in self.metadata['attach']:
+                name = getattr(getattr(self.instance, attr_name), 'verbose_name', attr_name)
+                path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
+                output['attach'].append(dict(name=name, path=path))
             return output
         else:
             if len(self.metadata['names']) == 1:
@@ -139,6 +145,8 @@ class ValueSet(dict):
             icon = None
             name = None
             actions = []
+            attach = []
+            auxiliary = []
             data = self.load(wrap=True, verbose=True)
         else:
             serialized = self.serialize(wrap=True, verbose=True)
@@ -146,11 +154,16 @@ class ValueSet(dict):
             name = serialized['name']
             data = serialized['data']
             actions = serialized['actions']
+            attach = serialized['attach']
+            if 'auxiliary' in serialized:
+                auxiliary = serialized['auxiliary']
+            else:
+                auxiliary = []
         if uuid:
             data['uuid'] = uuid
         return render_to_string(
             'adm/valueset.html',
-            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions)
+            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, auxiliary=auxiliary)
         )
 
 
@@ -331,7 +344,10 @@ class QuerySet(models.QuerySet):
         return self
 
     def actions(self, *names):
-        self.metadata['actions'] = list(names)
+        if names:
+            self.metadata['actions'] = list(names)
+        else:
+            self.metadata['actions'].extend(('add', 'edit', 'delete'))
         return self
 
     def html(self, uuid=None, inner=False):
@@ -367,7 +383,10 @@ class QuerySet(models.QuerySet):
         subset = request.GET['subset']
         if subset != 'all' and subset not in self.metadata['subsets']:
             raise ValueError('"{}" is an invalid subset.'.format(subset))
-        qs = getattr(self, subset)()
+        if subset == 'all':
+            qs = self.actions()
+        else:
+            qs = getattr(self, subset)()
         for item in self._get_filters().values():
             value = request.GET.get(item['key'])
             if value:
@@ -442,27 +461,70 @@ class ModelMixin(object):
 
     @classmethod
     def add_form_cls(cls):
-        return modelform_factory(cls, form=ModelForm, exclude=())
+
+        class Add(ModelForm):
+            class Meta:
+                model = cls
+                exclude = ()
+                name = 'Cadastrar'
+                icon = 'plus'
+                style = 'success'
+
+            def process(self):
+                return self.save()
+
+        return Add
 
     @classmethod
     def edit_form_cls(cls):
-        return modelform_factory(cls, form=ModelForm, exclude=())
+
+        class Edit(QuerySetForm):
+            class Meta:
+                model = cls
+                exclude = ()
+                name = 'Editar'
+                icon = 'pencil'
+                style = 'primary'
+
+            def process(self):
+                return self.save()
+
+        return Edit
 
     @classmethod
     def delete_form_cls(cls):
-        return modelform_factory(cls, form=ModelForm, fields=())
+
+        class Delete(QuerySetForm):
+            class Meta:
+                model = cls
+                fields = ()
+                name = 'Excluir'
+                icon = 'x'
+                style = 'danger'
+
+            def process(self):
+                self.instance.delete()
+
+        return Delete
 
     @classmethod
     def action_form_cls(cls, action):
-        config = apps.get_app_config(cls._meta.app_label)
-        forms = __import__(
-            '{}.forms'.format(config.module.__package__),
-            fromlist=config.module.__package__.split()
-        )
-        for name in dir(forms):
-            if name.lower() == action.lower():
-                return getattr(forms, name)
-        return None
+        if action.lower() == 'add':
+            return cls.add_form_cls()
+        if action.lower() == 'edit':
+            return cls.edit_form_cls()
+        if action.lower() == 'delete':
+            return cls.delete_form_cls()
+        else:
+            config = apps.get_app_config(cls._meta.app_label)
+            forms = __import__(
+                '{}.forms'.format(config.module.__package__),
+                fromlist=config.module.__package__.split()
+            )
+            for name in dir(forms):
+                if name.lower() == action.lower():
+                    return getattr(forms, name)
+            return None
 
     @classmethod
     def get_field(cls, lookup):

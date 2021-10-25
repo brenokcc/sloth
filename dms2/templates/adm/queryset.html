@@ -162,11 +162,11 @@
                 <thead>
                 <tr>
                     {% if data.actions.queryset %}
-                    <th scope="col">
+                    <th scope="col" width="10px">
                         <input type="checkbox" class="action-checkbox form-check-input" onclick="toggleActions{{ data.uuid }}(this)">
                     </th>
                     {% endif %}
-                    <td scope="col"></td>
+                    <td scope="col" width="30px"></td>
                     {% for label, display in data.metadata.display.items %}
                     <th scope="col">{{ display.name }}</th>
                     {% endfor %}

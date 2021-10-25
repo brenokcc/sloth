@@ -38,7 +38,7 @@ def add_view(request, app_label, model_name):
     form = form_cls(request=request, data=request.POST or None)
     if form.has_add_permission(request.user):
         if form.is_valid():
-            obj = form.save()
+            obj = form.process()
             form.notify(next=obj.get_absolute_url())
         return form
     raise PermissionDenied()
@@ -63,7 +63,7 @@ def delete_view(request, app_label, model_name, pk):
     form = form_cls(request=request, data=data, instance=model.objects.get(pk=pk))
     if form.has_delete_permission(request.user):
         if form.is_valid():
-            form.instance.delete()
+            form.process()
             form.notify()
         return form
     raise PermissionDenied()
@@ -97,7 +97,7 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
             form = form_cls(request=request, data=data)
             return form
     else:
-        return qs
+        return qs.actions()
 
 
 def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):

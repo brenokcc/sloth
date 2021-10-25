@@ -49,7 +49,7 @@ class FormMixin:
                 path = '{}{{id}}/{}/'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
-        metadata = dict(name=name, target=target)
+        metadata = dict(type='form', name=name, target=target)
         if getattr(meta, 'batch', False):
             metadata.update(batch=True)
         metadata.update(method=method, icon=icon, style=style, path=path)

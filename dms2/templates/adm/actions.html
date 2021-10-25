@@ -15,7 +15,7 @@
     </script>
     {% else %}
         {% for action in actions %}
-            <a href="/adm{{ action.path }}" class="btn btn-outline-primary {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
+            <a href="/adm{{ action.path }}" class="btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %} {{ action.name }}
             </a>
         {% endfor %}

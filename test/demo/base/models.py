@@ -109,9 +109,12 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
+    def get_foto(self):
+        return 'https://www.gravatar.com/avatar/680b8d4a9b843a858148493db5ef0164?s=128&d=identicon&r=PG'
+
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')
 
     @meta('Endereço')
     def get_endereco(self):

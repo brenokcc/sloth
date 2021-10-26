@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import traceback
+import time
 
 from django.apps import apps
 from django.contrib import auth
@@ -16,6 +16,7 @@ from ..exceptions import ReadyResponseException, HtmlReadyResponseException
 def view(func):
     def decorate(request, *args, **kwargs):
         try:
+            time.sleep(0.5)
             if views.is_authenticated(request):
                 response = func(request, *args, **kwargs)
                 response["X-Frame-Options"] = "SAMEORIGIN"

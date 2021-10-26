@@ -3,7 +3,6 @@
 import datetime
 from decimal import Decimal
 
-from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.files import FieldFile
 
 

@@ -11,7 +11,7 @@
                 </h2>
             {% endif %}
         </div>
-        <div class="fielset-action-bar" style="margin-right:18px">
+        <div class="fieldset-action-bar" style="margin-right:18px">
               {% if actions %}
                   {% include "adm/actions.html" with uuid=uuid target="model" actions=actions   %}
               {% endif %}
@@ -33,7 +33,7 @@
                     <div class="fieldset-title">
                         <h5>{{ item.name }}</h5>
                     </div>
-                    <div class="fielset-action-bar" style="margin-right:18px">
+                    <div class="fieldset-action-bar" style="margin-right:18px">
                           {% if item.actions %}
                               {% include "adm/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
                           {% endif %}
@@ -47,6 +47,7 @@
                     </ul>
                     <script>
                         function reloadTab{{ item.uuid }}(tab, path){
+                            $(document.body).addClass('page-loading');
                             $.ajax({
                                 url:'/adm'+path,
                                 data:{},
@@ -54,6 +55,7 @@
                                     $('#fieldset-tab').html(html);
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link').removeClass('active');
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
+                                    $(document.body).removeClass('page-loading');
                                 }
                             });
                         }

@@ -33,10 +33,10 @@ SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
 
 
 class ValueSet(dict):
-    def __init__(self, instance, names):
+    def __init__(self, instance, names, image=None):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[])
+        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[], image=image)
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 for name in attr_name:
@@ -55,6 +55,10 @@ class ValueSet(dict):
 
     def attach(self, *names):
         self.metadata['attach'] = list(names)
+        return self
+
+    def image(self, image):
+        self.metadata['image'] = image
         return self
 
     def contextualize(self, request):
@@ -85,6 +89,7 @@ class ValueSet(dict):
                 elif isinstance(value, ValueSet):
                     key = attr_name
                     actions = getattr(value, 'metadata')['actions']
+                    image_attr_name = getattr(value, 'metadata')['image']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     if attr_name == 'fieldset':
                         key = None
@@ -96,11 +101,15 @@ class ValueSet(dict):
                             action = self.instance.action_form_cls(form_name).get_metadata(path)
                             value['actions'].append(action)
                         value['path'] = path
+                        if image_attr_name:
+                            image_attr = getattr(self.instance, image_attr_name)
+                            image = image_attr() if callable(image_attr) else image_attr
+                            if image:
+                                value['image'] = image
                 else:
                     value = serialize(value)
 
                 if wrap and add_width:
-                    print()
                     value = dict(value=value, width=width)
                 if verbose:
                     self[self.metadata['model'].get_attr_verbose_name(attr_name)[0]] = value

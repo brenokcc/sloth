@@ -111,6 +111,7 @@
 
     <script>
         function reloadQueryset{{ data.uuid }}(subset){
+            $(document.body).addClass('page-loading');
             if(subset==null) subset = 'all';
             $('#subset-{{ data.uuid }}').val(subset);
             $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
@@ -121,6 +122,7 @@
                 data:data,
                 success:function( html ) {
                     $('#queryset-data-{{ data.uuid }}').html(html);
+                    $(document.body).removeClass('page-loading');
                 }
             });
         }

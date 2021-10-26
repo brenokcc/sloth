@@ -5,15 +5,22 @@
       <div class="fieldset-title">
         <h5>{{ fieldset.name }}</h5>
       </div>
-      <div class="fielset-action-bar">
+      <div class="fieldset-action-bar">
           {% if fieldset.actions %}
               {% include "adm/actions.html" with uuid=data.uuid target="model" actions=fieldset.actions   %}
           {% endif %}
       </div>
-      <div class="card-text fieldset-content">
-          {% for k, item in fieldset.data.items %}
-            <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
-          {% endfor %}
+      <div class="card-text fieldset-data">
+          {% if fieldset.image %}
+          <div class="fieldset-data-item">
+              <img src="{{ fieldset.image }}"/>
+          </div>
+          {% endif %}
+          <div class="fieldset-data-item">
+              {% for k, item in fieldset.data.items %}
+                <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
+              {% endfor %}
+          </div>
       </div>
     </div>
   </div>

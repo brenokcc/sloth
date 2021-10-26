@@ -41,15 +41,14 @@ class ModelTestCase(TestCase):
     def test(self):
         loaddata()
         self.log(Municipio.objects.first().serialize(wrap=True, verbose=True))
-        return
-        # self.log(Municipio.objects.count('estado').serialize())
-        # self.log(Municipio.objects.all().serialize(wrap=True, verbose=True))
+
+        self.log(Municipio.objects.count('estado').serialize())
+        self.log(Municipio.objects.all().serialize(wrap=True, verbose=True))
         servidor = Servidor.objects.first()
         self.log(servidor.serialize(wrap=True, verbose=True))
-        return
-        # self.log(Servidor.objects.count('naturalidade').serialize())
-        # self.log(Servidor.objects.count('naturalidade', 'ativo').serialize())
-        # self.log(Servidor.objects.serialize(wrap=True, verbose=True))
+        self.log(Servidor.objects.count('naturalidade').serialize())
+        self.log(Servidor.objects.count('naturalidade', 'ativo').serialize())
+        self.log(Servidor.objects.serialize(wrap=True, verbose=True))
 
         self.log(servidor.get_ferias().count('ano').serialize())
         self.log(servidor.serialize(wrap=True, verbose=True))

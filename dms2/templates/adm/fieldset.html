@@ -10,9 +10,9 @@
               {% include "adm/actions.html" with uuid=data.uuid target="model" actions=fieldset.actions   %}
           {% endif %}
       </div>
-      <div class="card-text">
-          {% for k, v in fieldset.data.items %}
-            <div class="fieldset-field"><b>{{ k }}</b><br>{{ v|format }}</div>
+      <div class="card-text fieldset-content">
+          {% for k, item in fieldset.data.items %}
+            <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
           {% endfor %}
       </div>
     </div>

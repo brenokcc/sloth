@@ -41,6 +41,13 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
+    @meta('Dados Gerais')
+    def get_dados_gerais(self):
+        return self.values('id', ('nome', 'estado'))
+
+    def view(self):
+        return self.values('get_dados_gerais')
+
 
 class Endereco(models.Model):
     logradouro = models.CharField('Logradouro')
@@ -104,7 +111,7 @@ class Servidor(models.Model):
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', 'cpf', 'data_nascimento').actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
 
     @meta('Endereço')
     def get_endereco(self):

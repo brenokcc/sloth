@@ -36,12 +36,13 @@ class ValueSet(dict):
     def __init__(self, instance, names):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names=[], metadata=[], actions=[], attach=[], append=[])
+        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[])
         for attr_name in names:
             if isinstance(attr_name, tuple):
-                self.metadata['names'].extend(attr_name)
+                for name in attr_name:
+                    self.metadata['names'][name] = 100//len(attr_name)
             else:
-                self.metadata['names'].append(attr_name)
+                self.metadata['names'][attr_name] = 100
         super().__init__()
 
     def actions(self, *names):
@@ -64,10 +65,10 @@ class ValueSet(dict):
             )
         return self
 
-    def load(self, wrap=False, verbose=False):
+    def load(self, wrap=False, verbose=False, add_width=False):
         if self.metadata['names']:
             metadata = getattr(self.instance, '_meta')
-            for attr_name in self.metadata['names']:
+            for attr_name, width in self.metadata['names'].items():
                 attr, value = getattrr(self.instance, attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 if isinstance(value, QuerySet):
@@ -88,7 +89,7 @@ class ValueSet(dict):
                     if attr_name == 'fieldset':
                         key = None
                         path = None
-                    value.load(wrap=wrap, verbose=verbose)
+                    value.load(wrap=wrap, verbose=verbose, add_width=self.get_type()=='fieldset')
                     value = dict(uuid=uuid1().hex, type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
                     if wrap:
                         for form_name in actions:
@@ -98,6 +99,9 @@ class ValueSet(dict):
                 else:
                     value = serialize(value)
 
+                if wrap and add_width:
+                    print()
+                    value = dict(value=value, width=width)
                 if verbose:
                     self[self.metadata['model'].get_attr_verbose_name(attr_name)[0]] = value
                 else:
@@ -140,7 +144,7 @@ class ValueSet(dict):
             return output
         else:
             if len(self.metadata['names']) == 1:
-                return self[self.metadata['names'][0]]
+                return self[list(self.metadata['names'].keys())[0]]
             return self
 
     def html(self, uuid=None, partial=False):

@@ -28,11 +28,15 @@ setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
 ))
 
 
+FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
+SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
+
+
 class ValueSet(dict):
     def __init__(self, instance, names):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names=[], actions=[], attach=[], append=[])
+        self.metadata = dict(model=type(instance), names=[], metadata=[], actions=[], attach=[], append=[])
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 self.metadata['names'].extend(attr_name)
@@ -70,6 +74,11 @@ class ValueSet(dict):
                     value.contextualize(self.request)
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap, verbose=verbose)
+                    if wrap:
+                        value['name'] = verbose_name
+                elif isinstance(value, QuerySetStatistics):
+                    verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
+                    value = value.serialize(path=path, wrap=wrap)
                     if wrap:
                         value['name'] = verbose_name
                 elif isinstance(value, ValueSet):
@@ -174,21 +183,21 @@ class QuerySet(models.QuerySet):
         return self.metadata['search']
 
     def _get_list_display(self):
-        if not self.metadata['display']:
-            self.metadata['display'] = [
-                field.name for field in getattr(self.model, '_meta').fields[0:5]
-            ]
-        return self.metadata['display']
+        if self.metadata['display']:
+            return self.metadata['display']
+        return self.model.default_list_fields()
 
     def _get_list_filter(self):
-        return self.metadata['filters']
+        if self.metadata['filters']:
+            return self.metadata['filters']
+        return self.model.default_filter_fields()
 
     def _get_list_ordering(self):
         return self.metadata['ordering']
 
     def _get_search(self, verbose=False):
         display = {}
-        for lookup in self._get_list_search():
+        for lookup in self._get_list_search() or self.model.default_search_fields():
             verbose_name, _ = self.model.get_attr_verbose_name(lookup)
             display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
         return display
@@ -240,11 +249,17 @@ class QuerySet(models.QuerySet):
             for i, name in enumerate(['all'] + self.metadata['attach']):
                 attr = getattr(self, name)
                 verbose_name = getattr(attr, 'verbose_name', name)
-                if verbose_name == 'all':
-                    verbose_name = 'Tudo'
-                attach[verbose_name if verbose else name] = dict(
-                    name=verbose_name, key=name, count=attr().count(), active=i==0
-                )
+                obj = attr()
+                if isinstance(obj, QuerySet):
+                    if verbose_name == 'all':
+                        verbose_name = 'Tudo'
+                    attach[verbose_name if verbose else name] = dict(
+                        name=verbose_name, key=name, count=obj.count(), active=i == 0
+                    )
+                else:
+                    attach[verbose_name if verbose else name] = dict(
+                        name=verbose_name, key=name, active=i == 0
+                    )
         return attach
 
     def to_list(self, wrap=False, verbose=False):
@@ -258,13 +273,15 @@ class QuerySet(models.QuerySet):
         field = getattrr(self.model, filter_lookup)[0].field
         values = self.values_list(
             filter_lookup, flat=True
-        ).order_by(filter_lookup).distinct()
-        total = values.count()
+        ).order_by(filter_lookup).order_by(filter_lookup).distinct()
         if field.related_model:
             qs = field.related_model.objects.filter(id__in=values)
             qs = qs.search(q=q) if q else qs
+            qs = qs.distinct()
+            total = values.count()
             items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
         else:
+            total = values.count()
             items = [dict(id=value, text=str(value)) for value in values]
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
@@ -293,10 +310,11 @@ class QuerySet(models.QuerySet):
             )
             if attach:
                 data.update(attach=attach)
+            if path is None:
+                path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
+                if att_name:
+                    path = '{}{}/'.format(path, att_name)
             data.update(path=path)
-            path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
-            if att_name:
-                path = '{}{}/'.format(path, att_name)
 
             for form_name in self.metadata['actions']:
                 action = self.model.action_form_cls(form_name).get_metadata(path)
@@ -370,14 +388,16 @@ class QuerySet(models.QuerySet):
 
     def process_params(self, request):
         page = 1
-        q = request.GET['q']
-        subset = request.GET['subset']
-        if subset != 'all' and subset not in self.metadata['attach']:
-            raise ValueError('"{}" is an invalid attach.'.format(subset))
-        if subset == 'all':
-            qs = self.actions()
+        attr_name = request.GET['subset']
+        if attr_name != 'all' and attr_name not in self.metadata['attach']:
+            raise ValueError('"{}" is an invalid attach.'.format(attr_name))
+        attach = getattr(self, attr_name)()
+        if isinstance(attach, QuerySet):
+            qs = self.actions() if attr_name == 'all' else attach
+        elif isinstance(attach, QuerySetStatistics):
+            qs = attach.qs
         else:
-            qs = getattr(self, subset)()
+            raise Exception()
         for item in self._get_filters().values():
             value = request.GET.get(item['key'])
             if value:
@@ -391,21 +411,25 @@ class QuerySet(models.QuerySet):
                     if item['type'] == 'boolean':
                         value = bool(int(value))
                     qs = qs.filter(**{item['key']: value})
-        if q:
-            qs = qs.search(q=q)
-        return qs.paginate(page)
+        if 'q' in request.GET:
+            qs = qs.search(q=request.GET['q'])
+        if isinstance(attach, QuerySet):
+            return qs.paginate(page)
+        else:
+            attach.qs = qs
+            return attach
 
     def count(self, x=None, y=None):
-        return QuerySetStatistic(self, x, y=y) if x else super().count()
+        return QuerySetStatistics(self, x, y=y) if x else super().count()
 
     def sum(self, x, y=None, z=None):
         if y:
-            return QuerySetStatistic(self, x, y=y, func=Sum, z=z)
+            return QuerySetStatistics(self, x, y=y, func=Sum, z=z)
         else:
-            return QuerySetStatistic(self, x, func=Sum, z=z)
+            return QuerySetStatistics(self, x, func=Sum, z=z)
 
 
-class QuerySetStatistic(object):
+class QuerySetStatistics(object):
     MONTHS = ('JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ')
 
     def __init__(self, qs, x, y=None, func=None, z='id'):
@@ -421,9 +445,9 @@ class QuerySetStatistic(object):
         self._values_dict = None
 
         if '__month' in x:
-            self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistic.MONTHS)}
+            self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
         if y and '__month' in y:
-            self._ydict = {i + 1: month for i, month in enumerate(QuerySetStatistic.MONTHS)}
+            self._ydict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
 
     def _calc(self):
         if self._values_dict is None:
@@ -497,7 +521,7 @@ class QuerySetStatistic(object):
         self.qs = self.qs.apply_lookups(user, lookups=lookups)
         return self
 
-    def serialize(self, name=None):
+    def serialize(self, wrap=True, verbose=True, path=None):
         self._calc()
         series = dict()
         formatter = {True: 'Sim', False: 'Não', None: ''}
@@ -519,10 +543,15 @@ class QuerySetStatistic(object):
             series['default'] = data
 
         return dict(
-            type='statistic',
-            name=name,
+            type='statistics',
+            name=None,
+            path=path,
             series=series
         )
+
+    def html(self, uuid=None):
+        data = self.serialize(wrap=True, verbose=True)
+        return render_to_string('adm/statistics.html', dict(data=data))
 
 
 class BaseManager(manager.BaseManager):
@@ -661,6 +690,32 @@ class ModelMixin(object):
                 except FieldDoesNotExist:
                     pass
         return None
+
+    @classmethod
+    def default_list_fields(cls, exclude=None):
+        return [field.name for field in cls._meta.fields[0:5] if field.name != exclude]
+
+    @classmethod
+    def default_filter_fields(cls, exclude=None):
+        filters = []
+        for field in cls._meta.fields:
+            cls_name = type(field).__name__
+            if cls_name in FILTER_FIELD_TYPES:
+                if field.name != exclude:
+                    filters.append(field.name)
+            elif field.choices:
+                if field.name != exclude:
+                    filters.append(field.name)
+        return filters
+
+    @classmethod
+    def default_search_fields(cls):
+        search = []
+        for field in cls._meta.fields:
+            cls_name = type(field).__name__
+            if cls_name in SEARCH_FIELD_TYPES:
+                search.append(field.name)
+        return search
 
     @classmethod
     def get_attr_verbose_name(cls, lookup):

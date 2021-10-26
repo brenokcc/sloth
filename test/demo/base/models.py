@@ -16,6 +16,20 @@ class Estado(models.Model):
         return self.sigla
 
 
+class MunicipioSet(models.QuerySet):
+
+    def all(self):
+        return self.attach('ativos', 'get_qtd_por_estado')
+
+    @meta('Ativos')
+    def ativos(self):
+        return self.filter(pk=1)
+
+    @meta('Quantidade por Estado')
+    def get_qtd_por_estado(self):
+        return self.count('estado')
+
+
 class Municipio(models.Model):
     nome = models.CharField('Nome')
     estado = models.ForeignKey(Estado, verbose_name='Estado')
@@ -99,7 +113,7 @@ class Servidor(models.Model):
         ).actions('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_endereco', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco').attach('get_ferias').append('get_endereco')
+        return self.values('get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco').attach('get_ferias').append('get_endereco', 'get_total_ferias_por_ano')
 
     @meta('Frequências')
     def get_frequencias(self):
@@ -113,12 +127,26 @@ class Servidor(models.Model):
     def get_dados_recursos_humanos(self):
         return self.values('get_endereco', 'get_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
 
+    @meta('Férias por Ano')
+    def get_total_ferias_por_ano(self):
+        return self.get_ferias().count('ano')
+
 
 class FeriasSet(models.QuerySet):
 
     @meta('Ferias')
     def all(self):
-        return super().all().display('servidor', 'ano', 'get_periodo2').search('servidor__matricula','servidor__nome').filters('servidor','ano').ordering('inicio', 'fim').actions('EditarFerias')
+        return super().all().display(
+            'servidor', 'ano', 'get_periodo2'
+        ).search(
+            'servidor__matricula', 'servidor__nome'
+        ).filters('servidor', 'ano').ordering(
+            'inicio', 'fim'
+        ).actions('EditarFerias').attach('total_por_ano_servidor')
+
+    @meta('Total por Ano e Servidor')
+    def total_por_ano_servidor(self):
+        return self.count('ano', 'servidor')
 
 
 class Ferias(models.Model):

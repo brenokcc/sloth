@@ -10,6 +10,8 @@
 <script src="/static/js/popper.min.js"></script>
 <script src="/static/js/bootstrap.bundle.min.js"></script>
 <script src="/static/js/jquery-ui.js"></script>
+<script src="/static/js/masonry.pkgd.min.js"></script>
+
 <style>
     @keyframes page-load {
         from {
@@ -56,6 +58,7 @@
     }
     .fieldset-side-panel .card{
         border: 0px;
+        margin-bottom: 30px;
     }
     .fieldset-side-panel .card-body {
         padding: 0px;
@@ -107,13 +110,14 @@
         width: 210px !important;
     }
     .search-and-filters .select2-container--default .select2-selection--single{
-        height: 35px !important;
+        height: 37px !important;
+        margin-bottom: 2px !important;
     }
     .search-and-filters .select2-selection__clear{
         margin-top: 10px;
     }
     .search-and-filters input[type=text]{
-        height: 34px;
+        height: 37px;
         border: 1px solid #aaa;
         border-radius: 4px;
     }
@@ -148,7 +152,7 @@
         width: 100%;
     }
     .search-and-filters .submit-panel{
-        padding-top: 20px;
+        padding-top: 24px;
     }
     .select2-selection__clear span{
         position: relative;

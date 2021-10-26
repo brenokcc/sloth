@@ -41,13 +41,19 @@
                     <ul class="nav nav-tabs fieldset-tabs" id="fieldset-tabs-{{ item.uuid }}">
                       {% for name, fieldset in item.data.items %}
                           <li class="nav-item">
-                            <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page" href="javascript:" onclick="reloadTab{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">{{ name }}</a>
+                              <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page" href="javascript:" onclick="reloadTab{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">
+                                  <div class="spinner-border spinner-border-sm d-none" role="status">
+                                      <span class="visually-hidden">Loading...</span>
+                                  </div>
+                                  {{ name }}
+                              </a>
                           </li>
                       {% endfor %}
                     </ul>
                     <script>
                         function reloadTab{{ item.uuid }}(tab, path){
                             $(document.body).addClass('page-loading');
+                            $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
                             $.ajax({
                                 url:'/adm'+path,
                                 data:{},
@@ -56,6 +62,7 @@
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link').removeClass('active');
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
                                     $(document.body).removeClass('page-loading');
+                                    $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').addClass('d-none');
                                 }
                             });
                         }

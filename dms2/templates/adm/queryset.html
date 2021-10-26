@@ -1,4 +1,3 @@
-{% load tags %}
 
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
@@ -159,57 +158,11 @@
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 {% endif %}
-        {% if data.data %}
-            <table class="table" style="overflow-x:auto">
-                <thead>
-                <tr>
-                    {% if data.actions.queryset %}
-                    <th scope="col" width="10px">
-                        <input type="checkbox" class="action-checkbox form-check-input" onclick="toggleActions{{ data.uuid }}(this)">
-                    </th>
-                    {% endif %}
-                    <td scope="col" width="30px"></td>
-                    {% for label, display in data.metadata.display.items %}
-                    <th scope="col">{{ display.name }}</th>
-                    {% endfor %}
-                    {% if data.actions.instance %}
-                        <th scope="col">Ações</th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for id, row in data.data %}
-                <tr>
-                    {% if data.actions.queryset %}
-                    <th scope="col" class="align-middle">
-                        <input type="checkbox" class="action-checkbox form-check-input" value="{{ id }}" onclick="toggleActions{{ data.uuid }}(this)">
-                    </th>
-                    {% endif %}
-                    <td class="align-middle">
-                        <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ id }}/">
-                            <i class="bi bi-search"></i>
-                        </a>
-                    </td>
-                    {% for k, v in row.items %}
-                    <td class="align-middle">{{ v|format }}</td>
-                    {% endfor %}
-                    {% if data.actions.instance %}
-                    <td class="align-middle">
-                        {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance  %}
-                    </td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% if data.actions.queryset %}
-                {% include "adm/actions.html" with uuid=data.uuid target="queryset" actions=data.actions.queryset  %}
-            {% endif %}
-        {% else %}
-            <div class="alert alert-primary" role="alert" style="margin-top:30px;">
-              Nehum registro encontrado.
-            </div>
-        {% endif %}
+    {% if data.template %}
+        {% include data.template with data=data %}
+    {% else %}
+        {% include "adm/datatable.html" with data=data %}
+    {% endif %}
 {% if uuid is None %}
     </div>
     {% if inner %}

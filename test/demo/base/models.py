@@ -70,7 +70,7 @@ class ServidorSet(models.QuerySet):
             'nome', 'ativo', 'data_nascimento'
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
-        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')
+        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')  # .template('servidores')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -114,7 +114,7 @@ class Servidor(models.Model):
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')
+        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
 
     @meta('Endereço')
     def get_endereco(self):

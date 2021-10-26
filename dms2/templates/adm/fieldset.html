@@ -1,29 +1,33 @@
 {% load tags %}
 {% if fieldset.type == 'fieldset' %}
-  <div class="card">
-    <div class="card-body">
-      <div class="fieldset-title">
-        <h5>{{ fieldset.name }}</h5>
-      </div>
-      <div class="fieldset-action-bar">
-          {% if fieldset.actions %}
-              {% include "adm/actions.html" with uuid=data.uuid target="model" actions=fieldset.actions   %}
-          {% endif %}
-      </div>
-      <div class="card-text fieldset-data">
-          {% if fieldset.image %}
-          <div class="fieldset-data-item">
-              <img src="{{ fieldset.image }}"/>
+    {% if fieldset.template %}
+        {% include fieldset.template with data=data %}
+    {% else %}
+      <div class="card">
+        <div class="card-body">
+          <div class="fieldset-title">
+            <h5>{{ fieldset.name }}</h5>
           </div>
-          {% endif %}
-          <div class="fieldset-data-item">
-              {% for k, item in fieldset.data.items %}
-                <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
-              {% endfor %}
+          <div class="fieldset-action-bar">
+              {% if fieldset.actions %}
+                  {% include "adm/actions.html" with uuid=data.uuid target="model" actions=fieldset.actions   %}
+              {% endif %}
           </div>
+          <div class="card-text fieldset-data">
+              {% if fieldset.image %}
+              <div class="fieldset-data-item">
+                  <img src="{{ fieldset.image }}"/>
+              </div>
+              {% endif %}
+              <div class="fieldset-data-item">
+                  {% for k, item in fieldset.data.items %}
+                    <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
+                  {% endfor %}
+              </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    {% endif %}
 {% endif %}
 
 {% if fieldset.type == 'queryset' %}

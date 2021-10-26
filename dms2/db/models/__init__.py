@@ -36,7 +36,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.request = None
-        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[], image=image)
+        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[], image=image, template=None)
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 for name in attr_name:
@@ -59,6 +59,10 @@ class ValueSet(dict):
 
     def image(self, image):
         self.metadata['image'] = image
+        return self
+
+    def template(self, name):
+        self.metadata['template'] = name
         return self
 
     def contextualize(self, request):
@@ -90,6 +94,7 @@ class ValueSet(dict):
                     key = attr_name
                     actions = getattr(value, 'metadata')['actions']
                     image_attr_name = getattr(value, 'metadata')['image']
+                    template = getattr(value, 'metadata')['template']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     if attr_name == 'fieldset':
                         key = None
@@ -106,6 +111,8 @@ class ValueSet(dict):
                             image = image_attr() if callable(image_attr) else image_attr
                             if image:
                                 value['image'] = image
+                        if template:
+                            value['template'] = '{}.html'.format(template)
                 else:
                     value = serialize(value)
 
@@ -184,7 +191,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], attach=[]
+            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], attach=[], template=None
         )
 
     def _clone(self):
@@ -333,6 +340,8 @@ class QuerySet(models.QuerySet):
                 action = self.model.action_form_cls(form_name).get_metadata(path)
                 data['actions'][action['target']].append(action)
             data.update(path=path)
+            if self.metadata['template']:
+                data.update(template='{}.html'.format(self.metadata['template']))
             return data
         return self.to_list()
 
@@ -359,6 +368,10 @@ class QuerySet(models.QuerySet):
 
     def limit(self, size):
         self.metadata['limit'] = size
+        return self
+
+    def template(self, name):
+        self.metadata['template'] = name
         return self
 
     def attach(self, *names):

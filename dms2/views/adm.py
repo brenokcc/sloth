@@ -91,6 +91,8 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
     data = views.obj_view(request, app_label, model_name, pk, method=method, pks=pks, action=action)
     if isinstance(data, FormMixin):
         context.update(form=data)
+        if data.message:
+            return HttpResponse('<script>window.parent.close_fancybox();</script>')
     else:
         context.update(data=data)
     return render(request, ['adm/view.html'], context)

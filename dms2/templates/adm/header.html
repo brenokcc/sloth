@@ -58,9 +58,6 @@
     .fieldset-data{
         clear: both;
     }
-    .fieldset-data-item{
-        display: inline-block;
-    }
     .fieldset-data-item img {
       border-radius: 50%;
       margin-right: 20px;
@@ -174,82 +171,17 @@
         color: #CCC;
         top: -8px;
     }
-    .datatable-application {
-        clear: both;
-    }
-    .pagination {
-        display: inline-block;
-        margin: 20px 0 5px;
-        padding: 0;
-        width: 100%;
-    }
-    .pagination li {
-        float: left;
-        list-style: none;
-        margin: 0 10px 0 0;
-    }
-    .pagination ul {
-        padding: 0;
-    }
-    .tabs {
-        border-bottom: 1px solid #666;
-        margin-bottom: 15px;
-        margin-top: 10px;
-        width: 100%;
-        clear: both;
-        display: inline-block;
-        padding: 0;
-    }
-    .tabs li.active {
-        background-color: #fff;
-        border-bottom: 1px solid #fff;
-        border-left: 1px solid #999;
-        border-right: 1px solid #999;
-        border-top: 1px solid #999;
-        font-weight: 900;
-        position: relative;
-        z-index: 2;
-    }
-    .tabs li {
-        background-color: #f6f6f6;
-        border: 1px solid #fff;
-        border-bottom-color: #666;
-        border-radius: 10px 10px 0 0;
-        float: left;
-        line-height: 1.2em;
-        margin: 5px 5px -1px 0;
-        padding: 10px;
-        list-style-type: none;
-    }
 
-    table.info{
-        width: 100%;
-    }
-
-    table.info tr:nth-child(even) td {
-        background-color: #f6f6f6;
-    }
-
-    table.info td:nth-child(odd) {
-        color: #666;
-        font-weight: 900;
-        text-align: left;
-    }
-
-    a{
-        text-decoration: none;
-    }
-
-    main{
+    body{
         margin:20px;
     }
 </style>
 
 <script>
     replaceAddAnotherLinks = function () {
-        let links = jQuery('.popup');
+        var links = jQuery('.popup');
         for (let i = 0; i < links.length; i++) {
-            let link = links[i];
+            var link = links[i];
             link.onclick = function (e) {
                 e.preventDefault();
                 let first_char = '?';
@@ -261,12 +193,14 @@
                     window.location = link.href;
                     return;
                 }
+                var reload = window['reload'+$(link).data('uuid')];
                 $.fancybox.open({
                     src  : url,
                     type : 'iframe',
+                    scrolling : 'no',
                     opts : {
                         afterClose: function( instance, current ) {
-
+                            if(reload!=null) reload();
                         }
                     }
                 });

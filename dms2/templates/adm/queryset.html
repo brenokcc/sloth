@@ -103,13 +103,13 @@
             </div>
             {% endfor %}
             <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="reloadQueryset{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">Filtrar</button>
+                <button type="button" class="btn btn-outline-primary" onclick="reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">Filtrar</button>
             </div>
         </form>
     </div>
 
     <script>
-        function reloadQueryset{{ data.uuid }}(subset){
+        function reload{{ data.uuid }}(subset){
             $(document.body).addClass('page-loading');
             if(subset==null) subset = 'all';
             $('#subset-{{ data.uuid }}').val(subset);
@@ -122,6 +122,7 @@
                 success:function( html ) {
                     $('#queryset-data-{{ data.uuid }}').html(html);
                     $(document.body).removeClass('page-loading');
+                    replaceAddAnotherLinks();
                 }
             });
         }
@@ -146,7 +147,7 @@
         <ul class="nav nav-pills">
             {% for subset in data.attach.values %}
           <li class="nav-item">
-            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('.pagination-{{ data.uuid }}').val('').trigger('change');reloadQueryset{{ data.uuid }}('{{ subset.key }}')">
+            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('.pagination-{{ data.uuid }}').val('').trigger('change');reload{{ data.uuid }}('{{ subset.key }}')">
                 {{ subset.name }}
                 <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %}">{{ subset.count }}</span>
             </a>

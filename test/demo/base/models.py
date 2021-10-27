@@ -41,9 +41,13 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
+    @meta('Progresso', formatter='progress')
+    def get_progresso(self):
+        return 27
+
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('id', ('nome', 'estado'))
+        return self.values('id', ('nome', 'estado'), 'get_progresso')
 
     def view(self):
         return self.values('get_dados_gerais')
@@ -112,9 +116,13 @@ class Servidor(models.Model):
     def get_foto(self):
         return 'https://www.gravatar.com/avatar/680b8d4a9b843a858148493db5ef0164?s=128&d=identicon&r=PG'
 
+    @meta('Progresso', formatter='progress')
+    def get_progresso(self):
+        return 27
+
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', ('cpf', 'data_nascimento')).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
+        return self.values('nome', ('cpf', 'data_nascimento'), 'get_progresso').actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
 
     @meta('Endereço')
     def get_endereco(self):

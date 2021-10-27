@@ -1,24 +1,44 @@
 {% if actions %}
-<div class="action-container" id="{{ target }}-{{ uuid }}">
+<div class="action-container" id="{{ target }}-{{ uuid }}-{{id}}">
     {% if 0 %}
     <div class="dropdown">
         <a class="btn btn-outline-primary dropdown-toggle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
            data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
         <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
-                <li><a class="dropdown-item action-button" href="#">{{ action.name }}</a></li>
+                <li>
+                    <a class="dropdown-item action-button" href="#" data-url="/adm{{ action.path }}" data-id="{{ id }}" data-uuid="{{ uuid }}">
+                        {{ action.name }}
+                    </a>
+                </li>
             {% endfor %}
         </ul>
     </div>
-    <script>
-        //document.getElementById('{{ target }}-{{ uuid }}').addEventListener('show.bs.dropdown', function () { $(this).find('ul').append(''); });
-    </script>
     {% else %}
         {% for action in actions %}
-            <a href="/adm{{ action.path }}" class="btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
+            <a href="#" data-url="/adm{{ action.path }}" data-id="{{ id }}" data-uuid="{{ uuid }}" class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %} {{ action.name }}
             </a>
         {% endfor %}
     {% endif %}
 </div>
+<script>
+    $('#{{ target }}-{{ uuid }}-{{id}}').find('.action-button').on('mouseenter', function(){
+        if($(this).hasClass('instance')){
+            this.href = $(this).data('url').replace('{id}', $(this).data('id'));
+        }
+        if($(this).hasClass('queryset')){
+            var ids = $('#queryset-{{ uuid }}').find('.action-checkbox:checked').map(function(){
+              return $(this).val();
+            }).get().filter(function (id) { return id!='on' }).join('-');
+            this.href = $(this).data('url').replace('{id}', ids);
+        }
+        if($(this).hasClass('model')){
+            this.href = $(this).data('url');
+        }
+    });
+</script>
 {% endif %}
+
+
+<!--<script>document.getElementById('{{ target }}-{{ uuid }}').addEventListener('show.bs.dropdown', function () { $(this).find('ul').append(''); });</script>-->

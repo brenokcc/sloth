@@ -117,7 +117,7 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                         form.notify()
                     return form
                 raise PermissionDenied()
-            else:  # pks is obj action
+            else:  # pks is instance action
                 form_cls = model.action_form_cls(pks)
                 data = request.POST if not form_cls.base_fields else request.POST or None
                 form = form_cls(request=request, data=data, instance=obj)
@@ -128,9 +128,20 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
                     return form
                 raise PermissionDenied()
         else:
-            if obj.has_attr_view_permission(request.user, method):
-                output = obj.values(method).contextualize(request)
-                return output
+            form_cls = model.action_form_cls(method)
+            if form_cls:  # instance action
+                data = request.POST if not form_cls.base_fields else request.POST or None
+                form = form_cls(request=request, data=data, instance=obj)
+                if form.has_permission(request.user):
+                    if form.is_valid():
+                        form.process()
+                        form.notify()
+                    return form
+                raise PermissionDenied()
+            else:
+                if obj.has_attr_view_permission(request.user, method):
+                    output = obj.values(method).contextualize(request)
+                    return output
             raise PermissionDenied()
     else:
         if obj.has_view_permission(request.user):

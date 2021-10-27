@@ -20,6 +20,7 @@ from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
 from dms2.forms import ModelForm, QuerySetForm
 from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
+from dms2 import formatters
 from django.db.models import options
 
 
@@ -73,7 +74,7 @@ class ValueSet(dict):
             )
         return self
 
-    def load(self, wrap=False, verbose=False, add_width=False):
+    def load(self, wrap=False, verbose=False, add_width=False, formatted=False):
         if self.metadata['names']:
             metadata = getattr(self.instance, '_meta')
             for attr_name, width in self.metadata['names'].items():
@@ -82,7 +83,7 @@ class ValueSet(dict):
                 if isinstance(value, QuerySet):
                     value.contextualize(self.request)
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    value = value.serialize(path=path, wrap=wrap, verbose=verbose)
+                    value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
                     if wrap:
                         value['name'] = verbose_name
                 elif isinstance(value, QuerySetStatistics):
@@ -99,7 +100,7 @@ class ValueSet(dict):
                     if attr_name == 'fieldset':
                         key = None
                         path = None
-                    value.load(wrap=wrap, verbose=verbose, add_width=self.get_type()=='fieldset')
+                    value.load(wrap=wrap, verbose=verbose, add_width=self.get_type() == 'fieldset', formatted=formatted)
                     value = dict(uuid=uuid1().hex, type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
                     if wrap:
                         for form_name in actions:
@@ -113,6 +114,10 @@ class ValueSet(dict):
                                 value['image'] = image
                         if template:
                             value['template'] = '{}.html'.format(template)
+                elif formatted and hasattr(attr, 'formatter'):
+                    formatters.initilize()
+                    formatter_cls = formatters.FORMATTERS[attr.formatter]
+                    value = formatter_cls(value, instance=self.instance).render()
                 else:
                     value = serialize(value)
 
@@ -136,8 +141,8 @@ class ValueSet(dict):
                 return 'fieldsets'
         return 'fieldset'
 
-    def serialize(self, wrap=False, verbose=False):
-        self.load(wrap=wrap, verbose=verbose)
+    def serialize(self, wrap=False, verbose=False, formatted=False):
+        self.load(wrap=wrap, verbose=verbose, formatted=formatted)
         if wrap:
             data = {}
             data.update(self)
@@ -172,7 +177,7 @@ class ValueSet(dict):
             append = []
             data = self.load(wrap=True, verbose=True)
         else:
-            serialized = self.serialize(wrap=True, verbose=True)
+            serialized = self.serialize(wrap=True, verbose=True, formatted=True)
             icon = serialized['icon']
             name = serialized['name']
             data = serialized['data']
@@ -282,10 +287,10 @@ class QuerySet(models.QuerySet):
                     )
         return attach
 
-    def to_list(self, wrap=False, verbose=False):
+    def to_list(self, wrap=False, verbose=False, formatted=False):
         data = []
         for obj in self:
-            item = obj.values(*self._get_list_display()).serialize(verbose=verbose)
+            item = obj.values(*self._get_list_display()).serialize(verbose=verbose, formatted=formatted)
             data.append([obj.id, item] if wrap else item)
         return data
 
@@ -308,7 +313,7 @@ class QuerySet(models.QuerySet):
             q=q, items=items
         )
 
-    def serialize(self, att_name=None, path=None, wrap=False, verbose=True):
+    def serialize(self, att_name=None, path=None, wrap=False, verbose=True, formatted=False):
         if wrap:
             attr = getattr(self, att_name or 'all')
             metadata = getattr(self.model, '_meta')
@@ -326,7 +331,7 @@ class QuerySet(models.QuerySet):
                 name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
                 metadata=dict(search=search, display=display, filters=filters),
-                data=self.paginate().to_list(wrap=wrap, verbose=verbose)
+                data=self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             )
             if attach:
                 data.update(attach=attach)
@@ -386,7 +391,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def html(self, uuid=None, inner=False):
-        data = self.serialize(wrap=True, verbose=True)
+        data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
         return render_to_string('adm/queryset.html', dict(data=data, uuid=uuid, inner=inner))

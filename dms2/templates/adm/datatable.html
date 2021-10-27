@@ -34,8 +34,8 @@
             <td class="align-middle">{{ v|format }}</td>
             {% endfor %}
             {% if data.actions.instance %}
-            <td class="align-middle">
-                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance  %}
+            <td class="align-middle instance-actions">
+                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=id  %}
             </td>
             {% endif %}
         </tr>

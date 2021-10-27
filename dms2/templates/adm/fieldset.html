@@ -14,16 +14,18 @@
               {% endif %}
           </div>
           <div class="card-text fieldset-data">
-              {% if fieldset.image %}
-              <div class="fieldset-data-item">
-                  <img src="{{ fieldset.image }}"/>
-              </div>
-              {% endif %}
-              <div class="fieldset-data-item">
-                  {% for k, item in fieldset.data.items %}
-                    <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
-                  {% endfor %}
-              </div>
+              <table width="100%">
+                  <tr>
+                    {% if fieldset.image %}
+                      <td><img src="{{ fieldset.image }}"/></td>
+                    {% endif %}
+                    <td>
+                      {% for k, item in fieldset.data.items %}
+                        <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
+                      {% endfor %}
+                    </td>
+                  </tr>
+              </table>
           </div>
         </div>
       </div>

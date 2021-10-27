@@ -74,7 +74,7 @@ class FormMixin:
     def __str__(self):
         html = list()
         csrf_token = get_token(self.request)
-        html.append('<form action="" method="{}">'.format(self.get_method()))
+        html.append('<form action="" method="{}" novalidate="novalidate">'.format(self.get_method()))
         html.append('<input name="csrfmiddlewaretoken" type="hidden" value="{}"/>'.format(csrf_token))
         html.append(self.as_p())
         html.append('<input class="btn-success" type="submit" value="Submit">')
@@ -114,7 +114,10 @@ class QuerySetForm(ModelForm):
         super().__init__(*args, **kwargs)
 
     def process(self):
-        for instance in self.instances:
-            self.instance = instance
-            self._post_clean()
+        if self.instances:
+            for instance in self.instances:
+                self.instance = instance
+                self._post_clean()
+                self.save()
+        else:
             self.save()

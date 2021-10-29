@@ -11,6 +11,8 @@
 <script src="/static/js/bootstrap.bundle.min.js"></script>
 <script src="/static/js/jquery-ui.js"></script>
 <script src="/static/js/masonry.pkgd.min.js"></script>
+<script src="/static/js/dms2.js"></script>
+<script src="/static/js/jquery.binarytransport.js"></script>
 
 <style>
     @keyframes page-load {
@@ -171,50 +173,15 @@
         color: #CCC;
         top: -8px;
     }
-
-    body{
+    .messages{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1;
+        border-radius: 0;
+    }
+    main{
         margin:20px;
     }
 </style>
-
-<script>
-    replaceAddAnotherLinks = function () {
-        var links = jQuery('.popup');
-        for (let i = 0; i < links.length; i++) {
-            var link = links[i];
-            link.onclick = function (e) {
-                e.preventDefault();
-                let first_char = '?';
-                if (this.href.indexOf('?') > 0) {
-                    first_char = '&';
-                }
-                let url = this.href + first_char + 'modal=1&_popup=1';
-                if (link.host !== window.location.host){
-                    window.location = link.href;
-                    return;
-                }
-                var reload = window['reload'+$(link).data('uuid')];
-                $.fancybox.open({
-                    src  : url,
-                    type : 'iframe',
-                    scrolling : 'no',
-                    opts : {
-                        afterClose: function( instance, current ) {
-                            if(reload!=null) reload();
-                        }
-                    }
-                });
-            };
-        }
-    }
-    close_fancybox = function () {
-        jQuery.fancybox.close();
-    }
-    close_fancybox_noreload = function () {
-        jQuery.fancybox.getInstance().noreload=true;
-        jQuery.fancybox.close();
-    }
-    $( document ).ready(function() {
-        replaceAddAnotherLinks();
-    });
-</script>

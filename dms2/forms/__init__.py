@@ -3,6 +3,7 @@
 from django.middleware.csrf import get_token
 from django.forms import *
 from django.utils.safestring import mark_safe
+from django.contrib import messages
 
 
 class FormMixin:
@@ -74,21 +75,30 @@ class FormMixin:
     def __str__(self):
         html = list()
         csrf_token = get_token(self.request)
-        html.append('<form action="" method="{}" novalidate="novalidate">'.format(self.get_method()))
+        html.append('<form action="{}" method="{}" novalidate="novalidate" class="form">'.format(
+            self.request.get_full_path(), self.get_method())
+        )
         html.append('<input name="csrfmiddlewaretoken" type="hidden" value="{}"/>'.format(csrf_token))
         html.append(self.as_p())
         html.append('<input class="btn-success" type="submit" value="Submit">')
         html.append('</form>')
         return mark_safe(''.join(html))
 
+    def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):
+        messages.add_message(self.request, messages.INFO, text)
+        self.message = dict(type='message', text=text, style=style, **kwargs)
+
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop('instance', None)
-        self.message = 'Ação realizada com sucesso'
+        self.message = None
         self.related = kwargs.pop('related', None)
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
+
+    def process(self):
+        self.notify()
 
 
 class ModelForm(FormMixin, ModelForm):
@@ -100,10 +110,8 @@ class ModelForm(FormMixin, ModelForm):
         super().__init__(*args, **kwargs)
 
     def process(self):
-        return self.save()
-
-    def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):
-        self.message = dict(type='message', text=text, style=style, **kwargs)
+        self.save()
+        self.notify()
 
 
 class QuerySetForm(ModelForm):
@@ -111,6 +119,8 @@ class QuerySetForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.instances = kwargs.pop('instances', ())
+        if self.instances:
+            kwargs.update(instance=self.instances[0])
         super().__init__(*args, **kwargs)
 
     def process(self):
@@ -121,3 +131,4 @@ class QuerySetForm(ModelForm):
                 self.save()
         else:
             self.save()
+        self.notify()

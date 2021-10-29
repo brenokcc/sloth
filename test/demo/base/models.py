@@ -5,6 +5,12 @@ from django.db import models
 from dms2.db.models.decorators import meta
 
 
+class EstadoSet(models.QuerySet):
+
+    def all(self):
+        return super().all().actions('FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado')
+
+
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
 
@@ -14,6 +20,9 @@ class Estado(models.Model):
 
     def __str__(self):
         return self.sigla
+
+    def view(self):
+        return super().view().actions('FazerAlgumaCoisa', 'Edit')
 
 
 class MunicipioSet(models.QuerySet):
@@ -122,7 +131,7 @@ class Servidor(models.Model):
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', ('cpf', 'data_nascimento'), 'get_progresso').actions('CorrigirNomeServidor', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
+        return self.values('nome', ('cpf', 'data_nascimento'), 'get_progresso').actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
 
     @meta('Endereço')
     def get_endereco(self):
@@ -131,7 +140,7 @@ class Servidor(models.Model):
         ).actions('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco').attach('get_ferias').append('get_endereco', 'get_total_ferias_por_ano')
+        return self.values('get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco', 'CorrigirNomeServidor1').attach('get_ferias').append('get_endereco', 'get_total_ferias_por_ano')
 
     @meta('Frequências')
     def get_frequencias(self):

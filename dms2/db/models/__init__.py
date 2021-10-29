@@ -6,7 +6,7 @@ import json
 import operator
 import datetime
 from decimal import Decimal
-
+from django.contrib import messages
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from functools import reduce
@@ -153,7 +153,7 @@ class ValueSet(dict):
                 icon=icon, data=data, actions=[], attach=[], append={}
             )
             for form_name in self.metadata['actions']:
-                path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, form_name)
+                path = '/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk)
                 action = self.instance.action_form_cls(form_name).get_metadata(path)
                 output['actions'].append(action)
             for attr_name in self.metadata['attach']:
@@ -196,7 +196,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], limit=2, actions=[], attach=[], template=None
+            display=[], filters={}, search=[], ordering=[], limit=10, actions=[], attach=[], template=None
         )
 
     def _clone(self):
@@ -384,17 +384,22 @@ class QuerySet(models.QuerySet):
         return self
 
     def actions(self, *names):
-        if names:
-            self.metadata['actions'] = list(names)
-        else:
-            self.metadata['actions'].extend(('add', 'edit', 'delete'))
+        self.metadata['actions'] = list(names)
         return self
 
-    def html(self, uuid=None, inner=False):
+    def add_default_actions(self, *names):
+        self.metadata['actions'].extend(('add', 'edit-inline', 'delete-inline'))
+        return self
+
+    def html(self, uuid=None, inner=False, request=None):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
-        return render_to_string('adm/queryset.html', dict(data=data, uuid=uuid, inner=inner))
+
+        return render_to_string(
+            'adm/queryset.html',
+            dict(data=data, uuid=uuid, inner=inner, messages=messages.get_messages(request))
+        )
 
     def contextualize(self, request):
         if request:
@@ -405,11 +410,12 @@ class QuerySet(models.QuerySet):
             if 'uuid' in request.GET:
                 raise HtmlReadyResponseException(
                     self.process_params(request).html(
-                        uuid=request.GET['uuid']
+                        uuid=request.GET['uuid'],
+                        request=request
                     )
                 )
-            if request.is_ajax():
-                raise HtmlReadyResponseException(self.html(inner=True))
+            if 0 and request.is_ajax():  # TODO
+                raise HtmlReadyResponseException(self.html(inner=True, request=request))
         return self
 
     def paginate(self, page=1):
@@ -424,7 +430,7 @@ class QuerySet(models.QuerySet):
             raise ValueError('"{}" is an invalid attach.'.format(attr_name))
         attach = getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
-            qs = self.actions() if attr_name == 'all' else attach
+            qs = self.add_default_actions() if attr_name == 'all' else attach
         elif isinstance(attach, QuerySetStatistics):
             qs = attach.qs
         else:
@@ -651,14 +657,15 @@ class ModelMixin(object):
                 style = 'success'
 
             def process(self):
-                return self.save()
+                print(self.save())
+                self.notify('Cadastro realizado com sucesso')
 
         return Add
 
     @classmethod
-    def edit_form_cls(cls):
+    def edit_form_cls(cls, inline=False):
 
-        class Edit(QuerySetForm):
+        class Edit(QuerySetForm if inline else ModelForm):
             class Meta:
                 model = cls
                 exclude = ()
@@ -667,14 +674,15 @@ class ModelMixin(object):
                 style = 'primary'
 
             def process(self):
-                return self.save()
+                self.save()
+                self.notify('Edição realizada com sucesso')
 
         return Edit
 
     @classmethod
-    def delete_form_cls(cls):
+    def delete_form_cls(cls, inline=False):
 
-        class Delete(QuerySetForm):
+        class Delete(QuerySetForm if inline else ModelForm):
             class Meta:
                 model = cls
                 fields = ()
@@ -684,6 +692,7 @@ class ModelMixin(object):
 
             def process(self):
                 self.instance.delete()
+                self.notify('Exclusão realizada com sucesso')
 
         return Delete
 
@@ -691,10 +700,14 @@ class ModelMixin(object):
     def action_form_cls(cls, action):
         if action.lower() == 'add':
             return cls.add_form_cls()
-        if action.lower() == 'edit':
+        elif action.lower() == 'edit':
             return cls.edit_form_cls()
-        if action.lower() == 'delete':
+        elif action.lower() == 'delete':
             return cls.delete_form_cls()
+        elif action.lower() == 'edit-inline':
+            return cls.edit_form_cls(inline=True)
+        elif action.lower() == 'delete-inline':
+            return cls.delete_form_cls(inline=True)
         else:
             config = apps.get_app_config(cls._meta.app_label)
             forms = __import__(

@@ -16,7 +16,11 @@
     </div>
     {% else %}
         {% for action in actions %}
-            <a href="#" data-url="/adm{{ action.path }}" data-id="{{ id }}" data-uuid="{{ uuid }}" class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
+            <a href="#"
+               data-url="/adm{{ action.path }}"
+               data-id="{{ id }}"
+               data-uuid="{{ uuid }}"
+               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %} {{ action.name }}
             </a>
         {% endfor %}

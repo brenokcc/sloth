@@ -2,7 +2,33 @@
 
 from django import forms
 
-from .models import Servidor, Ferias
+from .models import Servidor, Ferias, Estado
+
+
+class FazerAlgumaCoisa(forms.Form):
+    mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
+
+
+class EditarSiglaEstado(forms.QuerySetForm):
+    class Meta:
+        name = 'Editar Sigla'
+        model = Estado
+        fields = 'sigla',
+
+
+class EditarSiglasEstado(forms.QuerySetForm):
+    class Meta:
+        name = 'Editar Siglas'
+        model = Estado
+        fields = 'sigla',
+        batch = True
+
+
+class CorrigirNomeServidor1(forms.ModelForm):
+    class Meta:
+        name = 'Corrigir Nome'
+        model = Servidor
+        fields = 'nome',
 
 
 class CorrigirNomeServidor(forms.QuerySetForm):
@@ -10,10 +36,6 @@ class CorrigirNomeServidor(forms.QuerySetForm):
         name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
-
-
-class FazerAlgumaCoisa(forms.Form):
-    mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
 
 
 class EditarFerias(forms.QuerySetForm):

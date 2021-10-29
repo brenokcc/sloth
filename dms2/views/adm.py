@@ -5,7 +5,7 @@ from django.apps import apps
 from django.contrib import auth
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from .. import views
 from ..forms import FormMixin
@@ -41,7 +41,7 @@ def icons(request):
 
 
 def login(request, username):
-    if settings.DEBUG and request.get_host() == 'localhost:8000':
+    if settings.DEBUG and request.get_host() in ('localhost:8000', '127.0.0.1:8000'):
         user = apps.get_model(
             settings.AUTH_USER_MODEL
         ).objects.get(username=username)
@@ -56,22 +56,27 @@ def index(request):
 @view
 def add_view(request, app_label, model_name):
     form = views.add_view(request, app_label, model_name)
+    print(form.message)
+    if form.message:
+        print(1111)
+        return HttpResponse('..')
     return render(request, ['adm/add.html'], dict(form=form))
 
 
 @view
 def edit_view(request, app_label, model_name, pk):
     form = views.edit_view(request, app_label, model_name, pk)
-    print(form.serialize())
     if form.message:
-        pass
+        return HttpResponse('..')
     return render(request, ['adm/add.html'], dict(form=form))
 
 
 @view
 def delete_view(request, app_label, model_name, pk):
-    data = views.delete_view(request, app_label, model_name, pk)
-    return render(request, ['adm/delete.html'], dict(data=data))
+    form = views.delete_view(request, app_label, model_name, pk)
+    if form.message:
+        return HttpResponse('..')
+    return render(request, ['adm/delete.html'], dict(form=form))
 
 
 @view
@@ -80,6 +85,8 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
     data = views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
     if isinstance(data, FormMixin):
         context.update(form=data)
+        if data.message:
+            return HttpResponse('..')
     else:
         context.update(data=data)
     return render(request, ['adm/list.html'], context)
@@ -92,7 +99,7 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
     if isinstance(data, FormMixin):
         context.update(form=data)
         if data.message:
-            return HttpResponse('<script>window.parent.close_fancybox();</script>')
+            return HttpResponse('..')
     else:
         context.update(data=data)
     return render(request, ['adm/view.html'], context)

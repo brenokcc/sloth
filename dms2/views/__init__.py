@@ -38,8 +38,7 @@ def add_view(request, app_label, model_name):
     form = form_cls(request=request, data=request.POST or None)
     if form.has_add_permission(request.user):
         if form.is_valid():
-            obj = form.process()
-            form.notify(next=obj.get_absolute_url())
+            form.process()
         return form
     raise PermissionDenied()
 
@@ -50,8 +49,7 @@ def edit_view(request, app_label, model_name, pk):
     form = form_cls(request=request, data=request.POST or None, instance=model.objects.get(pk=pk))
     if form.has_edit_permission(request.user):
         if form.is_valid():
-            obj = form.process()
-            form.notify(next=obj.get_absolute_url())
+            form.process()
         return form
     raise PermissionDenied()
 
@@ -64,7 +62,6 @@ def delete_view(request, app_label, model_name, pk):
     if form.has_delete_permission(request.user):
         if form.is_valid():
             form.process()
-            form.notify()
         return form
     raise PermissionDenied()
 
@@ -83,9 +80,7 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
                 if form.has_permission(request.user):
                     if form.is_valid():
                         result = form.process()
-                        if result is None:
-                            form.notify()
-                        else:
+                        if result is not None:
                             return result
                     return form
                 raise PermissionDenied()
@@ -95,58 +90,74 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
             form_cls = model.action_form_cls(method)
             data = request.POST if not form_cls.base_fields else request.POST or None
             form = form_cls(request=request, data=data)
+            if form.is_valid():
+                result = form.process()
+                if result is not None:
+                    return result
             return form
     else:
-        return qs.actions()
+        return qs.add_default_actions()
 
 
 def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
+    pk = str(pk)
     model = apps.get_model(app_label, model_name)
-    obj = model.objects.get(pk=pk)
-    if method:
-        if pks:
-            if pks.split('-')[0].isdigit():  # queryset action
-                attr = getattr(obj, method)
-                form_cls = model.action_form_cls(action)
-                instances = attr().filter(pk__in=pks.split('-'))
-                data = request.POST if not form_cls.base_fields else request.POST or None
-                form = form_cls(request=request, data=data, instances=instances)
-                if form.has_permission(request.user):
-                    if form.is_valid():
-                        form.process()
-                        form.notify()
-                    return form
-                raise PermissionDenied()
-            else:  # pks is instance action
-                form_cls = model.action_form_cls(pks)
-                data = request.POST if not form_cls.base_fields else request.POST or None
-                form = form_cls(request=request, data=data, instance=obj)
-                if form.has_permission(request.user):
-                    if form.is_valid():
-                        form.process()
-                        form.notify()
-                    return form
+    if pk.isdigit():
+        obj = model.objects.get(pk=pk)
+        if method:
+            if pks:
+                if pks.split('-')[0].isdigit():  # queryset action
+                    attr = getattr(obj, method)
+                    form_cls = model.action_form_cls(action)
+                    instances = attr().filter(pk__in=pks.split('-'))
+                    data = request.POST if not form_cls.base_fields else request.POST or None
+                    form = form_cls(request=request, data=data, instances=instances)
+                    if form.has_permission(request.user):
+                        if form.is_valid():
+                            form.process()
+                        return form
+                    raise PermissionDenied()
+                else:  # pks is instance action
+                    form_cls = model.action_form_cls(pks)
+                    data = request.POST if not form_cls.base_fields else request.POST or None
+                    form = form_cls(request=request, data=data, instance=obj)
+                    if form.has_permission(request.user):
+                        if form.is_valid():
+                            form.process()
+                        return form
+                    raise PermissionDenied()
+            else:
+                form_cls = model.action_form_cls(method)
+                if form_cls:  # instance action
+                    data = request.POST if not form_cls.base_fields else request.POST or None
+                    form = form_cls(request=request, data=data, instance=obj)
+                    if form.has_permission(request.user):
+                        if form.is_valid():
+                            form.process()
+                        return form
+                    raise PermissionDenied()
+                else:
+                    if obj.has_attr_view_permission(request.user, method):
+                        output = obj.values(method).contextualize(request)
+                        return output
                 raise PermissionDenied()
         else:
-            form_cls = model.action_form_cls(method)
-            if form_cls:  # instance action
-                data = request.POST if not form_cls.base_fields else request.POST or None
-                form = form_cls(request=request, data=data, instance=obj)
-                if form.has_permission(request.user):
-                    if form.is_valid():
-                        form.process()
-                        form.notify()
-                    return form
-                raise PermissionDenied()
-            else:
-                if obj.has_attr_view_permission(request.user, method):
-                    output = obj.values(method).contextualize(request)
-                    return output
+            if obj.has_view_permission(request.user):
+                return obj.view()
             raise PermissionDenied()
     else:
-        if obj.has_view_permission(request.user):
-            return obj.view()
+        if method:
+            form_cls = model.action_form_cls(method)
+            data = request.POST if not form_cls.base_fields else request.POST or None
+            instances = model.objects.all().filter(pk__in=pk.split('-'))
+            form = form_cls(request=request, data=data, instances=instances)
+        else:
+            form_cls = model.action_form_cls(pk)
+            data = request.POST if not form_cls.base_fields else request.POST or None
+            form = form_cls(request=request, data=data)
+
+        if form.has_permission(request.user):
+            if form.is_valid():
+                form.process()
+            return form
         raise PermissionDenied()
-
-
-

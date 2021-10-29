@@ -122,7 +122,7 @@
                 success:function( html ) {
                     $('#queryset-data-{{ data.uuid }}').html(html);
                     $(document.body).removeClass('page-loading');
-                    replaceAddAnotherLinks();
+                    $(document).initialize();
                 }
             });
         }
@@ -159,6 +159,7 @@
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 {% endif %}
+    {% include "adm/messages.html" %}
     {% if data.template %}
         {% include data.template with data=data %}
     {% else %}

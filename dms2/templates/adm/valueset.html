@@ -58,7 +58,7 @@
                                 url:'/adm'+path,
                                 data:{},
                                 success:function( html ) {
-                                    $('#fieldset-tab').html(html);
+                                    $('#fieldset-tab').html(html).initialize();
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link').removeClass('active');
                                     $('#fieldset-tabs-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
                                     $(document.body).removeClass('page-loading');

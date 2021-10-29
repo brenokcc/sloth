@@ -3,25 +3,10 @@
 
 {% block content %}
 
-<main class="container py-5">
-  <h1>Administração</h1>
+  <h1>{{ user }}</h1>
 
-  <!-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-  Launch demo modal
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:90%">
-    <div class="modal-content">
-      <div class="modal-body">
-        <div style="width: 100%; height:1800px; background-color:red"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
+  <a class="ajax btn btn-primary" href="/adm/base/servidor/1/get_dados_gerais/FazerAlgumaCoisa/">AJAX</a>
+  <a class="popup btn btn-primary" href="/adm/base/servidor/1/get_dados_gerais/FazerAlgumaCoisa/">POPUP</a>
 
   <div class="row" data-masonry='{"percentPosition": true }' style="position: relative; height: 714px;">
     <div class="col-sm-6 col-lg-4 mb-4" style="position: absolute; left: 0%; top: 0px;">
@@ -106,9 +91,5 @@
       </div>
     </div>
   </div>
-
-</main>
-
-
 
 {% endblock %}

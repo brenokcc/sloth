@@ -8,11 +8,14 @@ from dms2.db.models.decorators import meta
 class EstadoSet(models.QuerySet):
 
     def all(self):
-        return super().all().actions('FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado')
+        return super().all().display(
+            'sigla', 'cidades_metropolitanas'
+        ).actions('FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado')
 
 
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
+    cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
 
     class Meta:
         verbose_name = 'Estado'

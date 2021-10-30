@@ -23,12 +23,16 @@ def _format(obj):
         elif isinstance(obj, Decimal):
             return float(obj)
         elif isinstance(obj, list):
-            return '<ul>{}</ul>'.format('<li>{}</li>'.join([str(o) for o in obj]))
+            return mark_safe(
+                '<ul>{}</ul>'.format(''.join(['<li>{}</li>'.format(o) for o in obj]))
+            )
         elif hasattr(obj, 'all'):
-            return '<ul>{}</ul>'.format('<li>{}</li>'.join([str(o) for o in obj]))
+            return mark_safe(
+                '<ul>{}</ul>'.format(''.join(['<li>{}</li>'.format(o) for o in obj]))
+            )
         elif isinstance(obj, dict):
             return mark_safe(
-                '<br>'.join(['<b>{}</b>: {}'.format(k, v) for k, v in obj.items()])
+                '<dl>{}</dl>'.format(''.join(['<dt>{}</dt><dd>{}</dd>'.format(k, v) for k, v in obj.items()]))
             )
         elif isinstance(obj, FieldFile):
             return obj.url

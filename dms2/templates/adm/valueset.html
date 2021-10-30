@@ -84,11 +84,11 @@
     {% if append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
         {% for name, item in append.items %}
-            {% include 'adm/fieldset.html' with fieldset=item %}
+            {% include 'adm/fieldset.html' with fieldset=item compact=True %}
         {% endfor %}
     </div>
     {% endif %}
-  </div>
+</div>
 
 
 

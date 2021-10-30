@@ -94,7 +94,7 @@ jQuery.fn.extend({
             return false;
         });
         $(this).find('select').not('.select2-hidden-accessible').select2(
-            {width: 'resolve', language: 'pt-BR', allowClear: true, placeholder: 'Selecione uma opção'}
+            {width: '100%', language: 'pt-BR', allowClear: true, placeholder: 'Selecione uma opção'}
         );
         $(this).find('.date-input').not('.hasDatepicker').datepicker(
             $.datepicker.regional['pt-BR']

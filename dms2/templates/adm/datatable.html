@@ -1,6 +1,16 @@
 {% load tags %}
 {% if data.data %}
-<div style="overflow-x:auto; max-width:100%">
+    {% if compact %}
+        {% for id, row in data.data %}
+            <dl>
+            {% for k, v in row.items %}
+                <dt>{{ k }}</dt>
+                <dd>{{ v|format }}</dd>
+            {% endfor %}
+            </dl>
+            <hr>
+        {% endfor %}
+    {% else %}
     <table class="table">
         <thead>
         <tr>
@@ -43,6 +53,7 @@
         {% endfor %}
         </tbody>
     </table>
+    {% endif %}
     {% if data.actions.queryset %}
         {% include "adm/actions.html" with uuid=data.uuid target="queryset" actions=data.actions.queryset  %}
     {% endif %}
@@ -51,4 +62,3 @@
       Nehum registro encontrado.
     </div>
 {% endif %}
-</div>

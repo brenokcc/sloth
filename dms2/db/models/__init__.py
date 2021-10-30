@@ -83,9 +83,11 @@ class ValueSet(dict):
                 if isinstance(value, QuerySet):
                     value.contextualize(self.request)
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
                     if wrap:
+                        value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
                         value['name'] = verbose_name
+                    else:
+                        value = [str(o) for o in value]
                 elif isinstance(value, QuerySetStatistics):
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap)
@@ -647,7 +649,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 exclude = ()
-                name = 'Cadastrar'
+                name = 'Cadastrar {}'.format(cls._meta.verbose_name)
                 icon = 'plus'
                 style = 'success'
 
@@ -664,7 +666,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 exclude = ()
-                name = 'Editar'
+                name = 'Editar {}'.format(cls._meta.verbose_name)
                 icon = 'pencil'
                 style = 'primary'
 
@@ -681,7 +683,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 fields = ()
-                name = 'Excluir'
+                name = 'Excluir {}'.format(cls._meta.verbose_name)
                 icon = 'x'
                 style = 'danger'
 

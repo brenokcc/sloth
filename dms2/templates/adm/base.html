@@ -1,55 +1,45 @@
 {% if not request.is_ajax %}
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>Área Administrativa</title>
-    {% include "adm/header.html" %}
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
+    <link href="/static/css/select2.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/jquery-ui.css">
+    <link href="/static/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/dms2.css" />
+
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/select2.min.js"></script>
+    <script src="/static/js/i18n/pt-BR.js"></script>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery-ui.js"></script>
+    <script src="/static/js/masonry.pkgd.min.js"></script>
+    <script src="/static/js/dms2.js"></script>
+    <script src="/static/js/jquery.binarytransport.js"></script>
+    <script src="/static/js/jquery.mask.min.js"></script>
     {% block extrahead %} {% endblock %}
   </head>
   <body>
 
-    {% if request.user.is_authenticated and not request.GET.modal %}
     {% block nav %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="/adm/">Navbar</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                {{ request.user }}
-              </a>
-              <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="/adm/icons/">Icones</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#">Sair</a></li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+      {% include "adm/header.html" %}
     {% endblock %}
-    {% endif %}
 
     <main>
 {% endif %}
-      {% block content %}
-      {% endblock %}
-      {% include "adm/messages.html" %}
+
+{% block content %}
+{% endblock %}
+{% include "adm/messages.html" %}
+
 {% if not request.is_ajax %}
     </main>
-  {% include "adm/modal.html" %}
+    {% include "adm/footer.html" %}
+    {% include "adm/modal.html" %}
   </body>
 </html>
 {% endif %}

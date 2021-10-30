@@ -1,6 +1,7 @@
 {% load tags %}
 {% if data.data %}
-    <table class="table" style="overflow-x:auto">
+<div style="overflow-x:auto; max-width:100%">
+    <table class="table">
         <thead>
         <tr>
             {% if data.actions.queryset %}
@@ -50,3 +51,4 @@
       Nehum registro encontrado.
     </div>
 {% endif %}
+</div>

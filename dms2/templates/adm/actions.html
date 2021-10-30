@@ -7,7 +7,12 @@
         <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
                 <li>
-                    <a class="dropdown-item action-button" href="#" data-url="/adm{{ action.path }}" data-id="{{ id }}" data-uuid="{{ uuid }}">
+                    <a class="dropdown-item action-button {{ target }} popup"
+                       href="/adm{{ action.path }}"
+                       data-url="/adm{{ action.path }}"
+                       data-id="{{ id }}"
+                       data-uuid="{{ uuid }}">
+                        {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
                         {{ action.name }}
                     </a>
                 </li>
@@ -16,12 +21,13 @@
     </div>
     {% else %}
         {% for action in actions %}
-            <a href="#"
+            <a href="/adm{{ action.path }}"
                data-url="/adm{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
-                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %} {{ action.name }}
+                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
+                {{ action.name }}
             </a>
         {% endfor %}
     {% endif %}

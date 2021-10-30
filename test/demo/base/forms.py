@@ -80,7 +80,7 @@ class ExcluirEndereco(forms.ModelForm):
         model = Servidor
         fields = ()
 
-    def submit(self):
+    def process(self):
         self.instance.endereco.delete()
 
 

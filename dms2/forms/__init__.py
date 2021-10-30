@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from functools import lru_cache
 
-from django.middleware.csrf import get_token
 from django.forms import *
+from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.contrib import messages
+from django.template.loader import render_to_string
 
 
 class FormMixin:
@@ -29,6 +31,7 @@ class FormMixin:
         return {}
 
     @classmethod
+    @lru_cache
     def get_metadata(cls, path=None):
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
@@ -73,16 +76,30 @@ class FormMixin:
         return self.instance and self.instance.has_add_permission(user)
 
     def __str__(self):
-        html = list()
-        csrf_token = get_token(self.request)
-        html.append('<form action="{}" method="{}" novalidate="novalidate" class="form">'.format(
-            self.request.get_full_path(), self.get_method())
+        for field in self.fields.values():
+            classes = field.widget.attrs.get('class', '').split()
+            if isinstance(field.widget, widgets.TextInput):
+                classes.append('form-control')
+            elif isinstance(field.widget, widgets.Select):
+                classes.append('form-control')
+            elif isinstance(field.widget, widgets.CheckboxInput):
+                classes.append('form-check-input')
+
+            if isinstance(field, DateField):
+                classes.append('date-input')
+
+            if getattr(field.widget, 'mask', None):
+                classes.append('masked-input')
+                field.widget.attrs['data-reverse'] = 'false'
+                field.widget.attrs['data-mask'] = getattr(field.widget, 'mask')
+            if getattr(field.widget, 'rmask', None):
+                classes.append('masked-input')
+                field.widget.attrs['data-reverse'] = 'true'
+                field.widget.attrs['data-mask'] = getattr(field.widget, 'rmask')
+            field.widget.attrs['class'] = ' '.join(classes)
+        return mark_safe(
+            render_to_string(['adm/form.html'], dict(self=self), request=self.request)
         )
-        html.append('<input name="csrfmiddlewaretoken" type="hidden" value="{}"/>'.format(csrf_token))
-        html.append(self.as_p())
-        html.append('<input class="btn-success" type="submit" value="Submit">')
-        html.append('</form>')
-        return mark_safe(''.join(html))
 
     def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):
         messages.add_message(self.request, messages.INFO, text)
@@ -95,6 +112,12 @@ class Form(FormMixin, Form):
         self.message = None
         self.related = kwargs.pop('related', None)
         self.request = kwargs.pop('request', None)
+        if 'data' not in kwargs:
+            if self.base_fields:
+                data = self.request.POST or None
+            else:
+                data = self.request.POST
+            kwargs['data'] = data
         super().__init__(*args, **kwargs)
 
     def process(self):
@@ -107,6 +130,12 @@ class ModelForm(FormMixin, ModelForm):
         self.message = None
         self.request = kwargs.pop('request', None)
         self.related = kwargs.pop('related', None)
+        if 'data' not in kwargs:
+            if self.base_fields:
+                data = self.request.POST or None
+            else:
+                data = self.request.POST
+            kwargs['data'] = data
         super().__init__(*args, **kwargs)
 
     def process(self):

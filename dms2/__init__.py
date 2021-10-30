@@ -27,7 +27,15 @@ def __new__(mcs, name, bases, attrs, **kwargs):
 
 class CharField(models.CharField):
     def __init__(self, *args, max_length=255, **kwargs):
+        self.mask = kwargs.pop('mask', None)
+        self.rmask = kwargs.pop('rmask', None)
         super().__init__(*args, max_length=max_length, **kwargs)
+
+    def formfield(self, **kwargs):
+        field = super().formfield(**kwargs)
+        field.widget.mask = self.mask
+        field.widget.rmask = self.rmask
+        return field
 
 
 class ForeignKey(models.ForeignKey):

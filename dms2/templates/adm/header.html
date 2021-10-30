@@ -1,187 +1,28 @@
-<link rel="stylesheet" href="/static/css/bootstrap.min.css">
-<link rel="stylesheet" href="/static/css/bootstrap-icons.css">
-<script src="/static/js/jquery-3.6.0.min.js"></script>
-<link href="/static/css/select2.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="/static/css/jquery-ui.css">
-<script src="/static/js/select2.min.js"></script>
-<link href="/static/css/all.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="/static/css/jquery.fancybox.min.css" />
-<script src="/static/js/jquery.fancybox.min.js"></script>
-<script src="/static/js/popper.min.js"></script>
-<script src="/static/js/bootstrap.bundle.min.js"></script>
-<script src="/static/js/jquery-ui.js"></script>
-<script src="/static/js/masonry.pkgd.min.js"></script>
-<script src="/static/js/dms2.js"></script>
-<script src="/static/js/jquery.binarytransport.js"></script>
-
-<style>
-    @keyframes page-load {
-        from {
-            width:0;
-        }
-        to {
-            width:100%;
-        }
-    }
-    .btn-circle {
-        width: 30px;
-        height: 30px;
-        padding: 6px 0px;
-        border-radius: 15px;
-        text-align: center;
-        font-size: 12px;
-        line-height: 1.42857;
-    }
-    .queryset-title {
-        display: inline-block;
-    }
-    .queryset-action-bar {
-        float: right;
-        display: inline-block;
-    }
-    .fieldset{
-        margin-bottom: 10px;
-    }
-    .fieldset-tab{
-        margin-top: 10px;
-    }
-    .fieldset-title {
-        display: inline-block;
-    }
-    .fieldset-field{
-        display: inline-block;
-    }
-    .fieldset-field.width-100{
-        width: 100%;
-    }
-    .fieldset-field.width-50{
-        width: calc(50% - 0.13rem);
-    }
-    .fieldset-data{
-        clear: both;
-    }
-    .fieldset-data-item img {
-      border-radius: 50%;
-      margin-right: 20px;
-    }
-    .fieldset-container{
-        padding: 1rem 1rem;
-    }
-    .fieldset-tabs{
-        clear: both;
-    }
-    .fieldset-side-panel .card{
-        border: 0px;
-        margin-bottom: 30px;
-    }
-    .fieldset-side-panel .card-body {
-        padding: 0px;
-    }
-    .card-body .queryset-title h2{
-        font-size: 1.25rem;
-    }
-    .fieldset-tab .queryset-title h2{
-        font-size: 1.25rem;
-    }
-    .fieldset-action-bar{
-        float: right;
-        display: inline-block;
-    }
-    .fieldet-tab{
-        padding-top: 1rem;
-    }
-    .page-loading::before {
-        content:" ";
-        display:block;
-        position:fixed;
-        z-index:10;
-        height:2px;
-        width:100%;
-        top:0;
-        left:0;
-        background-color:#0d6efd;
-        animation: page-load ease-out 3s;
-    }
-    .search-and-filters {
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        clear: both;
-        display: flex;
-        align-items: flex-end;
-        flex-direction: row;
-        flex-wrap: wrap;
-        float: none;
-        margin-top: 20px;
-        margin-bottom: 10px;
-        padding: 20px 10px 5px;
-        position: relative;
-        width: 100%;
-    }
-    .search-and-filters label {
-        color: #666;
-    }
-    .search-and-filters .select2-container{
-        width: 210px !important;
-    }
-    .search-and-filters .select2-container--default .select2-selection--single{
-        height: 37px !important;
-        margin-bottom: 2px !important;
-    }
-    .search-and-filters .select2-selection__clear{
-        margin-top: 10px;
-    }
-    .search-and-filters input[type=text]{
-        height: 37px;
-        border: 1px solid #aaa;
-        border-radius: 4px;
-    }
-    .search-and-filters form>div {
-        display: inline;
-        float: left;
-        width: auto;
-    }
-    .search-and-filters .filter {
-        flex-basis: 210px;
-        flex-grow: 1;
-        float: left;
-        margin: 0 10px 15px;
-        max-width: 210px;
-        min-width: 160px;
-        padding: 0;
-        width: auto;
-    }
-    .search-and-filters .filter .fa-calendar{
-        position: relative;
-        left: -75px;
-        bottom: -27px;
-        color: #DDD;
-    }
-    .search-and-filters .submit-button {
-        flex-basis: 100px;
-        flex-grow: 1;
-        margin: 15px 10px;
-    }
-    .search-and-filters input[type="text"] {
-        max-width: 100%;
-        width: 100%;
-    }
-    .search-and-filters .submit-panel{
-        padding-top: 24px;
-    }
-    .select2-selection__clear span{
-        position: relative;
-        color: #CCC;
-        top: -8px;
-    }
-    .messages{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1;
-        border-radius: 0;
-    }
-    main{
-        margin:20px;
-    }
-</style>
+{% if request.user.is_authenticated and not request.GET.modal %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/adm/">Navbar</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ request.user }}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/adm/icons/">Icones</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">Sair</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+{% endif %}

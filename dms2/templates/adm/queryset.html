@@ -1,9 +1,6 @@
 
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
-    {% if inner %}
-        <div class="card"><div class="card-body">
-    {% endif %}
     <div class="queryset-title">
         <h2>
             {% if data.icon %}
@@ -92,10 +89,9 @@
                        placeholder="Informe um data" style="padding-left:10px">
                 <script>
                         $(function() {
-                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker();
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker($.datepicker.regional['pt-BR']);
                             $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "dateFormat", 'dd/mm/yy');
                             $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "width", '');
-                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker("option", $.datepicker.regional['pt-BR']);
                         });
 
                 </script>
@@ -103,7 +99,12 @@
             </div>
             {% endfor %}
             <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">Filtrar</button>
+                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
+                    <div class="spinner-border spinner-border-sm d-none" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Filtrar
+                </button>
             </div>
         </form>
     </div>
@@ -122,6 +123,7 @@
                 success:function( html ) {
                     $('#queryset-data-{{ data.uuid }}').html(html);
                     $(document.body).removeClass('page-loading');
+                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('.spinner-border').addClass('d-none')
                     $(document).initialize();
                 }
             });
@@ -167,8 +169,5 @@
     {% endif %}
 {% if uuid is None %}
     </div>
-    {% if inner %}
-        </div></div>
-    {% endif %}
 </div>
 {% endif %}

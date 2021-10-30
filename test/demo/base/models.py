@@ -105,7 +105,7 @@ class ServidorSet(models.QuerySet):
 class Servidor(models.Model):
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
-    cpf = models.CharField('CPF')
+    cpf = models.CharField('CPF', rmask='000.000.000-00')
     data_nascimento = models.DateField('Data de Nascimento', null=True)
     endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True)
     ativo = models.BooleanField('Ativo', default=True)
@@ -140,15 +140,19 @@ class Servidor(models.Model):
         ).actions('InformarEndereco', 'ExcluirEndereco')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias').actions('InformarEndereco', 'CorrigirNomeServidor1').attach('get_ferias').append('get_endereco', 'get_total_ferias_por_ano')
+        return self.values(
+            'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias'
+        ).actions('InformarEndereco', 'CorrigirNomeServidor1').attach('get_ferias').append(
+            'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
+        )
 
     @meta('Frequências')
     def get_frequencias(self):
-        return self.frequencia_set.paginate(5)
+        return self.frequencia_set.limit(5)
 
     @meta('Férias')
     def get_ferias(self):
-        return self.ferias_set.all().display('ano', 'inicio', 'fim').actions('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
+        return self.ferias_set.display('ano', 'inicio', 'fim').actions('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):

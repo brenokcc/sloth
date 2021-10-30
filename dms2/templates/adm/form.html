@@ -1,0 +1,10 @@
+<h2>
+    {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
+    {{ self.get_metadata.name }}
+</h2>
+
+<form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="form" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ self.as_p }}
+    <input class="btn btn-primary" type="submit" value="Submit">
+</form>

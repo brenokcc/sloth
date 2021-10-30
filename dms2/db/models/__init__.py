@@ -106,6 +106,7 @@ class ValueSet(dict):
                         for form_name in actions:
                             action = self.instance.action_form_cls(form_name).get_metadata(path)
                             value['actions'].append(action)
+                            print(form_name, value['path'])
                         value['path'] = path
                         if image_attr_name:
                             image_attr = getattr(self.instance, image_attr_name)
@@ -141,7 +142,7 @@ class ValueSet(dict):
                 return 'fieldsets'
         return 'fieldset'
 
-    def serialize(self, wrap=False, verbose=False, formatted=False):
+    def serialize(self, wrap=False, verbose=False, formatted=False, request=None):
         self.load(wrap=wrap, verbose=verbose, formatted=formatted)
         if wrap:
             data = {}
@@ -161,7 +162,7 @@ class ValueSet(dict):
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 output['attach'].append(dict(name=name, path=path))
             for attr_name in self.metadata['append']:
-                output['append'].update(self.instance.values(attr_name).load(wrap=wrap, verbose=verbose))
+                output['append'].update(self.instance.values(attr_name).load(wrap=wrap, verbose=verbose, formatted=formatted))
             return output
         else:
             if len(self.metadata['names']) == 1:
@@ -177,7 +178,7 @@ class ValueSet(dict):
             append = []
             data = self.load(wrap=True, verbose=True)
         else:
-            serialized = self.serialize(wrap=True, verbose=True, formatted=True)
+            serialized = self.serialize(wrap=True, verbose=True, formatted=True, request=None)
             icon = serialized['icon']
             name = serialized['name']
             data = serialized['data']
@@ -313,14 +314,10 @@ class QuerySet(models.QuerySet):
             q=q, items=items
         )
 
-    def serialize(self, att_name=None, path=None, wrap=False, verbose=True, formatted=False):
+    def serialize(self, path=None, wrap=False, verbose=True, formatted=False):
         if wrap:
-            attr = getattr(self, att_name or 'all')
             metadata = getattr(self.model, '_meta')
-            if hasattr(attr, 'verbose_name'):
-                verbose_name = getattr(attr, 'verbose_name', att_name)
-            else:
-                verbose_name = str(getattr(self.model, '_meta').verbose_name_plural)
+            verbose_name = str(getattr(self.model, '_meta').verbose_name_plural)
             icon = getattr(metadata, 'icon', None)
             search = self._get_search(verbose)
             display = self._get_display(verbose)
@@ -337,8 +334,6 @@ class QuerySet(models.QuerySet):
                 data.update(attach=attach)
             if path is None:
                 path = '/{}/{}/'.format(metadata.app_label, metadata.model_name)
-                if att_name:
-                    path = '{}{}/'.format(path, att_name)
             data.update(path=path)
 
             for form_name in self.metadata['actions']:
@@ -357,7 +352,7 @@ class QuerySet(models.QuerySet):
     def search(self, *names, q=None):
         if q:
             lookups = []
-            for search_field in self._get_list_search() or ['nome']:
+            for search_field in self._get_list_search() or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
         self.metadata['search'] = list(names)
@@ -387,25 +382,27 @@ class QuerySet(models.QuerySet):
         self.metadata['actions'] = list(names)
         return self
 
-    def add_default_actions(self, *names):
+    def add_default_actions(self):
         self.metadata['actions'].extend(('add', 'edit-inline', 'delete-inline'))
         return self
 
-    def html(self, uuid=None, inner=False, request=None):
+    def html(self, uuid=None, request=None):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
 
         return render_to_string(
             'adm/queryset.html',
-            dict(data=data, uuid=uuid, inner=inner, messages=messages.get_messages(request))
+            dict(data=data, uuid=uuid, messages=messages.get_messages(request))
         )
 
-    def contextualize(self, request):
+    def contextualize(self, request, add_default_actions=False):
         if request:
+            if add_default_actions:
+                self.add_default_actions()
             if 'choices' in request.GET:
                 raise ReadyResponseException(
-                    self.choices(request.GET['choices'])
+                    self.choices(request.GET['choices'], q=request.GET.get('term'))
                 )
             if 'uuid' in request.GET:
                 raise HtmlReadyResponseException(
@@ -414,8 +411,6 @@ class QuerySet(models.QuerySet):
                         request=request
                     )
                 )
-            if 0 and request.is_ajax():  # TODO
-                raise HtmlReadyResponseException(self.html(inner=True, request=request))
         return self
 
     def paginate(self, page=1):
@@ -428,9 +423,9 @@ class QuerySet(models.QuerySet):
         attr_name = request.GET['subset']
         if attr_name != 'all' and attr_name not in self.metadata['attach']:
             raise ValueError('"{}" is an invalid attach.'.format(attr_name))
-        attach = getattr(self, attr_name)()
+        attach = self if attr_name == 'all' else getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
-            qs = self.add_default_actions() if attr_name == 'all' else attach
+            qs = attach
         elif isinstance(attach, QuerySetStatistics):
             qs = attach.qs
         else:
@@ -451,7 +446,7 @@ class QuerySet(models.QuerySet):
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
         if isinstance(attach, QuerySet):
-            return qs.paginate(page)
+            return qs.add_default_actions().paginate(page)
         else:
             attach.qs = qs
             return attach
@@ -586,7 +581,7 @@ class QuerySetStatistics(object):
             series=series
         )
 
-    def html(self, uuid=None):
+    def html(self, uuid=None, request=None):
         data = self.serialize(wrap=True, verbose=True)
         return render_to_string('adm/statistics.html', dict(data=data))
 
@@ -657,7 +652,7 @@ class ModelMixin(object):
                 style = 'success'
 
             def process(self):
-                print(self.save())
+                self.save()
                 self.notify('Cadastro realizado com sucesso')
 
         return Add

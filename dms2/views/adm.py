@@ -56,9 +56,7 @@ def index(request):
 @view
 def add_view(request, app_label, model_name):
     form = views.add_view(request, app_label, model_name)
-    print(form.message)
     if form.message:
-        print(1111)
         return HttpResponse('..')
     return render(request, ['adm/add.html'], dict(form=form))
 

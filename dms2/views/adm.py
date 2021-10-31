@@ -81,22 +81,9 @@ def delete_view(request, app_label, model_name, pk):
 
 
 @view
-def list_view(request, app_label, model_name, method=None, pks=None, action=None):
+def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = {}
-    data = views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
-    if isinstance(data, FormMixin):
-        context.update(form=data)
-        if data.message:
-            return HttpResponse('..')
-    else:
-        context.update(data=data)
-    return render(request, ['adm/list.html'], context)
-
-
-@view
-def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
-    context = {}
-    data = views.obj_view(request, app_label, model_name, pk, method=method, pks=pks, action=action)
+    data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
     if isinstance(data, FormMixin):
         context.update(form=data)
         if data.message:

@@ -108,7 +108,6 @@ class ValueSet(dict):
                         for form_name in actions:
                             action = self.instance.action_form_cls(form_name).get_metadata(path)
                             value['actions'].append(action)
-                            print(form_name, value['path'])
                         value['path'] = path
                         if image_attr_name:
                             image_attr = getattr(self.instance, image_attr_name)
@@ -278,7 +277,6 @@ class QuerySet(models.QuerySet):
                 attr = getattr(self.model.objects._queryset_class, name)
                 verbose_name = getattr(attr, 'verbose_name', name)
                 obj = getattr(self.model.objects, name)()
-                print(name, obj.metadata['attach'])
                 if isinstance(obj, QuerySet):
                     if verbose_name == 'all':
                         verbose_name = 'Tudo'

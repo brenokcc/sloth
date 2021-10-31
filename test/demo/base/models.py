@@ -142,7 +142,7 @@ class Servidor(models.Model):
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
-        ).actions('InformarEndereco', 'ExcluirEndereco')
+        ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.values('endereco')
 
     def view(self):
         return self.values(

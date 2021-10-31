@@ -8,15 +8,9 @@ urlpatterns = [
     path('', api.index),
     path('docs/', api.index),
 
-    path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/<str:pks>/<str:action>/', api.obj_view),
-    path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/<str:pks>/', api.obj_view),
-    path('<str:app_label>/<str:model_name>/<int:pk>/edit/', api.edit_view),
-    path('<str:app_label>/<str:model_name>/<int:pk>/delete/', api.delete_view),
-    path('<str:app_label>/<str:model_name>/<int:pk>/<str:method>/', api.obj_view),
-    path('<str:app_label>/<str:model_name>/<int:pk>/', api.obj_view),
-
-    path('<str:app_label>/<str:model_name>/add/', api.add_view),
-    path('<str:app_label>/<str:model_name>/<str:method>/<str:pks>/<str:action>/', api.list_view),
-    path('<str:app_label>/<str:model_name>/<str:method>/', api.list_view),
-    path('<str:app_label>/<str:model_name>/', api.list_view),
+    path('<str:app_label>/<str:model_name>/', api.obj_view),
+    path('<str:app_label>/<str:model_name>/<str:x>/', api.obj_view),
+    path('<str:app_label>/<str:model_name>/<int:x>/<str:y>/<str:z>/<str:w>/', api.obj_view),
+    path('<str:app_label>/<str:model_name>/<int:x>/<str:y>/<str:z>/', api.obj_view),
+    path('<str:app_label>/<str:model_name>/<int:x>/<str:y>/', api.obj_view),
 ]

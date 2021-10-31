@@ -44,7 +44,7 @@ class ForeignKey(models.ForeignKey):
 
 
 class OneToOneField(models.OneToOneField):
-    def __init__(self, to, on_delete=models.CASCADE, **kwargs):
+    def __init__(self, to, on_delete=models.SET_NULL, **kwargs):
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
 

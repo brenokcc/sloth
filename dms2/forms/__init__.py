@@ -110,7 +110,7 @@ class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop('instance', None)
         self.message = None
-        self.related = kwargs.pop('related', None)
+        self.instantiator = kwargs.pop('instantiator', None)
         self.request = kwargs.pop('request', None)
         if 'data' not in kwargs:
             if self.base_fields:
@@ -129,7 +129,7 @@ class ModelForm(FormMixin, ModelForm):
     def __init__(self, *args, **kwargs):
         self.message = None
         self.request = kwargs.pop('request', None)
-        self.related = kwargs.pop('related', None)
+        self.instantiator = kwargs.pop('instantiator', None)
         if 'data' not in kwargs:
             if self.base_fields:
                 data = self.request.POST or None

@@ -104,11 +104,11 @@ class ApiTestCase(ServerTestCase):
         self.get('/api/auth/group/1/edit/')
         self.post('/api/auth/group/1/edit/', data=dict(name='Gerente'))
         self.get('/api/auth/group/1/delete/')
-        self.post('/api/auth/group/1/delete/')
+        # self.post('/api/auth/group/1/delete/')
 
         self.get('/api/base/servidor/')
         self.get('/api/base/servidor/ativos/')
-        self.post('/api/base/servidor/ativos/1/inativarservidores/')
+        self.post('/api/base/servidor/1/inativarservidores/')
         self.get('/api/base/servidor/ativos/')
 
         self.get('/api/base/servidor/1/')

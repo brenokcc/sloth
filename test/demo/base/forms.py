@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django import forms
+from dms2 import forms
 
 from .models import Servidor, Ferias, Estado
 
@@ -87,6 +87,7 @@ class ExcluirEndereco(forms.ModelForm):
 
     def process(self):
         self.instance.endereco.delete()
+        self.notify()
 
 
 class CadastrarFerias(forms.ModelForm):

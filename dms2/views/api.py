@@ -55,29 +55,5 @@ def index(request):
 
 @csrf_exempt
 @endpoint
-def add_view(request, app_label, model_name):
-    return views.add_view(request, app_label, model_name)
-
-
-@csrf_exempt
-@endpoint
-def edit_view(request, app_label, model_name, pk):
-    return views.edit_view(request, app_label, model_name, pk)
-
-
-@csrf_exempt
-@endpoint
-def delete_view(request, app_label, model_name, pk):
-    return views.delete_view(request, app_label, model_name, pk)
-
-
-@csrf_exempt
-@endpoint
-def list_view(request, app_label, model_name, method=None, pks=None, action=None):
-    return views.list_view(request, app_label, model_name, method=method, pks=pks, action=action)
-
-
-@csrf_exempt
-@endpoint
-def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
-    return views.obj_view(request, app_label, model_name, pk, method=method, pks=pks, action=action)
+def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
+    return views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)

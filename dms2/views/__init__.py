@@ -32,132 +32,110 @@ def is_authenticated(request):
     return True
 
 
-def add_view(request, app_label, model_name):
+def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     model = apps.get_model(app_label, model_name)
-    form_cls = model.add_form_cls()
-    form = form_cls(request=request)
-    if form.has_add_permission(request.user):
-        if form.is_valid():
-            form.process()
-        return form
-    raise PermissionDenied()
-
-
-def edit_view(request, app_label, model_name, pk):
-    model = apps.get_model(app_label, model_name)
-    form_cls = model.edit_form_cls()
-    form = form_cls(request=request, instance=model.objects.get(pk=pk))
-    if form.has_edit_permission(request.user):
-        if form.is_valid():
-            form.process()
-        return form
-    raise PermissionDenied()
-
-
-def delete_view(request, app_label, model_name, pk):
-    model = apps.get_model(app_label, model_name)
-    form_cls = model.delete_form_cls()
-    form = form_cls(request=request, instance=model.objects.get(pk=pk))
-    if form.has_delete_permission(request.user):
-        if form.is_valid():
-            form.process()
-        return form
-    raise PermissionDenied()
-
-
-def list_view(request, app_label, model_name, method=None, pks=None, action=None):
-    model = apps.get_model(app_label, model_name)
-    if method:
-        attr = getattr(model.objects, method, None)
-        if attr:
-            if pks:
-                form_cls = model.action_form_cls(action)
-                instances = attr().filter(pk__in=pks.split('-'))
-                form = form_cls(request=request, instances=instances)
-                if form.has_permission(request.user):
-                    if form.is_valid():
-                        result = form.process()
-                        if result is not None:
-                            return result
-                    return form
-                raise PermissionDenied()
+    # print(dict(x=x, y=y, z=z, w=w))
+    if x:
+        x = str(x)
+        if x.isdigit():
+            obj = model.objects.get(pk=x)
+            if y:
+                if z:
+                    if z.split('-')[0].isdigit():  # queryset action
+                        attr = getattr(obj, y)
+                        form_cls = model.action_form_cls(w)
+                        instances = attr().filter(pk__in=z.split('-'))
+                        form = form_cls(request=request, instantiator=obj, instances=instances)
+                        if form.has_permission(request.user):
+                            if form.is_valid():
+                                form.process()
+                            return form
+                        raise PermissionDenied()
+                    else:  # pks is instance action
+                        form_cls = model.action_form_cls(z)
+                        form = form_cls(request=request, instantiator=obj)
+                        if form.has_permission(request.user):
+                            if form.is_valid():
+                                form.process()
+                            return form
+                        raise PermissionDenied()
+                else:
+                    if y.lower() == 'edit':  # /base/estado/1/edit/
+                        form_cls = model.edit_form_cls()
+                        form = form_cls(request=request, instance=obj)
+                        if form.has_edit_permission(request.user):
+                            if form.is_valid():
+                                form.process()
+                            return form
+                        raise PermissionDenied()
+                    if y.lower() == 'delete':  # /base/estado/1/delete/
+                        form_cls = model.delete_form_cls()
+                        form = form_cls(request=request, instance=obj)
+                        if form.has_delete_permission(request.user):
+                            if form.is_valid():
+                                form.process()
+                            return form
+                        raise PermissionDenied()
+                    else:  # /base/estado/1/editar_sigla/
+                        form_cls = model.action_form_cls(y)
+                        if form_cls:  # instance action
+                            form = form_cls(request=request, instance=obj)
+                            if form.has_permission(request.user):
+                                if form.is_valid():
+                                    form.process()
+                                return form
+                            raise PermissionDenied()
+                        else:
+                            # subset
+                            if obj.has_attr_view_permission(request.user, y):
+                                output = obj.values(y).contextualize(request)
+                                return output
+                        raise PermissionDenied()
             else:
-                return attr().contextualize(request)
-        else:
-            form_cls = model.action_form_cls(method)
+                if obj.has_view_permission(request.user):
+                    return obj.view()
+                raise PermissionDenied()
+        elif x.lower() == 'add':
+            form_cls = model.add_form_cls()
             form = form_cls(request=request)
-            if form.is_valid():
-                result = form.process()
-                if result is not None:
-                    return result
-            return form
-    else:
-        return model.objects.all().contextualize(request).add_default_actions()
-
-
-def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
-    pk = str(pk)
-    model = apps.get_model(app_label, model_name)
-    if pk.isdigit():
-        obj = model.objects.get(pk=pk)
-        if method:
-            if pks:
-                if pks.split('-')[0].isdigit():  # queryset action
-                    attr = getattr(obj, method)
-                    form_cls = model.action_form_cls(action)
-                    instances = attr().filter(pk__in=pks.split('-'))
+            if form.has_add_permission(request.user):
+                if form.is_valid():
+                    form.process()
+                return form
+            raise PermissionDenied()
+        else:
+            attr = getattr(model.objects, x, None)
+            if attr:
+                if y:
+                    form_cls = model.action_form_cls(z)
+                    instances = attr().filter(pk__in=y.split('-'))
+                    form = form_cls(request=request, instances=instances)
+                    if form.has_permission(request.user):
+                        if form.is_valid():
+                            result = form.process()
+                            if result is not None:
+                                return result
+                        return form
+                    raise PermissionDenied()
+                else:
+                    return attr().contextualize(request)
+            else:
+                if y:
+                    form_cls = model.action_form_cls(y)
+                    instances = model.objects.all().filter(pk__in=x.split('-'))
                     form = form_cls(request=request, instances=instances)
                     if form.has_permission(request.user):
                         if form.is_valid():
                             form.process()
                         return form
                     raise PermissionDenied()
-                else:  # pks is instance action
-                    form_cls = model.action_form_cls(pks)
-                    form = form_cls(request=request, instance=obj)
-                    if form.has_permission(request.user):
-                        if form.is_valid():
-                            form.process()
-                        return form
-                    raise PermissionDenied()
-            else:
-                form_cls = model.action_form_cls(method)
-                if form_cls:  # instance action
-                    form = form_cls(request=request, instance=obj)
-                    if form.has_permission(request.user):
-                        if form.is_valid():
-                            form.process()
-                        return form
-                    raise PermissionDenied()
                 else:
-                    # subset
-                    if obj.has_attr_view_permission(request.user, method):
-                        output = obj.values(method).contextualize(request)
-                        return output
-                raise PermissionDenied()
-        else:
-            if obj.has_view_permission(request.user):
-                return obj.view()
-            raise PermissionDenied()
-    else:
-        if method:
-            form_cls = model.action_form_cls(method)
-            instances = model.objects.all().filter(pk__in=pk.split('-'))
-            form = form_cls(request=request, instances=instances)
-            if form.has_permission(request.user):
-                if form.is_valid():
-                    form.process()
-                return form
-            raise PermissionDenied()
-        else:
-            form_cls = model.action_form_cls(pk)
-            if form_cls:
-                form = form_cls(request=request)
-                if form.has_permission(request.user):
-                    if form.is_valid():
-                        form.process()
-                    return form
-                raise PermissionDenied()
-            else:
-                return list_view(request, app_label, model_name, pk)
-
+                    form_cls = model.action_form_cls(x)
+                    form = form_cls(request=request)
+                    if form.has_permission(request.user):
+                        if form.is_valid():
+                            form.process()
+                        return form
+                    raise PermissionDenied()
+    else:  # /base/estado/
+        return model.objects.all().contextualize(request).add_default_actions()

@@ -57,30 +57,6 @@ def index(request):
 
 
 @view
-def add_view(request, app_label, model_name):
-    form = views.add_view(request, app_label, model_name)
-    if form.message:
-        return HttpResponse('..')
-    return render(request, ['adm/add.html'], dict(form=form))
-
-
-@view
-def edit_view(request, app_label, model_name, pk):
-    form = views.edit_view(request, app_label, model_name, pk)
-    if form.message:
-        return HttpResponse('..')
-    return render(request, ['adm/add.html'], dict(form=form))
-
-
-@view
-def delete_view(request, app_label, model_name, pk):
-    form = views.delete_view(request, app_label, model_name, pk)
-    if form.message:
-        return HttpResponse('..')
-    return render(request, ['adm/delete.html'], dict(form=form))
-
-
-@view
 def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = {}
     data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
@@ -90,4 +66,4 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
             return HttpResponse('..')
     else:
         context.update(data=data)
-    return render(request, ['adm/view.html'], context)
+    return render(request, ['adm/default.html'], context)

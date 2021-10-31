@@ -104,7 +104,6 @@
 }
 .search-and-filters .select2-container--default .select2-selection--single{
     height: 38px !important;
-    margin-bottom: 2px !important;
     padding-top: 3px;
 }
 .search-and-filters .select2-selection__clear{
@@ -171,4 +170,18 @@ main{
 }
 .select2-container--open {
     z-index: 9999999;
+}
+.select2-selection__arrow{
+    margin: 5px;
+}
+
+.search-results{
+    position: absolute;
+    top: 50;
+    z-index: 1;
+    max-height: 300px;
+    overflow-y: scroll;
+}
+.search-results a{
+    text-decoration: none;
 }

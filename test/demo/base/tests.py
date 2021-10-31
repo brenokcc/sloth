@@ -2,13 +2,17 @@
 
 import json
 from datetime import date, datetime
-
 from django.contrib.auth.models import Group
 from django.test import TestCase
 from oauth2_provider.generators import generate_client_id
 
 from dms2.test import ServerTestCase
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
+from dms2 import utils
+
+
+def log(data):
+    print(json.dumps(data, indent=4, ensure_ascii=False))
 
 
 def loaddata():
@@ -41,7 +45,6 @@ class ModelTestCase(TestCase):
     def test(self):
         loaddata()
         self.log(Municipio.objects.first().serialize(wrap=True, verbose=True))
-        return
         self.log(Municipio.objects.count('estado').serialize())
         self.log(Municipio.objects.all().serialize(wrap=True, verbose=True))
         servidor = Servidor.objects.first()
@@ -115,6 +118,13 @@ class ApiTestCase(ServerTestCase):
         self.get('/api/base/servidor/1/get_ferias/')
         self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
         self.get('/api/base/servidor/1/get_ferias/')
+
+
+class MenuTestCase(TestCase):
+
+    def test(self):
+        items = utils.load_menu(None)
+        log(items)
 
 
 class Oauth2TestCase(ServerTestCase):

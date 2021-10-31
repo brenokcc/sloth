@@ -67,9 +67,8 @@ def delete_view(request, app_label, model_name, pk):
 
 def list_view(request, app_label, model_name, method=None, pks=None, action=None):
     model = apps.get_model(app_label, model_name)
-    qs = model.objects.contextualize(request)
     if method:
-        attr = getattr(qs, method, None)
+        attr = getattr(model.objects, method, None)
         if attr:
             if pks:
                 form_cls = model.action_form_cls(action)
@@ -83,7 +82,7 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
                     return form
                 raise PermissionDenied()
             else:
-                return attr()
+                return attr().contextualize(request)
         else:
             form_cls = model.action_form_cls(method)
             form = form_cls(request=request)
@@ -93,7 +92,7 @@ def list_view(request, app_label, model_name, method=None, pks=None, action=None
                     return result
             return form
     else:
-        return qs.add_default_actions()
+        return model.objects.all().contextualize(request).add_default_actions()
 
 
 def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=None):
@@ -145,12 +144,20 @@ def obj_view(request, app_label, model_name, pk, method=None, pks=None, action=N
             form_cls = model.action_form_cls(method)
             instances = model.objects.all().filter(pk__in=pk.split('-'))
             form = form_cls(request=request, instances=instances)
+            if form.has_permission(request.user):
+                if form.is_valid():
+                    form.process()
+                return form
+            raise PermissionDenied()
         else:
             form_cls = model.action_form_cls(pk)
-            form = form_cls(request=request)
+            if form_cls:
+                form = form_cls(request=request)
+                if form.has_permission(request.user):
+                    if form.is_valid():
+                        form.process()
+                    return form
+                raise PermissionDenied()
+            else:
+                return list_view(request, app_label, model_name, pk)
 
-        if form.has_permission(request.user):
-            if form.is_valid():
-                form.process()
-            return form
-        raise PermissionDenied()

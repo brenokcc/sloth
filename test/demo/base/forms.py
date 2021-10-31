@@ -51,6 +51,11 @@ class AtivarServidor(forms.QuerySetForm):
         model = Servidor
         fields = ()
 
+    def process(self):
+        self.instance.ativo = True
+        self.instance.save()
+        self.notify()
+
 
 class InativarServidores(forms.QuerySetForm):
     class Meta:

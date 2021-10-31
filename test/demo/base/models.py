@@ -7,6 +7,7 @@ from dms2.db.models.decorators import meta
 
 class EstadoSet(models.QuerySet):
 
+    @meta('Todos')
     def all(self):
         return super().all().display(
             'sigla', 'cidades_metropolitanas'
@@ -19,7 +20,7 @@ class Estado(models.Model):
 
     class Meta:
         verbose_name = 'Estado'
-        verbose_name_plural = 'Estado'
+        verbose_name_plural = 'Estados'
 
     def __str__(self):
         return self.sigla
@@ -77,8 +78,9 @@ class Endereco(models.Model):
 
 class ServidorSet(models.QuerySet):
 
+    @meta('Todos')
     def all(self):
-        return super().all().display(
+        return super().display(
             'get_dados_gerais', 'ativo', 'naturalidade'
         ).filters(
             'data_nascimento', 'ativo', 'naturalidade'

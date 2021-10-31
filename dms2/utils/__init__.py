@@ -2,7 +2,7 @@
 
 import datetime
 from decimal import Decimal
-
+from django.apps import apps
 from django.db.models.fields.files import FieldFile
 
 
@@ -59,6 +59,30 @@ def serialize(obj):
             return obj.url
         return str(obj)
     return None
+
+
+def load_menu(user):
+    items = []
+    for model in apps.get_models():
+        app_label = model._meta.app_label
+        model_name = model._meta.model_name
+        model_verbose_name = model._meta.verbose_name_plural
+        icon = getattr(model._meta, 'icon', None)
+        url = '/adm/{}/{}/'.format(app_label, model_name)
+        item = dict(label=str(model_verbose_name), description=None, url=url, icon=icon, subitems=[])
+        for name, attr in model.objects._queryset_class.__dict__.items():
+            if hasattr(attr, 'decorated'):
+                attr_verbose_name = getattr(attr, 'verbose_name')
+                attr_icon = getattr(attr, 'icon', None)
+                attr_description = attr_verbose_name
+                if name == 'all':
+                    attr_url = url
+                else:
+                    attr_url = '{}{}/'.format(url, name)
+                subitem = dict(label=attr_verbose_name, icon=attr_icon, description=attr_description, url=attr_url)
+                item['subitems'].append(subitem)
+        items.append(item)
+    return items
 
 
 

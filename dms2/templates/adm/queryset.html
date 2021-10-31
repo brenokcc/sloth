@@ -112,8 +112,7 @@
     <script>
         function reload{{ data.uuid }}(subset){
             $(document.body).addClass('page-loading');
-            if(subset==null) subset = 'all';
-            $('#subset-{{ data.uuid }}').val(subset);
+            if(subset!=null) $('#subset-{{ data.uuid }}').val(subset);
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').removeClass('d-none');
             $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).addClass('active').find('.badge').removeClass('text-white').removeClass('bg-primary').addClass('bg-white').addClass('text-primary');

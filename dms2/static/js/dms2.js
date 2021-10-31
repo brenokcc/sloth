@@ -5,6 +5,10 @@ $.datepicker.regional['pt-BR'] = {
     dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
     dayNamesMin: ['Do', 'Se', 'Te', 'Qu', 'Qu', 'Se', 'Sa']
 }
+jQuery.expr[':'].icontains = function(a, i, m) {
+  return jQuery(a).text().toUpperCase()
+      .indexOf(m[3].toUpperCase()) >= 0;
+};
 jQuery.fn.extend({
     request: function(url, method, data, callback){
         var xhr = $.ajax({

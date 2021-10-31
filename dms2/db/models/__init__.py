@@ -275,9 +275,10 @@ class QuerySet(models.QuerySet):
         attach = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                attr = getattr(self, name)
+                attr = getattr(self.model.objects._queryset_class, name)
                 verbose_name = getattr(attr, 'verbose_name', name)
-                obj = attr()
+                obj = getattr(self.model.objects, name)()
+                print(name, obj.metadata['attach'])
                 if isinstance(obj, QuerySet):
                     if verbose_name == 'all':
                         verbose_name = 'Tudo'
@@ -423,9 +424,7 @@ class QuerySet(models.QuerySet):
     def process_params(self, request):
         page = 1
         attr_name = request.GET['subset']
-        if attr_name != 'all' and attr_name not in self.metadata['attach']:
-            raise ValueError('"{}" is an invalid attach.'.format(attr_name))
-        attach = self if attr_name == 'all' else getattr(self, attr_name)()
+        attach = self if attr_name == 'all' else getattr(self.model.objects, attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach
         elif isinstance(attach, QuerySetStatistics):
@@ -590,7 +589,10 @@ class QuerySetStatistics(object):
 
 class BaseManager(manager.BaseManager):
     def get_queryset(self):
-        return super().get_queryset().all()
+        return super().get_queryset()
+
+    def all(self):
+        return self.get_queryset().all()
 
 
 class Manager(BaseManager.from_queryset(QuerySet)):

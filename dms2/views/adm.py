@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from .. import views
+from ..utils import load_menu
 from ..forms import FormMixin
 from ..utils.icons import bootstrap
 from ..exceptions import ReadyResponseException, HtmlReadyResponseException
@@ -46,6 +47,8 @@ def login(request, username):
             settings.AUTH_USER_MODEL
         ).objects.get(username=username)
         auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        request.session['menu'] = load_menu(user)
+        request.session.save()
     return index(request)
 
 

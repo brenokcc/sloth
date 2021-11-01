@@ -8,7 +8,7 @@
         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
                 <li>
-                    <a class="dropdown-item action-button {{ target }} popup"
+                    <a class="dropdown-item action-button {{ target }} popup {% if target == 'instance' and action.key not in enabled %}disabled{% endif %}"
                        href="/adm{{ action.path }}"
                        data-url="/adm{{ action.path }}"
                        data-id="{{ id }}"
@@ -26,7 +26,7 @@
                data-url="/adm{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
-               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup">
+               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup {% if target == 'instance' and action.key not in enabled %}disabled{% endif %}">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
                 {{ action.name }}
             </a>

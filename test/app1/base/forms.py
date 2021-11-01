@@ -20,6 +20,9 @@ class InformarCidadesMetropolitanas(forms.ModelForm):
 class FazerAlgumaCoisa(forms.Form):
     mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
 
+    def has_permission(self):
+        return True
+
 
 class EditarSiglaEstado(forms.QuerySetForm):
     class Meta:
@@ -90,6 +93,9 @@ class InformarEndereco(forms.ModelForm):
         style = 'success'
         fields = 'endereco',
 
+    def has_permission(self):
+        return super().has_permission()
+
 
 class ExcluirEndereco(forms.ModelForm):
     class Meta:
@@ -100,6 +106,9 @@ class ExcluirEndereco(forms.ModelForm):
     def process(self):
         self.instance.endereco.delete()
         self.notify()
+
+    def has_permission(self):
+        return True
 
 
 class CadastrarFerias(forms.ModelForm):

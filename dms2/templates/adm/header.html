@@ -1,7 +1,9 @@
 {% if request.user.is_authenticated and not request.GET.modal %}
     <nav class="navbar navbar-expand">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/adm/">Navbar</a>
+        <a class="navbar-brand" href="/adm/">
+          <img height="30" src="/static/images/bootstrap.png">
+        </a>
         <div class="collapse navbar-collapse">
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" onkeyup="search(this)"  onfocus="search(this)">
           <div class="search-results d-none" onmouseleave="$(this).addClass('d-none')">

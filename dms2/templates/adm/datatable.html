@@ -1,20 +1,20 @@
 {% load tags %}
 {% if data.data %}
     {% if compact or request|mobile or request|tablet and data.metadata.display|length > 2 %}
-        {% for id, row in data.data %}
+        {% for row in data.data %}
             <div class="float-end">
-                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ id }}/">
+                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ row.id }}/">
                     <i class="bi bi-search"></i>
                 </a>
             </div>
             <dl>
-            {% for k, v in row.items %}
+            {% for k, v in row.data.items %}
                 <dt>{{ k }}</dt>
                 <dd>{{ v|format }}</dd>
             {% endfor %}
             </dl>
             <div class="float-end">
-                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=id  %}
+                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id enabled=row.actions  %}
             </div>
             <div class="clearfix"></div>
             <hr>
@@ -38,24 +38,24 @@
         </tr>
         </thead>
         <tbody>
-        {% for id, row in data.data %}
+        {% for row in data.data %}
         <tr>
             {% if data.actions.queryset %}
             <th scope="col" class="align-middle">
-                <input type="checkbox" class="action-checkbox form-check-input" value="{{ id }}" onclick="toggleActions{{ data.uuid }}(this)">
+                <input type="checkbox" class="action-checkbox form-check-input" value="{{ row.id }}" onclick="toggleActions{{ data.uuid }}(this)">
             </th>
             {% endif %}
             <td class="align-middle">
-                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ id }}/">
+                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ row.id }}/">
                     <i class="bi bi-search"></i>
                 </a>
             </td>
-            {% for k, v in row.items %}
+            {% for k, v in row.data.items %}
             <td class="align-middle">{{ v|format }}</td>
             {% endfor %}
             {% if data.actions.instance %}
             <td class="align-middle instance-actions">
-                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=id  %}
+                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id enabled=row.actions %}
             </td>
             {% endif %}
         </tr>

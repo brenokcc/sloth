@@ -117,7 +117,7 @@
                   <span class="visually-hidden">Loading...</span>
                 </div>
                 {{ subset.name }}
-                <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %}">{{ subset.count }}</span>
+                <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %} total-{{ subset.key }}">{{ subset.count }}</span>
             </a>
           </li>
             {% endfor %}
@@ -132,9 +132,6 @@
             else $('#subset-{{ data.uuid }}').val(subset);
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').removeClass('d-none');
             $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
-            console.log(subset);
-            console.log("$('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset)");
-            console.log($('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).length);
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).addClass('active').find('.badge').removeClass('text-white').removeClass('bg-primary').addClass('bg-white').addClass('text-primary');
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
@@ -145,6 +142,17 @@
                     $(document.body).removeClass('page-loading');
                     $('#queryset-{{ data.uuid }}').find('.submit-panel').find('.spinner-border').addClass('d-none');
                     $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').addClass('d-none');
+                }
+            });
+        }
+        function onreload{{ data.uuid }}(){
+            $.ajax({
+                dataType: 'json',
+                url: '/adm{{ data.path }}?attaches=',
+                success:function( totals ) {
+                    for (const [key, value] of Object.entries(totals)) {
+                        if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
+                    }
                 }
             });
         }

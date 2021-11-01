@@ -44,16 +44,7 @@
     <div class="card">
         <div class="card-body">
             <h5>{{ fieldset.name }}</h5>
-            <table class="table" style="overflow-x:auto">
-                {% if fieldset.series.default %}
-                    {% for name, value, color in fieldset.series.default %}
-                    <tr>
-                        <td scope="col">{{ name }}</td>
-                        <td>{{ value }}</td>
-                    </tr>
-                    {% endfor %}
-                {% endif %}
-            </table>
+            {% include 'adm/statistics.html' with data=fieldset %}
         </div>
     </div>
 {% endif %}

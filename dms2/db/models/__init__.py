@@ -90,16 +90,18 @@ class ValueSet(dict):
                     else:
                         value = [str(o) for o in value]
                 elif isinstance(value, QuerySetStatistics):
+                    value.contextualize(self.metadata['request'])
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     value = value.serialize(path=path, wrap=wrap)
                     if wrap:
                         value['name'] = verbose_name
                 elif isinstance(value, ValueSet):
-                    key = attr_name
+                    value.contextualize(self.metadata['request'])
                     actions = getattr(value, 'metadata')['actions']
                     image_attr_name = getattr(value, 'metadata')['image']
                     template = getattr(value, 'metadata')['template']
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
+                    key = attr_name
                     if attr_name == 'fieldset':
                         key = None
                         path = None
@@ -107,8 +109,10 @@ class ValueSet(dict):
                     value = dict(uuid=uuid1().hex, type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
                     if wrap:
                         for form_name in actions:
-                            action = self.instance.action_form_cls(form_name).get_metadata(path)
-                            value['actions'].append(action)
+                            form_cls = self.instance.action_form_cls(form_name)
+                            if self.metadata['request'] is None or form_cls(request=self.metadata['request'], instantiator=self.instance, fake=True).has_permission():
+                                action = form_cls.get_metadata(path)
+                                value['actions'].append(action)
                         value['path'] = path
                         if image_attr_name:
                             image_attr = getattr(self.instance, image_attr_name)
@@ -164,7 +168,11 @@ class ValueSet(dict):
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 output['attach'].append(dict(name=name, path=path))
             for attr_name in self.metadata['append']:
-                output['append'].update(self.instance.values(attr_name).load(wrap=wrap, verbose=verbose, formatted=formatted))
+                output['append'].update(
+                    self.instance.values(attr_name).contextualize(self.metadata['request']).load(
+                        wrap=wrap, verbose=verbose, formatted=formatted
+                    )
+                )
             return output
         else:
             if len(self.metadata['names']) == 1:
@@ -289,8 +297,17 @@ class QuerySet(models.QuerySet):
         data = []
         for obj in self:
             item = obj.values(*self._get_list_display()).serialize(verbose=verbose, formatted=formatted)
-            data.append([obj.id, item] if wrap else item)
+            data.append(dict(id=obj.id, data=item, actions=self.get_obj_actions(obj)) if wrap else item)
         return data
+
+    def get_obj_actions(self, obj):
+        actions = []
+        for form_name in self.metadata['actions']:
+            form_cls = self.model.action_form_cls(form_name)
+            if issubclass(form_cls, QuerySetForm) and not getattr(getattr(form_cls, 'Meta'), 'batch', False):
+                if self.metadata['request'] is None or form_cls(request=self.metadata['request'], instance=obj).has_permission():
+                    actions.append(form_cls.__name__)
+        return actions
 
     def choices(self, filter_lookup, q=None):
         field = getattrr(self.model, filter_lookup)[0].field
@@ -338,7 +355,11 @@ class QuerySet(models.QuerySet):
             data.update(path=path)
 
             for form_name in self.metadata['actions']:
-                action = self.model.action_form_cls(form_name).get_metadata(path)
+                form_cls = self.model.action_form_cls(form_name)
+                if not issubclass(form_cls, QuerySetForm):
+                    if self.metadata['request'] and not form_cls(request=self.metadata['request']).has_permission():
+                        continue
+                action = form_cls.get_metadata(path)
                 data['actions'][action['target']].append(action)
             data.update(path=path)
             if self.metadata['template']:
@@ -391,7 +412,6 @@ class QuerySet(models.QuerySet):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
-
         return render_to_string(
             'adm/queryset.html',
             dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
@@ -407,9 +427,12 @@ class QuerySet(models.QuerySet):
                 raise ReadyResponseException(
                     self.choices(request.GET['choices'], q=request.GET.get('term'))
                 )
+            if 'attaches' in request.GET:
+                raise ReadyResponseException(self._get_attach())
             if 'uuid' in request.GET:
+                component = self.process_params(request)
                 raise HtmlReadyResponseException(
-                    self.process_params(request).html(
+                    component.html(
                         uuid=request.GET['uuid']
                     )
                 )
@@ -489,11 +512,16 @@ class QuerySetStatistics(object):
         self._xdict = {}
         self._ydict = {}
         self._values_dict = None
+        self.metadata = dict(request=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
         if y and '__month' in y:
             self._ydict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
+
+    def contextualize(self, request):
+        self.metadata.update(request=request)
+        return self
 
     def _calc(self):
         if self._values_dict is None:
@@ -675,6 +703,9 @@ class ModelMixin(object):
                 self.save()
                 self.notify('Cadastro realizado com sucesso')
 
+            def has_permission(self):
+                return self.instance.has_add_permission(self.request.user)
+
         return Add
 
     @classmethod
@@ -692,6 +723,9 @@ class ModelMixin(object):
                 self.save()
                 self.notify('Edição realizada com sucesso')
 
+            def has_permission(self):
+                return self.instance.has_edit_permission(self.request.user)
+
         return Edit
 
     @classmethod
@@ -708,6 +742,9 @@ class ModelMixin(object):
             def process(self):
                 self.instance.delete()
                 self.notify('Exclusão realizada com sucesso')
+
+            def has_permission(self):
+                return self.instance.has_delete_permission(self.request.user)
 
         return Delete
 

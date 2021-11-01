@@ -56,7 +56,8 @@ jQuery.fn.extend({
         });
     },
     popup: function(url, method, data){
-        window['reloader'] = window['reload'+$(this).data('uuid')];
+        window['reload'] = window['reload'+$(this).data('uuid')];
+        window['onreload'] = window['onreload'+$(this).data('uuid')];
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');
@@ -65,11 +66,19 @@ jQuery.fn.extend({
     back: function(){
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
-            if(window['reloader']) window['reloader']();
-            else $(document).open(document.location.href);
+            if(window['reload']){
+                window['reload']();
+                if(window['onreload']) window['onreload']();
+            } else{
+                $(document).open(document.location.href);
+            }
         } else {
-            if(window['reloader']) window['reloader']();
-            else $(document).open(document.referrer);
+            if(window['reload']){
+                window['reload']();
+                if(window['onreload']) window['onreload']();
+            } else{
+                $(document).open(document.referrer);
+            }
         }
     },
     initialize: function (element) {

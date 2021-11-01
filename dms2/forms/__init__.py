@@ -61,7 +61,7 @@ class FormMixin:
                 path = '{}{{id}}/{}/'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
-        metadata = dict(type='form', name=name, submit=submit, target=target)
+        metadata = dict(type='form', key=form_name, name=name, submit=submit, target=target)
         if getattr(meta, 'batch', False):
             metadata.update(batch=True)
         metadata.update(method=method, icon=icon, style=style, ajax=ajax, path=path)
@@ -71,17 +71,8 @@ class FormMixin:
         meta = getattr(self, 'Meta', None)
         return getattr(meta, 'method', 'post') if meta else 'post'
 
-    def has_permission(self, user):
-        return self and user.is_superuser
-
-    def has_add_permission(self, user):
-        return self.instance and self.instance.has_add_permission(user)
-
-    def has_edit_permission(self, user):
-        return self.instance and self.instance.has_edit_permission(user)
-
-    def has_delete_permission(self, user):
-        return self.instance and self.instance.has_add_permission(user)
+    def has_permission(self):
+        return self.request.user.is_superuser
 
     def __str__(self):
         for name, field in self.fields.items():
@@ -158,7 +149,8 @@ class Form(FormMixin, Form):
             else:
                 data = self.request.POST
             kwargs['data'] = data
-        super().__init__(*args, **kwargs)
+        if not kwargs.pop('fake', False):
+            super().__init__(*args, **kwargs)
 
     def process(self):
         self.notify()
@@ -176,7 +168,8 @@ class ModelForm(FormMixin, ModelForm):
             else:
                 data = self.request.POST
             kwargs['data'] = data
-        super().__init__(*args, **kwargs)
+        if not kwargs.pop('fake', False):
+            super().__init__(*args, **kwargs)
 
     def process(self):
         self.save()

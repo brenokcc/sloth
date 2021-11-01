@@ -33,11 +33,11 @@ class MunicipioSet(models.QuerySet):
 
     @meta('Todos')
     def all(self):
-        return self.attach('ativos', 'get_qtd_por_estado')
+        return self.attach('potiguares', 'get_qtd_por_estado')
 
-    @meta('Ativos')
-    def ativos(self):
-        return self.filter(pk=1)
+    @meta('Potiguares')
+    def potiguares(self):
+        return self.filter(estado__sigla='RN')
 
     @meta('Quantidade por Estado')
     def get_qtd_por_estado(self):
@@ -65,6 +65,9 @@ class Municipio(models.Model):
 
     def view(self):
         return self.values('get_dados_gerais')
+
+    def has_edit_permission(self, user):
+        return self.pk % 2 == 0
 
 
 class Endereco(models.Model):

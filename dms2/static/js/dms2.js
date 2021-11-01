@@ -134,7 +134,6 @@ $( document ).ready(function() {
     document.cookie = "width="+$(window).width()+";path=/";
 });
 $( window ).resize(function() {
-    console.log($(window).width());
     document.cookie = "width="+$(window).width()+";path=/";
 });
 

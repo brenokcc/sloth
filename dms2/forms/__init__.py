@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib import auth
 from django.template.loader import render_to_string
 
-from dms2.exceptions import ReadyResponseException
+from dms2.exceptions import JsonReadyResponseException
 from dms2.utils import load_menu
 
 
@@ -113,7 +113,7 @@ class FormMixin:
 
     def is_valid(self):
         if 'choices' in self.request.GET:
-            raise ReadyResponseException(
+            raise JsonReadyResponseException(
                 self.choices(self.request.GET['choices'], q=self.request.GET.get('term'))
             )
         return super().is_valid()

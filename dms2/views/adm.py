@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from .. import views
 from ..forms import FormMixin, LoginForm
 from ..utils.icons import bootstrap
-from ..exceptions import ReadyResponseException, HtmlReadyResponseException
+from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 
 
 def view(func):
@@ -24,8 +24,10 @@ def view(func):
             else:
                 return HttpResponseForbidden()
         except ReadyResponseException as e:
+            return e.response
+        except JsonReadyResponseException as e:
             return JsonResponse(e.data)
-        except HtmlReadyResponseException as e:
+        except HtmlJsonReadyResponseException as e:
             messages = render_to_string('adm/messages.html', request=request)
             return HttpResponse(messages + e.html)
         except PermissionDenied:

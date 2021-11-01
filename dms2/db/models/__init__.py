@@ -16,13 +16,14 @@ from django.db.models import manager
 from django.template.loader import render_to_string
 from django.db.models.aggregates import Sum, Count
 
-from dms2.exceptions import ReadyResponseException, HtmlReadyResponseException
+from dms2.exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from dms2.forms import ModelForm, QuerySetForm
 from dms2.utils import getattrr, serialize
 from dms2.db.models.decorators import meta
 from dms2 import formatters
 from django.db.models import options
 
+from dms2.utils.http import XlsResponse, CsvResponse
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
     'icon', 'display', 'search', 'limit', 'filters'
@@ -424,14 +425,24 @@ class QuerySet(models.QuerySet):
             if add_default_actions:
                 self.add_default_actions()
             if 'choices' in request.GET:
-                raise ReadyResponseException(
+                raise JsonReadyResponseException(
                     self.choices(request.GET['choices'], q=request.GET.get('term'))
                 )
+            if 'export' in request.GET:
+                export = request.GET['export']
+                if export == 'xls':
+                    raise ReadyResponseException(
+                        XlsResponse([('Dados', [])])
+                    )
+                if export == 'csv':
+                    raise ReadyResponseException(
+                        CsvResponse([])
+                    )
             if 'attaches' in request.GET:
-                raise ReadyResponseException(self._get_attach())
+                raise JsonReadyResponseException(self._get_attach())
             if 'uuid' in request.GET:
                 component = self.process_params(request)
-                raise HtmlReadyResponseException(
+                raise HtmlJsonReadyResponseException(
                     component.html(
                         uuid=request.GET['uuid']
                     )

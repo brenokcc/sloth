@@ -1,3 +1,4 @@
+{% include "adm/messages.html" %}
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>
@@ -13,23 +14,29 @@
         </tr>
         {% endfor %}
     {% else %}
-        {% for name, series in data.series.items %}
-            {% if forloop.first %}
-                <thead>
+        {% if data.series.default %}
+            {% for name, series in data.series.items %}
+                {% if forloop.first %}
+                    <thead>
+                    <tr>
+                        <td scope="col"></td>
+                        {% for name, value, color in series %}
+                            <th scope="col" class="align-middle" style="text-align:center">{{ name }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                {% endif %}
                 <tr>
-                    <td scope="col"></td>
+                    <th scope="col">{{ name }}</th>
                     {% for name, value, color in series %}
-                        <th scope="col" class="align-middle" style="text-align:center">{{ name }}</th>
+                        <td scope="col" class="align-middle" align="center">{{ value }}</td>
                     {% endfor %}
                 </tr>
-                </thead>
-            {% endif %}
-            <tr>
-                <th scope="col">{{ name }}</th>
-                {% for name, value, color in series %}
-                    <td scope="col" class="align-middle" align="center">{{ value }}</td>
-                {% endfor %}
-            </tr>
-        {% endfor %}
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-primary" role="alert" style="margin-top:30px;">
+              Nehum registro encontrado.
+            </div>
+        {% endif %}
     {% endif %}
 </table>

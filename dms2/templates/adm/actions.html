@@ -4,7 +4,7 @@
     <div class="dropdown">
         <a class="btn btn-outline-primary dropdown-toggle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
            data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
-        <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownMenuLink">
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
                 <li>
                     <a class="dropdown-item action-button {{ target }} popup"

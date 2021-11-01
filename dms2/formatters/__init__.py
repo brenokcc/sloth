@@ -44,3 +44,10 @@ class Formatter(metaclass=FormatterType):
 
     def __str__(self):
         return self.render()
+
+
+class Progress(Formatter):
+    template = 'adm/formatters/progress.html'
+
+    def render(self):
+        return super().render()

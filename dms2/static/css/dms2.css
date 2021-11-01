@@ -7,6 +7,9 @@
     font-size: 12px;
     line-height: 1.42857;
 }
+.img-circle{
+    border-radius: 50%;
+}
 .queryset-title {
     display: inline-block;
 }
@@ -16,10 +19,14 @@
 }
 .queryset-data{
     overflow-x:auto;
-    max-width:100%
+    max-width:100%;
+    clear: both;
 }
 .fieldset{
     margin-bottom: 10px;
+}
+.fieldset .search-and-filters{
+
 }
 .fieldset-tab{
     margin-top: 10px;
@@ -173,6 +180,10 @@ main{
 }
 .select2-selection__arrow{
     margin: 5px;
+}
+
+.select2-selection__clear span{
+    margin-right: 10px;
 }
 
 .search-results{

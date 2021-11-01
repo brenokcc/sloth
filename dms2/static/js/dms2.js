@@ -110,5 +110,6 @@ jQuery.fn.extend({
 });
 $( document ).ready(function() {
     $(document).initialize();
+    document.cookie = "width="+$(window).width()+";path=/";
 });
 

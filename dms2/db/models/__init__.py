@@ -74,6 +74,9 @@ class ValueSet(dict):
             )
         return self
 
+    def debug(self):
+        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+
     def load(self, wrap=False, verbose=False, add_width=False, formatted=False):
         if self.metadata['names']:
             metadata = getattr(self.instance, '_meta')
@@ -198,7 +201,9 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[], limit=10, actions=[], attach=[], template=None
+            display=[], filters={}, search=[], ordering=[],
+            page=1, limit=10, interval='1 - 10', total=0,
+            actions=[], attach=[], template=None
         )
 
     def _clone(self):
@@ -315,6 +320,9 @@ class QuerySet(models.QuerySet):
             q=q, items=items
         )
 
+    def debug(self):
+        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+
     def serialize(self, path=None, wrap=False, verbose=True, formatted=False):
         if wrap:
             metadata = getattr(self.model, '_meta')
@@ -324,11 +332,12 @@ class QuerySet(models.QuerySet):
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
+            pagination = dict(interval=self.metadata['interval'], total=self.metadata['total'])
             data = dict(
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
-                metadata=dict(search=search, display=display, filters=filters),
+                metadata=dict(search=search, display=display, filters=filters, pagination=pagination),
                 data=self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             )
             if attach:
@@ -414,10 +423,17 @@ class QuerySet(models.QuerySet):
                 )
         return self
 
-    def paginate(self, page=1):
-        start = (page - 1) * self.metadata['limit']
-        end = start + self.metadata['limit']
-        return self[start:end]
+    def paginate(self, page=None):
+        if page:
+            start = (page - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
+            self.metadata['page'] = page
+            self.metadata['interval'] = '{} - {}'.format(start+1, end)
+            return self
+        else:
+            start = (self.metadata['page'] - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
+            return self[start:end]
 
     def process_params(self, request):
         page = 1
@@ -445,13 +461,19 @@ class QuerySet(models.QuerySet):
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
         if isinstance(attach, QuerySet):
-            return qs.add_default_actions().paginate(page)
+            qs = qs.add_default_actions().paginate(page)
+            # qs.debug()
+            return qs
         else:
             attach.qs = qs
             return attach
 
     def count(self, x=None, y=None):
-        return QuerySetStatistics(self, x, y=y) if x else super().count()
+        if x:
+            return QuerySetStatistics(self, x, y=y)
+        total = super().count()
+        self.metadata['total'] = total
+        return total
 
     def sum(self, x, y=None, z=None):
         if y:
@@ -551,6 +573,9 @@ class QuerySetStatistics(object):
         self._clear()
         self.qs = self.qs.apply_lookups(user, lookups=lookups)
         return self
+
+    def debug(self):
+        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
     def serialize(self, wrap=True, verbose=True, path=None):
         self._calc()

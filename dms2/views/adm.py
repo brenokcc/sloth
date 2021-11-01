@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 import time
 
-from django.apps import apps
 from django.contrib import auth
-from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from .. import views
-from ..utils import load_menu
-from ..forms import FormMixin
+from ..forms import FormMixin, LoginForm
 from ..utils.icons import bootstrap
 from ..exceptions import ReadyResponseException, HtmlReadyResponseException
 
@@ -41,25 +38,31 @@ def icons(request):
     return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
 
-def login(request, username):
-    if settings.DEBUG and request.get_host() in ('localhost:8000', '127.0.0.1:8000'):
-        user = apps.get_model(
-            settings.AUTH_USER_MODEL
-        ).objects.get(username=username)
-        auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        request.session['menu'] = load_menu(user)
-        request.session.save()
-    return index(request)
+def login(request):
+    form = LoginForm(request=request)
+    if form.is_valid():
+        form.process()
+        return HttpResponseRedirect('/adm/')
+    return render(request, ['adm/login.html'], dict(form=form))
+
+
+def logout(request):
+    auth.logout(request)
+    return HttpResponseRedirect('/adm/login/')
 
 
 def index(request):
-    return render(request, ['adm/index.html'], dict())
+    request.COOKIES.get('width')
+    if request.user.is_authenticated:
+        return render(request, ['adm/index.html'], dict())
+    return HttpResponseRedirect('/adm/login/')
 
 
 @view
 def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = {}
     data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    # data.debug()
     if isinstance(data, FormMixin):
         context.update(form=data)
         if data.message:

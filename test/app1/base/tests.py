@@ -44,6 +44,7 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
+
         self.log(Municipio.objects.first().serialize(wrap=True, verbose=True))
         self.log(Municipio.objects.count('estado').serialize())
         self.log(Municipio.objects.all().serialize(wrap=True, verbose=True))

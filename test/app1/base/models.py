@@ -31,6 +31,7 @@ class Estado(models.Model):
 
 class MunicipioSet(models.QuerySet):
 
+    @meta('Todos')
     def all(self):
         return self.attach('ativos', 'get_qtd_por_estado')
 

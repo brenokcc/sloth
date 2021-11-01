@@ -5,7 +5,10 @@ from django.forms import *
 from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.contrib import messages
+from django.contrib import auth
 from django.template.loader import render_to_string
+
+from dms2.utils import load_menu
 
 
 class FormMixin:
@@ -36,14 +39,18 @@ class FormMixin:
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
         name = form_name
+        submit = name
         target = 'model'
         icon = None
+        ajax = True
         style = 'primary'
         method = 'get'
         batch = False
         if meta:
             name = getattr(meta, 'name', form_name)
+            submit = getattr(meta, 'submit', form_name)
             icon = getattr(meta, 'icon', None)
+            ajax = getattr(meta, 'ajax', True)
             style = getattr(meta, 'style', 'primary')
             method = getattr(meta, 'method', 'post')
             batch = getattr(meta, 'batch', False)
@@ -53,7 +60,7 @@ class FormMixin:
                 path = '{}{{id}}/{}/'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
-        metadata = dict(type='form', name=name, target=target)
+        metadata = dict(type='form', name=name, submit=submit, target=target)
         if getattr(meta, 'batch', False):
             metadata.update(batch=True)
         metadata.update(method=method, icon=icon, style=style, path=path)
@@ -79,6 +86,10 @@ class FormMixin:
         for field in self.fields.values():
             classes = field.widget.attrs.get('class', '').split()
             if isinstance(field.widget, widgets.TextInput):
+                classes.append('form-control')
+            elif isinstance(field.widget, widgets.PasswordInput):
+                classes.append('form-control')
+            elif isinstance(field.widget, widgets.NumberInput):
                 classes.append('form-control')
             elif isinstance(field.widget, widgets.Select):
                 classes.append('form-control')
@@ -161,3 +172,35 @@ class QuerySetForm(ModelForm):
         else:
             self.save()
         self.notify()
+
+
+class LoginForm(Form):
+    username = CharField(label='Login')
+    password = CharField(label='Senha', widget=widgets.PasswordInput())
+
+    class Meta:
+        name = None
+        ajax = False
+        submit = 'Acessar'
+
+    def __init__(self, *args, **kwargs):
+        self.user = None
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        if self.cleaned_data:
+            username = self.cleaned_data.get('username')
+            password = self.cleaned_data.get('password')
+            if username and password:
+                self.user = auth.authenticate(
+                    self.request, username=username, password=password
+                )
+                if self.user is None:
+                    raise ValidationError('Login e senham não conferem.')
+        return self.cleaned_data
+
+    def process(self):
+        if self.user:
+            auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
+            self.request.session['menu'] = load_menu(self.user)
+            self.request.session.save()

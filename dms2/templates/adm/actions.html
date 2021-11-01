@@ -1,6 +1,7 @@
+{% load tags %}
 {% if actions %}
 <div class="action-container" id="{{ target }}-{{ uuid }}-{{id}}">
-    {% if 0 %}
+    {% if request|mobile or request|tablet %}
     <div class="dropdown">
         <a class="btn btn-outline-primary dropdown-toggle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
            data-bs-toggle="dropdown" aria-expanded="false">Ações</a>

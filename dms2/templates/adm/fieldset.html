@@ -17,7 +17,7 @@
               <table width="100%">
                   <tr>
                     {% if fieldset.image %}
-                      <td><img src="{{ fieldset.image }}"/></td>
+                      <td><img class="img-circle" src="{{ fieldset.image }}"/></td>
                     {% endif %}
                     <td>
                       {% for k, item in fieldset.data.items %}

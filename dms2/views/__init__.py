@@ -53,7 +53,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         raise PermissionDenied()
                     else:  # pks is instance action
                         form_cls = model.action_form_cls(z)
-                        form = form_cls(request=request, instantiator=obj)
+                        form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.has_permission(request.user):
                             if form.is_valid():
                                 form.process()
@@ -93,7 +93,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         raise PermissionDenied()
             else:
                 if obj.has_view_permission(request.user):
-                    return obj.view()
+                    return obj.view().contextualize(request)
                 raise PermissionDenied()
         elif x.lower() == 'add':
             form_cls = model.add_form_cls()

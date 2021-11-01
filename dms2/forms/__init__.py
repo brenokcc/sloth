@@ -47,8 +47,8 @@ class FormMixin:
         method = 'get'
         batch = False
         if meta:
-            name = getattr(meta, 'name', form_name)
-            submit = getattr(meta, 'submit', form_name)
+            name = getattr(meta, 'name', None)
+            submit = getattr(meta, 'submit', name)
             icon = getattr(meta, 'icon', None)
             ajax = getattr(meta, 'ajax', True)
             style = getattr(meta, 'style', 'primary')
@@ -63,7 +63,7 @@ class FormMixin:
         metadata = dict(type='form', name=name, submit=submit, target=target)
         if getattr(meta, 'batch', False):
             metadata.update(batch=True)
-        metadata.update(method=method, icon=icon, style=style, path=path)
+        metadata.update(method=method, icon=icon, style=style, ajax=ajax, path=path)
         return metadata
 
     def get_method(self):

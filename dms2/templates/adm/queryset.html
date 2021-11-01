@@ -1,3 +1,4 @@
+{% load tags %}
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     <div class="queryset-title">
@@ -13,7 +14,7 @@
             {% include "adm/actions.html" with uuid=data.uuid target="model" actions=data.actions.model  %}
         {% endif %}
     </div>
-    <div class="search-and-filters {% if compact %}d-none{% endif %}" id="search-and-filters-{{ data.uuid }}">
+    <div class="search-and-filters {% if compact or request|mobile %}d-none{% endif %}" id="search-and-filters-{{ data.uuid }}">
         <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
             <input type="hidden" name="uuid" value="{{ data.uuid }}">
             <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
@@ -106,8 +107,9 @@
         </form>
     </div>
     {% if data.attach %}
+    <div class="clearfix"></div>
     <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
-        <ul class="nav nav-pills">
+        <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item">
             <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('.pagination-{{ data.uuid }}').val('').trigger('change');reload{{ data.uuid }}('{{ subset.key }}')">
@@ -181,7 +183,6 @@
     </div>
 </div>
 {% endif %}
-{% include "adm/messages.html" %}
 {% if data.template %}
     {% include data.template with data=data %}
 {% else %}

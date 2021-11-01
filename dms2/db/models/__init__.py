@@ -36,8 +36,10 @@ SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
 class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
-        self.request = None
-        self.metadata = dict(model=type(instance), names={}, metadata=[], actions=[], attach=[], append=[], image=image, template=None)
+        self.metadata = dict(
+            model=type(instance), names={}, metadata=[], actions=[],
+            attach=[], append=[], image=image, template=None, request=None
+        )
         for attr_name in names:
             if isinstance(attr_name, tuple):
                 for name in attr_name:
@@ -67,11 +69,7 @@ class ValueSet(dict):
         return self
 
     def contextualize(self, request):
-        self.request = request
-        if request.is_ajax():
-            raise HtmlReadyResponseException(
-                self.html(partial=True)
-            )
+        self.metadata.update(request=request)
         return self
 
     def debug(self):
@@ -84,7 +82,7 @@ class ValueSet(dict):
                 attr, value = getattrr(self.instance, attr_name)
                 path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
                 if isinstance(value, QuerySet):
-                    value.contextualize(self.request)
+                    value.contextualize(self.metadata['request'])
                     verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                     if wrap:
                         value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
@@ -146,7 +144,7 @@ class ValueSet(dict):
                 return 'fieldsets'
         return 'fieldset'
 
-    def serialize(self, wrap=False, verbose=False, formatted=False, request=None):
+    def serialize(self, wrap=False, verbose=False, formatted=False):
         self.load(wrap=wrap, verbose=verbose, formatted=formatted)
         if wrap:
             data = {}
@@ -173,27 +171,20 @@ class ValueSet(dict):
                 return self[list(self.metadata['names'].keys())[0]]
             return self
 
-    def html(self, uuid=None, partial=False):
-        if partial:
-            icon = None
-            name = None
-            actions = []
-            attach = []
-            append = []
-            data = self.load(wrap=True, verbose=True)
-        else:
-            serialized = self.serialize(wrap=True, verbose=True, formatted=True, request=None)
-            icon = serialized['icon']
-            name = serialized['name']
-            data = serialized['data']
-            actions = serialized['actions']
-            attach = serialized['attach']
-            append = serialized['append']
+    def html(self, uuid=None):
+        serialized = self.serialize(wrap=True, verbose=True, formatted=True)
+        icon = serialized['icon']
+        name = serialized['name']
+        data = serialized['data']
+        actions = serialized['actions']
+        attach = serialized['attach']
+        append = serialized['append']
         if uuid:
             data['uuid'] = uuid
         return render_to_string(
             'adm/valueset.html',
-            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append)
+            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append),
+            request=self.metadata['request']
         )
 
 
@@ -203,7 +194,7 @@ class QuerySet(models.QuerySet):
         self.metadata = dict(
             display=[], filters={}, search=[], ordering=[],
             page=1, limit=10, interval='1 - 10', total=0,
-            actions=[], attach=[], template=None
+            actions=[], attach=[], template=None, request=None
         )
 
     def _clone(self):
@@ -396,18 +387,20 @@ class QuerySet(models.QuerySet):
         self.metadata['actions'].extend(('add', 'edit-inline', 'delete-inline'))
         return self
 
-    def html(self, uuid=None, request=None):
+    def html(self, uuid=None):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
 
         return render_to_string(
             'adm/queryset.html',
-            dict(data=data, uuid=uuid, messages=messages.get_messages(request))
+            dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
+            request=self.metadata['request']
         )
 
     def contextualize(self, request, add_default_actions=False):
         if request:
+            self.metadata.update(request=request)
             if add_default_actions:
                 self.add_default_actions()
             if 'choices' in request.GET:
@@ -417,8 +410,7 @@ class QuerySet(models.QuerySet):
             if 'uuid' in request.GET:
                 raise HtmlReadyResponseException(
                     self.process_params(request).html(
-                        uuid=request.GET['uuid'],
-                        request=request
+                        uuid=request.GET['uuid']
                     )
                 )
         return self
@@ -445,6 +437,7 @@ class QuerySet(models.QuerySet):
             qs = attach.qs
         else:
             raise Exception()
+        qs.metadata.update(request=request)
         for item in self._get_filters().values():
             value = request.GET.get(item['key'])
             if value:
@@ -758,8 +751,8 @@ class ModelMixin(object):
         return None
 
     @classmethod
-    def default_list_fields(cls, exclude=None):
-        return [field.name for field in cls._meta.fields[0:5] if field.name != exclude]
+    def default_list_fields(cls):
+        return [field.name for field in cls._meta.fields[0:5] if field.name != 'id']
 
     @classmethod
     def default_filter_fields(cls, exclude=None):

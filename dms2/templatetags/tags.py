@@ -46,18 +46,17 @@ def index(indexable, i):
 
 
 @register.filter
-def is_image(value):
-    if isinstance(value, str):
-        if value.startswith('/media') or value.startswith('/static'):
-            for extension in ('.jpg', '.png'):
-                if value.endswith(extension):
-                    return True
+def mobile(request):
+    if request:
+        width = int(request.COOKIES.get('width', 0))
+        return width if width < 600 else False
     return False
 
 
 @register.filter
-def format_image(value):
-    return mark_safe(
-        '<div class="photo-circle"><img src={}/></div>'.format(value)
-    )
+def tablet(request):
+    if request:
+        width = int(request.COOKIES.get('width', 0))
+        return width if 600 < width < 800 else False
+    return False
 

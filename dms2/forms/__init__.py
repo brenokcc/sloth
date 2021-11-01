@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from functools import lru_cache
-
+import math
 from django.forms import *
 from django.forms import widgets
 from django.utils.safestring import mark_safe
@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib import auth
 from django.template.loader import render_to_string
 
+from dms2.exceptions import ReadyResponseException
 from dms2.utils import load_menu
 
 
@@ -83,7 +84,7 @@ class FormMixin:
         return self.instance and self.instance.has_add_permission(user)
 
     def __str__(self):
-        for field in self.fields.values():
+        for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
             if isinstance(field.widget, widgets.TextInput):
                 classes.append('form-control')
@@ -99,6 +100,13 @@ class FormMixin:
             if isinstance(field, DateField):
                 classes.append('date-input')
 
+            if isinstance(field, ModelChoiceField):
+                pks = [obj.pk for obj in self.initial.get(name, ())]
+                field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
+                field.widget.attrs['data-choices-url'] = '{}?choices={}'.format(
+                    self.request.path, name
+                )
+
             if getattr(field.widget, 'mask', None):
                 classes.append('masked-input')
                 field.widget.attrs['data-reverse'] = 'false'
@@ -110,6 +118,27 @@ class FormMixin:
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(['adm/form.html'], dict(self=self), request=self.request)
+        )
+
+    def is_valid(self):
+        if 'choices' in self.request.GET:
+            raise ReadyResponseException(
+                self.choices(self.request.GET['choices'], q=self.request.GET.get('term'))
+            )
+        return super().is_valid()
+
+    def choices(self, field_name, q=None):
+        field = self.fields[field_name]
+        attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
+        self.data.update(self.request.GET)
+        qs = field.queryset if attr is None else attr(field.queryset)
+        total = qs.count()
+        qs = qs.search(q=q) if q else qs
+        items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
+
+        return dict(
+            total=total, page=1, pages=math.ceil((1.0 * total) / 25),
+            q=q, items=items
         )
 
     def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):

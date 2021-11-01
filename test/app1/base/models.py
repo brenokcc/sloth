@@ -26,7 +26,7 @@ class Estado(models.Model):
         return self.sigla
 
     def view(self):
-        return super().view().actions('FazerAlgumaCoisa', 'Edit')
+        return super().view().actions('FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas')
 
 
 class MunicipioSet(models.QuerySet):

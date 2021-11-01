@@ -97,9 +97,21 @@ jQuery.fn.extend({
             });
             return false;
         });
-        $(this).find('select').not('.select2-hidden-accessible').select2(
-            {width: '100%', language: 'pt-BR', allowClear: true, placeholder: 'Selecione uma opção'}
-        );
+        $(this).find('select').not('.select2-hidden-accessible').each(function( index ) {
+            var url = $(this).data('choices-url');
+            var ajax = {
+                url: function(){ return url+'&'+$(this).closest('form').serialize(); },
+                dataType: 'json', delay: 250, minimumInputLength: 3,
+                data: function (params) {return { term: params.term };},
+                processResults: function (data) {return { results: data.items };},
+                templateResult: function (data) {return data.html || 'Buscando...';},
+                templateSelection: function (data) {return data.text;}
+            }
+            if(url==null) ajax = null;
+            $(this).select2(
+                {width: '100%', language: 'pt-BR', allowClear: true, placeholder: 'Selecione uma opção', ajax:ajax}
+            ).on("select2:open", function (e) { });
+        });
         $(this).find('.date-input').not('.hasDatepicker').datepicker(
             $.datepicker.regional['pt-BR']
         ).datepicker("option", "dateFormat", 'dd/mm/yy');

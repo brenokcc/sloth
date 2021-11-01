@@ -5,6 +5,18 @@ from dms2 import forms
 from .models import Servidor, Ferias, Estado
 
 
+class InformarCidadesMetropolitanas(forms.ModelForm):
+
+    class Meta:
+        model = Estado
+        fields = 'cidades_metropolitanas',
+        name = 'Informar Cidades Metropolitanas'
+        submit = 'Informar'
+
+    def get_cidades_metropolitanas_queryset(self, queryset):
+        return queryset.filter(estado=self.instance)
+
+
 class FazerAlgumaCoisa(forms.Form):
     mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
 

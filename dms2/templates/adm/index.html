@@ -2,6 +2,19 @@
 
 
 {% block content %}
+
+
+<style type="text/css" media="print">
+
+</style>
+
+<iframe id="printf" name="printf" style="display:none"></iframe>
+<script>
+  var newWin = window.frames["printf"];
+newWin.document.write('<body data-onload="window.print()"> <style>@page {size: auto;margin: 0;}</style> dddd</body>');
+newWin.document.close();
+</script>
+
   <div>
     <a class="ajax btn btn-primary" href="/adm/base/servidor/1/get_dados_gerais/FazerAlgumaCoisa/">AJAX</a>
     <a class="popup btn btn-primary" href="/adm/base/servidor/1/get_dados_gerais/FazerAlgumaCoisa/">POPUP</a>

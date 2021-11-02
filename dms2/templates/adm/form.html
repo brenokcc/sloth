@@ -7,6 +7,31 @@
 
 <form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ self.as_p }}
-    <input class="btn btn-primary" type="submit" value="{{ self.get_metadata.submit }}">
+    {% for title, fields in fieldsets.items %}
+        <h5>{{ title }}</h5>
+        <div class="form-fieldset responsive-container">
+        {% for item in fields %}
+            {% for field in self %}
+                {% if field.name == item.name %}
+                <div class="form-field width-{{ item.width }}">
+                    <label class="{% if field.field.required %}required{% endif %}">
+                        {{ field.label_tag }}
+                    </label> {{ field }}
+                    {% if field.help_text %}
+                    <span class="help">{{ field.help_text|safe }}</span>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="errors" role="alert">
+                          {{ field.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        </div>
+    {% endfor %}
+    <div class="form-submit">
+        <input class="btn btn-primary" type="submit" value="{{ self.get_metadata.submit }}">
+    </div>
 </form>

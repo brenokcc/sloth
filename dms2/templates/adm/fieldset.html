@@ -20,9 +20,13 @@
                       <td><img class="img-circle" src="{{ fieldset.image }}"/></td>
                     {% endif %}
                     <td>
-                      {% for k, item in fieldset.data.items %}
-                        <div class="fieldset-field width-{{ item.width }}"><b>{{ k }}</b><br>{{ item.value|format }}</div>
-                      {% endfor %}
+                      <div class="responsive-container">
+                          {% for k, item in fieldset.data.items %}
+                            <div class="fieldset-field width-{{ item.width }}">
+                                <b>{{ k }}</b><br>{{ item.value|format }}
+                            </div>
+                          {% endfor %}
+                      </div>
                     </td>
                   </tr>
               </table>

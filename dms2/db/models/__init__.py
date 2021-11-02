@@ -38,8 +38,8 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[],
-            attach=[], append=[], image=image, template=None, request=None
+            model=type(instance), names={}, metadata=[], actions=[], type='fieldset',
+            attach=[], append=[], image=image, template=None, request=None, primitive=False
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -76,84 +76,91 @@ class ValueSet(dict):
     def debug(self):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
-    def load(self, wrap=False, verbose=False, add_width=False, formatted=False):
+    def load(self, wrap=False, verbose=False, formatted=False, valueset=None, size=True):
         if self.metadata['names']:
             metadata = getattr(self.instance, '_meta')
             for attr_name, width in self.metadata['names'].items():
-                attr, value = getattrr(self.instance, attr_name)
-                path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
-                if isinstance(value, QuerySet):
-                    value.contextualize(self.metadata['request'])
-                    verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    if wrap:
-                        value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
-                        value['name'] = verbose_name
+                if self.metadata['request'] is None or self.instance.check_attr_access(attr_name, self.metadata['request'].user):
+                    attr, value = getattrr(self.instance, attr_name)
+                    path = '/{}/{}/{}/{}/'.format(metadata.app_label, metadata.model_name, self.instance.pk, attr_name)
+                    if isinstance(value, QuerySet):
+                        if valueset is not None:
+                            valueset.metadata['type'] = 'fieldsets'
+                        value.contextualize(self.metadata['request'])
+                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
+                        if wrap:
+                            value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
+                            value['name'] = verbose_name
+                        else:
+                            value = [str(o) for o in value]
+                    elif isinstance(value, QuerySetStatistics):
+                        if valueset is not None:
+                            valueset.metadata['type'] = 'fieldsets'
+                        value.contextualize(self.metadata['request'])
+                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
+                        value = value.serialize(path=path, wrap=wrap)
+                        if wrap:
+                            value['name'] = verbose_name
+                    elif isinstance(value, ValueSet):
+                        if valueset is not None:
+                            valueset.metadata['type'] = 'fieldsets'
+                        value.contextualize(self.metadata['request'])
+                        actions = getattr(value, 'metadata')['actions']
+                        image_attr_name = getattr(value, 'metadata')['image']
+                        template = getattr(value, 'metadata')['template']
+                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
+                        key = attr_name
+                        value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
+                        value = dict(uuid=uuid1().hex, type=self.metadata['type'], name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
+                        if wrap:
+                            for form_name in actions:
+                                form_cls = self.instance.action_form_cls(form_name)
+                                if self.metadata['request'] is None or form_cls(request=self.metadata['request'], instantiator=self.instance, fake=True).has_permission():
+                                    action = form_cls.get_metadata(path)
+                                    value['actions'].append(action)
+                            value['path'] = path
+                            if image_attr_name:
+                                image_attr = getattr(self.instance, image_attr_name)
+                                image = image_attr() if callable(image_attr) else image_attr
+                                if image:
+                                    value['image'] = image
+                            if template:
+                                value['template'] = '{}.html'.format(template)
                     else:
-                        value = [str(o) for o in value]
-                elif isinstance(value, QuerySetStatistics):
-                    value.contextualize(self.metadata['request'])
-                    verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    value = value.serialize(path=path, wrap=wrap)
-                    if wrap:
-                        value['name'] = verbose_name
-                elif isinstance(value, ValueSet):
-                    value.contextualize(self.metadata['request'])
-                    actions = getattr(value, 'metadata')['actions']
-                    image_attr_name = getattr(value, 'metadata')['image']
-                    template = getattr(value, 'metadata')['template']
-                    verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
-                    key = attr_name
-                    if attr_name == 'fieldset':
-                        key = None
-                        path = None
-                    value.load(wrap=wrap, verbose=verbose, add_width=self.get_type() == 'fieldset', formatted=formatted)
-                    value = dict(uuid=uuid1().hex, type=value.get_type(), name=verbose_name, key=key, actions=[], data=value, path=path) if wrap else value
-                    if wrap:
-                        for form_name in actions:
-                            form_cls = self.instance.action_form_cls(form_name)
-                            if self.metadata['request'] is None or form_cls(request=self.metadata['request'], instantiator=self.instance, fake=True).has_permission():
-                                action = form_cls.get_metadata(path)
-                                value['actions'].append(action)
-                        value['path'] = path
-                        if image_attr_name:
-                            image_attr = getattr(self.instance, image_attr_name)
-                            image = image_attr() if callable(image_attr) else image_attr
-                            if image:
-                                value['image'] = image
-                        if template:
-                            value['template'] = '{}.html'.format(template)
-                elif formatted and hasattr(attr, 'formatter'):
-                    formatters.initilize()
-                    formatter_cls = formatters.FORMATTERS[attr.formatter]
-                    value = formatter_cls(value, instance=self.instance).render()
-                else:
-                    value = serialize(value)
+                        self.metadata['primitive'] = True
+                        if formatted and getattr(attr, 'formatter', None):
+                            formatters.initilize()
+                            formatter_cls = formatters.FORMATTERS[attr.formatter]
+                            value = formatter_cls(value, instance=self.instance).render()
+                        else:
+                            value = serialize(value)
 
-                if wrap and add_width:
-                    value = dict(value=value, width=width)
-                if verbose:
-                    self[self.metadata['model'].get_attr_verbose_name(attr_name)[0]] = value
-                else:
+                        if size:
+                            value = dict(value=value, width=width)
+
+                    if verbose:
+                        attr_name = self.metadata['model'].get_attr_verbose_name(attr_name)[0]
+
                     self[attr_name] = value
         else:
             self['id'] = self.instance.id
             self[self.metadata['model'].__name__.lower()] = str(self.instance)
+
         return self
 
     def __str__(self):
         return json.dumps(self, indent=4, ensure_ascii=False)
 
-    def get_type(self):
-        for value in self.values():
-            if isinstance(value, dict) and value.get('type') in ('queryset', 'fieldset'):
-                return 'fieldsets'
-        return 'fieldset'
-
     def serialize(self, wrap=False, verbose=False, formatted=False):
         self.load(wrap=wrap, verbose=verbose, formatted=formatted)
         if wrap:
             data = {}
-            data.update(self)
+            if self.metadata['primitive']:
+                data['Dados Gerais'] = dict(
+                    uuid=uuid1().hex, type='fieldset', name='Dados Gerais', key='default', actions=[], data=self, path=None
+                )
+            else:
+                data.update(self)
             metadata = getattr(self.instance, '_meta')
             icon = getattr(metadata, 'icon', None)
             output = dict(
@@ -190,6 +197,7 @@ class ValueSet(dict):
         append = serialized['append']
         if uuid:
             data['uuid'] = uuid
+            name = None
         return render_to_string(
             'adm/valueset.html',
             dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append),
@@ -297,7 +305,7 @@ class QuerySet(models.QuerySet):
     def to_list(self, wrap=False, verbose=False, formatted=False):
         data = []
         for obj in self:
-            item = obj.values(*self._get_list_display()).serialize(verbose=verbose, formatted=formatted)
+            item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
             data.append(dict(id=obj.id, data=item, actions=self.get_obj_actions(obj)) if wrap else item)
         return data
 
@@ -681,14 +689,8 @@ class ModelMixin(object):
     def values(self, *names):
         return ValueSet(self, names)
 
-    @meta('Dados Gerais')
-    def fieldset(self):
-        model = type(self)
-        names = [field.name for field in getattr(model, '_meta').fields[0:5]]
-        return self.values(*names)
-
     def view(self):
-        return self.values('fieldset')
+        return self.values(*[field.name for field in self._meta.fields])
 
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)
@@ -699,10 +701,20 @@ class ModelMixin(object):
     def __str__(self):
         return '{} #{}'.format(self._meta.verbose_name, self.pk)
 
+    def check_attr_access(self, attr_name, user):
+        if attr_name.startswith('get_'):
+            attr_name = 'can_{}'.format(attr_name)
+        else:
+            attr_name = 'can_view_{}'.format(attr_name)
+        if hasattr(self, attr_name):
+            return getattr(self, attr_name)(user)
+        return user.is_superuser
+
     @classmethod
     def add_form_cls(cls):
+        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
 
-        class Add(ModelForm):
+        class Add(form_cls or ModelForm):
             class Meta:
                 model = cls
                 exclude = ()

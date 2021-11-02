@@ -28,6 +28,9 @@ class Estado(models.Model):
     def view(self):
         return super().view().actions('FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas')
 
+    def can_view_sigla(self, user):
+        return not user.is_superuser
+
 
 class MunicipioSet(models.QuerySet):
 
@@ -63,11 +66,38 @@ class Municipio(models.Model):
     def get_dados_gerais(self):
         return self.values('id', ('nome', 'estado'), 'get_progresso')
 
+    @meta('Dados Gerais2')
+    def get_dados_gerais2(self):
+        return self.values(('get_a', 'get_b', 'get_c', 'get_d'))
+
     def view(self):
-        return self.values('get_dados_gerais')
+        # return super().view()
+        # return self.values('get_dados_gerais', 'get_dados_gerais2')
+        # return self.values(('nome', 'estado'), 'get_progresso')
+        return self.values('get_dados_gerais', 'get_dados')
+
+    @meta('Dados')
+    def get_dados(self):
+        return self.values('get_dados_gerais', 'get_dados_gerais2')
 
     def has_edit_permission(self, user):
         return self.pk % 2 == 0
+
+    @meta('Nome')
+    def get_a(self):
+        return 'Carlos Breno Pereira Silva'
+
+    @meta('Data de Nascimento')
+    def get_b(self):
+        return '27/08/1984'
+
+    @meta('CPF')
+    def get_c(self):
+        return '047.704.024-14'
+
+    @meta('R$')
+    def get_d(self):
+        return 'R$ 23.00,99'
 
 
 class Endereco(models.Model):
@@ -116,7 +146,7 @@ class Servidor(models.Model):
     nome = models.CharField('Nome')
     cpf = models.CharField('CPF', rmask='000.000.000-00')
     data_nascimento = models.DateField('Data de Nascimento', null=True)
-    endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True)
+    endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True, blank=True)
     ativo = models.BooleanField('Ativo', default=True)
     naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
 

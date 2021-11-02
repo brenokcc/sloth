@@ -81,7 +81,26 @@ jQuery.fn.extend({
             }
         }
     },
-    initialize: function (element) {
+    responsive: function(){
+        $(this).find('.responsive-container > div').each(function (index) {
+            var width = $(this).parent().width();
+            if(width==0) width = $(window).width(); // popup
+            $(this).removeClass('n').removeClass('s').removeClass('m').removeClass('l');
+            if (width > 900) {
+                $(this).addClass('l');
+            } else if (width > 600) {
+                $(this).addClass('m');
+            } else if (width > 300) {
+                $(this).addClass('s');
+            } else {
+                $(this).addClass('n');
+            }
+            $(this).css('visibility', 'visible');
+        });
+        document.cookie = "width="+$(window).width()+";path=/";
+        return this;
+    },
+    initialize: function () {
         $(this).find('.popup').on('click', function(e){
             $(this).popup(this.href);
             e.preventDefault();
@@ -127,13 +146,15 @@ jQuery.fn.extend({
         $(this).find('.masked-input').each(function( index ) {
             $(this).mask($(this).data('mask'), {reverse: $(this).data('reverse')})
         });
+        $(this).responsive();
+        return this;
     }
 });
 $( document ).ready(function() {
     $(document).initialize();
-    document.cookie = "width="+$(window).width()+";path=/";
+
 });
 $( window ).resize(function() {
-    document.cookie = "width="+$(window).width()+";path=/";
+    $(document).responsive();
 });
 

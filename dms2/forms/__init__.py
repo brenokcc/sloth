@@ -14,6 +14,20 @@ from dms2.utils import load_menu
 
 class FormMixin:
 
+    def configure_fieldsets(self):
+        fieldsets = {}
+        if not hasattr(self, 'fieldsets'):
+            setattr(self, 'fieldsets', {'Dados Gerais': list(self.fields.keys())})
+        for title, names in self.fieldsets.items():
+            fieldsets[title] = []
+            for name in names:
+                if isinstance(name, tuple) or isinstance(name, list):
+                    for _name in name:
+                        fieldsets[title].append(dict(name=_name, width=100//len(name)))
+                else:
+                    fieldsets[title].append(dict(name=name, width=100))
+        return fieldsets
+
     def serialize(self, wrap=False, verbose=False):
         if self.message:
             return self.message
@@ -92,7 +106,13 @@ class FormMixin:
                 classes.append('date-input')
 
             if isinstance(field, ModelChoiceField):
-                pks = [obj.pk for obj in self.initial.get(name, ())]
+                initial = self.initial.get(name)
+                pks = []
+                if initial:
+                    if isinstance(initial, int):
+                        pks.append(initial)
+                    else:
+                        pks.extend([obj.pk for obj in initial])
                 field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
                 field.widget.attrs['data-choices-url'] = '{}?choices={}'.format(
                     self.request.path, name
@@ -108,7 +128,12 @@ class FormMixin:
                 field.widget.attrs['data-mask'] = getattr(field.widget, 'rmask')
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
-            render_to_string(['adm/form.html'], dict(self=self), request=self.request)
+            render_to_string(
+                ['adm/form.html'], dict(
+                    self=self, fieldsets=self.configure_fieldsets()
+                ),
+                request=self.request
+            )
         )
 
     def is_valid(self):

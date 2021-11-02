@@ -40,12 +40,8 @@
 }
 .fieldset-field{
     display: inline-block;
-}
-.fieldset-field.width-100{
-    width: 100%;
-}
-.fieldset-field.width-50{
-    width: calc(50% - 0.13rem);
+    vertical-align: top;
+    margin-bottom: 10px;
 }
 .fieldset-data{
     clear: both;
@@ -178,6 +174,8 @@ main{
 .select2-container--default .select2-selection--single{
     height: 38px;
     padding-top: 3px;
+
+    border-color: #ced4da !important;
 }
 .select2-container--open {
     z-index: 9999999;
@@ -207,4 +205,29 @@ dl dl {
 
 textarea{
     width: 100%;
+}
+
+.form-field{
+    display: inline-block;
+    margin-bottom: 10px;
+    vertical-align: top;
+}
+.form-field label.required{
+    font-weight: bold;
+}
+.form-submit{
+    float: right;
+    margin: 25px;
+}
+.width-100, .n.width-50, .n.width-33, .n.width-25, .s.width-25{
+    width: 98.5%;
+}
+.s.width-25, .s.width-33, .s.width-50, .m.width-25, .m.width-50, .l.width-50{
+    width: 48.9%;
+}
+.m.width-33, .l.width-33{
+    width: 32.45%;
+}
+.l.width-25{
+    width: 24.2%;
 }

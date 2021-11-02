@@ -2,7 +2,7 @@
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
 
         <div class="fieldset-title">
-            {% if name %}
+            {% if name and not request.is_ajax %}
                 <h2>
                     {% if icon %}
                         <i class="bi bi-{{ icon }}"></i>

@@ -149,9 +149,9 @@ class Oauth2TestCase(ServerTestCase):
         self.logout()
 
         data = dict(
-            client_id=app['access_data']['client_id'],
-            client_secret=app['access_data']['client_secret'],
-            grant_type=app['access_data']['authorization_grant_type'],
+            client_id=app['access_data']['client_id']['value'],
+            client_secret=app['access_data']['client_secret']['value'],
+            grant_type=app['access_data']['authorization_grant_type']['value'],
             username=admin.username,
             password='123',
             scope='public'

@@ -43,8 +43,8 @@ class OpenApi(dict):
                 continue
             api_models = []
             for model in app_config.get_models():
-                model_name = model._meta.model_name
-                verbose_name = model._meta.verbose_name
+                model_name = model.metaclass().model_name
+                verbose_name = model.metaclass().verbose_name
                 if self.request.GET.get('model') and self.request.GET['model'] != model_name:
                     continue
                 api_models.append((model_name, verbose_name))

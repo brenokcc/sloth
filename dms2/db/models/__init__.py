@@ -35,7 +35,7 @@ class Manager(BaseManager.from_queryset(QuerySet)):
 class ModelMixin(object):
 
     def init_one_to_one_fields(self):
-        for field in getattr(self, '_meta').fields:
+        for field in self.metaclass().fields:
             if isinstance(field, models.OneToOneField):
                 if getattr(self, '{}_id'.format(field.name)) is None:
                     setattr(self, field.name, field.related_model())
@@ -60,16 +60,16 @@ class ModelMixin(object):
         return ValueSet(self, names)
 
     def view(self):
-        return self.values(*[field.name for field in self._meta.fields])
+        return self.values(*[field.name for field in self.metaclass().fields])
 
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)
 
     def get_absolute_url(self, prefix=''):
-        return '{}/{}/{}/{}/'.format(prefix, self._meta.app_label, self._meta.model_name, self.pk)
+        return '{}/{}/{}/{}/'.format(prefix, self.metaclass().app_label, self.metaclass().model_name, self.pk)
 
     def __str__(self):
-        return '{} #{}'.format(self._meta.verbose_name, self.pk)
+        return '{} #{}'.format(self.metaclass().verbose_name, self.pk)
 
     def check_attr_access(self, attr_name, user):
         if attr_name.startswith('get_'):
@@ -88,7 +88,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 exclude = ()
-                name = 'Cadastrar {}'.format(cls._meta.verbose_name)
+                name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 icon = 'plus'
                 style = 'success'
 
@@ -108,7 +108,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 exclude = ()
-                name = 'Editar {}'.format(cls._meta.verbose_name)
+                name = 'Editar {}'.format(cls.metaclass().verbose_name)
                 icon = 'pencil'
                 style = 'primary'
 
@@ -128,7 +128,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 fields = ()
-                name = 'Excluir {}'.format(cls._meta.verbose_name)
+                name = 'Excluir {}'.format(cls.metaclass().verbose_name)
                 icon = 'x'
                 style = 'danger'
 
@@ -154,7 +154,7 @@ class ModelMixin(object):
         elif action.lower() == 'delete-inline':
             return cls.delete_form_cls(inline=True)
         else:
-            config = apps.get_app_config(cls._meta.app_label)
+            config = apps.get_app_config(cls.metaclass().app_label)
             forms = __import__(
                 '{}.forms'.format(config.module.__package__),
                 fromlist=config.module.__package__.split()
@@ -171,23 +171,23 @@ class ModelMixin(object):
         while attrs:
             attr_name = attrs.pop(0)
             if attrs:  # go deeper
-                field = getattr(model, '_meta').get_field(attr_name)
+                field = model.metaclass().get_field(attr_name)
                 model = field.related_model
             else:
                 try:
-                    return getattr(model, '_meta').get_field(attr_name)
+                    return model.metaclass().get_field(attr_name)
                 except FieldDoesNotExist:
                     pass
         return None
 
     @classmethod
     def default_list_fields(cls):
-        return [field.name for field in cls._meta.fields[0:5] if field.name != 'id']
+        return [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id']
 
     @classmethod
     def default_filter_fields(cls, exclude=None):
         filters = []
-        for field in cls._meta.fields:
+        for field in cls.metaclass().fields:
             cls_name = type(field).__name__
             if cls_name in FILTER_FIELD_TYPES:
                 if field.name != exclude:
@@ -200,7 +200,7 @@ class ModelMixin(object):
     @classmethod
     def default_search_fields(cls):
         search = []
-        for field in cls._meta.fields:
+        for field in cls.metaclass().fields:
             cls_name = type(field).__name__
             if cls_name in SEARCH_FIELD_TYPES:
                 search.append(field.name)
@@ -218,7 +218,7 @@ class ModelMixin(object):
     def get_api_paths(cls):
         instance = cls()
         instance.init_one_to_one_fields()
-        url = '/api/{}/{}/'.format(cls._meta.app_label, cls._meta.model_name)
+        url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
         info = dict()
         info[url] = [('get', 'List', 'List objects', {'type': 'string'})]
@@ -254,7 +254,7 @@ class ModelMixin(object):
                     'responses': {
                         '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
                     },
-                    'tags': [cls._meta.app_label],
+                    'tags': [cls.metaclass().app_label],
                     'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
                 }
         return paths

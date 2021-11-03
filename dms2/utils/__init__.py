@@ -64,11 +64,11 @@ def serialize(obj):
 def load_menu(user):
     items = []
     for model in apps.get_models():
-        app_label = model._meta.app_label
-        model_name = model._meta.model_name
-        model_verbose_name = model._meta.verbose_name
-        model_verbose_name_plural = model._meta.verbose_name_plural
-        icon = getattr(model._meta, 'icon', None)
+        app_label = model.metaclass().app_label
+        model_name = model.metaclass().model_name
+        model_verbose_name = model.metaclass().verbose_name
+        model_verbose_name_plural = model.metaclass().verbose_name_plural
+        icon = getattr(model.metaclass(), 'icon', None)
         url = '/adm/{}/{}/'.format(app_label, model_name)
         item = dict(label=str(model_verbose_name_plural), description=None, url=url, icon=icon, subitems=[])
         for name, attr in model.objects._queryset_class.__dict__.items():

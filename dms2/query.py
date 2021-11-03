@@ -15,7 +15,7 @@ from django.template.loader import render_to_string
 from .utils.http import XlsResponse, CsvResponse
 from .statistics import QuerySetStatistics
 from .exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from .forms import QuerySetForm
+from .forms import QuerySetForm, QuerySetFormMixin
 from .utils import getattrr
 
 
@@ -127,7 +127,7 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
-            if issubclass(form_cls, QuerySetForm) and not getattr(getattr(form_cls, 'Meta'), 'batch', False):
+            if issubclass(form_cls, QuerySetFormMixin) and not getattr(getattr(form_cls, 'Meta'), 'batch', False):
                 if self.metadata['request'] is None or form_cls(request=self.metadata['request'],
                                                                 instance=obj).has_permission():
                     actions.append(form_cls.__name__)
@@ -181,7 +181,7 @@ class QuerySet(models.QuerySet):
 
             for form_name in self.metadata['actions']:
                 form_cls = self.model.action_form_cls(form_name)
-                if not issubclass(form_cls, QuerySetForm):
+                if not issubclass(form_cls, QuerySetFormMixin):
                     if self.metadata['request'] and not form_cls(request=self.metadata['request']).has_permission():
                         continue
                 action = form_cls.get_metadata(path)

@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import OneToOneField
-from .forms import ModelForm, QuerySetForm
+from .forms import ModelForm, QuerySetForm, QuerySetFormMixin
 from .values import ValueSet
 from .query import QuerySet
 
@@ -93,23 +93,36 @@ class ModelMixin(object):
 
     @classmethod
     def edit_form_cls(cls, inline=False):
+        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
+        if form_cls:
+            if inline:
+                class Edit(form_cls, QuerySetFormMixin):
+                    pass
+                form_cls = Edit
 
-        class Edit(QuerySetForm if inline else ModelForm):
-            class Meta:
-                model = cls
-                exclude = ()
-                name = 'Editar {}'.format(cls.metaclass().verbose_name)
-                icon = 'pencil'
-                style = 'primary'
+        else:
+            class Edit(QuerySetForm if inline else ModelForm):
+                class Meta:
+                    model = cls
+                    exclude = ()
+                    name = 'Editar {}'.format(cls.metaclass().verbose_name)
+                    icon = 'pencil'
+                    style = 'primary'
 
-            def process(self):
-                self.save()
-                self.notify('Edição realizada com sucesso')
+                def process(self):
+                    self.save()
+                    self.notify('Edição realizada com sucesso')
 
-            def has_permission(self):
-                return self.instance.has_edit_permission(self.request.user)
+                def has_permission(self):
+                    return self.instance.has_edit_permission(self.request.user)
 
-        return Edit
+            form_cls = Edit
+        fieldsets = getattr(cls, 'fieldsets', None)
+        if fieldsets:
+            form_cls.fieldsets = fieldsets
+        form_cls.Meta.name = 'Editar'
+        form_cls.Meta.icon = 'pencil'
+        return form_cls
 
     @classmethod
     def delete_form_cls(cls, inline=False):
@@ -118,7 +131,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 fields = ()
-                name = 'Excluir {}'.format(cls.metaclass().verbose_name)
+                name = 'Excluir'
                 icon = 'x'
                 style = 'danger'
 

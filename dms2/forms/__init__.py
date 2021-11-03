@@ -280,7 +280,7 @@ class ModelForm(FormMixin, ModelForm):
         self.notify()
 
 
-class QuerySetForm(ModelForm):
+class QuerySetFormMixin:
     instances = []
 
     def __init__(self, *args, **kwargs):
@@ -298,6 +298,10 @@ class QuerySetForm(ModelForm):
         else:
             self.save()
         self.notify()
+
+
+class QuerySetForm(QuerySetFormMixin, ModelForm):
+    pass
 
 
 class LoginForm(Form):

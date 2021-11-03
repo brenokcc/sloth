@@ -20,7 +20,7 @@ class EstadoForm(forms.ModelForm):
 class ServidorForm(forms.ModelForm):
 
     fieldsets = {
-        'Dados Gerais': ('nome', ('nome', 'cpf'), ('nome', 'cpf', 'nome')),
+        'Dados Gerais': ('nome', ('matricula', 'data_nascimento'), ('nome', 'cpf', 'nome')),
         'Outros Dados': (('nome', 'cpf', 'nome', 'naturalidade'),),
         'Endereço': ('endereco',),
     }
@@ -92,10 +92,9 @@ class AtivarServidor(forms.QuerySetForm):
         model = Servidor
         fields = ()
 
-    def process(self):
+    def save(self):
         self.instance.ativo = True
-        self.instance.save()
-        self.notify()
+        super().save()
 
 
 class InativarServidores(forms.QuerySetForm):
@@ -129,7 +128,7 @@ class ExcluirEndereco(forms.ModelForm):
         model = Servidor
         fields = ()
 
-    def process(self):
+    def save(self):
         self.instance.endereco.delete()
         self.notify()
 

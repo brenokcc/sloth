@@ -5,7 +5,7 @@
     {{ self.get_metadata.name }}
 </h2>
 {% endif %}
-
+{{ self.errors }}
 <form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
     {% csrf_token %}
     {% for title, itens in fieldsets.items %}

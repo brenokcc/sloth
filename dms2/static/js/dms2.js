@@ -56,25 +56,28 @@ jQuery.fn.extend({
         });
     },
     popup: function(url, method, data){
-        window['reload'] = window['reload'+$(this).data('uuid')];
+        window['reloader'] = window['reload'+$(this).data('uuid')];
         window['onreload'] = window['onreload'+$(this).data('uuid')];
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');
+            document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {
+              window['reloader'] = window['onreload'] = null;
+            });
         });
     },
     back: function(){
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
-            if(window['reload']){
-                window['reload']();
+            if(window['reloader']){
+                window['reloader']();
                 if(window['onreload']) window['onreload']();
             } else{
                 $(document).open(document.location.href);
             }
         } else {
-            if(window['reload']){
-                window['reload']();
+            if(window['reloader']){
+                window['reloader']();
                 if(window['onreload']) window['onreload']();
             } else{
                 $(document).open(document.referrer);
@@ -114,6 +117,7 @@ jQuery.fn.extend({
         $(this).find('.form').on('submit', function(e){
             var form = this;
             var method = form.method.toUpperCase();
+            $(form).find('.btn-submit').addClass('disabled').find('.spinner-border').removeClass('d-none');
             if(method=='GET') var data = $(form).serialize();
             else var data = new FormData(form);
             $(document).request(form.action, method, data, function(html){
@@ -122,6 +126,7 @@ jQuery.fn.extend({
                 } else {
                     $('main').html(html).initialize();
                 }
+                $(form).find('.btn-submit').removeClass('disabled').find('.spinner-border').addClass('d-none');
             });
             return false;
         });

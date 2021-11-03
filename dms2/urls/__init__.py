@@ -16,7 +16,7 @@ urlpatterns = [
     path('adm/<str:app_label>/<str:model_name>/', adm.obj_view),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/', adm.obj_view),
     path('adm/<str:app_label>/<str:model_name>/<int:x>/<str:y>/<str:z>/<str:w>/', adm.obj_view),
-    path('adm/<str:app_label>/<str:model_name>/<int:x>/<str:y>/<str:z>/', adm.obj_view),
+    path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', adm.obj_view),
     path('adm/<str:app_label>/<str:model_name>/<int:x>/<str:y>/', adm.obj_view),
 
     path('api/', api.index),

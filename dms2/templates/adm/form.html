@@ -32,6 +32,11 @@
         </div>
     {% endfor %}
     <div class="form-submit">
-        <input class="btn btn-primary" type="submit" value="{{ self.get_metadata.submit }}">
+        <button type="submit" class="btn btn-primary btn-submit">
+            <div class="spinner-border spinner-border-sm d-none" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            {{ self.get_metadata.submit }}
+        </button>
     </div>
 </form>

@@ -118,7 +118,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         return form
                     raise PermissionDenied()
                 else:
-                    return attr().contextualize(request)
+                    return attr().attr(x).contextualize(request)
             else:
                 if y:
                     form_cls = model.action_form_cls(y)

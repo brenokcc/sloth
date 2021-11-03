@@ -162,7 +162,7 @@ class Servidor(models.Model):
         return self and user.is_superuser
 
     def get_foto(self):
-        return 'https://www.gravatar.com/avatar/680b8d4a9b843a858148493db5ef0164?s=128&d=identicon&r=PG'
+        return '/static/images/profile.png'
 
     @meta('Progresso', formatter='progress')
     def get_progresso(self):

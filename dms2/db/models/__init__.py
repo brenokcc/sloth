@@ -33,6 +33,8 @@ class ForeignKey(ForeignKey):
 
 class OneToOneField(OneToOneField):
     def __init__(self, to, on_delete=SET_NULL, **kwargs):
+        if kwargs.get('blank'):
+            kwargs.update(null=True)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
 

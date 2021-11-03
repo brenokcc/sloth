@@ -43,7 +43,6 @@ class FormMixin:
             self.fields[one_to_one_field_name.upper()] = fields.BooleanField(
                 required=one_to_one_field.required, initial=bool(initial)
             )
-            field_list.append(one_to_one_field_name.upper())
             for name, field in form_cls.base_fields.items():
                 key = '{}__{}'.format(one_to_one_field_name, name)
                 field_list.append(key)
@@ -53,6 +52,18 @@ class FormMixin:
                 self.fields[key] = field
                 self.initial[key] = initial.get(name)
 
+            # try to get field organization from form fieldsets if defined
+            if hasattr(form_cls, 'fieldsets'):
+                field_list = []
+                for fieldset in form_cls.fieldsets.values():
+                    for names in fieldset:
+                        if isinstance(names, str):
+                            field_list.append('{}__{}'.format(one_to_one_field_name, names))
+                        else:
+                            field_list.append(
+                                ['{}__{}'.format(one_to_one_field_name, field_name) for field_name in names]
+                            )
+            field_list.append(one_to_one_field_name.upper())
             self.fieldsets[one_to_one_field.label] = field_list
 
         # configure one-to-many fields

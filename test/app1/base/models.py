@@ -110,6 +110,10 @@ class Endereco(models.Model):
     numero = models.CharField('Número')
     municipio = models.ForeignKey(Municipio, verbose_name='Município')
 
+    fieldsets = {
+        'Dados Gerais': ('logradouro', ('numero', 'municipio'))
+    }
+
     class Meta:
         verbose_name = 'Endereço'
         verbose_name_plural = 'Endereços'

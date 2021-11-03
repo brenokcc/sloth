@@ -67,29 +67,34 @@ class ModelMixin(object):
     @classmethod
     def add_form_cls(cls):
         form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
+        if form_cls is None:
 
-        class Add(form_cls or ModelForm):
-            class Meta:
-                model = cls
-                exclude = ()
-                name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
-                icon = 'plus'
-                style = 'success'
+            class Add(ModelForm):
+                class Meta:
+                    model = cls
+                    exclude = ()
+                    name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
+                    icon = 'plus'
+                    style = 'success'
 
-            def process(self):
-                self.save()
-                self.notify('Cadastro realizado com sucesso')
+                def process(self):
+                    self.save()
+                    self.notify('Cadastro realizado com sucesso')
 
-            def has_permission(self):
-                return self.instance.has_add_permission(self.request.user)
+                def has_permission(self):
+                    return self.instance.has_add_permission(self.request.user)
 
-        return Add
+            form_cls = Add
+            fieldsets = getattr(cls, 'fieldsets', None)
+            if fieldsets:
+                form_cls.fieldsets = fieldsets
+
+        return form_cls
 
     @classmethod
     def edit_form_cls(cls, inline=False):
-        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
 
-        class Edit(QuerySetForm if inline else (form_cls or ModelForm)):
+        class Edit(QuerySetForm if inline else ModelForm):
             class Meta:
                 model = cls
                 exclude = ()

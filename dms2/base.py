@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
+from django.db.models import OneToOneField
 from .forms import ModelForm, QuerySetForm
 from .values import ValueSet
 from .query import QuerySet
@@ -12,9 +13,16 @@ class ModelMixin(object):
 
     def init_one_to_one_fields(self):
         for field in self.metaclass().fields:
-            if isinstance(field, models.OneToOneField):
+            if isinstance(field, OneToOneField):
                 if getattr(self, '{}_id'.format(field.name)) is None:
                     setattr(self, field.name, field.related_model())
+
+    def get_one_to_one_field_names(self):
+        names = []
+        for field in self.metaclass().fields:
+            if isinstance(field, OneToOneField):
+                names.append(field.name)
+        return names
 
     def has_view_permission(self, user):
         return self and user.is_superuser
@@ -79,8 +87,9 @@ class ModelMixin(object):
 
     @classmethod
     def edit_form_cls(cls, inline=False):
+        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
 
-        class Edit(QuerySetForm if inline else ModelForm):
+        class Edit(QuerySetForm if inline else (form_cls or ModelForm)):
             class Meta:
                 model = cls
                 exclude = ()

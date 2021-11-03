@@ -113,9 +113,6 @@
     height: 38px !important;
     padding-top: 3px;
 }
-.search-and-filters .select2-selection__clear{
-    margin-top: 10px;
-}
 .search-and-filters input[type=text]{
     height: 38px;
     border: 1px solid #aaa;
@@ -184,8 +181,9 @@ main{
     margin: 5px;
 }
 
-.select2-selection__clear span{
-    margin-right: 10px;
+.select2-selection__clear{
+    margin-top: 10px;
+    padding-right: 12px !important;
 }
 
 .search-results{

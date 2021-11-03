@@ -60,3 +60,13 @@ def tablet(request):
         return width if 600 < width < 800 else False
     return False
 
+
+@register.filter
+def formfield(form, name):
+    return form[name]
+
+
+@register.filter
+def isupper(text):
+    return text.isupper()
+

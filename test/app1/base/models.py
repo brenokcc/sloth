@@ -10,13 +10,14 @@ class EstadoManager(models.Manager):
     @meta('Todos')
     def all(self):
         return super().all().display(
-            'sigla', 'cidades_metropolitanas'
+            'sigla', 'cidades_metropolitanas', 'endereco'
         ).actions('FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado')
 
 
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
     cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
+    endereco = models.OneToOneField('base.Endereco', verbose_name='Endereço', null=True, blank=True)
 
     objects = EstadoManager()
 
@@ -112,6 +113,9 @@ class Endereco(models.Model):
     class Meta:
         verbose_name = 'Endereço'
         verbose_name_plural = 'Endereços'
+
+    def __str__(self):
+        return '{}, {}, {}'.format(self.logradouro, self.numero, self.municipio)
 
 
 class ServidorManager(models.Manager):

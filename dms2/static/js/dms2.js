@@ -130,6 +130,15 @@ jQuery.fn.extend({
             });
             return false;
         });
+        $(this).find('.form h5 input').each(function( index ) {
+            var fieldset = $(this).parent().parent().find('fieldset');
+            $(this).on('click', function(e){
+                $(fieldset).find('select').prop('disabled', !this.checked);
+                $(fieldset).prop('disabled', !this.checked);
+            });
+            $(fieldset).find('select').prop('disabled', !this.checked);
+            $(fieldset).prop('disabled', !this.checked);
+        });
         $(this).find('select').not('.select2-hidden-accessible').each(function( index ) {
             var url = $(this).data('choices-url');
             var ajax = {
@@ -142,7 +151,7 @@ jQuery.fn.extend({
             }
             if(url==null) ajax = null;
             $(this).select2(
-                {width: '100%', language: 'pt-BR', allowClear: true, placeholder: 'Selecione uma opção', ajax:ajax}
+                {width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax}
             ).on("select2:open", function (e) { });
         });
         $(this).find('.date-input').not('.hasDatepicker').datepicker(

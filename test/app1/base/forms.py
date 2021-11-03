@@ -5,11 +5,24 @@ from dms2 import forms
 from .models import Servidor, Ferias, Estado
 
 
+class EstadoForm(forms.ModelForm):
+    class Meta:
+        name = 'Cadastrar Estado'
+        model = Estado
+        exclude = ()
+
+    fieldsets = {
+        'Dados Gerais': ('sigla',),
+        'Endereço': ('endereco',),
+    }
+
+
 class ServidorForm(forms.ModelForm):
 
     fieldsets = {
         'Dados Gerais': ('nome', ('nome', 'cpf'), ('nome', 'cpf', 'nome')),
-        'Outros Dados': (('nome', 'cpf', 'endereco', 'naturalidade'),)
+        'Outros Dados': (('nome', 'cpf', 'nome', 'naturalidade'),),
+        'Endereço': ('endereco',),
     }
 
     class Meta:

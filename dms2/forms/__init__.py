@@ -2,6 +2,7 @@
 from functools import lru_cache
 import math
 from django.forms import *
+from django.forms import fields
 from django.forms import widgets
 from django.utils.safestring import mark_safe
 from django.contrib import messages
@@ -14,19 +15,84 @@ from ..utils import load_menu
 
 class FormMixin:
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.one_to_one = {}
+        self.fieldsets = self.configure_fieldsets()
+
     def configure_fieldsets(self):
         fieldsets = {}
-        if not hasattr(self, 'fieldsets'):
-            setattr(self, 'fieldsets', {'Dados Gerais': list(self.fields.keys())})
+        # creates default fieldset if necessary
+        setattr(self, 'fieldsets', getattr(self, 'fieldsets', {'Dados Gerais': list(self.fields.keys())}))
+
+        # configure one-to-one fields
+        if self.instance:
+            for name in list(self.fields):
+                if name in self.instance.get_one_to_one_field_names():
+                    # remove one-to-one fields from the form
+                    self.one_to_one[name] = self.fields.pop(name)
+
+        for one_to_one_field_name, one_to_one_field in self.one_to_one.items():
+            field_list = []
+            form_cls = one_to_one_field.queryset.model.add_form_cls()
+            initial = one_to_one_field.queryset.model.objects.filter(
+                pk=getattr(self.instance, '{}_id'.format(one_to_one_field_name))
+            ).values(
+                *form_cls.base_fields.keys()
+            ).first() or {}
+            self.fields[one_to_one_field_name.upper()] = fields.BooleanField(
+                required=one_to_one_field.required, initial=bool(initial)
+            )
+            field_list.append(one_to_one_field_name.upper())
+            for name, field in form_cls.base_fields.items():
+                key = '{}__{}'.format(one_to_one_field_name, name)
+                field_list.append(key)
+                field.required = field.required and one_to_one_field.required or self.data.get(
+                    one_to_one_field_name.upper()
+                )
+                self.fields[key] = field
+                self.initial[key] = initial.get(name)
+
+            self.fieldsets[one_to_one_field.label] = field_list
+
+        # configure one-to-many fields
+        # TODO
+
+        # configure ordinary fields
         for title, names in self.fieldsets.items():
-            fieldsets[title] = []
+            field_list = []
             for name in names:
                 if isinstance(name, tuple) or isinstance(name, list):
                     for _name in name:
-                        fieldsets[title].append(dict(name=_name, width=100//len(name)))
+                        if _name in self.fields:
+                            field_list.append(dict(name=_name, width=100//len(name)))
                 else:
-                    fieldsets[title].append(dict(name=name, width=100))
+                    if name in self.fields:
+                        field_list.append(dict(name=name, width=100))
+            if field_list:
+                fieldsets[title] = field_list
         return fieldsets
+
+    def save(self, *args, **kwargs):
+        # save one-to-one fields
+        for name in self.one_to_one:
+            instance = getattr(self.instance, name)
+            if self.data.get(name.upper()):  # if checkbox is checked
+                instance = instance or self.one_to_one[name].queryset.model()
+                for field_name in self.fields:
+                    if field_name.split('__')[0] == name:
+                        setattr(instance, field_name.split('__')[1], self.cleaned_data[field_name])
+                instance.save()
+                setattr(self.instance, name, instance)
+            else:  # if checkbox is NOT checked
+                if instance:
+                    instance.delete()
+                setattr(self.instance, name, None)
+
+        # save one-to-many fields
+        # TODO
+
+        super().save(*args, **kwargs)
 
     def serialize(self, wrap=False, verbose=False):
         if self.message:
@@ -62,7 +128,7 @@ class FormMixin:
         method = 'get'
         batch = False
         if meta:
-            name = getattr(meta, 'name', None)
+            name = getattr(meta, 'name', form_name)
             submit = getattr(meta, 'submit', name)
             icon = getattr(meta, 'icon', None)
             ajax = getattr(meta, 'ajax', True)
@@ -113,6 +179,8 @@ class FormMixin:
                         pks.append(initial)
                     else:
                         pks.extend([obj.pk for obj in initial])
+                if self.data:
+                    pks = [pk for pk in self.data.getlist(name) if pk]
                 field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
                 field.widget.attrs['data-choices-url'] = '{}?choices={}'.format(
                     self.request.path, name
@@ -130,7 +198,7 @@ class FormMixin:
         return mark_safe(
             render_to_string(
                 ['adm/form.html'], dict(
-                    self=self, fieldsets=self.configure_fieldsets()
+                    self=self, fieldsets=self.fieldsets
                 ),
                 request=self.request
             )

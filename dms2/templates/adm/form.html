@@ -1,3 +1,4 @@
+{% load tags %}
 {% if self.get_metadata.name %}
 <h2>
     {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
@@ -7,29 +8,42 @@
 
 <form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
     {% csrf_token %}
-    {% for title, fields in fieldsets.items %}
-        <h5>{{ title }}</h5>
-        <div class="form-fieldset responsive-container">
-        {% for item in fields %}
-            {% for field in self %}
-                {% if field.name == item.name %}
-                <div class="form-field width-{{ item.width }}">
-                    <label class="{% if field.field.required %}required{% endif %}">
-                        {{ field.label_tag }}
-                    </label> {{ field }}
-                    {% if field.help_text %}
-                    <span class="help">{{ field.help_text|safe }}</span>
-                    {% endif %}
-                    {% if field.errors %}
-                        <div class="errors" role="alert">
-                          {{ field.errors }}
-                        </div>
-                    {% endif %}
-                </div>
+    {% for title, itens in fieldsets.items %}
+    <div>
+        <h5>
+            {% for item in itens %}
+                {% if item.name|isupper %}
+                    {% with field=self|formfield:item.name %}
+                        {{ field }}
+                    {% endwith %}
                 {% endif %}
             {% endfor %}
-        {% endfor %}
-        </div>
+            {{ title }}
+        </h5>
+        <fieldset>
+            <div class="form-fieldset responsive-container">
+            {% for item in itens %}
+                {% if not item.name|isupper %}
+                    {% with field=self|formfield:item.name %}
+                    <div class="form-field width-{{ item.width }}">
+                        <label class="{% if field.field.required %}required{% endif %}">
+                            {{ field.label_tag }}
+                        </label> {{ field }}
+                        {% if field.help_text %}
+                        <span class="help">{{ field.help_text|safe }}</span>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="errors" role="alert">
+                              {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            </div>
+        </fieldset>
+    </div>
     {% endfor %}
     <div class="form-submit">
         <button type="submit" class="btn btn-primary btn-submit">

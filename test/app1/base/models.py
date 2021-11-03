@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from django.db import models
+from dms2.db import models
 
 from dms2.db.models.decorators import meta
 
 
-class EstadoSet(models.QuerySet):
+class EstadoManager(models.Manager):
 
     @meta('Todos')
     def all(self):
@@ -17,6 +17,8 @@ class EstadoSet(models.QuerySet):
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
     cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
+
+    objects = EstadoManager()
 
     class Meta:
         verbose_name = 'Estado'
@@ -32,7 +34,7 @@ class Estado(models.Model):
         return not user.is_superuser
 
 
-class MunicipioSet(models.QuerySet):
+class MunicipioManager(models.Manager):
 
     @meta('Todos')
     def all(self):
@@ -50,6 +52,8 @@ class MunicipioSet(models.QuerySet):
 class Municipio(models.Model):
     nome = models.CharField('Nome')
     estado = models.ForeignKey(Estado, verbose_name='Estado')
+
+    objects = MunicipioManager()
 
     class Meta:
         verbose_name = 'Municipio'
@@ -110,7 +114,7 @@ class Endereco(models.Model):
         verbose_name_plural = 'Endereços'
 
 
-class ServidorSet(models.QuerySet):
+class ServidorManager(models.Manager):
 
     @meta('Todos')
     def all(self):
@@ -149,6 +153,8 @@ class Servidor(models.Model):
     endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True, blank=True)
     ativo = models.BooleanField('Ativo', default=True)
     naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
+
+    objects = ServidorManager()
 
     class Meta:
         icon = 'file-earmark-person'
@@ -202,7 +208,7 @@ class Servidor(models.Model):
         return self.get_ferias().count('ano')
 
 
-class FeriasSet(models.QuerySet):
+class FeriasManager(models.Manager):
 
     @meta('Ferias')
     def all(self):
@@ -224,6 +230,8 @@ class Ferias(models.Model):
     ano = models.IntegerField('Ano')
     inicio = models.DateField('Início')
     fim = models.DateField('Fim')
+
+    objects = FeriasManager()
 
     class Meta:
         verbose_name = 'Férias'

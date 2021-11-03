@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import dms2
+import dms2.db.models
 
 
 class Migration(migrations.Migration):
@@ -20,11 +20,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='servidor',
             name='naturalidade',
-            field=dms2.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='base.municipio', verbose_name='Naturalidade'),
+            field=dms2.db.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='base.municipio', verbose_name='Naturalidade'),
         ),
         migrations.AlterField(
             model_name='servidor',
             name='endereco',
-            field=dms2.OneToOneField(null=True, on_delete=django.db.models.deletion.CASCADE, to='base.endereco', verbose_name='Endereço'),
+            field=dms2.db.models.OneToOneField(null=True, on_delete=django.db.models.deletion.CASCADE, to='base.endereco', verbose_name='Endereço'),
         ),
     ]

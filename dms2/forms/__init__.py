@@ -8,8 +8,8 @@ from django.contrib import messages
 from django.contrib import auth
 from django.template.loader import render_to_string
 
-from dms2.exceptions import JsonReadyResponseException
-from dms2.utils import load_menu
+from ..exceptions import JsonReadyResponseException
+from ..utils import load_menu
 
 
 class FormMixin:

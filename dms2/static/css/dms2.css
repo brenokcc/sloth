@@ -229,3 +229,11 @@ textarea{
 .l.width-25{
     width: 24.2%;
 }
+
+.errors ul{
+    padding-inline-start: 0;
+}
+.errors li{
+    list-style: none;
+    color: #dc3545;
+}

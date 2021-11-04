@@ -5,7 +5,6 @@
     {{ self.get_metadata.name }}
 </h2>
 {% endif %}
-{{ self.errors }}
 <form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
     {% csrf_token %}
     {% for title, itens in fieldsets.items %}
@@ -29,8 +28,8 @@
                         {% if item.name|is_one_to_many_field_controller %}
                             {{ field }} <strong>{{ field.field.label }}</strong>
                         {% else %}
-                            <label class="{% if field.field.required %}required{% endif %}">
-                                {{ field.field.label }}
+                            <label>
+                                {{ field.field.label }}{% if field.field.required %}*{% endif %}
                             </label> {{ field }}
                             {% if field.help_text %}
                             <span class="help">{{ field.help_text|safe }}</span>
@@ -50,6 +49,9 @@
     </div>
     {% endfor %}
     <div class="form-submit">
+        <button type="button" class="btn btn-light" onclick="$('#modal').modal('hide');">
+            Cancelar
+        </button>
         <button type="submit" class="btn btn-primary btn-submit">
             <div class="spinner-border spinner-border-sm d-none" role="status">
               <span class="visually-hidden">Loading...</span>

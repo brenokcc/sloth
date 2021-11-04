@@ -9,7 +9,7 @@ from .decorators import meta
 from ...query import QuerySet
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'display', 'search', 'limit', 'filters'
+    'icon', 'display', 'search', 'limit', 'filters', 'fieldsets'
 ))
 
 

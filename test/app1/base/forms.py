@@ -7,29 +7,22 @@ from .models import Servidor, Ferias, Estado
 
 class EstadoForm(forms.ModelForm):
     class Meta:
-        name = 'Cadastrar Estado'
+        verbose_name = 'Cadastrar Estado'
         model = Estado
-        exclude = ()
-
-    fieldsets = {
-        'Dados Gerais': ('sigla',),
-        'Endereço': ('endereco',),
-        'Telefones': ('telefones',),
-    }
+        fieldsets = {
+            'Dados Gerais': ('sigla', 'endereco', 'telefones'),
+        }
 
 
 class ServidorForm(forms.ModelForm):
 
-    fieldsets = {
-        'Dados Gerais': ('nome', ('matricula', 'data_nascimento'), ('nome', 'cpf', 'nome')),
-        'Outros Dados': (('nome', 'cpf', 'nome', 'naturalidade'),),
-        'Endereço': ('endereco',),
-    }
-
     class Meta:
-        name = 'Cadastrar Servidor'
+        verbose_name = 'Cadastrar Servidor'
         model = Servidor
-        exclude = ()
+        fieldsets = {
+            'Dados Gerais': ('nome', ('cpf', 'matricula', 'data_nascimento', 'naturalidade'), 'ativo'),
+            'Endereço': ('endereco',),
+        }
 
 
 class InformarCidadesMetropolitanas(forms.ModelForm):
@@ -37,8 +30,8 @@ class InformarCidadesMetropolitanas(forms.ModelForm):
     class Meta:
         model = Estado
         fields = 'cidades_metropolitanas',
-        name = 'Informar Cidades Metropolitanas'
-        submit = 'Informar'
+        verbose_name = 'Informar Cidades Metropolitanas'
+        submit_label = 'Informar'
 
     def get_cidades_metropolitanas_queryset(self, queryset):
         return queryset.filter(estado=self.instance)
@@ -47,20 +40,24 @@ class InformarCidadesMetropolitanas(forms.ModelForm):
 class FazerAlgumaCoisa(forms.Form):
     mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
 
+    class Meta:
+        verbose_name = 'Fazer Alguma Coisa'
+        submit_label = 'Enviar'
+
     def has_permission(self):
         return True
 
 
 class EditarSiglaEstado(forms.QuerySetForm):
     class Meta:
-        name = 'Editar Sigla'
+        verbose_name = 'Editar Sigla'
         model = Estado
         fields = 'sigla',
 
 
 class EditarSiglasEstado(forms.QuerySetForm):
     class Meta:
-        name = 'Editar Siglas'
+        verbose_name = 'Editar Siglas'
         model = Estado
         fields = 'sigla',
         batch = True
@@ -68,28 +65,28 @@ class EditarSiglasEstado(forms.QuerySetForm):
 
 class CorrigirNomeServidor1(forms.ModelForm):
     class Meta:
-        name = 'Corrigir Nome'
+        verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
 class CorrigirNomeServidor(forms.QuerySetForm):
     class Meta:
-        name = 'Corrigir Nome'
+        verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
 class EditarFerias(forms.QuerySetForm):
     class Meta:
-        name = 'Editar'
+        verbose_name = 'Editar'
         model = Ferias
         exclude = ()
 
 
 class AtivarServidor(forms.QuerySetForm):
     class Meta:
-        name = 'Ativar'
+        verbose_name = 'Ativar'
         model = Servidor
         fields = ()
 
@@ -113,8 +110,7 @@ class InativarServidores(forms.QuerySetForm):
 class InformarEndereco(forms.ModelForm):
     class Meta:
         model = Servidor
-        field = 'endereco'
-        name = 'Informar'
+        verbose_name = 'Informar'
         icon = 'archive'
         style = 'success'
         fields = 'endereco',
@@ -125,7 +121,7 @@ class InformarEndereco(forms.ModelForm):
 
 class ExcluirEndereco(forms.ModelForm):
     class Meta:
-        name = 'Excluir'
+        verbose_name = 'Excluir'
         model = Servidor
         fields = ()
 
@@ -139,21 +135,21 @@ class ExcluirEndereco(forms.ModelForm):
 
 class CadastrarFerias(forms.ModelForm):
     class Meta:
-        name = 'Cadastrar'
+        verbose_name = 'Cadastrar'
         model = Ferias
         exclude = ()
 
 
 class AlterarFerias(forms.QuerySetForm):
     class Meta:
-        name = 'Alterar'
+        verbose_name = 'Alterar'
         model = Ferias
         fields = 'inicio', 'fim'
 
 
 class ExcluirFerias(forms.QuerySetForm):
     class Meta:
-        name = 'Excluir'
+        verbose_name = 'Excluir'
         model = Ferias
         exclude = ()
         batch = True

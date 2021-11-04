@@ -5,6 +5,7 @@ import math
 from django.forms import *
 from django.forms import fields
 from django.forms import widgets
+from django.forms import models
 from django.utils.safestring import mark_safe
 from django.contrib import messages
 from django.contrib import auth
@@ -21,12 +22,20 @@ class FormMixin:
         if not self.fake:
             self.one_to_one = {}
             self.one_to_many = {}
-            self.fieldsets = self.configure_fieldsets()
+            self.fieldsets = self.load_fieldsets()
+            self.parse_fieldsets()
 
-    def configure_fieldsets(self):
-        fieldsets = {}
+    def load_fieldsets(self):
         # creates default fieldset if necessary
-        setattr(self, 'fieldsets', getattr(self, 'fieldsets', {'Dados Gerais': list(self.fields.keys())}))
+        fieldsets = getattr(self.Meta, 'fieldsets', None)
+        if fieldsets is None:
+            if self.instance:
+                fieldsets = getattr(self.instance.metaclass(), 'fielsets', None)
+
+        if fieldsets is None:
+            fieldsets = {'Dados Gerais': list(self.fields.keys())}
+        else:
+            fieldsets = dict(fieldsets)
 
         # extract one-to-one and one-to-many fields
         if self.instance:
@@ -63,9 +72,12 @@ class FormMixin:
                 self.initial[ont_to_one_key] = initial.get(name)
 
             # try to get field organization from form fieldsets if defined
-            if hasattr(form_cls, 'fieldsets'):
+            one_to_one_fieldsets = getattr(form_cls.Meta, 'fieldsets', None)
+            if one_to_one_fieldsets is None:
+                one_to_one_fieldsets = getattr(form_cls.Meta.model.metaclass(), 'fieldsets', None)
+            if one_to_one_fieldsets is not None:
                 field_list = []
-                for fieldset in form_cls.fieldsets.values():
+                for fieldset in one_to_one_fieldsets.values():
                     for names in fieldset:
                         if isinstance(names, str):
                             field_list.append('{}__{}'.format(one_to_one_field_name, names))
@@ -74,13 +86,15 @@ class FormMixin:
                                 ['{}__{}'.format(one_to_one_field_name, field_name) for field_name in names]
                             )
             field_list.append(one_to_one_field_name.upper())
-            self.fieldsets[one_to_one_field.label] = field_list
+            fieldsets[one_to_one_field.label] = field_list
 
         # configure one-to-many fields
         for one_to_many_field_name, one_to_many_field in self.one_to_many.items():
             field_list = []
             form_cls = one_to_many_field.queryset.model.add_form_cls()
-            pks = list(getattr(self.instance, one_to_many_field_name).values_list('pk', flat=True))
+            pks = []
+            if self.instance.pk:
+                pks.extend(getattr(self.instance, one_to_many_field_name).values_list('pk', flat=True))
             pks.extend(['' for _ in range(1, 3)])
             for i, pk in enumerate(pks):
                 initial = one_to_many_field.queryset.model.objects.filter(
@@ -106,8 +120,10 @@ class FormMixin:
                     self.initial[one_to_many_key] = initial.get(name)
 
                 field_list.append(inline_field_list)
-            self.fieldsets[one_to_many_field.label] = field_list
+            fieldsets[one_to_many_field.label] = field_list
+        return fieldsets
 
+    def parse_fieldsets(self):
         # configure ordinary fields
         for title, names in self.fieldsets.items():
             field_list = []
@@ -120,8 +136,7 @@ class FormMixin:
                     if name in self.fields:
                         field_list.append(dict(name=name, width=100))
             if field_list:
-                fieldsets[title] = field_list
-        return fieldsets
+                self.fieldsets[title] = field_list
 
     def save(self, *args, **kwargs):
         # save one-to-one fields
@@ -143,7 +158,6 @@ class FormMixin:
         for name in self.one_to_many:
             qs = getattr(self.instance, name)
             pks = list(qs.values_list('pk', flat=True))
-            print(pks, 7777)
             for i in range(0, 5):
                 key = '{}--{}'.format(name.upper(), i)
                 pk = self.data.get(key)
@@ -186,22 +200,24 @@ class FormMixin:
     def get_metadata(cls, path=None):
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
-        name = form_name
-        submit = name
-        target = 'model'
-        icon = None
-        ajax = True
-        style = 'primary'
-        method = 'get'
-        batch = False
         if meta:
-            name = getattr(meta, 'name', form_name)
-            submit = getattr(meta, 'submit', name)
+            target = 'model'
+            name = getattr(meta, 'verbose_name', form_name)
+            submit = getattr(meta, 'submit_label', 'Enviar')
             icon = getattr(meta, 'icon', None)
             ajax = getattr(meta, 'ajax', True)
             style = getattr(meta, 'style', 'primary')
             method = getattr(meta, 'method', 'post')
             batch = getattr(meta, 'batch', False)
+        else:
+            target = 'model'
+            name = 'Enviar'
+            submit = name
+            icon = None
+            ajax = True
+            style = 'primary'
+            method = 'get'
+            batch = False
         if path:
             if hasattr(cls, 'instances'):
                 target = 'queryset' if batch else 'instance'
@@ -317,7 +333,24 @@ class Form(FormMixin, Form):
         self.notify()
 
 
-class ModelForm(FormMixin, ModelForm):
+class ModelFormMetaclass(models.ModelFormMetaclass):
+    def __new__(mcs, name, bases, attrs):
+        if 'Meta' in attrs:
+            if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
+                form_fields = []
+                fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
+                for tuples in fieldsets.values():
+                    for names in tuples:
+                        if isinstance(names, str):
+                            form_fields.append(names)
+                        else:
+                            form_fields.extend(names)
+                setattr(attrs['Meta'], 'fields', form_fields)
+
+        return super().__new__(mcs, name, bases, attrs)
+
+
+class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
 
     def __init__(self, *args, **kwargs):
         self.fake = kwargs.pop('fake', False)

@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 
-from .forms import ModelForm, QuerySetForm, QuerySetFormMixin
+from .forms import ModelForm, QuerySetForm
 from .values import ValueSet
 from .query import QuerySet
 
@@ -80,7 +80,7 @@ class ModelMixin(object):
                 class Meta:
                     model = cls
                     exclude = ()
-                    name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
+                    verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                     icon = 'plus'
                     style = 'success'
 
@@ -105,7 +105,7 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 exclude = ()
-                name = 'Editar {}'.format(cls.metaclass().verbose_name)
+                verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
                 submit = 'Editar'
                 icon = 'pencil'
                 style = 'primary'
@@ -127,7 +127,7 @@ class ModelMixin(object):
                 model = cls
                 fields = ()
                 name = 'Excluir {}'.format(cls.metaclass().verbose_name)
-                submit = 'Excluir'
+                verbose_name = 'Excluir'
                 icon = 'x'
                 style = 'danger'
 

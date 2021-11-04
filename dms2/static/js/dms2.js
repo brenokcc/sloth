@@ -130,14 +130,12 @@ jQuery.fn.extend({
             });
             return false;
         });
-        $(this).find('.form h5 input').each(function( index ) {
-            var fieldset = $(this).parent().parent().find('fieldset');
+        $(this).find('.field-controller').each(function( index ) {
+            var widgets = $('.'+this.name);
             $(this).on('click', function(e){
-                $(fieldset).find('select').prop('disabled', !this.checked);
-                $(fieldset).prop('disabled', !this.checked);
+                $(widgets).prop('disabled', !this.checked);
             });
-            $(fieldset).find('select').prop('disabled', !this.checked);
-            $(fieldset).prop('disabled', !this.checked);
+            $(widgets).prop('disabled', !this.checked);
         });
         $(this).find('select').not('.select2-hidden-accessible').each(function( index ) {
             var url = $(this).data('choices-url');

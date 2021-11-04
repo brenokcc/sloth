@@ -38,6 +38,10 @@ class OneToOneField(OneToOneField):
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
 
+class OneToManyField(ManyToManyField):
+    one_to_many = True
+
+
 class Manager(QuerySet):
     pass
 

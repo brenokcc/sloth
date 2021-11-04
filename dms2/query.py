@@ -129,7 +129,7 @@ class QuerySet(models.QuerySet):
             form_cls = self.model.action_form_cls(form_name)
             if issubclass(form_cls, QuerySetFormMixin) and not getattr(getattr(form_cls, 'Meta'), 'batch', False):
                 if self.metadata['request'] is None or form_cls(request=self.metadata['request'],
-                                                                instance=obj).has_permission():
+                                                                instance=obj, fake=True).has_permission():
                     actions.append(form_cls.__name__)
         return actions
 
@@ -182,7 +182,7 @@ class QuerySet(models.QuerySet):
             for form_name in self.metadata['actions']:
                 form_cls = self.model.action_form_cls(form_name)
                 if not issubclass(form_cls, QuerySetFormMixin):
-                    if self.metadata['request'] and not form_cls(request=self.metadata['request']).has_permission():
+                    if self.metadata['request'] and not form_cls(request=self.metadata['request'], fake=True).has_permission():
                         continue
                 action = form_cls.get_metadata(path)
                 data['actions'][action['target']].append(action)

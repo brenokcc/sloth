@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
-from django.db.models import OneToOneField
+
 from .forms import ModelForm, QuerySetForm, QuerySetFormMixin
 from .values import ValueSet
 from .query import QuerySet
@@ -13,14 +13,21 @@ class ModelMixin(object):
 
     def init_one_to_one_fields(self):
         for field in self.metaclass().fields:
-            if isinstance(field, OneToOneField):
+            if getattr(field, 'one_to_one', False):
                 if getattr(self, '{}_id'.format(field.name)) is None:
                     setattr(self, field.name, field.related_model())
 
     def get_one_to_one_field_names(self):
         names = []
         for field in self.metaclass().fields:
-            if isinstance(field, OneToOneField):
+            if getattr(field, 'one_to_one', False):
+                names.append(field.name)
+        return names
+
+    def get_one_to_many_field_names(self):
+        names = []
+        for field in self.metaclass().many_to_many:
+            if getattr(field, 'one_to_many', False):
                 names.append(field.name)
         return names
 
@@ -93,36 +100,24 @@ class ModelMixin(object):
 
     @classmethod
     def edit_form_cls(cls, inline=False):
-        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
-        if form_cls:
-            if inline:
-                class Edit(form_cls, QuerySetFormMixin):
-                    pass
-                form_cls = Edit
 
-        else:
-            class Edit(QuerySetForm if inline else ModelForm):
-                class Meta:
-                    model = cls
-                    exclude = ()
-                    name = 'Editar {}'.format(cls.metaclass().verbose_name)
-                    icon = 'pencil'
-                    style = 'primary'
+        class Edit(QuerySetForm if inline else ModelForm):
+            class Meta:
+                model = cls
+                exclude = ()
+                name = 'Editar {}'.format(cls.metaclass().verbose_name)
+                submit = 'Editar'
+                icon = 'pencil'
+                style = 'primary'
 
-                def process(self):
-                    self.save()
-                    self.notify('Edição realizada com sucesso')
+            def process(self):
+                self.save()
+                self.notify('Edição realizada com sucesso')
 
-                def has_permission(self):
-                    return self.instance.has_edit_permission(self.request.user)
+            def has_permission(self):
+                return self.instance.has_edit_permission(self.request.user)
 
-            form_cls = Edit
-        fieldsets = getattr(cls, 'fieldsets', None)
-        if fieldsets:
-            form_cls.fieldsets = fieldsets
-        form_cls.Meta.name = 'Editar'
-        form_cls.Meta.icon = 'pencil'
-        return form_cls
+        return Edit
 
     @classmethod
     def delete_form_cls(cls, inline=False):
@@ -131,7 +126,8 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 fields = ()
-                name = 'Excluir'
+                name = 'Excluir {}'.format(cls.metaclass().verbose_name)
+                submit = 'Excluir'
                 icon = 'x'
                 style = 'danger'
 

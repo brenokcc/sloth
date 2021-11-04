@@ -67,6 +67,25 @@ def formfield(form, name):
 
 
 @register.filter
+def label_tag(html):
+    return mark_safe(html.replace(':', ''))
+
+
+@register.filter
 def isupper(text):
     return text.isupper()
 
+
+@register.filter
+def is_one_to_one_field_controller(name):
+    return name.isupper() and name.count('--') == 0
+
+
+@register.filter
+def is_one_to_many_field_controller(name):
+    return name.isupper() and name.count('--') == 1
+
+
+@register.filter
+def is_controller_field(name):
+    return is_one_to_one_field_controller(name) or is_one_to_many_field_controller(name)

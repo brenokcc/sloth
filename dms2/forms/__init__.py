@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 from functools import lru_cache
 import math
 from django.forms import *
@@ -17,21 +18,27 @@ class FormMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.one_to_one = {}
-        self.fieldsets = self.configure_fieldsets()
+        if not self.fake:
+            self.one_to_one = {}
+            self.one_to_many = {}
+            self.fieldsets = self.configure_fieldsets()
 
     def configure_fieldsets(self):
         fieldsets = {}
         # creates default fieldset if necessary
         setattr(self, 'fieldsets', getattr(self, 'fieldsets', {'Dados Gerais': list(self.fields.keys())}))
 
-        # configure one-to-one fields
+        # extract one-to-one and one-to-many fields
         if self.instance:
             for name in list(self.fields):
                 if name in self.instance.get_one_to_one_field_names():
                     # remove one-to-one fields from the form
                     self.one_to_one[name] = self.fields.pop(name)
+                if name in self.instance.get_one_to_many_field_names():
+                    # remove one-to-many fields from the form
+                    self.one_to_many[name] = self.fields.pop(name)
 
+        # configure one-to-one fields
         for one_to_one_field_name, one_to_one_field in self.one_to_one.items():
             field_list = []
             form_cls = one_to_one_field.queryset.model.add_form_cls()
@@ -40,17 +47,20 @@ class FormMixin:
             ).values(
                 *form_cls.base_fields.keys()
             ).first() or {}
-            self.fields[one_to_one_field_name.upper()] = fields.BooleanField(
+            key = one_to_one_field_name.upper()
+            self.fields[key] = fields.BooleanField(
                 required=one_to_one_field.required, initial=bool(initial)
             )
+            self.fields[key].widget.attrs['class'] = 'field-controller'
             for name, field in form_cls.base_fields.items():
-                key = '{}__{}'.format(one_to_one_field_name, name)
-                field_list.append(key)
+                ont_to_one_key = '{}__{}'.format(one_to_one_field_name, name)
+                field_list.append(ont_to_one_key)
                 field.required = field.required and one_to_one_field.required or self.data.get(
                     one_to_one_field_name.upper()
                 )
-                self.fields[key] = field
-                self.initial[key] = initial.get(name)
+                field.widget.attrs['class'] = key
+                self.fields[ont_to_one_key] = field
+                self.initial[ont_to_one_key] = initial.get(name)
 
             # try to get field organization from form fieldsets if defined
             if hasattr(form_cls, 'fieldsets'):
@@ -67,7 +77,36 @@ class FormMixin:
             self.fieldsets[one_to_one_field.label] = field_list
 
         # configure one-to-many fields
-        # TODO
+        for one_to_many_field_name, one_to_many_field in self.one_to_many.items():
+            field_list = []
+            form_cls = one_to_many_field.queryset.model.add_form_cls()
+            pks = list(getattr(self.instance, one_to_many_field_name).values_list('pk', flat=True))
+            pks.extend(['' for _ in range(1, 3)])
+            for i, pk in enumerate(pks):
+                initial = one_to_many_field.queryset.model.objects.filter(
+                    pk=pk
+                ).values(
+                    *form_cls.base_fields.keys()
+                ).first() if pk else {}
+                key = '{}--{}'.format(one_to_many_field_name.upper(), i)
+                self.fields[key] = fields.CharField(
+                    label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i+1),
+                    required=False, initial=pk, widget=fields.CheckboxInput()
+                )
+                self.fields[key].widget.attrs['class'] = 'field-controller'
+                field_list.append(key)
+                inline_field_list = []
+                for name, field in form_cls.base_fields.items():
+                    field = deepcopy(field)
+                    one_to_many_key = '{}__{}__{}'.format(one_to_many_field_name, name, i)
+                    inline_field_list.append(one_to_many_key)
+                    field.required = False
+                    field.widget.attrs['class'] = key
+                    self.fields[one_to_many_key] = field
+                    self.initial[one_to_many_key] = initial.get(name)
+
+                field_list.append(inline_field_list)
+            self.fieldsets[one_to_many_field.label] = field_list
 
         # configure ordinary fields
         for title, names in self.fieldsets.items():
@@ -101,8 +140,25 @@ class FormMixin:
                 setattr(self.instance, name, None)
 
         # save one-to-many fields
-        # TODO
-
+        for name in self.one_to_many:
+            qs = getattr(self.instance, name)
+            pks = list(qs.values_list('pk', flat=True))
+            print(pks, 7777)
+            for i in range(0, 5):
+                key = '{}--{}'.format(name.upper(), i)
+                pk = self.data.get(key)
+                if pk:  # if checkbox is checked
+                    if pk == 'on':
+                        instance = qs.model()
+                    else:
+                        pks.remove(int(pk))
+                        instance = qs.get(pk=pk)
+                    for field_name in self.fields:
+                        if field_name.startswith('{}__'.format(name)) and field_name.endswith('__{}'.format(i)):
+                            setattr(instance, field_name.split('__')[1], self.cleaned_data[field_name])
+                    instance.save()
+                    qs.add(instance)
+            qs.filter(pk__in=pks).delete()
         super().save(*args, **kwargs)
 
     def serialize(self, wrap=False, verbose=False):
@@ -243,6 +299,7 @@ class FormMixin:
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
+        self.fake = kwargs.pop('fake', False)
         self.instance = kwargs.pop('instance', None)
         self.message = None
         self.instantiator = kwargs.pop('instantiator', None)
@@ -253,7 +310,7 @@ class Form(FormMixin, Form):
             else:
                 data = self.request.POST
             kwargs['data'] = data
-        if not kwargs.pop('fake', False):
+        if not self.fake:
             super().__init__(*args, **kwargs)
 
     def process(self):
@@ -263,6 +320,8 @@ class Form(FormMixin, Form):
 class ModelForm(FormMixin, ModelForm):
 
     def __init__(self, *args, **kwargs):
+        self.fake = kwargs.pop('fake', False)
+        self.instance = kwargs.get('instance', None)
         self.message = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
@@ -272,7 +331,7 @@ class ModelForm(FormMixin, ModelForm):
             else:
                 data = self.request.POST
             kwargs['data'] = data
-        if not kwargs.pop('fake', False):
+        if not self.fake:
             super().__init__(*args, **kwargs)
 
     def process(self):

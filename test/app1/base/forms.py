@@ -14,6 +14,7 @@ class EstadoForm(forms.ModelForm):
     fieldsets = {
         'Dados Gerais': ('sigla',),
         'Endereço': ('endereco',),
+        'Telefones': ('telefones',),
     }
 
 

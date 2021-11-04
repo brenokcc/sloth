@@ -5,19 +5,34 @@ from dms2.db import models
 from dms2.db.models.decorators import meta
 
 
+class Telefone(models.Model):
+    ddd = models.PositiveIntegerField(verbose_name='DDD')
+    numero = models.CharField(verbose_name='Número', mask='00000-0000')
+
+    def __str__(self):
+        return '({}) - {}'.format(self.ddd, self.numero)
+
+    class Meta:
+        verbose_name = 'Telefone'
+        verbose_name_plural = 'Telefones'
+
+
 class EstadoManager(models.Manager):
 
     @meta('Todos')
     def all(self):
         return super().all().display(
-            'sigla', 'cidades_metropolitanas', 'endereco'
-        ).actions('FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado')
+            'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
+        ).actions(
+            'FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado'
+        )
 
 
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
     cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
     endereco = models.OneToOneField('base.Endereco', verbose_name='Endereço', null=True, blank=True)
+    telefones = models.OneToManyField(Telefone, verbose_name='Telefones')
 
     objects = EstadoManager()
 

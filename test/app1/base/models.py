@@ -22,7 +22,7 @@ class EstadoManager(models.Manager):
 
     @meta('Todos')
     def all(self):
-        return super().all().display(
+        return super().all().list_display(
             'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
         ).actions(
             'EditarSiglaEstado',
@@ -40,6 +40,7 @@ class Estado(models.Model):
     class Meta:
         verbose_name = 'Estado'
         verbose_name_plural = 'Estados'
+        add_form = 'EstadoForm'
 
     def __str__(self):
         return self.sigla
@@ -47,7 +48,7 @@ class Estado(models.Model):
     def view(self):
         return super().view().actions('FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas')
 
-    def can_view_sigla(self, user):
+    def _can_view_sigla(self, user):
         return not user.is_superuser
 
 
@@ -184,11 +185,11 @@ class ServidorManager(models.Manager):
 
     @meta('Todos')
     def all(self):
-        return super().display(
+        return self.list_display(
             'get_dados_gerais', 'ativo', 'naturalidade'
-        ).filters(
+        ).list_filter(
             'data_nascimento', 'ativo', 'naturalidade'
-        ).search('nome').ordering(
+        ).search_fields('nome').ordering(
             'nome', 'ativo', 'data_nascimento'
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
@@ -267,15 +268,17 @@ class Servidor(models.Model):
 
     @meta('Frequências')
     def get_frequencias(self):
-        return self.frequencia_set.limit(5)
+        return self.frequencia_set.limit_per_page(3).relation_actions('RegistrarPonto')
 
     @meta('Férias')
     def get_ferias(self):
-        return self.ferias_set.display('ano', 'inicio', 'fim').actions('CadastrarFerias', 'AlterarFerias', 'ExcluirFerias')
+        return self.ferias_set.list_display(
+            'ano', 'inicio', 'fim'
+        ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
-        return self.values('get_endereco', 'get_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
+        return self.values('get_ferias', 'get_endereco', 'get_frequencias').actions('FazerAlgumaCoisa')
 
     @meta('Férias por Ano')
     def get_total_ferias_por_ano(self):
@@ -292,11 +295,11 @@ class FeriasManager(models.Manager):
 
     @meta('Ferias')
     def all(self):
-        return super().all().display(
+        return self.list_display(
             'servidor', 'ano', 'get_periodo2'
-        ).search(
+        ).search_fields(
             'servidor__matricula', 'servidor__nome'
-        ).filters('servidor', 'ano').ordering(
+        ).list_filter('servidor', 'ano').ordering(
             'inicio', 'fim'
         ).actions('EditarFerias').attach('total_por_ano_servidor')
 

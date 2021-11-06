@@ -14,7 +14,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type='fieldset',
+            model=type(instance), names={}, metadata=[], actions=[], type='fieldset', attr=None,
             attach=[], append=[], image=image, template=None, request=None, primitive=False
         )
         for attr_name in names:
@@ -43,6 +43,10 @@ class ValueSet(dict):
 
     def template(self, name):
         self.metadata['template'] = name
+        return self
+
+    def attr(self, name):
+        self.metadata['attr'] = name
         return self
 
     def contextualize(self, request):

@@ -13,7 +13,7 @@
         </tr>
         {% endfor %}
     {% else %}
-        {% if data.series.default %}
+        {% if data.series %}
             {% for name, series in data.series.items %}
                 {% if forloop.first %}
                     <thead>

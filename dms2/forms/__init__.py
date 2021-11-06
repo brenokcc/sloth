@@ -24,6 +24,7 @@ class FormMixin:
             self.one_to_many = {}
             self.fieldsets = self.load_fieldsets()
             self.parse_fieldsets()
+            self.relation_field_name = getattr(self.Meta, 'relation', None)
 
     def load_fieldsets(self):
         # creates default fieldset if necessary
@@ -173,6 +174,10 @@ class FormMixin:
                     instance.save()
                     qs.add(instance)
             qs.filter(pk__in=pks).delete()
+
+        if self.relation_field_name:
+            setattr(self.instance, self.relation_field_name, self.instantiator)
+
         super().save(*args, **kwargs)
 
     def serialize(self, wrap=False, verbose=False):
@@ -197,13 +202,13 @@ class FormMixin:
 
     @classmethod
     @lru_cache
-    def get_metadata(cls, path=None, inline=False, batch=False):
+    def get_metadata(cls, path=None, inline=False, batch=False, relation=False):
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
         if meta:
             target = 'model'
             name = getattr(meta, 'verbose_name', form_name)
-            submit = getattr(meta, 'submit_label', 'Enviar')
+            submit = getattr(meta, 'submit_label', name)
             icon = getattr(meta, 'icon', None)
             ajax = getattr(meta, 'ajax', True)
             style = getattr(meta, 'style', 'primary')
@@ -220,6 +225,8 @@ class FormMixin:
             if inline or batch:
                 target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, form_name)
+            elif relation:
+                path = '{}{}/?xx'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
         metadata = dict(

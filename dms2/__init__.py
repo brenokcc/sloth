@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import options
 from django.db.models import manager, Model
 from django.db.models.base import ModelBase
 
@@ -41,5 +42,10 @@ def __new__(mcs, name, bases, attrs, **kwargs):
 ModelBase.__new__ = __new__
 models.QuerySet = QuerySet
 models.Manager = Manager
+
+setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
+    'icon', 'list_display', 'search_fields', 'list_per_page', 'list_filter', 'fieldsets',
+    'add_form', 'edit_form', 'delete_form'
+))
 
 

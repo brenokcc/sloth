@@ -2,7 +2,15 @@
 
 from dms2 import forms
 
-from .models import Servidor, Ferias, Estado
+from .models import Servidor, Ferias, Estado, Frequencia
+
+
+class RegistrarPonto(forms.ModelForm):
+
+    class Meta:
+        model = Frequencia
+        fields = 'horario', 'homologado',
+        relation = 'servidor'
 
 
 class DefinirSetor(forms.ModelForm):
@@ -48,7 +56,6 @@ class FazerAlgumaCoisa(forms.Form):
 
     class Meta:
         verbose_name = 'Fazer Alguma Coisa'
-        submit_label = 'Enviar'
         style = 'warning'
 
     def has_permission(self):
@@ -80,7 +87,7 @@ class EditarFerias(forms.ModelForm):
     class Meta:
         verbose_name = 'Editar'
         model = Ferias
-        exclude = ()
+        fields = 'inicio', 'fim'
 
 
 class AtivarServidor(forms.ModelForm):

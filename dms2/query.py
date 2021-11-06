@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import datetime
 import json
 import math
@@ -19,13 +20,14 @@ from .utils import getattrr
 
 
 class QuerySet(models.QuerySet):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
             display=[], filters={}, search=[], ordering=[],
-            page=1, limit=None, interval=None, total=0,
+            page=1, limit=None, interval='', total=0,
             actions=[], attach=[], template=None, request=None, attr=None,
-            global_actions=[], batch_actions=[]
+            global_actions=[], batch_actions=[], relation_actions={}
         )
 
     def _clone(self):
@@ -104,7 +106,7 @@ class QuerySet(models.QuerySet):
         attach = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                attr = getattr(self.model.objects._queryset_class, name)
+                attr = getattr(getattr(self.model.objects, '_queryset_class'), name)
                 verbose_name = getattr(attr, 'verbose_name', name)
                 obj = getattr(self.model.objects, name)()
                 if isinstance(obj, QuerySet):
@@ -119,21 +121,7 @@ class QuerySet(models.QuerySet):
                     )
         return attach
 
-    def to_list(self, wrap=False, verbose=False, formatted=False):
-        data = []
-        for obj in self:
-            item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
-            data.append(dict(id=obj.id, data=item, actions=self.get_obj_actions(obj)) if wrap else item)
-        return data
-
-    def get_obj_actions(self, obj):
-        actions = []
-        for form_name in self.metadata['actions']:
-            form_cls = self.model.action_form_cls(form_name)
-            if self.metadata['request'] is None or form_cls(
-                    request=self.metadata['request'], instance=obj, fake=True).has_permission():
-                actions.append(form_cls.__name__)
-        return actions
+    # choices function
 
     def choices(self, filter_lookup, q=None):
         field = getattrr(self.model, filter_lookup)[0].field
@@ -154,8 +142,23 @@ class QuerySet(models.QuerySet):
             q=q, items=items
         )
 
-    def debug(self):
-        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+    # serialization function
+
+    def to_list(self, wrap=False, verbose=False, formatted=False):
+        data = []
+        for obj in self:
+            item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
+            data.append(dict(id=obj.id, data=item, actions=self.get_obj_actions(obj)) if wrap else item)
+        return data
+
+    def get_obj_actions(self, obj):
+        actions = []
+        for form_name in self.metadata['actions']:
+            form_cls = self.model.action_form_cls(form_name)
+            if self.metadata['request'] is None or form_cls(
+                    request=self.metadata['request'], instance=obj, fake=True).has_permission():
+                actions.append(form_cls.__name__)
+        return actions
 
     def serialize(self, path=None, wrap=False, verbose=True, formatted=False):
         if wrap:
@@ -176,40 +179,51 @@ class QuerySet(models.QuerySet):
             if attach:
                 data.update(attach=attach)
             if path is None:
-                path = '/{}/{}/'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
-                if self.metadata['attr']:
-                    path = '{}{}/'.format(path, self.metadata['attr'])
+                if self.metadata['request'] and self.metadata['request'].is_ajax():
+                    path = self.metadata['request'].path[4:]
+                else:
+                    path = '/{}/{}/'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
+                    if self.metadata['attr']:
+                        path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
-            for action_type in ('global_actions', 'actions', 'batch_actions'):
+            for action_type in ('global_actions', 'actions', 'batch_actions', 'relation_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
                     if self.metadata['request'] is None or form_cls(
                             request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
                         action = form_cls.get_metadata(
-                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
+                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions',
+                            relation=action_type == 'relation_actions'
                         )
                         data['actions'][action['target']].append(action)
-            data.update(path=path)
             if self.metadata['template']:
                 data.update(template='{}.html'.format(self.metadata['template']))
             return data
         return self.to_list()
 
-    def display(self, *names):
+    def debug(self):
+        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+
+    # metadata functions
+
+    def list_display(self, *names):
         self.metadata['display'] = list(names)
         return self
 
-    def search(self, *names, q=None):
+    def search(self, q=None):
         if q:
             lookups = []
             for search_field in self._get_list_search() or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
+        return self
+
+    def search_fields(self, *names):
         self.metadata['search'] = list(names)
         return self
 
-    def filters(self, *names):
+    def list_filter(self, *names):
         self.metadata['filters'] = list(names)
         return self
 
@@ -217,7 +231,7 @@ class QuerySet(models.QuerySet):
         self.metadata['ordering'] = list(names)
         return self
 
-    def limit(self, size):
+    def limit_per_page(self, size):
         self.metadata['limit'] = size
         return self
 
@@ -228,6 +242,12 @@ class QuerySet(models.QuerySet):
     def attach(self, *names):
         self.metadata['attach'] = list(names)
         return self
+
+    def attr(self, name):
+        self.metadata['attr'] = name
+        return self
+
+    # action functions
 
     def actions(self, *names):
         self.metadata['actions'] = list(names)
@@ -241,14 +261,32 @@ class QuerySet(models.QuerySet):
         self.metadata['batch_actions'] = list(names)
         return self
 
-    def attr(self, name):
-        self.metadata['attr'] = name
+    def default_actions(self):
+        if self.metadata['attr'] is None:
+            self.metadata['actions'].extend(('edit', 'delete'))
+            self.metadata['global_actions'].extend(('add',))
         return self
 
-    def add_default_actions(self):
-        self.metadata['actions'].extend(('edit', 'delete'))
-        self.metadata['global_actions'].extend(('add',))
+    def relation_actions(self, *names):
+        self.metadata['relation_actions'] = list(names)
         return self
+
+    # search and pagination functions
+
+    def paginate(self, page=None):
+        if page:
+            start = (page - 1) * self._get_list_per_page()
+            end = start + self._get_list_per_page()
+            self.metadata['page'] = page
+            self.metadata['interval'] = '{} - {}'.format(start + 1, end)
+            return self
+        else:
+            self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
+            start = (self.metadata['page'] - 1) * self._get_list_per_page()
+            end = start + self._get_list_per_page()
+            return self[start:end]
+
+    # rendering function
 
     def html(self, uuid=None):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
@@ -259,6 +297,8 @@ class QuerySet(models.QuerySet):
             dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
             request=self.metadata['request']
         )
+
+    # request functions
 
     def contextualize(self, request):
         if request:
@@ -280,7 +320,7 @@ class QuerySet(models.QuerySet):
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self._get_attach())
             if 'uuid' in request.GET:
-                component = self.process_params(request)
+                component = self.process_request(request)
                 raise HtmlJsonReadyResponseException(
                     component.html(
                         uuid=request.GET['uuid']
@@ -288,20 +328,7 @@ class QuerySet(models.QuerySet):
                 )
         return self
 
-    def paginate(self, page=None):
-        if page:
-            start = (page - 1) * self._get_list_per_page()
-            end = start + self._get_list_per_page()
-            self.metadata['page'] = page
-            self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            return self
-        else:
-            self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
-            start = (self.metadata['page'] - 1) * self._get_list_per_page()
-            end = start + self._get_list_per_page()
-            return self[start:end]
-
-    def process_params(self, request):
+    def process_request(self, request):
         page = 1
         attr_name = request.GET['subset']
         attach = self if attr_name == 'all' else getattr(self.model.objects, attr_name)()
@@ -329,13 +356,15 @@ class QuerySet(models.QuerySet):
             qs = qs.search(q=request.GET['q'])
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None:
-                qs.add_default_actions()
+                qs.default_actions()
             qs = qs.paginate(page)
             # qs.debug()
             return qs
         else:
             attach.qs = qs
             return attach
+
+    # aggregation functions
 
     def count(self, x=None, y=None):
         if x:

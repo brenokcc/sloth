@@ -14,7 +14,7 @@
                        data-id="{{ id }}"
                        data-uuid="{{ uuid }}">
                         {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
-                        {{ action.name }}
+                        {{ action.submit }}
                     </a>
                 </li>
             {% endfor %}
@@ -28,7 +28,7 @@
                data-uuid="{{ uuid }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} popup {% if target == 'instance' and action.key not in enabled %}disabled{% endif %}">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
-                {{ action.name }}
+                {{ action.submit }}
             </a>
         {% endfor %}
     {% endif %}

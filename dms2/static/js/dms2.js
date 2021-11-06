@@ -154,7 +154,7 @@ jQuery.fn.extend({
         });
         $(this).find('.date-input').not('.hasDatepicker').datepicker(
             $.datepicker.regional['pt-BR']
-        ).datepicker("option", "dateFormat", 'dd/mm/yy');
+        ).datepicker("option", "dateFormat", 'mm/dd/yy');
         $(this).find('.masked-input').each(function( index ) {
             $(this).mask($(this).data('mask'), {reverse: $(this).data('reverse')})
         });

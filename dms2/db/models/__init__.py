@@ -3,14 +3,10 @@ import six
 from django.db import models
 from django.db.models import *
 from django.db.models import base
-from django.db.models import options
+
 
 from .decorators import meta
 from ...query import QuerySet
-
-setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'list_display', 'search_fields', 'list_per_page', 'list_filter', 'fieldsets'
-))
 
 
 class CharField(CharField):

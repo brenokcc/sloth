@@ -41,8 +41,8 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
             obj = model.objects.get(pk=x)
             if y:
                 if z:
+                    attr = getattr(obj, y)
                     if z.split('-')[0].isdigit():  # queryset action
-                        attr = getattr(obj, y)
                         form_cls = model.action_form_cls(w)
                         instances = attr().filter(pk__in=z.split('-'))
                         form = form_cls(request=request, instantiator=obj, instances=instances)
@@ -53,7 +53,11 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         raise PermissionDenied()
                     else:  # pks is instance action
                         form_cls = model.action_form_cls(z)
-                        form = form_cls(request=request, instance=obj, instantiator=obj)
+                        # if it is a relation action, do not set the instance attribute
+                        if z in getattr(attr(), 'metadata', {}).get('relation_actions', ()):
+                            form = form_cls(request=request, instantiator=obj)
+                        else:
+                            form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.has_permission():
                             if form.is_valid():
                                 form.process()
@@ -86,9 +90,10 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 return form
                             raise PermissionDenied()
                         else:
-                            # subset
+                            # object subset
                             if obj.has_attr_view_permission(request.user, y):
-                                output = obj.values(y).contextualize(request)
+                                attr = getattr(obj, y)
+                                output = attr().attr(x).contextualize(request)
                                 return output
                         raise PermissionDenied()
             else:
@@ -138,4 +143,4 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        return model.objects.all().contextualize(request).add_default_actions()
+        return model.objects.all().contextualize(request).default_actions()

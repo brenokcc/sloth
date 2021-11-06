@@ -50,7 +50,9 @@ class ModelMixin(object):
         return ValueSet(self, names)
 
     def view(self):
-        return self.values(*[field.name for field in self.metaclass().fields])
+        names = [field.name for field in self.metaclass().fields]
+        print(names)
+        return self.values(*names)
 
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)
@@ -72,7 +74,8 @@ class ModelMixin(object):
 
     @classmethod
     def add_form_cls(cls):
-        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
+        cls_name = getattr(cls.metaclass(), 'add_form', None)
+        form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
         class Add(form_cls or ModelForm):
             class Meta:
@@ -81,6 +84,7 @@ class ModelMixin(object):
                 verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 icon = 'plus'
                 style = 'success'
+                submit_label = 'Cadastrar'
 
             def process(self):
                 self.save()
@@ -98,14 +102,17 @@ class ModelMixin(object):
 
     @classmethod
     def edit_form_cls(cls):
-        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
+        cls_name = getattr(cls.metaclass(), 'edit_form', None)
+        if cls_name is None:
+            cls_name = getattr(cls.metaclass(), 'add_form', None)
+        form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
         class Edit(form_cls or ModelForm):
             class Meta:
                 model = cls
                 exclude = ()
                 verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
-                submit = 'Editar'
+                submit_label = 'Editar'
                 icon = 'pencil'
                 style = 'primary'
 
@@ -134,6 +141,7 @@ class ModelMixin(object):
                 verbose_name = 'Excluir'
                 icon = 'x'
                 style = 'danger'
+                submit_label = 'Excluir'
 
             def process(self):
                 self.instance.delete()

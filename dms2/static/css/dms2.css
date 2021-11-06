@@ -35,6 +35,9 @@
 .fieldset-tab{
     margin-top: 10px;
 }
+.fieldset-tab .fieldset-title{
+    visibility: hidden;
+}
 .fieldset-title {
     display: inline-block;
 }

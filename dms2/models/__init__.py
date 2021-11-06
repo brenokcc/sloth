@@ -9,13 +9,6 @@ from oauth2_provider.models import AbstractApplication
 from dms2.db.models import meta
 
 
-class RoleManager(models.Manager):
-
-    @meta('Todos')
-    def all(self):
-        return self.display('user', 'name', 'scope_key', 'get_scope')
-
-
 class Role(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -30,11 +23,12 @@ class Role(models.Model):
     scope_type = models.ForeignKey(ContentType, verbose_name='Tipo do Escopo', null=True, on_delete=models.CASCADE)
     scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True)
 
-    objects = RoleManager()
-
     class Meta:
         verbose_name = 'Papel'
         verbose_name_plural = 'Papéis'
+        list_display = 'user', 'name', 'scope_key', 'get_scope'
+        list_filter = 'user',
+        list_per_page = 20
 
     def __str__(self):
         if self.scope_key and self.scope_value:

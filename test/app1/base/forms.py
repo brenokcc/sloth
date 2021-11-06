@@ -5,7 +5,7 @@ from dms2 import forms
 from .models import Servidor, Ferias, Estado
 
 
-class DefinirSetor(forms.QuerySetForm):
+class DefinirSetor(forms.ModelForm):
     class Meta:
         model = Servidor
         fields = 'setor',
@@ -49,19 +49,20 @@ class FazerAlgumaCoisa(forms.Form):
     class Meta:
         verbose_name = 'Fazer Alguma Coisa'
         submit_label = 'Enviar'
+        style = 'warning'
 
     def has_permission(self):
         return True
 
 
-class EditarSiglaEstado(forms.QuerySetForm):
+class EditarSiglaEstado(forms.ModelForm):
     class Meta:
         verbose_name = 'Editar Sigla'
         model = Estado
         fields = 'sigla',
 
 
-class EditarSiglasEstado(forms.QuerySetForm):
+class EditarSiglasEstado(forms.ModelForm):
     class Meta:
         verbose_name = 'Editar Siglas'
         model = Estado
@@ -76,21 +77,21 @@ class CorrigirNomeServidor1(forms.ModelForm):
         fields = 'nome',
 
 
-class CorrigirNomeServidor(forms.QuerySetForm):
+class CorrigirNomeServidor(forms.ModelForm):
     class Meta:
         verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
-class EditarFerias(forms.QuerySetForm):
+class EditarFerias(forms.ModelForm):
     class Meta:
         verbose_name = 'Editar'
         model = Ferias
         exclude = ()
 
 
-class AtivarServidor(forms.QuerySetForm):
+class AtivarServidor(forms.ModelForm):
     class Meta:
         verbose_name = 'Ativar'
         model = Servidor
@@ -101,7 +102,7 @@ class AtivarServidor(forms.QuerySetForm):
         super().save()
 
 
-class InativarServidores(forms.QuerySetForm):
+class InativarServidores(forms.ModelForm):
     class Meta:
         title = 'Inativar'
         model = Servidor
@@ -146,14 +147,14 @@ class CadastrarFerias(forms.ModelForm):
         exclude = ()
 
 
-class AlterarFerias(forms.QuerySetForm):
+class AlterarFerias(forms.ModelForm):
     class Meta:
         verbose_name = 'Alterar'
         model = Ferias
         fields = 'inicio', 'fim'
 
 
-class ExcluirFerias(forms.QuerySetForm):
+class ExcluirFerias(forms.ModelForm):
     class Meta:
         verbose_name = 'Excluir'
         model = Ferias

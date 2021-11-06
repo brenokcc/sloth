@@ -25,8 +25,8 @@ class EstadoManager(models.Manager):
         return super().all().display(
             'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
         ).actions(
-            'FazerAlgumaCoisa', 'EditarSiglaEstado', 'EditarSiglasEstado'
-        )
+            'EditarSiglaEstado', 'EditarSiglasEstado'
+        ).global_actions('FazerAlgumaCoisa', )
 
 
 class Estado(models.Model):
@@ -162,8 +162,8 @@ class UnidadeOrganizacional(models.Model):
         return '{}/{}'.format(self.sigla, self.instituto)
 
 
-@role('Chefe', 'chefe__user', setor='self')
-@role('Substituto Eventual', 'substitutos_eventuais__user', setor='self')
+@role('Chefe', 'chefe__user', setor='id')
+@role('Substituto Eventual', 'substitutos_eventuais__user', setor='id')
 class Setor(models.Model):
     uo = models.ForeignKey(UnidadeOrganizacional, verbose_name='Campus')
     sigla = models.CharField(verbose_name='Sigla')
@@ -192,7 +192,9 @@ class ServidorManager(models.Manager):
             'nome', 'ativo', 'data_nascimento'
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
-        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor')  # .template('servidores')
+        ).actions(
+            'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
+        )  # .template('servidores')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -211,7 +213,7 @@ class ServidorManager(models.Manager):
         return self.filter(ativo=False).actions('AtivarServidor')
 
 
-@role('Servidor', 'user', servidor='self', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
+@role('Servidor', 'user', servidor='id', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
 class Servidor(models.Model):
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
@@ -276,6 +278,12 @@ class Servidor(models.Model):
     @meta('Férias por Ano')
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
+
+    def save(self):
+        self.user = User.objects.get_or_create(
+            username=self.cpf, defaults=dict(email=None)
+        )[0]
+        super().save()
 
 
 class FeriasManager(models.Manager):

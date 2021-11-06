@@ -197,7 +197,7 @@ class FormMixin:
 
     @classmethod
     @lru_cache
-    def get_metadata(cls, path=None):
+    def get_metadata(cls, path=None, inline=False):
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
         if meta:
@@ -219,7 +219,7 @@ class FormMixin:
             method = 'get'
             batch = False
         if path:
-            if hasattr(cls, 'instances'):
+            if inline:
                 target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, form_name)
             else:
@@ -358,6 +358,9 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
         self.message = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
+        self.instances = kwargs.pop('instances', ())
+        if self.instances:
+            kwargs.update(instance=self.instances[0])
         if 'data' not in kwargs:
             if self.base_fields:
                 data = self.request.POST or None
@@ -368,20 +371,6 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
             super().__init__(*args, **kwargs)
 
     def process(self):
-        self.save()
-        self.notify()
-
-
-class QuerySetFormMixin:
-    instances = []
-
-    def __init__(self, *args, **kwargs):
-        self.instances = kwargs.pop('instances', ())
-        if self.instances:
-            kwargs.update(instance=self.instances[0])
-        super().__init__(*args, **kwargs)
-
-    def process(self):
         if self.instances:
             for instance in self.instances:
                 self.instance = instance
@@ -390,10 +379,6 @@ class QuerySetFormMixin:
         else:
             self.save()
         self.notify()
-
-
-class QuerySetForm(QuerySetFormMixin, ModelForm):
-    pass
 
 
 class LoginForm(Form):

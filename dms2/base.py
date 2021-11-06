@@ -1,7 +1,6 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
-
-from .forms import ModelForm, QuerySetForm
+from .forms import ModelForm
 from .values import ValueSet
 from .query import QuerySet
 
@@ -74,34 +73,34 @@ class ModelMixin(object):
     @classmethod
     def add_form_cls(cls):
         form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
-        if form_cls is None:
 
-            class Add(ModelForm):
-                class Meta:
-                    model = cls
-                    exclude = ()
-                    verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
-                    icon = 'plus'
-                    style = 'success'
+        class Add(form_cls or ModelForm):
+            class Meta:
+                model = cls
+                exclude = ()
+                verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
+                icon = 'plus'
+                style = 'success'
 
-                def process(self):
-                    self.save()
-                    self.notify('Cadastro realizado com sucesso')
+            def process(self):
+                self.save()
+                self.notify('Cadastro realizado com sucesso')
 
-                def has_permission(self):
-                    return self.instance.has_add_permission(self.request.user)
+            def has_permission(self):
+                return self.instance.has_add_permission(self.request.user)
 
-            form_cls = Add
-            fieldsets = getattr(cls, 'fieldsets', None)
-            if fieldsets:
-                form_cls.fieldsets = fieldsets
+        form_cls = Add
+        fieldsets = getattr(cls.metaclass(), 'fieldsets', None)
+        if fieldsets:
+            form_cls.Meta.fieldsets = fieldsets
 
         return form_cls
 
     @classmethod
-    def edit_form_cls(cls, inline=False):
+    def edit_form_cls(cls):
+        form_cls = cls.action_form_cls('{}Form'.format(cls.__name__))
 
-        class Edit(QuerySetForm if inline else ModelForm):
+        class Edit(form_cls or ModelForm):
             class Meta:
                 model = cls
                 exclude = ()
@@ -117,12 +116,17 @@ class ModelMixin(object):
             def has_permission(self):
                 return self.instance.has_edit_permission(self.request.user)
 
-        return Edit
+        form_cls = Edit
+        fieldsets = getattr(cls.metaclass(), 'fieldsets', None)
+        if fieldsets:
+            form_cls.Meta.fieldsets = fieldsets
+
+        return form_cls
 
     @classmethod
-    def delete_form_cls(cls, inline=False):
+    def delete_form_cls(cls):
 
-        class Delete(QuerySetForm if inline else ModelForm):
+        class Delete(ModelForm):
             class Meta:
                 model = cls
                 fields = ()
@@ -148,10 +152,6 @@ class ModelMixin(object):
             return cls.edit_form_cls()
         elif action.lower() == 'delete':
             return cls.delete_form_cls()
-        elif action.lower() == 'edit-inline':
-            return cls.edit_form_cls(inline=True)
-        elif action.lower() == 'delete-inline':
-            return cls.delete_form_cls(inline=True)
         else:
             config = apps.get_app_config(cls.metaclass().app_label)
             forms = __import__(
@@ -180,20 +180,27 @@ class ModelMixin(object):
         return None
 
     @classmethod
+    def default_list_per_page(cls):
+        return getattr(cls.metaclass(), 'list_per_page', 10)
+
+    @classmethod
     def default_list_fields(cls):
-        return [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id']
+        list_display = getattr(cls.metaclass(), 'list_display', None)
+        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id']
 
     @classmethod
     def default_filter_fields(cls, exclude=None):
-        filters = []
-        for field in cls.metaclass().fields:
-            cls_name = type(field).__name__
-            if cls_name in FILTER_FIELD_TYPES:
-                if field.name != exclude:
-                    filters.append(field.name)
-            elif field.choices:
-                if field.name != exclude:
-                    filters.append(field.name)
+        filters = getattr(cls.metaclass(), 'list_filter', None)
+        if filters is None:
+            filters = []
+            for field in cls.metaclass().fields:
+                cls_name = type(field).__name__
+                if cls_name in FILTER_FIELD_TYPES:
+                    if field.name != exclude:
+                        filters.append(field.name)
+                elif field.choices:
+                    if field.name != exclude:
+                        filters.append(field.name)
         return filters
 
     @classmethod
@@ -261,3 +268,38 @@ class ModelMixin(object):
     @classmethod
     def metaclass(cls):
         return getattr(cls, '_meta')
+
+    def get_role_tuples(self):
+        content_type = apps.get_model('contenttypes', 'ContentType')
+        model = type(self)
+        lookups = list()
+        tuples = set()
+        for role in self._roles:
+            lookups.append(role['user'])
+            lookups.extend(role['scopes'].values())
+        values = model.objects.filter(pk=self.pk).values(*set(lookups)).first()
+        if values:
+            for role in self._roles:
+                user_id = values[role['user']]
+                tuples.add((user_id, role['name'], None, None, None))
+                for scope_key, lookup in role['scopes'].items():
+                    scope_type = content_type.objects.get_for_model(
+                        model if lookup == 'id' else model.get_field(lookup).related_model
+                    )
+                    scope_value = values[lookup]
+                    tuples.add((user_id, role['name'], scope_type.id, scope_key, scope_value))
+        return tuples
+
+    def sync_roles(self, role_tuples):
+        role = apps.get_model('dms2', 'Role')
+        role_tuples2 = self.get_role_tuples()
+        if role_tuples != role_tuples2:
+            for user_id, name, scope_type, scope_key, scope_value in role_tuples2:
+                role.objects.get_or_create(
+                    user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
+                )
+            deleted_role_tuples = role_tuples - role_tuples2
+            for user_id, name, scope_type, scope_key, scope_value in deleted_role_tuples:
+                role.objects.filter(
+                    user_id=user_id, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+                ).delete()

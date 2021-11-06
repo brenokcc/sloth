@@ -15,7 +15,6 @@ from django.template.loader import render_to_string
 from .utils.http import XlsResponse, CsvResponse
 from .statistics import QuerySetStatistics
 from .exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from .forms import QuerySetForm, QuerySetFormMixin
 from .utils import getattrr
 
 
@@ -24,7 +23,7 @@ class QuerySet(models.QuerySet):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
             display=[], filters={}, search=[], ordering=[],
-            page=1, limit=10, interval='1 - 10', total=0,
+            page=1, limit=None, interval=None, total=0,
             actions=[], attach=[], template=None, request=None, attr=None,
             global_actions=[]
         )
@@ -49,6 +48,9 @@ class QuerySet(models.QuerySet):
 
     def _get_list_ordering(self):
         return self.metadata['ordering']
+
+    def _get_list_per_page(self):
+        return self.metadata['limit'] or self.model.default_list_per_page()
 
     def _get_search(self, verbose=False):
         display = {}
@@ -89,9 +91,9 @@ class QuerySet(models.QuerySet):
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
         pagination = []
-        for page in range(0, self.count() // self.metadata['limit'] + 1):
-            start = page * self.metadata['limit']
-            end = start + self.metadata['limit']
+        for page in range(0, self.count() // self._get_list_per_page() + 1):
+            start = page * self._get_list_per_page()
+            end = start + self._get_list_per_page()
             pagination.append(dict(id=page + 1, text='{} - {}'.format(start + 1, end)))
         filters['Paginação'] = dict(
             key='pagination', name='Paginação', type='choices', choices=pagination
@@ -128,9 +130,9 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
-            if issubclass(form_cls, QuerySetFormMixin) and not getattr(getattr(form_cls, 'Meta'), 'batch', False):
-                if self.metadata['request'] is None or form_cls(request=self.metadata['request'],
-                                                                instance=obj, fake=True).has_permission():
+            if not getattr(getattr(form_cls, 'Meta'), 'batch', False):
+                if self.metadata['request'] is None or form_cls(
+                        request=self.metadata['request'], instance=obj, fake=True).has_permission():
                     actions.append(form_cls.__name__)
         return actions
 
@@ -180,13 +182,13 @@ class QuerySet(models.QuerySet):
                     path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
-            for form_name in self.metadata['actions']:
-                form_cls = self.model.action_form_cls(form_name)
-                if not issubclass(form_cls, QuerySetFormMixin):
-                    if self.metadata['request'] and not form_cls(request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
-                        continue
-                action = form_cls.get_metadata(path)
-                data['actions'][action['target']].append(action)
+            for action_type in ('global_actions', 'actions'):
+                for form_name in self.metadata[action_type]:
+                    form_cls = self.model.action_form_cls(form_name)
+                    if self.metadata['request'] is None or form_cls(
+                            request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
+                        action = form_cls.get_metadata(path, inline=action_type == 'actions')
+                        data['actions'][action['target']].append(action)
             data.update(path=path)
             if self.metadata['template']:
                 data.update(template='{}.html'.format(self.metadata['template']))
@@ -239,7 +241,8 @@ class QuerySet(models.QuerySet):
         return self
 
     def add_default_actions(self):
-        self.metadata['actions'].extend(('add', 'edit-inline', 'delete-inline'))
+        self.metadata['actions'].extend(('edit', 'delete'))
+        self.metadata['global_actions'].extend(('add',))
         return self
 
     def html(self, uuid=None):
@@ -282,14 +285,15 @@ class QuerySet(models.QuerySet):
 
     def paginate(self, page=None):
         if page:
-            start = (page - 1) * self.metadata['limit']
-            end = start + self.metadata['limit']
+            start = (page - 1) * self._get_list_per_page()
+            end = start + self._get_list_per_page()
             self.metadata['page'] = page
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
             return self
         else:
-            start = (self.metadata['page'] - 1) * self.metadata['limit']
-            end = start + self.metadata['limit']
+            self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
+            start = (self.metadata['page'] - 1) * self._get_list_per_page()
+            end = start + self._get_list_per_page()
             return self[start:end]
 
     def process_params(self, request):

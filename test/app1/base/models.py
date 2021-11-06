@@ -186,7 +186,7 @@ class ServidorManager(models.Manager):
     @meta('Todos')
     def all(self):
         return self.list_display(
-            'get_dados_gerais', 'ativo', 'naturalidade'
+            'get_foto', 'get_dados_gerais', 'ativo', 'naturalidade'
         ).list_filter(
             'data_nascimento', 'ativo', 'naturalidade'
         ).search_fields('nome').ordering(
@@ -209,7 +209,7 @@ class ServidorManager(models.Manager):
 
     @meta('Ativos')
     def ativos(self):
-        return self.filter(ativo=True).actions('InativarServidores')
+        return self.filter(ativo=True).batch_actions('InativarServidores')
 
     @meta('Inativos')
     def inativos(self):
@@ -218,6 +218,7 @@ class ServidorManager(models.Manager):
 
 @role('Servidor', 'user', servidor='id', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
 class Servidor(models.Model):
+    foto = models.ImageField(verbose_name='Foto', null=True, blank=True, upload_to='fotos')
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
     cpf = models.CharField('CPF', rmask='000.000.000-00')
@@ -235,6 +236,7 @@ class Servidor(models.Model):
         icon = 'file-earmark-person'
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
+        form = 'ServidorForm'
 
     def __str__(self):
         return self.nome
@@ -242,8 +244,9 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
+    @meta('Foto', formatter='image')
     def get_foto(self):
-        return '/static/images/profile.png'
+        return self.foto.name or '/static/images/profile.png'
 
     @meta('Progresso', formatter='progress')
     def get_progresso(self):
@@ -262,7 +265,7 @@ class Servidor(models.Model):
     def view(self):
         return self.values(
             'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias'
-        ).actions('InformarEndereco', 'CorrigirNomeServidor1').attach('get_ferias').append(
+        ).actions('InformarEndereco', 'CorrigirNomeServidor1', 'Edit').attach('get_ferias').append(
             'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
         )
 
@@ -286,7 +289,7 @@ class Servidor(models.Model):
 
     def save(self):
         self.user = User.objects.get_or_create(
-            username=self.cpf, defaults=dict(email=None)
+            username=self.cpf, defaults={}
         )[0]
         super().save()
 

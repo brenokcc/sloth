@@ -112,16 +112,34 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
             attr = getattr(model.objects, x, None)
             if attr:
                 if y:
-                    form_cls = model.action_form_cls(z)
-                    instances = attr().filter(pk__in=y.split('-'))
-                    form = form_cls(request=request, instances=instances)
-                    if form.has_permission():
-                        if form.is_valid():
-                            result = form.process()
-                            if result is not None:
-                                return result
-                        return form
-                    raise PermissionDenied()
+                    if y.isdigit():  # view object in a subset
+                        if z:
+                            form_cls = model.action_form_cls(z)
+                            instances = attr().filter(pk__in=y.split('-'))
+                            form = form_cls(request=request, instances=instances)
+                            if form.has_permission():
+                                if form.is_valid():
+                                    result = form.process()
+                                    if result is not None:
+                                        return result
+                                return form
+                            raise PermissionDenied()
+                        else:
+                            obj = model.objects.get(pk=y)
+                            if obj.has_view_permission(request.user):
+                                return obj.view().contextualize(request)
+                            raise PermissionDenied()
+                    else:  # execute action in a subset
+                        form_cls = model.action_form_cls(z)
+                        instances = attr().filter(pk__in=y.split('-'))
+                        form = form_cls(request=request, instances=instances)
+                        if form.has_permission():
+                            if form.is_valid():
+                                result = form.process()
+                                if result is not None:
+                                    return result
+                            return form
+                        raise PermissionDenied()
                 else:
                     return attr().attr(x).contextualize(request)
             else:

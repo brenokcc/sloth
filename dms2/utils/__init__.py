@@ -56,7 +56,7 @@ def serialize(obj):
         elif hasattr(obj, 'all'):
             return [str(o) for o in obj]
         elif isinstance(obj, FieldFile):
-            return obj.url
+            return obj and obj.url or '/static/images/no-image.png'
         return str(obj)
     return None
 

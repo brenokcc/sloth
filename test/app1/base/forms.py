@@ -34,7 +34,7 @@ class ServidorForm(forms.ModelForm):
         verbose_name = 'Cadastrar Servidor'
         model = Servidor
         fieldsets = {
-            'Dados Gerais': ('nome', ('cpf', 'matricula', 'data_nascimento', 'naturalidade'), 'ativo'),
+            'Dados Gerais': ('nome', 'foto', ('cpf', 'matricula', 'data_nascimento', 'naturalidade'), 'ativo'),
             'Endereço': ('endereco',),
         }
 

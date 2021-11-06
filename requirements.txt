@@ -2,3 +2,4 @@ django
 requests
 django-oauth-toolkit
 xlwt
+Pillow

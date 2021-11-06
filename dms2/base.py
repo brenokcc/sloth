@@ -75,6 +75,8 @@ class ModelMixin(object):
     @classmethod
     def add_form_cls(cls):
         cls_name = getattr(cls.metaclass(), 'add_form', None)
+        if cls_name is None:
+            cls_name = getattr(cls.metaclass(), 'form', None)
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
         class Add(form_cls or ModelForm):
@@ -85,6 +87,10 @@ class ModelMixin(object):
                 icon = 'plus'
                 style = 'success'
                 submit_label = 'Cadastrar'
+                if form_cls and hasattr(form_cls.Meta, 'fieldsets'):
+                    fieldsets = form_cls.Meta.fieldsets
+                elif hasattr(cls.metaclass(), 'fieldsets'):
+                    fieldsets = cls.metaclass().fieldsets
 
             def process(self):
                 self.save()
@@ -93,18 +99,13 @@ class ModelMixin(object):
             def has_permission(self):
                 return self.instance.has_add_permission(self.request.user)
 
-        form_cls = Add
-        fieldsets = getattr(cls.metaclass(), 'fieldsets', None)
-        if fieldsets:
-            form_cls.Meta.fieldsets = fieldsets
-
-        return form_cls
+        return Add
 
     @classmethod
     def edit_form_cls(cls):
         cls_name = getattr(cls.metaclass(), 'edit_form', None)
         if cls_name is None:
-            cls_name = getattr(cls.metaclass(), 'add_form', None)
+            cls_name = getattr(cls.metaclass(), 'form', None)
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
         class Edit(form_cls or ModelForm):
@@ -115,6 +116,10 @@ class ModelMixin(object):
                 submit_label = 'Editar'
                 icon = 'pencil'
                 style = 'primary'
+                if form_cls and hasattr(form_cls.Meta, 'fieldsets'):
+                    fieldsets = form_cls.Meta.fieldsets
+                elif hasattr(cls.metaclass(), 'fieldsets'):
+                    fieldsets = cls.metaclass().fieldsets
 
             def process(self):
                 self.save()
@@ -123,12 +128,7 @@ class ModelMixin(object):
             def has_permission(self):
                 return self.instance.has_edit_permission(self.request.user)
 
-        form_cls = Edit
-        fieldsets = getattr(cls.metaclass(), 'fieldsets', None)
-        if fieldsets:
-            form_cls.Meta.fieldsets = fieldsets
-
-        return form_cls
+        return Edit
 
     @classmethod
     def delete_form_cls(cls):

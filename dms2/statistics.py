@@ -126,7 +126,8 @@ class QuerySetStatistics(object):
             data = list()
             for j, (xk, xv) in enumerate(self._xdict.items()):
                 data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, None), 0)), '#EEE'])
-            series['default'] = data
+            if data:
+                series['default'] = data
 
         return dict(
             type='statistics',

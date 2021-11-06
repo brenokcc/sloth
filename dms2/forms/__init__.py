@@ -253,6 +253,8 @@ class FormMixin:
                 classes.append('form-control')
             elif isinstance(field.widget, widgets.Select):
                 classes.append('form-control')
+            elif isinstance(field.widget, widgets.FileInput):
+                classes.append('form-control')
             elif isinstance(field.widget, widgets.CheckboxInput):
                 classes.append('form-check-input')
 
@@ -372,6 +374,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
             else:
                 data = self.request.POST
             kwargs['data'] = data
+            kwargs['files'] = self.request.FILES or None
         if not self.fake:
             super().__init__(*args, **kwargs)
 

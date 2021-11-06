@@ -105,6 +105,9 @@ class ValueSet(dict):
                                 image_attr = getattr(self.instance, image_attr_name)
                                 image = image_attr() if callable(image_attr) else image_attr
                                 if image:
+                                    image = str(image)
+                                    if not image.startswith('/') and not image.startswith('http'):
+                                        image = '/media/{}'.format(image)
                                     value['image'] = image
                             if template:
                                 value['template'] = '{}.html'.format(template)

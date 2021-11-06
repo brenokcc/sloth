@@ -240,3 +240,7 @@ textarea{
     list-style: none;
     color: #dc3545;
 }
+
+.search-menu a.subitem{
+    line-height: 1.7;
+}

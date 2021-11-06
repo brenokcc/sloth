@@ -51,3 +51,10 @@ class Progress(Formatter):
 
     def render(self):
         return super().render()
+
+
+class Image(Formatter):
+    template = 'adm/formatters/image.html'
+
+    def render(self):
+        return super().render()

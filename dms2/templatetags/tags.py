@@ -89,3 +89,10 @@ def is_one_to_many_field_controller(name):
 @register.filter
 def is_controller_field(name):
     return is_one_to_one_field_controller(name) or is_one_to_many_field_controller(name)
+
+
+@register.filter
+def image_src(path):
+    if path.startswith('/') or path.startswith('http'):
+        return path
+    return '/media/{}'.format(path)

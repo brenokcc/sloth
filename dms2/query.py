@@ -25,7 +25,7 @@ class QuerySet(models.QuerySet):
             display=[], filters={}, search=[], ordering=[],
             page=1, limit=None, interval=None, total=0,
             actions=[], attach=[], template=None, request=None, attr=None,
-            global_actions=[]
+            global_actions=[], batch_actions=[]
         )
 
     def _clone(self):
@@ -130,10 +130,9 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
-            if not getattr(getattr(form_cls, 'Meta'), 'batch', False):
-                if self.metadata['request'] is None or form_cls(
-                        request=self.metadata['request'], instance=obj, fake=True).has_permission():
-                    actions.append(form_cls.__name__)
+            if self.metadata['request'] is None or form_cls(
+                    request=self.metadata['request'], instance=obj, fake=True).has_permission():
+                actions.append(form_cls.__name__)
         return actions
 
     def choices(self, filter_lookup, q=None):
@@ -182,12 +181,14 @@ class QuerySet(models.QuerySet):
                     path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
-            for action_type in ('global_actions', 'actions'):
+            for action_type in ('global_actions', 'actions', 'batch_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
                     if self.metadata['request'] is None or form_cls(
                             request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
-                        action = form_cls.get_metadata(path, inline=action_type == 'actions')
+                        action = form_cls.get_metadata(
+                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
+                        )
                         data['actions'][action['target']].append(action)
             data.update(path=path)
             if self.metadata['template']:
@@ -234,6 +235,10 @@ class QuerySet(models.QuerySet):
 
     def global_actions(self, *names):
         self.metadata['global_actions'] = list(names)
+        return self
+
+    def batch_actions(self, *names):
+        self.metadata['batch_actions'] = list(names)
         return self
 
     def attr(self, name):

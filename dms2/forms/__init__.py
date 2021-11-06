@@ -197,7 +197,7 @@ class FormMixin:
 
     @classmethod
     @lru_cache
-    def get_metadata(cls, path=None, inline=False):
+    def get_metadata(cls, path=None, inline=False, batch=False):
         form_name = cls.__name__
         meta = getattr(cls, 'Meta', None)
         if meta:
@@ -208,7 +208,6 @@ class FormMixin:
             ajax = getattr(meta, 'ajax', True)
             style = getattr(meta, 'style', 'primary')
             method = getattr(meta, 'method', 'post')
-            batch = getattr(meta, 'batch', False)
         else:
             target = 'model'
             name = 'Enviar'
@@ -217,17 +216,16 @@ class FormMixin:
             ajax = True
             style = 'primary'
             method = 'get'
-            batch = False
         if path:
-            if inline:
+            if inline or batch:
                 target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
-        metadata = dict(type='form', key=form_name, name=name, submit=submit, target=target)
-        if getattr(meta, 'batch', False):
-            metadata.update(batch=True)
-        metadata.update(method=method, icon=icon, style=style, ajax=ajax, path=path)
+        metadata = dict(
+            type='form', key=form_name, name=name, submit=submit, target=target,
+            method=method, icon=icon, style=style, ajax=ajax, path=path
+        )
         return metadata
 
     def get_method(self):

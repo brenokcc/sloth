@@ -62,14 +62,6 @@ class EditarSiglaEstado(forms.ModelForm):
         fields = 'sigla',
 
 
-class EditarSiglasEstado(forms.ModelForm):
-    class Meta:
-        verbose_name = 'Editar Siglas'
-        model = Estado
-        fields = 'sigla',
-        batch = True
-
-
 class CorrigirNomeServidor1(forms.ModelForm):
     class Meta:
         verbose_name = 'Corrigir Nome'
@@ -106,7 +98,6 @@ class InativarServidores(forms.ModelForm):
     class Meta:
         title = 'Inativar'
         model = Servidor
-        batch = True
         fields = ()
 
     def save(self):
@@ -159,4 +150,3 @@ class ExcluirFerias(forms.ModelForm):
         verbose_name = 'Excluir'
         model = Ferias
         exclude = ()
-        batch = True

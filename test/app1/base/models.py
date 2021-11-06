@@ -25,8 +25,8 @@ class EstadoManager(models.Manager):
         return super().all().display(
             'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
         ).actions(
-            'EditarSiglaEstado', 'EditarSiglasEstado'
-        ).global_actions('FazerAlgumaCoisa', )
+            'EditarSiglaEstado',
+        ).global_actions('FazerAlgumaCoisa').batch_actions('EditarSiglaEstado')
 
 
 class Estado(models.Model):
@@ -194,7 +194,9 @@ class ServidorManager(models.Manager):
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
         ).actions(
             'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
-        )  # .template('servidores')
+        ).global_actions(
+            'FazerAlgumaCoisa'
+        )   # .template('servidores')
 
     @meta('Com Endereço')
     def com_endereco(self):

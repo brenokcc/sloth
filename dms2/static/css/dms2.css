@@ -66,6 +66,10 @@
 .fieldset-side-panel .card-body {
     padding: 0px;
 }
+.fieldset-side-panel .action-checkbox{
+    font-size: 22px;
+    margin: 5px;
+}
 .card-body .queryset-title h2{
     font-size: 1.25rem;
 }

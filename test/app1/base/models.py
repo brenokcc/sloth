@@ -271,7 +271,8 @@ class Servidor(models.Model):
 
     @meta('Frequências')
     def get_frequencias(self):
-        return self.frequencia_set.limit_per_page(3).relation_actions('RegistrarPonto')
+        return self.frequencia_set.limit_per_page(3).relation_actions('RegistrarPonto').actions(
+            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa')
 
     @meta('Férias')
     def get_ferias(self):

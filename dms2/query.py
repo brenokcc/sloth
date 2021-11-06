@@ -190,7 +190,7 @@ class QuerySet(models.QuerySet):
             for action_type in ('global_actions', 'actions', 'batch_actions', 'relation_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
-                    if self.metadata['request'] is None or form_cls(
+                    if action_type == 'actions' or self.metadata['request'] is None or form_cls(
                             request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
                         action = form_cls.get_metadata(
                             path, inline=action_type == 'actions', batch=action_type == 'batch_actions',

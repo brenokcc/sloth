@@ -5,6 +5,13 @@ from dms2 import forms
 from .models import Servidor, Ferias, Estado, Frequencia
 
 
+class HomologarFrequencia(forms.ModelForm):
+    class Meta:
+        verbose_name = 'Homologar'
+        model = Frequencia
+        fields = 'homologado',
+
+
 class RegistrarPonto(forms.ModelForm):
 
     class Meta:

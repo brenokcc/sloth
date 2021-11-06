@@ -9,14 +9,11 @@
             {{ data.name }}
         </h2>
     </div>
-    <div class="queryset-action-bar">
-        {% if data.actions.model %}
-            {% include "adm/actions.html" with uuid=data.uuid target="model" actions=data.actions.model  %}
-        {% endif %}
-    </div>
+    {% include "adm/queryset/actions/global.html" %}
     <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}" style="{% if compact or request|mobile %}display:none{% endif %}">
         <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
             <input type="hidden" name="uuid" value="{{ data.uuid }}">
+            <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
             <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
             {% if data.metadata.search %}
             <div class="filter">
@@ -145,6 +142,7 @@
                 }
             });
         }
+        {% if data.attach %}
         function onreload{{ data.uuid }}(){
             $.ajax({
                 dataType: 'json',
@@ -156,6 +154,7 @@
                 }
             });
         }
+        {% endif %}
         function toggleActions{{ data.uuid }}(input){
             if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
             if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
@@ -205,6 +204,7 @@
 {% else %}
     {% include "adm/datatable.html" with data=data %}
 {% endif %}
+{% include "adm/queryset/actions/batch.html" %}
 
 {% if uuid is None %}
     </div>

@@ -324,6 +324,7 @@ class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
         self.fake = kwargs.pop('fake', False)
         self.instance = kwargs.pop('instance', None)
+        self.instances = kwargs.pop('instances', ())
         self.message = None
         self.instantiator = kwargs.pop('instantiator', None)
         self.request = kwargs.pop('request', None)

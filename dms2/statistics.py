@@ -138,5 +138,4 @@ class QuerySetStatistics(object):
 
     def html(self, uuid=None, request=None):
         data = self.serialize(wrap=True, verbose=True)
-        print(data)
         return render_to_string('adm/statistics.html', dict(data=data))

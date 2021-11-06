@@ -1,11 +1,10 @@
 {% load tags %}
 {% if data.data %}
-    {% if compact or request|mobile or request|tablet and data.metadata.display|length > 2 %}
+    {% if compact or request.GET.compact or request|mobile or request|tablet and data.metadata.display|length > 2 %}
         {% for row in data.data %}
             <div class="float-end">
-                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ row.id }}/">
-                    <i class="bi bi-search"></i>
-                </a>
+                {% include "adm/queryset/checkbox.html" %}
+                {% include "adm/queryset/viewer.html" %}
             </div>
             <dl>
             {% for k, v in row.data.items %}
@@ -25,7 +24,7 @@
         <tr>
             {% if data.actions.queryset %}
             <th scope="col" width="10px">
-                <input type="checkbox" class="action-checkbox form-check-input" onclick="toggleActions{{ data.uuid }}(this)">
+                {% include "adm/queryset/checkbox.html" %}
             </th>
             {% endif %}
             <td scope="col" width="30px"></td>
@@ -42,29 +41,24 @@
         <tr>
             {% if data.actions.queryset %}
             <th scope="col" class="align-middle">
-                <input type="checkbox" class="action-checkbox form-check-input" value="{{ row.id }}" onclick="toggleActions{{ data.uuid }}(this)">
+                {% include "adm/queryset/checkbox.html" %}
             </th>
             {% endif %}
             <td class="align-middle">
-                <a type="button" class="btn btn-outline-primary btn-circle" href="/adm{{ data.path }}{{ row.id }}/">
-                    <i class="bi bi-search"></i>
-                </a>
+                {% include "adm/queryset/viewer.html" %}
             </td>
             {% for k, v in row.data.items %}
             <td class="align-middle">{{ v|format }}</td>
             {% endfor %}
             {% if data.actions.instance %}
             <td class="align-middle instance-actions">
-                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id enabled=row.actions %}
+                {% include "adm/queryset/actions/actions.html" %}
             </td>
             {% endif %}
         </tr>
         {% endfor %}
         </tbody>
     </table>
-    {% endif %}
-    {% if data.actions.queryset %}
-        {% include "adm/actions.html" with uuid=data.uuid target="queryset" actions=data.actions.queryset  %}
     {% endif %}
 {% else %}
     <div class="alert alert-primary" role="alert" style="margin-top:30px;">

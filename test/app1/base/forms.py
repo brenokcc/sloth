@@ -5,6 +5,12 @@ from dms2 import forms
 from .models import Servidor, Ferias, Estado
 
 
+class DefinirSetor(forms.QuerySetForm):
+    class Meta:
+        model = Servidor
+        fields = 'setor',
+
+
 class EstadoForm(forms.ModelForm):
     class Meta:
         verbose_name = 'Cadastrar Estado'

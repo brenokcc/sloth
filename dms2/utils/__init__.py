@@ -17,13 +17,17 @@ def getattrr(obj, args):
 def _getattr_rec(obj, attrs):
     attr_name = attrs.pop(0)
     if obj is not None:
-        attr = getattr(obj, attr_name)
-        if hasattr(attr, 'all'):
-            value = attr.all()
-        elif callable(attr):
-            value = attr()
+        if hasattr(obj, 'all'):
+            attr, value = obj, obj.values_list(attr_name, flat=True)
+            print(attr_name, type(attr), value, 8888)
         else:
-            value = attr
+            attr = getattr(obj, attr_name)
+            if hasattr(attr, 'all'):
+                value = attr.all()
+            elif callable(attr):
+                value = attr()
+            else:
+                value = attr
         if attrs:
             return _getattr_rec(value, attrs)
         else:

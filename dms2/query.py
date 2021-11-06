@@ -25,7 +25,8 @@ class QuerySet(models.QuerySet):
         self.metadata = dict(
             display=[], filters={}, search=[], ordering=[],
             page=1, limit=10, interval='1 - 10', total=0,
-            actions=[], attach=[], template=None, request=None, attr=None
+            actions=[], attach=[], template=None, request=None, attr=None,
+            global_actions=[]
         )
 
     def _clone(self):
@@ -182,7 +183,7 @@ class QuerySet(models.QuerySet):
             for form_name in self.metadata['actions']:
                 form_cls = self.model.action_form_cls(form_name)
                 if not issubclass(form_cls, QuerySetFormMixin):
-                    if self.metadata['request'] and not form_cls(request=self.metadata['request'], fake=True).has_permission():
+                    if self.metadata['request'] and not form_cls(request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
                         continue
                 action = form_cls.get_metadata(path)
                 data['actions'][action['target']].append(action)
@@ -227,6 +228,10 @@ class QuerySet(models.QuerySet):
 
     def actions(self, *names):
         self.metadata['actions'] = list(names)
+        return self
+
+    def global_actions(self, *names):
+        self.metadata['global_actions'] = list(names)
         return self
 
     def attr(self, name):

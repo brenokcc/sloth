@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+from django.contrib.auth.models import User
 
 from dms2.db import models
 
-from dms2.db.models.decorators import meta
+from dms2.db.models.decorators import meta, role
 
 
 class Telefone(models.Model):
@@ -136,6 +137,49 @@ class Endereco(models.Model):
         return '{}, {}, {}'.format(self.logradouro, self.numero, self.municipio)
 
 
+class Instituto(models.Model):
+    sigla = models.CharField(verbose_name='Sigla')
+    reitor = models.ForeignKey('base.Servidor', verbose_name='Reitor', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Instituto'
+        verbose_name_plural = 'Instituto'
+
+    def __str__(self):
+        return self.sigla
+
+
+class UnidadeOrganizacional(models.Model):
+    instituto = models.ForeignKey(Instituto, verbose_name='Instituto')
+    sigla = models.CharField(verbose_name='Sigla')
+    diretor = models.ForeignKey('base.Servidor', verbose_name='Diretor', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Campus'
+        verbose_name_plural = 'Campi'
+
+    def __str__(self):
+        return '{}/{}'.format(self.sigla, self.instituto)
+
+
+@role('Chefe', 'chefe__user', setor='self')
+@role('Substituto Eventual', 'substitutos_eventuais__user', setor='self')
+class Setor(models.Model):
+    uo = models.ForeignKey(UnidadeOrganizacional, verbose_name='Campus')
+    sigla = models.CharField(verbose_name='Sigla')
+    chefe = models.ForeignKey('base.Servidor', verbose_name='Chefe', null=True, related_name='chefia', blank=True)
+    substitutos_eventuais = models.ManyToManyField(
+        'base.Servidor', verbose_name='Substituto Eventuais', related_name='substituicao_chefia', blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Setor'
+        verbose_name_plural = 'Setor'
+
+    def __str__(self):
+        return '{}/{}'.format(self.sigla, self.uo)
+
+
 class ServidorManager(models.Manager):
 
     @meta('Todos')
@@ -148,7 +192,7 @@ class ServidorManager(models.Manager):
             'nome', 'ativo', 'data_nascimento'
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
-        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa')  # .template('servidores')
+        ).actions('CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor')  # .template('servidores')
 
     @meta('Com Endereço')
     def com_endereco(self):
@@ -167,6 +211,7 @@ class ServidorManager(models.Manager):
         return self.filter(ativo=False).actions('AtivarServidor')
 
 
+@role('Servidor', 'user', servidor='self', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
 class Servidor(models.Model):
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
@@ -175,6 +220,9 @@ class Servidor(models.Model):
     endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True, blank=True)
     ativo = models.BooleanField('Ativo', default=True)
     naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
+    setor = models.ForeignKey(Setor, verbose_name='Setor', null=True, blank=True)
+
+    user = models.ForeignKey(User, verbose_name='Usuário', null=True, blank=True)
 
     objects = ServidorManager()
 

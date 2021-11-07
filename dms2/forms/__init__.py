@@ -22,9 +22,11 @@ class FormMixin:
         if not self.fake:
             self.one_to_one = {}
             self.one_to_many = {}
+            self.relation_field_name = getattr(self.Meta, 'relation', None)
+            if self.relation_field_name and self.relation_field_name in self.fields:
+                del self.fields[self.relation_field_name]
             self.fieldsets = self.load_fieldsets()
             self.parse_fieldsets()
-            self.relation_field_name = getattr(self.Meta, 'relation', None)
 
     def load_fieldsets(self):
         # creates default fieldset if necessary
@@ -132,10 +134,12 @@ class FormMixin:
                 if isinstance(name, tuple) or isinstance(name, list):
                     for _name in name:
                         if _name in self.fields:
-                            field_list.append(dict(name=_name, width=100//len(name)))
+                            if not isinstance(self.fields[_name].widget, widgets.HiddenInput):
+                                field_list.append(dict(name=_name, width=100//len(name)))
                 else:
                     if name in self.fields:
-                        field_list.append(dict(name=name, width=100))
+                        if not isinstance(self.fields[name].widget, widgets.HiddenInput):
+                            field_list.append(dict(name=name, width=100))
             if field_list:
                 self.fieldsets[title] = field_list
 

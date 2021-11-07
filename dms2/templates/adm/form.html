@@ -1,4 +1,5 @@
 {% load tags %}
+
 {% if self.get_metadata.name %}
 <h2>
     {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
@@ -7,6 +8,18 @@
 {% endif %}
 <form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
     {% csrf_token %}
+
+    {% if self.non_field_errors %}
+        <div class="errors" role="alert">
+            {{ self.non_field_errors }}
+        </div>
+    {% endif %}
+
+    {% for hidden_field in self.hidden_fields %}
+        {{ hidden_field.errors }}
+        {{ hidden_field }}
+    {% endfor %}
+
     {% for title, itens in fieldsets.items %}
     <div>
         <h5>

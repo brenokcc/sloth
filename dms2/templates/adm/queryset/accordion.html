@@ -1,0 +1,37 @@
+{% load tags %}
+
+{% if data.data %}
+    <div class="accordion" id="accordion{{ data.uuid }}">
+      {% for row in data.data %}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne{{ data.uuid }}{{ forloop.counter }}" aria-expanded="true" aria-controls="collapseOne{{ data.uuid }}{{ forloop.counter }}">
+            {{ row.description }}
+          </button>
+        </h2>
+        <div id="collapseOne{{ data.uuid }}{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="headingOne" data-bs-parent="#accordion{{ data.uuid }}">
+          <div class="accordion-body">
+            <div class="float-end">
+                {% include "adm/queryset/checkbox.html" %}
+                {% include "adm/queryset/viewer.html" %}
+            </div>
+            <dl>
+            {% for k, v in row.data.items %}
+                <dt>{{ k }}</dt>
+                <dd>{{ v|format }}</dd>
+            {% endfor %}
+            </dl>
+            <div class="float-end">
+                {% include "adm/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id enabled=row.actions  %}
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+{% else %}
+<div class="alert alert-primary" role="alert" style="margin-top:30px;">
+    Nehum registro encontrado.
+</div>
+{% endif %}

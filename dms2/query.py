@@ -25,7 +25,7 @@ class QuerySet(models.QuerySet):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
             display=[], filters={}, search=[], ordering=[],
-            page=1, limit=None, interval='', total=0,
+            page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
             global_actions=[], batch_actions=[], relation_actions={}
         )
@@ -40,13 +40,17 @@ class QuerySet(models.QuerySet):
 
     def _get_list_display(self):
         if self.metadata['display']:
-            return self.metadata['display']
-        return self.model.default_list_fields()
+            list_display = self.metadata['display']
+        else:
+            list_display = self.model.default_list_fields()
+        return [name for name in list_display if name not in self.metadata['ignore']]
 
     def _get_list_filter(self):
         if self.metadata['filters']:
-            return self.metadata['filters']
-        return self.model.default_filter_fields()
+            list_filter = self.metadata['filters']
+        else:
+            list_filter = self.model.default_filter_fields()
+        return [name for name in list_filter if name not in self.metadata['ignore']]
 
     def _get_list_ordering(self):
         return self.metadata['ordering']
@@ -148,7 +152,7 @@ class QuerySet(models.QuerySet):
         data = []
         for obj in self:
             item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
-            data.append(dict(id=obj.id, data=item, actions=self.get_obj_actions(obj)) if wrap else item)
+            data.append(dict(id=obj.id, description=str(obj), data=item, actions=self.get_obj_actions(obj)) if wrap else item)
         return data
 
     def get_obj_actions(self, obj):
@@ -197,8 +201,12 @@ class QuerySet(models.QuerySet):
                             relation=action_type == 'relation_actions'
                         )
                         data['actions'][action['target']].append(action)
-            if self.metadata['template']:
-                data.update(template='{}.html'.format(self.metadata['template']))
+            template = self.metadata['template']
+            if template is None:
+                template = getattr(self.model.metaclass(), 'list_template', None)
+            if template:
+                template = template if template.endswith('.html') else '{}.html'.format(template)
+                data.update(template=template)
             return data
         return self.to_list()
 
@@ -241,6 +249,10 @@ class QuerySet(models.QuerySet):
 
     def attach(self, *names):
         self.metadata['attach'] = list(names)
+        return self
+
+    def ignore(self, *names):
+        self.metadata['ignore'] = list(names)
         return self
 
     def attr(self, name):
@@ -293,7 +305,7 @@ class QuerySet(models.QuerySet):
         if uuid:
             data['uuid'] = uuid
         return render_to_string(
-            'adm/queryset.html',
+            'adm/queryset/queryset.html',
             dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
             request=self.metadata['request']
         )

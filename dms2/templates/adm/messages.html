@@ -1,8 +1,16 @@
 {% if messages %}
-  {% for message in messages %}
-      <div class="alert alert-primary alert-dismissible fade show messages" role="alert">
-        <strong>Atenção!</strong> {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-  {% endfor %}
+{% for message in messages %}
+<div class="alert alert-primary alert-dismissible fade show messages" role="alert">
+    <strong>Atenção!</strong> {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+<script>
+    function dismissMessage(){
+        $(".alert-dismissible").fadeTo(2000, 500).slideUp(500, function(){
+            $(".alert-dismissible").slideUp(500);
+        });
+    }
+    setTimeout(dismissMessage, 3000);
+</script>
 {% endif %}

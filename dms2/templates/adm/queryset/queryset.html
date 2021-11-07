@@ -202,7 +202,7 @@
 {% if data.template %}
     {% include data.template with data=data %}
 {% else %}
-    {% include "adm/datatable.html" with data=data %}
+    {% include "adm/queryset/datatable.html" with data=data %}
 {% endif %}
 {% include "adm/queryset/actions/batch.html" %}
 

@@ -37,7 +37,7 @@ def _format(obj):
         elif isinstance(obj, FieldFile):
             return obj.url
         return str(obj)
-    return ''
+    return '-'
 
 
 @register.filter
@@ -93,6 +93,18 @@ def is_controller_field(name):
 
 @register.filter
 def image_src(path):
-    if path.startswith('/') or path.startswith('http'):
-        return path
-    return '/media/{}'.format(path)
+    if path:
+        if path.startswith('/') or path.startswith('http'):
+            return path
+        return '/media/{}'.format(path)
+    return '/static/images/no-image.png'
+
+
+@register.filter
+def image_key(dictionary):
+    for k, v in dictionary.items():
+        if v and isinstance(v, str) and v.split('.')[-1].lower() in ('png', 'jpg', 'jpeg'):
+            return k
+    return None
+
+

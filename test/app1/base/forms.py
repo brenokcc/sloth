@@ -2,7 +2,16 @@
 
 from dms2 import forms
 
-from .models import Servidor, Ferias, Estado, Frequencia
+from .models import Servidor, Ferias, Estado, Frequencia, Municipio
+
+
+class AdicionarMunicipioEstado(forms.ModelForm):
+
+    class Meta:
+        model = Municipio
+        exclude = ()
+        relation = 'estado'
+        verbose_name = 'Adicionar Município'
 
 
 class HomologarFrequencia(forms.ModelForm):

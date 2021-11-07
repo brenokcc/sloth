@@ -45,11 +45,23 @@ class Estado(models.Model):
     def __str__(self):
         return self.sigla
 
+    @meta('Dados Gerais')
+    def get_dados_gerais(self):
+        return self.values('id', ('sigla', 'endereco'))
+
     def view(self):
-        return super().view().actions('FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas')
+        return self.values('get_dados_gerais', 'get_cidades').actions(
+            'FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas'
+        )
 
     def _can_view_sigla(self, user):
         return not user.is_superuser
+
+    @meta('Cidades')
+    def get_cidades(self):
+        return self.municipio_set.get_queryset().actions('Edit').relation_actions(
+            'AdicionarMunicipioEstado'
+        )
 
 
 class MunicipioManager(models.Manager):
@@ -145,6 +157,7 @@ class Instituto(models.Model):
     class Meta:
         verbose_name = 'Instituto'
         verbose_name_plural = 'Instituto'
+        list_template = 'adm/queryset/cards'
 
     def __str__(self):
         return self.sigla
@@ -186,7 +199,7 @@ class ServidorManager(models.Manager):
     @meta('Todos')
     def all(self):
         return self.list_display(
-            'get_foto', 'get_dados_gerais', 'ativo', 'naturalidade'
+            'get_dados_gerais', 'ativo', 'naturalidade'
         ).list_filter(
             'data_nascimento', 'ativo', 'naturalidade'
         ).search_fields('nome').ordering(
@@ -237,6 +250,7 @@ class Servidor(models.Model):
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
         form = 'ServidorForm'
+        list_template = 'adm/queryset/rows'
 
     def __str__(self):
         return self.nome
@@ -244,9 +258,9 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Foto', formatter='image')
+    @meta('Foto')
     def get_foto(self):
-        return self.foto.name or '/static/images/profile.png'
+        return self.foto # or '/static/images/profile.png'
 
     @meta('Progresso', formatter='progress')
     def get_progresso(self):
@@ -272,7 +286,7 @@ class Servidor(models.Model):
     @meta('Frequências')
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).relation_actions('RegistrarPonto').actions(
-            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa')
+            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('adm/queryset/accordion')
 
     @meta('Férias')
     def get_ferias(self):
@@ -288,7 +302,7 @@ class Servidor(models.Model):
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self.user = User.objects.get_or_create(
             username=self.cpf, defaults={}
         )[0]
@@ -341,3 +355,7 @@ class Frequencia(models.Model):
     class Meta:
         verbose_name = 'Frequência'
         verbose_name_plural = 'Frequências'
+        list_template = 'adm/queryset/timeline'
+
+    def __str__(self):
+        return 'Resistro {}'.format(self.id)

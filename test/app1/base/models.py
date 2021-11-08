@@ -92,7 +92,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @meta('Progresso', formatter='progress')
+    @meta('Progresso', template='adm/formatters/progress')
     def get_progresso(self):
         return 27
 
@@ -199,7 +199,7 @@ class ServidorManager(models.Manager):
     @meta('Todos')
     def all(self):
         return self.list_display(
-            'get_dados_gerais', 'ativo', 'naturalidade'
+            'foto', 'get_dados_gerais', 'ativo', 'naturalidade'
         ).list_filter(
             'data_nascimento', 'ativo', 'naturalidade'
         ).search_fields('nome').ordering(
@@ -210,11 +210,11 @@ class ServidorManager(models.Manager):
             'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
         ).global_actions(
             'FazerAlgumaCoisa'
-        )   # .template('servidores')
+        ).template('adm/queryset/cards')
 
     @meta('Com Endereço')
     def com_endereco(self):
-        return self.filter(endereco__isnull=False).actions('CorrigirNomeServidor')
+        return self.list_display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     @meta('Sem Endereço')
     def sem_endereco(self):
@@ -250,7 +250,6 @@ class Servidor(models.Model):
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
         form = 'ServidorForm'
-        list_template = 'adm/queryset/rows'
 
     def __str__(self):
         return self.nome
@@ -258,11 +257,11 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Foto')
+    @meta('Foto', template='adm/formatters/image')
     def get_foto(self):
         return self.foto # or '/static/images/profile.png'
 
-    @meta('Progresso', formatter='progress')
+    @meta('Progresso', template='adm/formatters/progress')
     def get_progresso(self):
         return 27
 

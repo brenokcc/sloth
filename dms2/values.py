@@ -113,10 +113,12 @@ class ValueSet(dict):
                                 value['template'] = '{}.html'.format(template)
                     else:
                         self.metadata['primitive'] = True
-                        if formatted and getattr(attr, 'formatter', None):
-                            formatters.initilize()
-                            formatter_cls = formatters.FORMATTERS[attr.formatter]
-                            value = formatter_cls(value, instance=self.instance).render()
+                        if formatted and getattr(attr, 'template', None):
+                            template = attr.template
+                            template = template if template.endswith('.html') else '{}.html'.format(template)
+                            value = render_to_string(
+                                template, dict(value=value, instance=self.instance)
+                            )
                         else:
                             value = serialize(value)
                         if formatted and value in (None, ''):

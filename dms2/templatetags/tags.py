@@ -94,6 +94,7 @@ def is_controller_field(name):
 @register.filter
 def image_src(path):
     if path:
+        path = str(path)
         if path.startswith('/') or path.startswith('http'):
             return path
         return '/media/{}'.format(path)

@@ -292,7 +292,7 @@ class Servidor(models.Model):
     def get_ferias(self):
         return self.ferias_set.list_display(
             'ano', 'inicio', 'fim'
-        ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias')
+        ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
 
     @meta('Recursos Humanos')
     def get_dados_recursos_humanos(self):
@@ -345,6 +345,9 @@ class Ferias(models.Model):
     @meta('Período')
     def get_periodo2(self):
         return self.values('inicio', 'fim')
+
+    def __str__(self):
+        return 'Férias do ano {}'.format(self.ano)
 
 
 class Frequencia(models.Model):

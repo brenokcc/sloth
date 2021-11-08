@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.conf import settings
+from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -9,13 +9,26 @@ from oauth2_provider.models import AbstractApplication
 from dms2.db.models import meta
 
 
+class User(DjangoUser):
+    class Meta:
+        proxy = True
+        verbose_name = 'Usuário'
+        verbose_name_plural = 'Usuários'
+        list_display = 'username',
+        fieldsets = {
+            'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'),
+            'Dados de Acesso': ('is_superuser',)
+        }
+
+
 class Role(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         related_name='roles',
         null=True,
         blank=True,
         on_delete=models.CASCADE,
+        verbose_name='Usuário'
     )
     name = models.CharField(max_length=50, verbose_name='Nome')
     scope = GenericForeignKey('scope_type', 'scope_value')

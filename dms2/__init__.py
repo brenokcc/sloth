@@ -7,6 +7,9 @@ from .base import ModelMixin
 from .query import QuerySet
 
 
+PROXIED_MODELS = []
+
+
 class BaseManager(manager.BaseManager):
     def get_queryset(self):
         return super().get_queryset()
@@ -36,6 +39,8 @@ def __new__(mcs, name, bases, attrs, **kwargs):
     if bases == (Model,):
         bases = Model, ModelMixin
     cls = ___new___(mcs, name, bases, attrs, **kwargs)
+    if cls._meta.proxy_for_model:
+        PROXIED_MODELS.append(cls._meta.proxy_for_model)
     return cls
 
 

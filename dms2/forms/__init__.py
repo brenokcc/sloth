@@ -251,18 +251,10 @@ class FormMixin:
     def __str__(self):
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
-            if isinstance(field.widget, widgets.TextInput):
-                classes.append('form-control')
-            elif isinstance(field.widget, widgets.PasswordInput):
-                classes.append('form-control')
-            elif isinstance(field.widget, widgets.NumberInput):
-                classes.append('form-control')
-            elif isinstance(field.widget, widgets.Select):
-                classes.append('form-control')
-            elif isinstance(field.widget, widgets.FileInput):
-                classes.append('form-control')
-            elif isinstance(field.widget, widgets.CheckboxInput):
+            if isinstance(field.widget, widgets.CheckboxInput):
                 classes.append('form-check-input')
+            elif isinstance(field.widget, widgets.Input):
+                classes.append('form-control')
 
             if isinstance(field, DateField):
                 classes.append('date-input')

@@ -9,7 +9,7 @@ class XlsResponse(HttpResponse):
     def __init__(self, data):
         wb = xlwt.Workbook(encoding='iso8859-1')
         for title, rows in data:
-            sheet = wb.add_sheet(title)
+            sheet = wb.add_sheet(str(title))
             for row_idx, row in enumerate(rows):
                 for col_idx, label in enumerate(row):
                     sheet.write(row_idx, col_idx, label=label)

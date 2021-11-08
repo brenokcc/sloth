@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import re
 from decimal import Decimal
 from django.apps import apps
 from django.db.models.fields.files import FieldFile
@@ -61,30 +62,55 @@ def serialize(obj):
     return None
 
 
+def pretty(name):
+    if name.islower():
+        regex_roman_numbers = r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$'
+        name = re.sub(r'\.', '. ', name or '')  # adding spaces to short names
+        name = re.sub(r'\s+', ' ', name)  # removing multiple spaces
+        name = name.title()  # camel case
+        tokens = name.split(' ')  # splitting into a list
+        ignore = [
+            'de', 'di', 'do', 'da', 'dos', 'das', 'dello', 'della', 'dalla', 'dal',
+            'del', 'e', 'em', 'na', 'no', 'nas', 'nos', 'van', 'von', 'y', 'a'
+        ]
+        output = []
+        for token in tokens:
+            if token.lower() in ignore:
+                output.append(token.lower())
+            elif re.match(regex_roman_numbers, token.upper()):
+                output.append(token.upper())
+            else:
+                output.append(token)
+        name = ' '.join(output)
+    return name
+
+
 def load_menu(user):
+    from .. import PROXIED_MODELS
     items = []
     for model in apps.get_models():
-        app_label = model.metaclass().app_label
-        model_name = model.metaclass().model_name
-        model_verbose_name = model.metaclass().verbose_name
-        model_verbose_name_plural = model.metaclass().verbose_name_plural
-        icon = getattr(model.metaclass(), 'icon', None)
-        url = '/adm/{}/{}/'.format(app_label, model_name)
-        item = dict(label=str(model_verbose_name_plural), description=None, url=url, icon=icon, subitems=[])
-        for name, attr in model.objects._queryset_class.__dict__.items():
-            if hasattr(attr, 'decorated'):
-                attr_verbose_name = getattr(attr, 'verbose_name')
-                attr_icon = getattr(attr, 'icon', None)
-                attr_description = attr_verbose_name
-                if name == 'all':
-                    attr_url = url
-                    attr_verbose_name = model_verbose_name_plural
-                    item.update(label=model_verbose_name)
-                else:
-                    attr_url = '{}{}/'.format(url, name)
-                subitem = dict(label=attr_verbose_name, icon=attr_icon, description=attr_description, url=attr_url)
-                item['subitems'].append(subitem)
-        items.append(item)
+        if model not in PROXIED_MODELS:
+            app_label = model.metaclass().app_label
+            model_name = model.metaclass().model_name
+            model_verbose_name = model.metaclass().verbose_name
+            model_verbose_name_plural = model.metaclass().verbose_name_plural
+            icon = getattr(model.metaclass(), 'icon', None)
+            url = '/adm/{}/{}/'.format(app_label, model_name)
+            item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
+            for name, attr in model.objects._queryset_class.__dict__.items():
+                if hasattr(attr, 'decorated'):
+                    attr_verbose_name = getattr(attr, 'verbose_name')
+                    attr_icon = getattr(attr, 'icon', None)
+                    attr_description = attr_verbose_name
+                    if name == 'all':
+                        attr_url = url
+                        attr_verbose_name = str(model_verbose_name_plural)
+                        item.update(label=str(model_verbose_name))
+                    else:
+                        attr_url = '{}{}/'.format(url, name)
+                    subitem = dict(label=pretty(attr_verbose_name), icon=attr_icon, description=attr_description, url=attr_url)
+                    item['subitems'].append(subitem)
+            items.append(item)
     return items
 
 

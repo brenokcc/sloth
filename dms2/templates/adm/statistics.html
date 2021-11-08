@@ -1,3 +1,6 @@
+{% if data.name %}
+    <h2>{{ data.name }}</h2>
+{% endif %}
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>

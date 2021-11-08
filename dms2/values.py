@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from .query import QuerySet
 from .statistics import QuerySetStatistics
 from . import formatters
-from .utils import getattrr, serialize
+from .utils import getattrr, serialize, pretty
 
 
 class ValueSet(dict):
@@ -119,12 +119,13 @@ class ValueSet(dict):
                             value = formatter_cls(value, instance=self.instance).render()
                         else:
                             value = serialize(value)
-
+                        if formatted and value in (None, ''):
+                            value = '-'
                         if size:
                             value = dict(value=value, width=width)
 
                     if verbose:
-                        attr_name = self.metadata['model'].get_attr_verbose_name(attr_name)[0]
+                        attr_name = pretty(self.metadata['model'].get_attr_verbose_name(attr_name)[0])
 
                     self[attr_name] = value
         else:

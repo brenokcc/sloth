@@ -54,7 +54,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     else:  # pks is instance action
                         form_cls = model.action_form_cls(z)
                         # if it is a relation action, do not set the instance attribute
-                        if getattr(form_cls.Meta, 'relation'):
+                        if getattr(form_cls.Meta, 'relation', None):
                             form = form_cls(request=request, instantiator=obj)
                         else:
                             form = form_cls(request=request, instance=obj, instantiator=obj)

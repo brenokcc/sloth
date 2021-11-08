@@ -21,7 +21,7 @@ class QuerySetStatistics(object):
         self._xdict = {}
         self._ydict = {}
         self._values_dict = None
-        self.metadata = dict(request=None)
+        self.metadata = dict(request=None, attr=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
@@ -56,6 +56,10 @@ class QuerySetStatistics(object):
         self._xdict = {}
         self._ydict = {}
         self._values_dict = None
+
+    def attr(self, name):
+        self.metadata['attr'] = name
+        return self
 
     def calc(self):
         self._values_dict = {}
@@ -111,6 +115,9 @@ class QuerySetStatistics(object):
         self._calc()
         series = dict()
         formatter = {True: 'Sim', False: 'Não', None: ''}
+        verbose_name = None
+        if self.metadata['attr']:
+            verbose_name = getattr(getattr(self.qs, self.metadata['attr']), 'verbose_name')
 
         def format_value(value):
             return isinstance(value, Decimal) and '{0:.2f}'.format(value) or value
@@ -131,7 +138,7 @@ class QuerySetStatistics(object):
 
         return dict(
             type='statistics',
-            name=None,
+            name=verbose_name,
             path=path,
             series=series
         )

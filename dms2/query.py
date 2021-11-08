@@ -16,7 +16,7 @@ from django.template.loader import render_to_string
 from .utils.http import XlsResponse, CsvResponse
 from .statistics import QuerySetStatistics
 from .exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from .utils import getattrr
+from .utils import getattrr, serialize, pretty
 
 
 class QuerySet(models.QuerySet):
@@ -85,8 +85,8 @@ class QuerySet(models.QuerySet):
             elif 'Date' in field_type_name:
                 filter_type = 'date'
             filters[
-                str(field.verbose_name) if verbose else lookup
-            ] = dict(key=lookup, name=field.verbose_name, type=filter_type, choices=None)
+                pretty(str(field.verbose_name)) if verbose else lookup
+            ] = dict(key=lookup, name=pretty(str(field.verbose_name)), type=filter_type, choices=None)
 
         ordering = []
         for lookup in self._get_list_ordering():
@@ -153,6 +153,30 @@ class QuerySet(models.QuerySet):
         for obj in self:
             item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=self.get_obj_actions(obj)) if wrap else item)
+        return data
+
+    def export(self, limit=100):
+        data = []
+        header = []
+        for attr_name in self._get_list_display():
+            attr = getattrr(self.model, attr_name)[0]
+            if hasattr(attr, 'field'):
+                header.append(str(attr.field.verbose_name))
+            elif hasattr(attr, 'verbose_name'):
+                header.append(attr.verbose_name)
+            else:
+                header.append(attr_name)
+        data.append(header)
+        for obj in self[0:limit]:
+            row = []
+            values = obj.values(*self._get_list_display()).load(verbose=False, size=False).values()
+            for value in values:
+                if value is None:
+                    value = ''
+                if isinstance(value, list) or isinstance(value, tuple) or hasattr(value, 'all'):
+                    value = ', '.join([str(o) for o in value])
+                row.append(serialize(value))
+            data.append(row)
         return data
 
     def get_obj_actions(self, obj):
@@ -318,11 +342,13 @@ class QuerySet(models.QuerySet):
                 export = request.GET['export']
                 if export == 'xls':
                     raise ReadyResponseException(
-                        XlsResponse([('Dados', [])])
+                        XlsResponse(
+                            [([self.model.metaclass().verbose_name_plural, self.export()])]
+                        )
                     )
                 if export == 'csv':
                     raise ReadyResponseException(
-                        CsvResponse([])
+                        CsvResponse(self.export())
                     )
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self._get_attach())

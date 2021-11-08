@@ -191,14 +191,13 @@ class QuerySet(models.QuerySet):
                         path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
-            for action_type in ('global_actions', 'actions', 'batch_actions', 'relation_actions'):
+            for action_type in ('global_actions', 'actions', 'batch_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
                     if action_type == 'actions' or self.metadata['request'] is None or form_cls(
                             request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
                         action = form_cls.get_metadata(
-                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions',
-                            relation=action_type == 'relation_actions'
+                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                         )
                         data['actions'][action['target']].append(action)
             template = self.metadata['template']
@@ -277,10 +276,6 @@ class QuerySet(models.QuerySet):
         if self.metadata['attr'] is None:
             self.metadata['actions'].extend(('edit', 'delete'))
             self.metadata['global_actions'].extend(('add',))
-        return self
-
-    def relation_actions(self, *names):
-        self.metadata['relation_actions'] = list(names)
         return self
 
     # search and pagination functions

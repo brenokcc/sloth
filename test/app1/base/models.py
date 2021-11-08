@@ -59,7 +59,7 @@ class Estado(models.Model):
 
     @meta('Cidades')
     def get_cidades(self):
-        return self.municipio_set.get_queryset().actions('Edit').relation_actions(
+        return self.municipio_set.get_queryset().actions('Edit').global_actions(
             'AdicionarMunicipioEstado'
         )
 
@@ -285,7 +285,7 @@ class Servidor(models.Model):
 
     @meta('Frequências')
     def get_frequencias(self):
-        return self.frequencia_set.limit_per_page(3).relation_actions('RegistrarPonto').actions(
+        return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
             'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('adm/queryset/accordion')
 
     @meta('Férias')

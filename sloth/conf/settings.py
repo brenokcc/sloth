@@ -20,6 +20,7 @@ USE_THOUSAND_SEPARATOR = True
 # }
 
 LOGO = '/static/images/bootstrap.png'
+INDEX_TEMPLATE = 'adm/index.html'
 NAME = 'Admin'
 CSS = []
 JS = []

@@ -29,6 +29,9 @@
     margin-top: 5px;
     margin-bottom: 10px;
 }
+.fieldset h2{
+
+}
 .fieldset .search-and-filters{
 
 }
@@ -247,4 +250,8 @@ textarea{
 
 .search-menu a.subitem{
     line-height: 1.7;
+}
+
+textarea{
+    border-color: #ced4da;
 }

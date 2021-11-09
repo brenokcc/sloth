@@ -118,3 +118,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGO = '/static/images/logo.png'
 NAME = 'Investimentos'
 CSS = ['/static/css/investimentos.css']
+INDEX_TEMPLATE = 'index.html'

@@ -2,7 +2,7 @@
 
 from sloth import forms
 
-from .models import Subcategoria, Campus, Demanda, Instituicao, Prioridade, Pergunta
+from .models import Subcategoria, Campus, Demanda, Instituicao, Prioridade, Pergunta, Questionario
 
 
 class AdicionarSubcategoria(forms.ModelForm):
@@ -33,24 +33,6 @@ class AdicionarCampus(forms.ModelForm):
         relation = 'instituicao'
 
 
-class AdicionarInstituicoesCiclo(forms.Form):
-    instituicao = forms.ModelMultipleChoiceField(Instituicao.objects, label='Instituições')
-
-    class Meta:
-        model = Demanda
-        fields = 'instituicao',
-        verbose_name = 'Adicionar Instituições'
-
-    def process(self):
-        for instituicao in self.cleaned_data['instituicao']:
-            for i in range(1, self.instantiator.prioridades+1):
-                prioridade = Prioridade.objects.get_or_create(numero=i)[0]
-                lookups = dict(ciclo=self.instantiator, instituicao=instituicao, prioridade=prioridade)
-                if not Demanda.objects.filter(**lookups).exists():
-                    Demanda.objects.create(**lookups)
-        self.notify()
-
-
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
@@ -58,15 +40,71 @@ class DetalharDemanda(forms.ModelForm):
         verbose_name = 'Detalhar Demanda'
 
 
-class InformarValorDemanda(forms.ModelForm):
+class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'valor',
-        verbose_name = 'Informar Valor'
+        fields = 'classificacao', 'valor'
+        verbose_name = 'Detalhar Demanda'
 
 
-class ClassificarDemanda(forms.ModelForm):
+class ResponderQuestionario(forms.ModelForm):
+
     class Meta:
         model = Demanda
-        fields = 'classificacao',
-        verbose_name = 'Classificar Demanda'
+        verbose_name = 'Responder Questionário'
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.fake:
+            for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
+                tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
+                key = '{}'.format(pergunta_questionario.pk)
+                if tipo_resposta == Pergunta.TEXTO_CURTO:
+                    self.fields[key] = forms.CharField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.TEXTO_LONGO:
+                    self.fields[key] = forms.CharField(
+                        label=pergunta_questionario.pergunta.texto, widget=forms.Textarea(),
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
+                    self.fields[key] = forms.DecimalField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
+                    self.fields[key] = forms.IntegerField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.DATA:
+                    self.fields[key] = forms.DateField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.BOOLEANO:
+                    self.fields[key] = forms.BooleanField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False
+                    )
+                elif tipo_resposta == Pergunta.OPCOES:
+                    self.fields[key] = forms.ChoiceField(
+                        label=pergunta_questionario.pergunta.texto,
+                        required=False,
+                        choices=[[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
+                    )
+            self.load_fieldsets()
+
+    def get_fieldsets(self):
+        return {
+            'Perguntas': list(self.fields.keys())
+        }
+
+    def process(self):
+        for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
+            key = '{}'.format(pergunta_questionario.pk)
+            pergunta_questionario.resposta = self.cleaned_data[key] or None
+            pergunta_questionario.save()

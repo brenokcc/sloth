@@ -25,13 +25,16 @@ class FormMixin:
             self.relation_field_name = getattr(self.Meta, 'relation', None)
             if self.relation_field_name and self.relation_field_name in self.fields:
                 del self.fields[self.relation_field_name]
-            self.fieldsets = self.load_fieldsets()
-            self.parse_fieldsets()
+            if not hasattr(self, 'get_fieldsets'):
+                self.load_fieldsets()
 
     def load_fieldsets(self):
+        fieldsets = None
+        if hasattr(self, 'get_fieldsets'):
+            fieldsets = self.get_fieldsets()
         # creates default fieldset if necessary
-        fieldsets = getattr(self.Meta, 'fieldsets', None)
         if fieldsets is None:
+            fieldsets = getattr(self.Meta, 'fieldsets', None)
             if self.instance:
                 fieldsets = getattr(self.instance.metaclass(), 'fielsets', None)
 
@@ -124,7 +127,8 @@ class FormMixin:
 
                 field_list.append(inline_field_list)
             fieldsets[one_to_many_field.label] = field_list
-        return fieldsets
+        self.fieldsets = fieldsets
+        self.parse_fieldsets()
 
     def parse_fieldsets(self):
         # configure ordinary fields
@@ -327,7 +331,7 @@ class Form(FormMixin, Form):
         self.instantiator = kwargs.pop('instantiator', None)
         self.request = kwargs.pop('request', None)
         if 'data' not in kwargs:
-            if self.base_fields:
+            if self.base_fields or hasattr(self, 'get_fieldsets'):
                 data = self.request.POST or None
             else:
                 data = self.request.POST
@@ -368,7 +372,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
         if self.instances:
             kwargs.update(instance=self.instances[0])
         if 'data' not in kwargs:
-            if self.base_fields:
+            if self.base_fields or hasattr(self, 'get_fieldsets'):
                 data = self.request.POST or None
             else:
                 data = self.request.POST

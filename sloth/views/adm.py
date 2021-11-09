@@ -60,7 +60,7 @@ def logout(request):
 def index(request):
     request.COOKIES.get('width')
     if request.user.is_authenticated:
-        return render(request, ['adm/index.html'], dict(settings=settings))
+        return render(request, [settings.INDEX_TEMPLATE], dict(settings=settings))
     return HttpResponseRedirect('/adm/login/')
 
 

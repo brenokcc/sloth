@@ -53,7 +53,7 @@ class Categoria(models.Model):
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
-        ).actions('edit', 'delete').template('adm/queryset/accordion')
+        ).actions('delete').template('adm/queryset/accordion')
 
 
 class Subcategoria(models.Model):
@@ -85,7 +85,8 @@ class Pergunta(models.Model):
     NUMERO_DECIMAL = 3
     NUMERO_INTEIRO = 4
     DATA = 5
-    OPCOES = 6
+    BOOLEANO = 6
+    OPCOES = 7
 
     TIPOS_RESPOSTA_CHOICES = [
         [1, 'Texto Curto'],
@@ -93,9 +94,11 @@ class Pergunta(models.Model):
         [3, 'Número Decimal'],
         [4, 'Número Inteiro'],
         [5, 'Data'],
+        [6, 'Sim/Não'],
+        [7, 'Múltiplas Escolhas'],
     ]
     categoria = models.ForeignKey(Categoria, verbose_name='Categoria')
-    texto = models.TextField(verbose_name='Texto')
+    texto = models.CharField(verbose_name='Texto')
     obrigatoria = models.BooleanField(verbose_name='Obrigatória', blank=True)
     tipo_resposta = models.IntegerField(verbose_name='Tipo de Resposta', choices=TIPOS_RESPOSTA_CHOICES)
     opcoes = models.OneToManyField(OpcaoResposta, verbose_name='Opções de Resposta', blank=True)
@@ -103,9 +106,14 @@ class Pergunta(models.Model):
     class Meta:
         verbose_name = 'Pergunta'
         verbose_name_plural = 'Perguntas'
+        list_display = 'categoria', 'texto', 'obrigatoria', 'get_tipo_resposta'
 
     def __str__(self):
         return '{}'.format(self.texto)
+
+    @meta('Tipo de Resposta')
+    def get_tipo_resposta(self):
+        return self.get_tipo_resposta_display()
 
 
 class Instituicao(models.Model):
@@ -150,6 +158,7 @@ class Ciclo(models.Model):
     fim = models.DateField(verbose_name='Fim')
     teto = models.DecimalField(verbose_name='Teto (R$)')
     prioridades = models.IntegerField(verbose_name='Prioridades', choices=[[x, x] for x in range(1, 11)])
+    instituicoes = models.ManyToManyField(Instituicao, verbose_name='Instituições', blank=True)
 
     class Meta:
         verbose_name = 'Ciclo de Demanda'
@@ -164,36 +173,50 @@ class Ciclo(models.Model):
 
     @meta('Demandas')
     def get_demandas(self):
-        return self.demanda_set.all().ignore('ciclo').global_actions(
-            'AdicionarInstituicoesCiclo'
-        )
+        return self.demanda_set.all().ignore('ciclo')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_demandas').append('get_total_por_instituicao')
+        return self.values('get_dados_gerais', 'get_demandas', 'get_total_por_instituicao')
 
     @meta('Total por Instituição')
     def get_total_por_instituicao(self):
         return self.demanda_set.filter(valor__isnull=False).sum('valor', 'instituicao')
+
+    def criar_questionarios(self):
+        for demanda in self.demanda_set.filter(classificacao__isnull=False):
+            questionario = Questionario.objects.filter(demanda=demanda).first()
+            if questionario is None:
+                questionario = Questionario.objects.create(demanda=demanda)
+            for pergunta in demanda.classificacao.categoria.pergunta_set.all():
+                lookups = dict(questionario=questionario, pergunta=pergunta)
+                if not PerguntaQuestionario.objects.filter(**lookups).exists():
+                    PerguntaQuestionario.objects.create(**lookups)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        for instituicao in self.instituicoes.all():
+            for i in range(1, self.prioridades+1):
+                prioridade = Prioridade.objects.get_or_create(numero=i)[0]
+                lookups = dict(ciclo=self, instituicao=instituicao, prioridade=prioridade)
+                if not Demanda.objects.filter(**lookups).exists():
+                    Demanda.objects.create(**lookups)
+        self.criar_questionarios()
 
 
 class DemandaManager(models.Manager):
     @meta('Todas')
     def all(self):
         return self.list_display(
-            'ciclo', 'instituicao', 'prioridade', 'classificacao', 'valor'
-        ).attach('aguardando_classificacao', 'aguardando_valor', 'aguardando_detalhamento')
-
-    @meta('Aguardando Classificação')
-    def aguardando_classificacao(self):
-        return self.all().filter(classificacao__isnull=True).actions('ClassificarDemanda')
-
-    @meta('Aguardando Valor')
-    def aguardando_valor(self):
-        return self.all().filter(valor__isnull=True).actions('InformarValorDemanda')
+            'ciclo', 'instituicao', 'get_detalhamento', 'get_dados_questionario'
+        ).attach('aguardando_detalhamento', 'aguardando_esclarecimentos')
 
     @meta('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.all().filter(prioridade__isnull=False)
+        return self.list_display('instituicao', 'prioridade').filter(classificacao__isnull=True).actions('DetalharDemanda')
+
+    @meta('Aguardando Esclarecimentos')
+    def aguardando_esclarecimentos(self):
+        return self.all().filter(prioridade__isnull=False).actions('ResponderQuestionario')
 
 
 class Demanda(models.Model):
@@ -214,3 +237,54 @@ class Demanda(models.Model):
 
     def __str__(self):
         return 'Demanda '.format(self.pk)
+
+    def get_questionario(self):
+        return self.questionario_set.first()
+
+    @meta('Detalhamento')
+    def get_detalhamento(self):
+        return self.values('prioridade', 'classificacao', 'valor')
+
+    @meta('Perguntas Obrigatórias')
+    def get_total_perguntas(self):
+        return self.get_questionario().perguntaquestionario_set.filter(pergunta__obrigatoria=True).count() if self.get_questionario() else 0
+
+    @meta('Total de Respostas')
+    def get_total_respostas(self):
+        return self.get_questionario().perguntaquestionario_set.filter(pergunta__obrigatoria=True, resposta__isnull=False).count() if self.get_questionario() else 0
+
+    @meta('Questionário')
+    def get_dados_questionario(self):
+        return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
+
+    @meta('Progresso', template='adm/formatters/progress')
+    def get_progresso_questionario(self):
+        total_perguntas = self.get_total_perguntas()
+        total_respostas = self.get_total_respostas()
+        if total_perguntas:
+            return int(total_respostas * 100 / total_perguntas)
+        return 0
+
+
+class Questionario(models.Model):
+    demanda = models.ForeignKey(Demanda, verbose_name='Demanda')
+
+    class Meta:
+        verbose_name = 'Questionário'
+        verbose_name_plural = 'Questionários'
+
+    def __str__(self):
+        return '{} - {}'.format(self.demanda.instituicao, self.demanda.ciclo)
+
+
+class PerguntaQuestionario(models.Model):
+    questionario = models.ForeignKey(Questionario, verbose_name='Questionário')
+    pergunta = models.ForeignKey(Pergunta, verbose_name='Pergunta')
+    resposta = models.TextField(verbose_name='Resposta', null=True)
+
+    class Meta:
+        verbose_name = 'Pergunta de Questionário'
+        verbose_name_plural = 'Perguntas de Questionário'
+
+    def __str__(self):
+        return '{} - {}'.format(self.pergunta, self.resposta)

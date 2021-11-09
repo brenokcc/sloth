@@ -17,5 +17,5 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    path('', include('dms2.urls')),
+    path('', include('sloth.urls')),
 ]

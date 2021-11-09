@@ -1,0 +1,250 @@
+.btn{
+    margin-bottom: 5px;
+}
+.btn-circle {
+    width: 30px;
+    height: 30px;
+    padding: 6px 0px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.42857;
+}
+.img-circle{
+    border-radius: 50%;
+}
+.queryset-title {
+    display: inline-block;
+}
+.queryset-action-bar {
+    float: right;
+    display: inline-block;
+}
+.queryset-data{
+    overflow-x:auto;
+    max-width:100%;
+    clear: both;
+}
+.fieldset{
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+.fieldset .search-and-filters{
+
+}
+.fieldset-tab{
+    margin-top: 10px;
+}
+.fieldset-tab .fieldset-title{
+    visibility: hidden;
+}
+.fieldset-title {
+    display: inline-block;
+}
+.fieldset-field{
+    display: inline-block;
+    vertical-align: top;
+    margin-bottom: 10px;
+}
+.fieldset-data{
+    clear: both;
+}
+.fieldset-data-item img {
+  border-radius: 50%;
+  margin-right: 20px;
+}
+.fieldset-container{
+    padding: 1rem 1rem;
+}
+.fieldset-tabs{
+    clear: both;
+}
+.fieldset-side-panel .card{
+    border: 0px;
+    margin-bottom: 30px;
+}
+.fieldset-side-panel .card-body {
+    padding: 0px;
+}
+.fieldset-side-panel .action-checkbox{
+    font-size: 22px;
+    margin: 5px;
+}
+.card-body .queryset-title h2{
+    font-size: 1.25rem;
+}
+.fieldset-tab .queryset-title h2{
+    font-size: 1.25rem;
+}
+.fieldset-action-bar{
+    float: right;
+    display: inline-block;
+}
+.fieldet-tab{
+    padding-top: 1rem;
+}
+.page-loading::before {
+    content:" ";
+    display:block;
+    position:fixed;
+    z-index:10;
+    height:2px;
+    width:100%;
+    top:0;
+    left:0;
+    background-color:#0d6efd;
+    animation: page-load ease-out 3s;
+}
+.search-and-filters {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    clear: both;
+    display: flex;
+    align-items: flex-end;
+    flex-direction: row;
+    flex-wrap: wrap;
+    float: none;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 20px 10px 5px;
+    position: relative;
+    width: 100%;
+}
+.search-and-filters label {
+    color: #666;
+}
+.search-and-filters .select2-container{
+    width: 210px !important;
+}
+.search-and-filters .select2-container--default .select2-selection--single{
+    height: 38px !important;
+    padding-top: 3px;
+}
+.search-and-filters input[type=text]{
+    height: 38px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
+.search-and-filters form>div {
+    display: inline;
+    float: left;
+    width: auto;
+}
+.search-and-filters .filter {
+    flex-basis: 210px;
+    flex-grow: 1;
+    float: left;
+    margin: 0 10px 15px;
+    max-width: 210px;
+    min-width: 160px;
+    padding: 0;
+    width: auto;
+}
+.search-and-filters .filter .fa-calendar{
+    position: relative;
+    left: -75px;
+    bottom: -27px;
+    color: #DDD;
+}
+.search-and-filters .submit-button {
+    flex-basis: 100px;
+    flex-grow: 1;
+    margin: 15px 10px;
+}
+.search-and-filters input[type="text"] {
+    max-width: 100%;
+    width: 100%;
+}
+.search-and-filters .submit-panel{
+    padding-top: 24px;
+}
+.select2-selection__clear span{
+    position: relative;
+    color: #CCC;
+    top: -8px;
+}
+.messages{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+    border-radius: 0;
+}
+main{
+    margin:20px;
+}
+
+.select2-container--default .select2-selection--single{
+    height: 38px;
+    padding-top: 3px;
+
+    border-color: #ced4da !important;
+}
+.select2-container--open {
+    z-index: 9999999;
+}
+.select2-selection__arrow{
+    margin: 5px;
+}
+
+.select2-selection__clear{
+    margin-top: 8px;
+    padding-right: 12px !important;
+}
+
+.search-results{
+    position: absolute;
+    top: 50;
+    z-index: 1;
+    max-height: 300px;
+    overflow-y: scroll;
+}
+.search-results a{
+    text-decoration: none;
+}
+
+dl dl {
+    margin-left: 10px;
+}
+
+textarea{
+    width: 100%;
+}
+
+.form-field{
+    display: inline-block;
+    margin-bottom: 10px;
+    vertical-align: top;
+}
+.form-field label.required{
+    font-weight: bold;
+}
+.form-submit{
+    float: right;
+    margin: 25px;
+}
+.width-100, .n.width-50, .n.width-33, .n.width-25, .s.width-25{
+    width: 98.5%;
+}
+.s.width-25, .s.width-33, .s.width-50, .m.width-25, .m.width-50, .l.width-50{
+    width: 48.9%;
+}
+.m.width-33, .l.width-33{
+    width: 32.45%;
+}
+.l.width-25{
+    width: 24.2%;
+}
+
+.errors ul{
+    padding-inline-start: 0;
+}
+.errors li{
+    list-style: none;
+    color: #dc3545;
+}
+
+.search-menu a.subitem{
+    line-height: 1.7;
+}

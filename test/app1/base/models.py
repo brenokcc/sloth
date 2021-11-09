@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
 
-from dms2.db import models
-
-from dms2.db.models.decorators import meta, role
+from sloth.db import models, meta, role
 
 
 class Telefone(models.Model):

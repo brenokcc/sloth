@@ -1,3 +1,3 @@
-from dms2.formatters import Formatter
+from sloth.formatters import Formatter
 
 

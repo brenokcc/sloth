@@ -6,9 +6,9 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from oauth2_provider.generators import generate_client_id
 
-from dms2.test import ServerTestCase
+from sloth.test import ServerTestCase
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
-from dms2 import utils
+from sloth import utils
 
 
 def log(data):
@@ -136,16 +136,16 @@ class Oauth2TestCase(ServerTestCase):
         admin = self.create_user('admin', '123', True)
         self.login('admin', '123')
         data = dict(name='public', description='Publica Data')
-        self.post('/api/dms2/scope/add/', data=data)
+        self.post('/api/sloth/scope/add/', data=data)
         data = dict(
             redirect_uris='', client_type='confidential',
             authorization_grant_type='password', name='App01',
             skip_authorization=True, user=admin.pk, client_id=generate_client_id(),
             default_scopes=[1], available_scopes=[1]
         )
-        self.get('/api/dms2/application/')
-        self.post('/api/dms2/application/add/', data=data)
-        app = self.get('/api/dms2/application/1/')
+        self.get('/api/sloth/application/')
+        self.post('/api/sloth/application/add/', data=data)
+        app = self.get('/api/sloth/application/1/')
         self.logout()
 
         data = dict(

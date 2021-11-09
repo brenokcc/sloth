@@ -1,0 +1,76 @@
+{% load tags %}
+{% if self.get_metadata.name %}
+<h2>
+    {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
+    {{ self.get_metadata.name }}
+</h2>
+{% endif %}
+<form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if self.non_field_errors %}
+        <div class="errors" role="alert">
+            {{ self.non_field_errors }}
+        </div>
+    {% endif %}
+
+    {% for hidden_field in self.hidden_fields %}
+        {{ hidden_field.errors }}
+        {{ hidden_field }}
+    {% endfor %}
+
+    {% for title, itens in fieldsets.items %}
+    <div>
+        {% if title %}
+        <h5>
+            {% for item in itens %}
+                {% if item.name|is_one_to_one_field_controller %}
+                    {% with field=self|formfield:item.name %}
+                        {{ field }}
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            {{ title }}
+        </h5>
+        {% endif %}
+        <fieldset>
+            <div class="form-fieldset responsive-container">
+            {% for item in itens %}
+                {% if not item.name|is_one_to_one_field_controller %}
+                    {% with field=self|formfield:item.name %}
+                    <div class="form-field width-{{ item.width }}">
+                        {% if item.name|is_one_to_many_field_controller %}
+                            {{ field }} <strong>{{ field.field.label }}</strong>
+                        {% else %}
+                            <label>
+                                {{ field.field.label }}{% if field.field.required %}*{% endif %}
+                            </label> {{ field }}
+                            {% if field.help_text %}
+                            <span class="help">{{ field.help_text|safe }}</span>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="errors" role="alert">
+                                  {{ field.errors }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            </div>
+        </fieldset>
+    </div>
+    {% endfor %}
+    <div class="form-submit">
+        <button type="button" class="btn btn-light" onclick="$('#modal').modal('hide');">
+            Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary btn-submit">
+            <div class="spinner-border spinner-border-sm d-none" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            {{ self.get_metadata.submit }}
+        </button>
+    </div>
+</form>

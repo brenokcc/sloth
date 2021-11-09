@@ -1,0 +1,52 @@
+{% if not request.is_ajax %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ settings.NAME }}</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
+    <link href="/static/css/select2.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/jquery-ui.css">
+    <link href="/static/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/dms2.css" />
+    {% for url in settings.CSS %}
+      <link rel="stylesheet" href="{{ url }}" />
+    {% endfor %}
+
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/select2.min.js"></script>
+    <script src="/static/js/i18n/pt-BR.js"></script>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery-ui.js"></script>
+    <script src="/static/js/masonry.pkgd.min.js"></script>
+    <script src="/static/js/dms2.js"></script>
+    <script src="/static/js/jquery.binarytransport.js"></script>
+    <script src="/static/js/jquery.mask.min.js"></script>
+    {% for url in settings.JS %}
+      <link rel="stylesheet" href="{{ url }}" />
+    {% endfor %}
+
+    {% block extrahead %} {% endblock %}
+  </head>
+  <body>
+
+    {% block nav %}
+      {% include "adm/header.html" %}
+    {% endblock %}
+
+    <main>
+{% endif %}
+
+{% block content %}
+{% endblock %}
+{% include "adm/messages.html" %}
+
+{% if not request.is_ajax %}
+    </main>
+    {% include "adm/footer.html" %}
+    {% include "adm/modal.html" %}
+  </body>
+</html>
+{% endif %}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from dms2 import forms
+from sloth import forms
 
 from .models import Servidor, Ferias, Estado, Frequencia, Municipio
 

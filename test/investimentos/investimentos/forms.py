@@ -48,7 +48,7 @@ class AdicionarCampus(forms.ModelForm):
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'prioridade', 'descricao', 'classificacao', 'valor'
+        fields = 'descricao', 'classificacao', 'valor'
         verbose_name = 'Detalhar Demanda'
         can_execute = 'Gestor',
 

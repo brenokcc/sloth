@@ -148,7 +148,7 @@ class QuerySet(models.QuerySet):
     def choices(self, request):
         filter_lookup = request.GET['choices']
         q = request.GET.get('term')
-        field = getattrr(self.model, filter_lookup)[0].field
+        field = self.model.get_field(filter_lookup)
         values = self.apply_role_lookups(request.user).values_list(
             filter_lookup, flat=True
         ).order_by(filter_lookup).order_by(filter_lookup).distinct()

@@ -388,7 +388,8 @@ class PerguntaQuestionario(models.Model):
         verbose_name = 'Resposta de Questionário'
         verbose_name_plural = 'Respostas de Questionário'
         can_list = 'Administrador',
-        list_display = 'get_ciclo', 'get_demanda', 'pergunta', 'resposta'
+        list_display = 'get_ciclo', 'get_instituicao', 'get_demanda', 'pergunta', 'resposta'
+        list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
 
     @meta('Demanda')
     def get_demanda(self):
@@ -397,6 +398,10 @@ class PerguntaQuestionario(models.Model):
     @meta('Ciclo')
     def get_ciclo(self):
         return self.questionario.demanda.ciclo.ano
+
+    @meta('Instituição')
+    def get_instituicao(self):
+        return self.questionario.demanda.instituicao
 
     def __str__(self):
         return '{} - {}'.format(self.pergunta, self.resposta)

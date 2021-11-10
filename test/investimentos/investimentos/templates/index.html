@@ -2,7 +2,20 @@
 
 
 {% block content %}
+    <style>
+        .badge{
+            padding: 10px;
+            font-size: 20px;
+        }
+    </style>
     {% if qs is not None %}
+        {% if valores %}
+            <div align="center">
+                <span class="badge rounded-pill bg-primary">Maxímo:<br>R$ {{ valores.maximo }}</span>
+                <span class="badge rounded-pill bg-danger">Utilizado:<br>R$ {{ valores.utilizado }}</span>
+                <span class="badge rounded-pill bg-success">Disponível:<br>R$ {{ valores.disponivel }}</span>
+            </div>
+        {% endif %}
         {{ qs.html }}
     {% else %}
         <center>

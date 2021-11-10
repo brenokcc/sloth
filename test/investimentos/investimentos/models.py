@@ -52,8 +52,8 @@ class Categoria(models.Model):
     nome = models.CharField(verbose_name='Nome')
 
     class Meta:
-        verbose_name = 'Categoria'
-        verbose_name_plural = 'Categorias'
+        verbose_name = 'Categoria de Investimento'
+        verbose_name_plural = 'Categorias de Investimento'
         list_display = 'nome', 'get_subcategorias'
         can_admin = 'Administrador',
 
@@ -293,6 +293,7 @@ class DemandaManager(models.Manager):
 class Demanda(models.Model):
     ciclo = models.ForeignKey(Ciclo, verbose_name='Ciclo')
     instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
+    descricao = models.TextField(verbose_name='Descrição')
     prioridade = models.ForeignKey(Prioridade, verbose_name='Prioridade')
     classificacao = models.ForeignKey(Subcategoria, verbose_name='Classificação', null=True)
     valor = models.DecimalField(verbose_name='Valor (R$)', null=True)

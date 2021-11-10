@@ -61,7 +61,7 @@ class Categoria(models.Model):
         return self.nome
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_perguntas').append('get_subcategorias')
+        return self.values('get_dados_gerais', 'get_subcategorias', 'get_perguntas')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -213,7 +213,7 @@ class Gestor(models.Model):
 class CicloManager(models.Manager):
     @meta('Ciclos', roles=('Administrador',))
     def all(self):
-        return super().all()
+        return super().all().template('adm/queryset/accordion')
 
     @meta('Ciclos Abertos', roles=('Administrador',))
     def abertos(self):
@@ -225,8 +225,8 @@ class Ciclo(models.Model):
     inicio = models.DateField(verbose_name='Início')
     fim = models.DateField(verbose_name='Fim')
     teto = models.DecimalField(verbose_name='Teto (R$)')
-    prioridades = models.IntegerField(verbose_name='Prioridades', choices=[[x, x] for x in range(1, 11)])
-    instituicoes = models.ManyToManyField(Instituicao, verbose_name='Instituições', blank=True)
+    prioridades = models.IntegerField(verbose_name='Quantidade', choices=[[x, x] for x in range(1, 11)])
+    instituicoes = models.ManyToManyField(Instituicao, verbose_name='Demandantes', blank=True)
 
     objects = CicloManager()
 
@@ -234,9 +234,14 @@ class Ciclo(models.Model):
         verbose_name = 'Ciclo de Demanda'
         verbose_name_plural = 'Ciclos de Demandas'
         can_admin = 'Administrador',
+        fieldsets = {
+            'Dados Gerais': ('ano', ('inicio', 'fim'),),
+            'Limite Finaneiro': ('teto',),
+            'Demandas': ('prioridades', 'instituicoes'),
+        }
 
     def __str__(self):
-        return '{}'.format(self.ano)
+        return 'Ciclo de investimentos para {}'.format(self.ano)
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -249,7 +254,15 @@ class Ciclo(models.Model):
     def view(self):
         return self.values('get_dados_gerais', 'get_demandas')
 
-    def criar_questionarios(self):
+    def gerar_demandas(self):
+        if not self.demanda_set.exists():
+            for prioridade in range(1, self.prioridades + 1):
+                for instituicao in self.instituicoes.all():
+                    lookups = dict(ciclo=self, prioridade=prioridade, instituicao=instituicao)
+                    if not Demanda.objects.filter(**lookups).exists():
+                        Demanda.objects.create(**lookups)
+
+    def gerar_questionarios(self):
         for demanda in self.demanda_set.filter(classificacao__isnull=False):
             questionario = Questionario.objects.filter(demanda=demanda).first()
             if questionario is None:
@@ -267,23 +280,30 @@ class Ciclo(models.Model):
                 lookups = dict(ciclo=self, instituicao=instituicao, prioridade=prioridade)
                 if not Demanda.objects.filter(**lookups).exists():
                     Demanda.objects.create(**lookups)
-        self.criar_questionarios()
+        self.gerar_demandas()
+        self.gerar_questionarios()
 
 
 class DemandaManager(models.Manager):
     @meta('Todas', roles=('Gestor',))
     def all(self):
         return self.list_display(
-            'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'get_dados_questionario'
-        ).attach('aguardando_detalhamento', 'aguardando_esclarecimentos', 'get_total_por_instituicao')
+            'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'get_progresso_questionario'
+        ).attach(
+            'aguardando_detalhamento', 'aguardando_esclarecimentos', 'get_total_por_instituicao'
+        ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.list_display('ciclo', 'instituicao', 'prioridade').filter(classificacao__isnull=True).actions('DetalharDemanda')
+        return self.list_display('ciclo', 'instituicao', 'get_prioridade').filter(classificacao__isnull=True).actions(
+            'DetalharDemanda'
+        ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Aguardando Justificativas')
     def aguardando_esclarecimentos(self):
-        return self.all().filter(prioridade__isnull=False).actions('ResponderQuestionario')
+        return self.all().filter(classificacao__isnull=False).actions(
+            'ResponderQuestionario'
+        ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Total por Instituição')
     def get_total_por_instituicao(self):
@@ -303,15 +323,7 @@ class Demanda(models.Model):
     class Meta:
         verbose_name = 'Demanda'
         verbose_name_plural = 'Demandas'
-
-    def has_add_permission(self, user):
-        return False
-
-    def has_edit_permission(self, user):
-        return False
-
-    def has_delete_permission(self, user):
-        return False
+        can_view = 'Administrador', 'Gestor'
 
     def __str__(self):
         return 'Demanda '.format(self.pk)
@@ -321,7 +333,7 @@ class Demanda(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('classificacao', 'valor')
+        return self.values('descricao', 'classificacao', 'valor')
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
@@ -335,7 +347,7 @@ class Demanda(models.Model):
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @meta('Progresso', template='adm/formatters/progress')
+    @meta('Respostas do Questionário', template='adm/formatters/progress')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()
         total_respostas = self.get_total_respostas()
@@ -346,6 +358,14 @@ class Demanda(models.Model):
     @meta('Prioridade', template='prioridade')
     def get_prioridade(self):
         return self.prioridade
+
+    def get_cor(self):
+        return ['cb4335', 'ec7063', 'f1948a', 'f5b7b1', 'fadbd8'][self.prioridade.numero-1]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.classificacao:
+            self.ciclo.gerar_questionarios()
 
 
 class Questionario(models.Model):
@@ -365,8 +385,18 @@ class PerguntaQuestionario(models.Model):
     resposta = models.TextField(verbose_name='Resposta', null=True)
 
     class Meta:
-        verbose_name = 'Pergunta de Questionário'
-        verbose_name_plural = 'Perguntas de Questionário'
+        verbose_name = 'Resposta de Questionário'
+        verbose_name_plural = 'Respostas de Questionário'
+        can_list = 'Administrador',
+        list_display = 'get_ciclo', 'get_demanda', 'pergunta', 'resposta'
+
+    @meta('Demanda')
+    def get_demanda(self):
+        return self.questionario.demanda.descricao
+
+    @meta('Ciclo')
+    def get_ciclo(self):
+        return self.questionario.demanda.ciclo.ano
 
     def __str__(self):
         return '{} - {}'.format(self.pergunta, self.resposta)

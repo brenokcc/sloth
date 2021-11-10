@@ -2,9 +2,11 @@
 
 
 {% block content %}
-
-<h2>Bem-vindo!</h2>
-<center>
-    <img src="/static/images/fluxograma.png">
-</center>
+    {% if qs is not None %}
+        {{ qs.html }}
+    {% else %}
+        <center>
+            <img src="/static/images/fluxograma.png">
+        </center>
+    {% endif %}
 {% endblock %}

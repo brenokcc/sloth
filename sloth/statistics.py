@@ -103,9 +103,9 @@ class QuerySetStatistics(object):
         self.qs = self.qs.filter(**kwargs)
         return self
 
-    def apply_lookups(self, user, lookups=None):
+    def apply_role_lookups(self, user):
         self._clear()
-        self.qs = self.qs.apply_lookups(user, lookups=lookups)
+        self.qs = self.qs.apply_role_lookups(user)
         return self
 
     def debug(self):

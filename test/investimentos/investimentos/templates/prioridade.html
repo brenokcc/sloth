@@ -1,7 +1,7 @@
 <style>
 .round-corner {
   border-radius: 50%;
-  background-color: #CCC;
+  color: white;
   padding-top: 10px;
   width: 75px;
   height: 75px;
@@ -9,4 +9,4 @@
   text-align: center;
 }
 </style>
-<div class="round-corner">{{ value }}</div>
+<div class="round-corner" style="background-color: {{ instance.get_cor }}">{{ value }}</div>

@@ -27,8 +27,26 @@ class QuerySet(models.QuerySet):
             display=[], filters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
-            global_actions=[], batch_actions=[], relation_actions={}
+            global_actions=[], batch_actions=[], lookups=[]
         )
+
+    def role_lookups(self, name, **scopes):
+        self.metadata['lookups'].append((name, scopes))
+        return self
+
+    def apply_role_lookups(self, user):
+        if user.is_superuser:
+            return self
+        lookups = []
+        for name, scopes in self.metadata['lookups']:
+            for scope_key, scope_value_attr in scopes.items():
+                self.metadata['ignore'].append(scope_key)
+                role = user.roles.filter(name=name, scope_key=scope_key).first()
+                if role:
+                    lookups.append(Q(**{scope_value_attr: role.scope_value}))
+        if lookups:
+            return self.filter(reduce(operator.__and__, lookups))
+        return self
 
     def _clone(self):
         clone = super()._clone()
@@ -112,7 +130,7 @@ class QuerySet(models.QuerySet):
             for i, name in enumerate(['all'] + self.metadata['attach']):
                 attr = getattr(getattr(self.model.objects, '_queryset_class'), name)
                 verbose_name = getattr(attr, 'verbose_name', name)
-                obj = getattr(self.model.objects, name)()
+                obj = getattr(self.model.objects, name)().apply_role_lookups(self.metadata['request'].user)
                 if isinstance(obj, QuerySet):
                     if verbose_name == 'all':
                         verbose_name = 'Tudo'
@@ -127,9 +145,11 @@ class QuerySet(models.QuerySet):
 
     # choices function
 
-    def choices(self, filter_lookup, q=None):
+    def choices(self, request):
+        filter_lookup = request.GET['choices']
+        q = request.GET.get('term')
         field = getattrr(self.model, filter_lookup)[0].field
-        values = self.values_list(
+        values = self.apply_role_lookups(request.user).values_list(
             filter_lookup, flat=True
         ).order_by(filter_lookup).order_by(filter_lookup).distinct()
         if field.related_model:
@@ -315,7 +335,7 @@ class QuerySet(models.QuerySet):
             self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
             start = (self.metadata['page'] - 1) * self._get_list_per_page()
             end = start + self._get_list_per_page()
-            return self[start:end]
+            return self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
 
     # rendering function
 
@@ -336,7 +356,7 @@ class QuerySet(models.QuerySet):
             self.metadata.update(request=request)
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
-                    self.choices(request.GET['choices'], q=request.GET.get('term'))
+                    self.choices(request)
                 )
             if 'export' in request.GET:
                 export = request.GET['export']
@@ -353,12 +373,13 @@ class QuerySet(models.QuerySet):
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self._get_attach())
             if 'uuid' in request.GET:
-                component = self.process_request(request)
+                component = self.process_request(request).apply_role_lookups(request.user)
                 raise HtmlJsonReadyResponseException(
                     component.html(
                         uuid=request.GET['uuid']
                     )
                 )
+            return self.apply_role_lookups(request.user)
         return self
 
     def process_request(self, request):

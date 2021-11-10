@@ -115,6 +115,7 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+ALLOWED_HOSTS = ['*']
 BASE_DIR = path.abspath(path.dirname(path.dirname(__file__)))
 MEDIA_URL = '/media/'
 STATIC_ROOT = path.join(BASE_DIR, 'static')

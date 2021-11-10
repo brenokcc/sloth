@@ -31,20 +31,29 @@ class ModelMixin(object):
         return names
 
     def has_view_permission(self, user):
-        return self and user.is_superuser
+        names = getattr(self.metaclass(), 'can_view', ()) + getattr(self.metaclass(), 'can_admin', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
 
     def has_attr_view_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
     def has_add_permission(self, user):
-        return self and user.is_superuser
+        names = getattr(self.metaclass(), 'can_add', ()) + getattr(self.metaclass(), 'can_admin', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
 
     def has_edit_permission(self, user):
-        return self and user.is_superuser
+        names = getattr(self.metaclass(), 'can_edit', ()) + getattr(self.metaclass(), 'can_admin', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
 
     def has_delete_permission(self, user):
-        return self and user.is_superuser
+        names = getattr(self.metaclass(), 'can_delete', ()) + getattr(self.metaclass(), 'can_admin', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
+
+    @classmethod
+    def has_list_permission(cls, user):
+        names = getattr(cls.metaclass(), 'can_list', ()) + getattr(cls.metaclass(), 'can_admin', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
 
     def values(self, *names):
         return ValueSet(self, names)
@@ -68,8 +77,8 @@ class ModelMixin(object):
             attr_name = 'can_{}'.format(attr_name)
         else:
             attr_name = 'can_view_{}'.format(attr_name)
-        if hasattr(self, attr_name):
-            return getattr(self, attr_name)(user)
+        if not hasattr(self, attr_name) or getattr(self, attr_name)(user):
+            return True
         return user.is_superuser
 
     @classmethod
@@ -98,7 +107,6 @@ class ModelMixin(object):
 
             def has_permission(self):
                 return self.instance.has_add_permission(self.request.user)
-
         return Add
 
     @classmethod

@@ -9,7 +9,16 @@ from django.db import models
 from sloth.db import meta
 
 
+class UserManager(models.Manager):
+    @meta('Usuários')
+    def all(self):
+        return super().all().list_display('username', 'is_superuser', 'get_roles')
+
+
 class User(DjangoUser):
+
+    objects = UserManager()
+
     class Meta:
         proxy = True
         verbose_name = 'Usuário'
@@ -17,8 +26,29 @@ class User(DjangoUser):
         list_display = 'username',
         fieldsets = {
             'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'),
-            'Dados de Acesso': ('is_superuser',)
+            'Dados de Acesso': ('is_superuser')
         }
+
+    def view(self):
+        return self.values('get_general_info', 'get_access_info')
+
+    @meta('Dados Gerais')
+    def get_general_info(self):
+        return self.values(('first_name', 'last_name'), 'username', 'email')
+
+    @meta('Dados de Acesso')
+    def get_access_info(self):
+        return self.values('is_superuser',)
+
+    @meta('Papeis')
+    def get_roles(self):
+        return [role.name for role in self.roles.all()]
+
+    def has_role(self, name):
+        return self.user.roles.filter(name=name).exists()
+
+    def has_roles(self, name):
+        return self.user.roles.filter(name__in=name).exists()
 
 
 class Role(models.Model):

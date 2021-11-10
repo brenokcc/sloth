@@ -50,7 +50,8 @@ models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
     'icon', 'list_display', 'search_fields', 'list_per_page', 'list_filter', 'fieldsets',
-    'form', 'add_form', 'edit_form', 'delete_form', 'list_template', 'view_template', 'select_template'
+    'form', 'add_form', 'edit_form', 'delete_form', 'list_template', 'view_template', 'select_template',
+    'can_list', 'can_add', 'can_edit', 'can_delete', 'can_view', 'can_admin'
 ))
 
 

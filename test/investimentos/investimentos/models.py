@@ -1,6 +1,29 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
-from sloth.db import models, meta
+from sloth.db import models, meta, role
+
+
+@role('Administrador', 'user')
+class Administrador(models.Model):
+    nome = models.CharField('Nome')
+    cpf = models.CharField('CPF', rmask='000.000.000-00')
+
+    user = models.ForeignKey(User, verbose_name='Usuário', blank=True)
+
+    class Meta:
+        verbose_name = 'Administrador'
+        verbose_name_plural = 'Administradores'
+        fieldsets = {
+            'Dados Gerais': ('nome', 'cpf')
+        }
+
+    def save(self, *args, **kwargs):
+        self.user = User.objects.get_or_create(
+            username=self.cpf, defaults={}
+        )[0]
+        self.user.set_password('123')
+        self.user.save()
+        super().save()
 
 
 class Ano(models.Model):
@@ -32,6 +55,7 @@ class Categoria(models.Model):
         verbose_name = 'Categoria'
         verbose_name_plural = 'Categorias'
         list_display = 'nome', 'get_subcategorias'
+        can_admin = 'Administrador',
 
     def __str__(self):
         return self.nome
@@ -63,6 +87,8 @@ class Subcategoria(models.Model):
     class Meta:
         verbose_name = 'Subcategoria'
         verbose_name_plural = 'Subcategorias'
+        can_delete = 'Administrador',
+        can_edit = 'Administrador',
 
     def __str__(self):
         return '{} / {}'.format(self.categoria, self.nome)
@@ -107,6 +133,8 @@ class Pergunta(models.Model):
         verbose_name = 'Pergunta'
         verbose_name_plural = 'Perguntas'
         list_display = 'categoria', 'texto', 'obrigatoria', 'get_tipo_resposta'
+        can_delete = 'Administrador',
+        can_edit = 'Administrador',
 
     def __str__(self):
         return '{}'.format(self.texto)
@@ -123,12 +151,13 @@ class Instituicao(models.Model):
     class Meta:
         verbose_name = 'Instituição'
         verbose_name_plural = 'Instituições'
+        can_admin = 'Administrador',
 
     def __str__(self):
         return self.sigla
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_campi')
+        return self.values('get_dados_gerais', 'get_gestores', 'get_campi')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -137,6 +166,10 @@ class Instituicao(models.Model):
     @meta('Campi')
     def get_campi(self):
         return self.campus_set.ignore('instituicao').global_actions('AdicionarCampus').actions('edit', 'delete')
+
+    @meta('Gestores')
+    def get_gestores(self):
+        return self.gestor_set.ignore('instituicao').global_actions('AdicionarGestor').actions('edit', 'delete')
 
 
 class Campus(models.Model):
@@ -152,6 +185,41 @@ class Campus(models.Model):
         return '{}/{}'.format(self.sigla, self.instituicao)
 
 
+@role('Gestor', 'user', instituicao='instituicao')
+class Gestor(models.Model):
+    nome = models.CharField('Nome')
+    cpf = models.CharField('CPF', rmask='000.000.000-00')
+    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
+
+    user = models.ForeignKey(User, verbose_name='Usuário', blank=True)
+
+    class Meta:
+        verbose_name = 'Gestor '
+        verbose_name_plural = 'Gestores'
+        fieldsets = {
+            'Dados Gerais': (('nome', 'cpf'), 'instituicao')
+        }
+        can_admin = 'Administrador',
+
+    def save(self, *args, **kwargs):
+        self.user = User.objects.get_or_create(
+            username=self.cpf, defaults={}
+        )[0]
+        self.user.set_password('123')
+        self.user.save()
+        super().save()
+
+
+class CicloManager(models.Manager):
+    @meta('Ciclos', roles=('Administrador',))
+    def all(self):
+        return super().all()
+
+    @meta('Ciclos Abertos', roles=('Administrador',))
+    def abertos(self):
+        return super().all()
+
+
 class Ciclo(models.Model):
     ano = models.ForeignKey(Ano, verbose_name='Ano')
     inicio = models.DateField(verbose_name='Início')
@@ -160,12 +228,15 @@ class Ciclo(models.Model):
     prioridades = models.IntegerField(verbose_name='Prioridades', choices=[[x, x] for x in range(1, 11)])
     instituicoes = models.ManyToManyField(Instituicao, verbose_name='Instituições', blank=True)
 
+    objects = CicloManager()
+
     class Meta:
         verbose_name = 'Ciclo de Demanda'
         verbose_name_plural = 'Ciclos de Demandas'
+        can_admin = 'Administrador',
 
     def __str__(self):
-        return 'Ciclo de Demandas {}'.format(self.ano)
+        return '{}'.format(self.ano)
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -176,11 +247,7 @@ class Ciclo(models.Model):
         return self.demanda_set.all().ignore('ciclo')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_demandas', 'get_total_por_instituicao')
-
-    @meta('Total por Instituição')
-    def get_total_por_instituicao(self):
-        return self.demanda_set.filter(valor__isnull=False).sum('valor', 'instituicao')
+        return self.values('get_dados_gerais', 'get_demandas')
 
     def criar_questionarios(self):
         for demanda in self.demanda_set.filter(classificacao__isnull=False):
@@ -204,19 +271,23 @@ class Ciclo(models.Model):
 
 
 class DemandaManager(models.Manager):
-    @meta('Todas')
+    @meta('Todas', roles=('Gestor',))
     def all(self):
         return self.list_display(
-            'ciclo', 'instituicao', 'get_detalhamento', 'get_dados_questionario'
-        ).attach('aguardando_detalhamento', 'aguardando_esclarecimentos')
+            'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'get_dados_questionario'
+        ).attach('aguardando_detalhamento', 'aguardando_esclarecimentos', 'get_total_por_instituicao')
 
     @meta('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.list_display('instituicao', 'prioridade').filter(classificacao__isnull=True).actions('DetalharDemanda')
+        return self.list_display('ciclo', 'instituicao', 'prioridade').filter(classificacao__isnull=True).actions('DetalharDemanda')
 
-    @meta('Aguardando Esclarecimentos')
+    @meta('Aguardando Justificativas')
     def aguardando_esclarecimentos(self):
         return self.all().filter(prioridade__isnull=False).actions('ResponderQuestionario')
+
+    @meta('Total por Instituição')
+    def get_total_por_instituicao(self):
+        return self.filter(valor__isnull=False).sum('valor', 'instituicao')
 
 
 class Demanda(models.Model):
@@ -226,14 +297,20 @@ class Demanda(models.Model):
     classificacao = models.ForeignKey(Subcategoria, verbose_name='Classificação', null=True)
     valor = models.DecimalField(verbose_name='Valor (R$)', null=True)
 
+    objects = DemandaManager()
+
     class Meta:
         verbose_name = 'Demanda'
         verbose_name_plural = 'Demandas'
-        fieldsets = {
-            'Dados Gerais': ('ciclo', 'instituicao')
-        }
 
-    objects = DemandaManager()
+    def has_add_permission(self, user):
+        return False
+
+    def has_edit_permission(self, user):
+        return False
+
+    def has_delete_permission(self, user):
+        return False
 
     def __str__(self):
         return 'Demanda '.format(self.pk)
@@ -243,7 +320,7 @@ class Demanda(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('prioridade', 'classificacao', 'valor')
+        return self.values('classificacao', 'valor')
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
@@ -264,6 +341,10 @@ class Demanda(models.Model):
         if total_perguntas:
             return int(total_respostas * 100 / total_perguntas)
         return 0
+
+    @meta('Prioridade', template='prioridade')
+    def get_prioridade(self):
+        return self.prioridade
 
 
 class Questionario(models.Model):

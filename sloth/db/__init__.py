@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
-def meta(verbose_name, template=None):
+def meta(verbose_name, template=None, roles=()):
     def decorate(func):
         setattr(func, 'decorated', True)
         setattr(func, 'verbose_name', verbose_name)
         setattr(func, 'template', template)
+        setattr(func, 'roles', roles if type(roles) in (str, tuple) else (roles,))
         return func
     return decorate
 

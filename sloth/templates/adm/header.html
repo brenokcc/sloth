@@ -13,8 +13,10 @@
                 <img width="30" class="img-circle" src="/static/images/user.png">
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                {% if request.user.is_superuser %}
                 <li><a class="dropdown-item" href="/adm/icons/">Icones</a></li>
                 <li><hr class="dropdown-divider"></li>
+                {% endif %}
                 <li><a class="dropdown-item" href="/adm/logout/">Sair</a></li>
               </ul>
             </li>

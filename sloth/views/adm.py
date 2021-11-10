@@ -53,6 +53,8 @@ def login(request):
 
 
 def logout(request):
+    request.session.clear()
+    request.session.save()
     auth.logout(request)
     return HttpResponseRedirect('/adm/login/')
 
@@ -68,7 +70,6 @@ def index(request):
 def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = dict(settings=settings)
     data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
-    # data.debug()
     if isinstance(data, FormMixin):
         context.update(form=data)
         if data.message:

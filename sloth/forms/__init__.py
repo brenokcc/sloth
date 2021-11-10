@@ -36,7 +36,7 @@ class FormMixin:
         if fieldsets is None:
             fieldsets = getattr(self.Meta, 'fieldsets', None)
             if self.instance:
-                fieldsets = getattr(self.instance.metaclass(), 'fielsets', None)
+                fieldsets = getattr(self.instance.metaclass(), 'fieldsets', None)
 
         if fieldsets is None:
             fieldsets = {'Dados Gerais': list(self.fields.keys())}
@@ -250,7 +250,8 @@ class FormMixin:
         return getattr(meta, 'method', 'post') if meta else 'post'
 
     def has_permission(self):
-        return self.request.user.is_superuser
+        names = getattr(self.Meta, 'can_execute', ())
+        return self.request.user.is_superuser or self.request.user.roles.filter(name__in=names)
 
     def __str__(self):
         for name, field in self.fields.items():
@@ -417,7 +418,7 @@ class LoginForm(Form):
                     self.request, username=username, password=password
                 )
                 if self.user is None:
-                    raise ValidationError('Login e senham não conferem.')
+                    raise ValidationError('Login e senha não conferem.')
         return self.cleaned_data
 
     def process(self):

@@ -99,18 +99,25 @@ def load_menu(user):
             item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
             for name, attr in model.objects._queryset_class.__dict__.items():
                 if hasattr(attr, 'decorated'):
-                    attr_verbose_name = getattr(attr, 'verbose_name')
-                    attr_icon = getattr(attr, 'icon', None)
-                    attr_description = attr_verbose_name
-                    if name == 'all':
-                        attr_url = url
-                        attr_verbose_name = str(model_verbose_name_plural)
-                        item.update(label=str(model_verbose_name))
+                    roles = getattr(attr, 'roles')
+                    if user.is_superuser or user.roles.filter(name__in=roles).exists():
+                        attr_verbose_name = getattr(attr, 'verbose_name')
+                        attr_icon = getattr(attr, 'icon', None)
+                        attr_description = attr_verbose_name
+                        if name == 'all':
+                            attr_url = url
+                            attr_verbose_name = str(model_verbose_name_plural)
+                            item.update(label=str(model_verbose_name))
+                        else:
+                            attr_url = '{}{}/'.format(url, name)
+                        subitem = dict(label=pretty(attr_verbose_name), icon=attr_icon, description=attr_description, url=attr_url)
+                        item['subitems'].append(subitem)
                     else:
-                        attr_url = '{}{}/'.format(url, name)
-                    subitem = dict(label=pretty(attr_verbose_name), icon=attr_icon, description=attr_description, url=attr_url)
-                    item['subitems'].append(subitem)
-            items.append(item)
+                        if name == 'all':
+                            item['url'] = '#'
+            attr = model.objects._queryset_class.all
+            if user.is_superuser or item['subitems'] or model.has_list_permission(user):
+                items.append(item)
     return items
 
 

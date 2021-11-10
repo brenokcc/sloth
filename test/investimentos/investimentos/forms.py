@@ -2,7 +2,16 @@
 
 from sloth import forms
 
-from .models import Subcategoria, Campus, Demanda, Instituicao, Prioridade, Pergunta, Questionario
+from .models import Subcategoria, Campus, Demanda, Pergunta, Gestor
+
+
+class AdicionarGestor(forms.ModelForm):
+    class Meta:
+        model = Gestor
+        fields = 'nome', 'cpf'
+        verbose_name = 'Adicionar Gestor'
+        relation = 'instituicao'
+        can_execute = 'Administrador',
 
 
 class AdicionarSubcategoria(forms.ModelForm):
@@ -11,6 +20,7 @@ class AdicionarSubcategoria(forms.ModelForm):
         fields = 'nome',
         verbose_name = 'Adicionar Subcategoria'
         relation = 'categoria'
+        can_execute = 'Administrador',
 
 
 class AdicionarPergunta(forms.ModelForm):
@@ -23,6 +33,7 @@ class AdicionarPergunta(forms.ModelForm):
             'Dados Gerais': ('texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
+        can_execute = 'Administrador',
 
 
 class AdicionarCampus(forms.ModelForm):
@@ -31,6 +42,7 @@ class AdicionarCampus(forms.ModelForm):
         fields = 'nome', 'sigla'
         verbose_name = 'Adicionar Campus'
         relation = 'instituicao'
+        can_execute = 'Administrador',
 
 
 class DetalharDemanda(forms.ModelForm):
@@ -38,13 +50,7 @@ class DetalharDemanda(forms.ModelForm):
         model = Demanda
         fields = 'prioridade', 'classificacao', 'valor'
         verbose_name = 'Detalhar Demanda'
-
-
-class DetalharDemanda(forms.ModelForm):
-    class Meta:
-        model = Demanda
-        fields = 'classificacao', 'valor'
-        verbose_name = 'Detalhar Demanda'
+        can_execute = 'Gestor',
 
 
 class ResponderQuestionario(forms.ModelForm):
@@ -53,6 +59,10 @@ class ResponderQuestionario(forms.ModelForm):
         model = Demanda
         verbose_name = 'Responder Questionário'
         fields = []
+        can_execute = 'Gestor',
+
+    def has_permission(self):
+        return self.instance.get_questionario() is not None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -60,6 +70,7 @@ class ResponderQuestionario(forms.ModelForm):
             for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
                 tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
                 key = '{}'.format(pergunta_questionario.pk)
+                self.initial[key] = pergunta_questionario.resposta
                 if tipo_resposta == Pergunta.TEXTO_CURTO:
                     self.fields[key] = forms.CharField(
                         label=pergunta_questionario.pergunta.texto,
@@ -108,3 +119,15 @@ class ResponderQuestionario(forms.ModelForm):
             key = '{}'.format(pergunta_questionario.pk)
             pergunta_questionario.resposta = self.cleaned_data[key] or None
             pergunta_questionario.save()
+        self.notify()
+
+
+class AlterarSenha(forms.Form):
+    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
+
+    class Meta:
+        verbose_name = 'Alterar Senha'
+
+    def proces(self):
+        self.instantiator.user.set_password(self.cleaned_data['password'])
+        self.instantiator.user.save()

@@ -22,6 +22,7 @@
     </div>
     {% else %}
         {% for action in actions %}
+            {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}
             <a href="/adm{{ action.path }}"
                data-url="/adm{{ action.path }}"
                data-id="{{ id }}"
@@ -30,6 +31,7 @@
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
                 {{ action.submit }}
             </a>
+            {% endif %}
         {% endfor %}
     {% endif %}
 </div>

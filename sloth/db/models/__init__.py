@@ -3,9 +3,6 @@ import six
 from django.db import models
 from django.db.models import *
 from django.db.models import base
-from decimal import Decimal
-from django.core import validators
-from django.forms import fields as formfields
 from ...query import QuerySet
 
 

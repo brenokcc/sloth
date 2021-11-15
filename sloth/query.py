@@ -349,6 +349,11 @@ class QuerySet(models.QuerySet):
             request=self.metadata['request']
         )
 
+    def __str__(self):
+        if self.metadata['request']:
+            return self.html()
+        return super().__str__()
+
     # request functions
 
     def contextualize(self, request):
@@ -424,13 +429,15 @@ class QuerySet(models.QuerySet):
 
     def count(self, x=None, y=None):
         if x:
-            return QuerySetStatistics(self, x, y=y)
+            statistcs = QuerySetStatistics(self, x, y=y)
+            return statistcs.contextualize(self.metadata['request'])
         total = super().count()
         self.metadata['total'] = total
         return total
 
     def sum(self, z, x=None, y=None):
         if y:
-            return QuerySetStatistics(self, x, y=y, func=Sum, z=z)
+            statistcs = QuerySetStatistics(self, x, y=y, func=Sum, z=z)
         else:
-            return QuerySetStatistics(self, x, func=Sum, z=z)
+            statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
+        return statistcs.contextualize(self.metadata['request'])

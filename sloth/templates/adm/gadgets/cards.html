@@ -1,0 +1,56 @@
+<style>
+    .single_element .single_quick_activity .count_content {
+        margin-left: 30px;
+        flex-basis: 50%;
+        text-align: left;
+    }
+    .single_element .single_quick_activity .count_content a{
+        text-decoration: none;
+        color: #212529;
+    }
+    .single_element .quick_activity_wrap {
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 15px;
+        margin-bottom: 30px;
+    }
+    .single_element .quick_activity_wrap {
+        display: grid;
+    }
+    .single_element .single_quick_activity {
+        background-color: #fff;
+        border-radius: 10px;
+        -webkit-transition: 0.5s;
+        padding: 43px 30px;
+        position: relative;
+        align-items: center;
+        justify-content: center;
+    }
+    .single_element .single_quick_activity i{
+        font-size: 90px;
+    }
+</style>
+<div class="col-lg-12">
+    <div class="single_element">
+        <div class="quick_activity">
+            <div class="row">
+                <div class="col-12">
+                    <div class="quick_activity_wrap">
+                        {% for item in self.items %}
+                        <div class="single_quick_activity d-flex">
+                            <div class="icon">
+                                <i class="bi bi-{{ item.icon }}"></i>
+                            </div>
+                            <div class="count_content">
+                                <a href="{{ item.url }}">
+                                <h3><span class="counter">{{ item.count }}</span> </h3>
+                                <p>{{ item.label }}</p>
+                                    </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

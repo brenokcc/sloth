@@ -12,6 +12,7 @@ from .. import views
 from ..forms import FormMixin, LoginForm
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
+from .. import gadgets
 
 
 def view(func):
@@ -60,9 +61,21 @@ def logout(request):
 
 
 def index(request):
-    request.COOKIES.get('width')
     if request.user.is_authenticated:
-        return render(request, [settings.INDEX_TEMPLATE], dict(settings=settings))
+        gadgets.initilize()
+        request.COOKIES.get('width')
+        components = []
+        for cls in gadgets.GADGETS.values():
+            width = 100
+            if hasattr(cls, 'Meta'):
+                if hasattr(cls.Meta, 'can_view'):
+                    names = cls.Meta.can_view
+                    if not request.user.roles.filter(name__in=names).exists():
+                        continue
+                if hasattr(cls.Meta, 'width'):
+                    width = cls.Meta.width
+            components.append((width, cls(request).render()))
+        return render(request, [settings.INDEX_TEMPLATE], dict(settings=settings, components=components))
     return HttpResponseRedirect('/adm/login/')
 
 

@@ -123,5 +123,4 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 LOGO = '/static/images/logo.png'
 NAME = 'Investimentos'
 CSS = ['/static/css/investimentos.css']
-INDEX_TEMPLATE = 'index.html'
 LOGIN_IMAGE = '/static/images/mec.jpeg'

@@ -6,9 +6,11 @@ from decimal import Decimal
 from django.db.models.aggregates import Count
 from django.template.loader import render_to_string
 
+COLORS = '#DECF3F', '#5DA5DA', '#B276B2', '#F15854', '#4D4D4D', '#B276B2'
+MONTHS = 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
+
 
 class QuerySetStatistics(object):
-    MONTHS = ('JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ')
 
     def __init__(self, qs, x, y=None, func=None, z='id'):
         self.qs = qs
@@ -21,12 +23,13 @@ class QuerySetStatistics(object):
         self._xdict = {}
         self._ydict = {}
         self._values_dict = None
-        self.metadata = dict(request=None, attr=None)
+        self.cursor = 0
+        self.metadata = dict(request=None, attr=None, template='')
 
         if '__month' in x:
-            self._xdict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
+            self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
         if y and '__month' in y:
-            self._ydict = {i + 1: month for i, month in enumerate(QuerySetStatistics.MONTHS)}
+            self._ydict = {i + 1: month for i, month in enumerate(MONTHS)}
 
     def contextualize(self, request):
         self.metadata.update(request=request)
@@ -123,16 +126,16 @@ class QuerySetStatistics(object):
             return float(value) if isinstance(value, Decimal) else value
 
         if self._ydict:
-
             for i, (yk, yv) in enumerate(self._ydict.items()):
                 data = []
+                self.cursor = 0
                 for j, (xk, xv) in enumerate(self._xdict.items()):
-                    data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, yk), 0)), '#EEE'])
+                    data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
                 series.update(**{formatter.get(yv, str(yv)): data})
         else:
             data = list()
             for j, (xk, xv) in enumerate(self._xdict.items()):
-                data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, None), 0)), '#EEE'])
+                data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
             if data:
                 series['default'] = data
 
@@ -140,9 +143,55 @@ class QuerySetStatistics(object):
             type='statistics',
             name=verbose_name,
             path=path,
-            series=series
+            series=series,
+            template=self.metadata['template']
         )
 
     def html(self, uuid=None, request=None):
-        data = self.serialize(wrap=True, verbose=True)
-        return render_to_string('adm/statistics.html', dict(data=data))
+        if self.metadata['template']:
+            data = self.normalize()
+            return render_to_string(self.metadata['template'], dict(data=data))
+        else:
+            data = self.serialize(wrap=True, verbose=True)
+            return render_to_string('adm/statistics.html', dict(data=data))
+
+    def __str__(self):
+        if self.metadata['request']:
+            return self.html()
+        return super().__str__()
+
+    def normalize(self):
+
+        series = self.serialize()['series']
+        if 'default' in series:
+            data = []
+            total = sum([item[1] for item in series['default']])
+            for item in series['default']:
+                data.append(dict(
+                    description=item[0], percentage=int(item[1] * 100 / total),
+                    value=item[1], color=item[2]
+                ))
+        else:
+            data = {}
+            max_value = 0
+            for key in series:
+                max_value = max(max([item[1] for item in series[key]]), max_value)
+            for key in series:
+                data[key] = []
+                for item in series[key]:
+                    data[key].append(dict(
+                        description=item[0], percentage=int(item[1] * 100 / max_value),
+                        value=item[1], color=item[2]
+                    ))
+        return data
+
+    def chart(self, name):
+        self.metadata['template'] = 'adm/charts/{}.html'.format(name)
+        return self
+
+    def nex_color(self):
+        color = COLORS[self.cursor]
+        self.cursor += 1
+        if self.cursor == len(COLORS):
+            self.cursor = 0
+        return color

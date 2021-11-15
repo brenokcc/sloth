@@ -66,6 +66,10 @@ class ModelMixin(object):
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)
 
+    @classmethod
+    def get_list_url(cls, prefix=''):
+        return '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+
     def get_absolute_url(self, prefix=''):
         return '{}/{}/{}/{}/'.format(prefix, self.metaclass().app_label, self.metaclass().model_name, self.pk)
 

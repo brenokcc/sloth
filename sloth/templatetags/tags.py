@@ -131,3 +131,37 @@ def image_key(dictionary):
     return None
 
 
+@register.filter
+def column_chart_height(percentage):
+    return 3*int(percentage)
+
+
+@register.filter
+def column_chart_serie_width(data):
+    for series in data.values():
+        return 100 * len(series)
+
+
+@register.filter
+def column_chart_series_width(data):
+    width = 0
+    for series in data.values():
+        for _ in series:
+            width += 100
+    return width
+
+
+@register.filter
+def column_chart_width(data):
+    return column_chart_series_width(data) + 100
+
+
+@register.filter
+def multiply(value, n):
+    return value * n
+
+
+@register.filter
+def add(value, n):
+    return value + n
+

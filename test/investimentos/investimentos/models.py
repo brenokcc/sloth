@@ -152,6 +152,7 @@ class Instituicao(models.Model):
         verbose_name = 'Instituição'
         verbose_name_plural = 'Instituições'
         can_admin = 'Administrador',
+        icon = 'building'
 
     def __str__(self):
         return self.sigla
@@ -231,6 +232,7 @@ class Ciclo(models.Model):
     objects = CicloManager()
 
     class Meta:
+        icon = 'arrow-clockwise'
         verbose_name = 'Ciclo de Demanda'
         verbose_name_plural = 'Ciclos de Demandas'
         can_admin = 'Administrador',

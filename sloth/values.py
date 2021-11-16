@@ -95,9 +95,9 @@ class ValueSet(dict):
                         if wrap:
                             for form_name in actions:
                                 form_cls = self.instance.action_form_cls(form_name)
-                                if self.metadata['request'] is None or form_cls(request=self.metadata['request'],
-                                                                                instantiator=self.instance,
-                                                                                fake=True).has_permission():
+                                if self.metadata['request'] is None or form_cls.check_permission(
+                                        request=self.metadata['request'], instantiator=self.instance,
+                                ):
                                     action = form_cls.get_metadata(path)
                                     value['actions'].append(action)
                             value['path'] = path

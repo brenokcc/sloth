@@ -165,3 +165,8 @@ def multiply(value, n):
 def add(value, n):
     return value + n
 
+
+@register.filter
+def can_view(obj, user):
+    return obj.can_view(user)
+

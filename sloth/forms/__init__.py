@@ -15,27 +15,34 @@ from ..exceptions import JsonReadyResponseException
 from ..utils import load_menu
 
 
+class FakeForm:
+
+    def __init__(self, request, instance=None, instantiator=None):
+        self.request = request
+        self.instance = instance
+        self.instantiator = instantiator
+
+
 class FormMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.fake:
-            self.one_to_one = {}
-            self.one_to_many = {}
-            self.relation_field_name = getattr(self.Meta, 'relation', None)
-            if self.relation_field_name and self.relation_field_name in self.fields:
-                del self.fields[self.relation_field_name]
-            if not hasattr(self, 'get_fieldsets'):
-                self.load_fieldsets()
+        self.one_to_one = {}
+        self.one_to_many = {}
+        self.relation_field_name = getattr(self.Meta, 'relation', None)
+        if self.relation_field_name and self.relation_field_name in self.fields:
+            del self.fields[self.relation_field_name]
+
+    # may be overridden by subclasses in case of dynamic forms
+    def get_fieldsets(self):
+        return None
 
     def load_fieldsets(self):
-        fieldsets = None
-        if hasattr(self, 'get_fieldsets'):
-            fieldsets = self.get_fieldsets()
+        fieldsets = self.get_fieldsets()
         # creates default fieldset if necessary
         if fieldsets is None:
             fieldsets = getattr(self.Meta, 'fieldsets', None)
-            if self.instance:
+            if fieldsets is None and self.instance:
                 fieldsets = getattr(self.instance.metaclass(), 'fieldsets', None)
 
         if fieldsets is None:
@@ -249,11 +256,18 @@ class FormMixin:
         meta = getattr(self, 'Meta', None)
         return getattr(meta, 'method', 'post') if meta else 'post'
 
-    def has_permission(self):
-        names = getattr(self.Meta, 'can_execute', ())
-        return self.request.user.is_superuser or self.request.user.roles.filter(name__in=names)
+    def can_view(self, user):
+        names = getattr(self.Meta, 'can_view', ())
+        return user.is_superuser or user.roles.filter(name__in=names)
+
+    @classmethod
+    def check_permission(cls, request, instance=None, instantiator=None):
+        form = FakeForm(request, instance=instance, instantiator=instantiator)
+        setattr(form, 'Meta', cls.Meta)
+        return cls.can_view(form, request.user)
 
     def __str__(self):
+        self.load_fieldsets()
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
             if isinstance(field.widget, widgets.CheckboxInput):
@@ -325,7 +339,6 @@ class FormMixin:
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
-        self.fake = kwargs.pop('fake', False)
         self.instance = kwargs.pop('instance', None)
         self.instances = kwargs.pop('instances', ())
         self.message = None
@@ -337,8 +350,7 @@ class Form(FormMixin, Form):
             else:
                 data = self.request.POST
             kwargs['data'] = data
-        if not self.fake:
-            super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def process(self):
         self.notify()
@@ -364,7 +376,6 @@ class ModelFormMetaclass(models.ModelFormMetaclass):
 class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
 
     def __init__(self, *args, **kwargs):
-        self.fake = kwargs.pop('fake', False)
         self.instance = kwargs.get('instance', None)
         self.message = None
         self.request = kwargs.pop('request', None)
@@ -379,8 +390,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
                 data = self.request.POST
             kwargs['data'] = data
             kwargs['files'] = self.request.FILES or None
-        if not self.fake:
-            super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def process(self):
         if self.instances:

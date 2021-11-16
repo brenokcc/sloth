@@ -30,28 +30,28 @@ class ModelMixin(object):
                 names.append(field.name)
         return names
 
-    def has_view_permission(self, user):
+    def can_view(self, user):
         names = getattr(self.metaclass(), 'can_view', ()) + getattr(self.metaclass(), 'can_admin', ())
         return user.is_superuser or user.roles.filter(name__in=names)
 
-    def has_attr_view_permission(self, user, name):
+    def can_view_attr(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
-    def has_add_permission(self, user):
+    def can_add(self, user):
         names = getattr(self.metaclass(), 'can_add', ()) + getattr(self.metaclass(), 'can_admin', ())
         return user.is_superuser or user.roles.filter(name__in=names)
 
-    def has_edit_permission(self, user):
+    def can_edit(self, user):
         names = getattr(self.metaclass(), 'can_edit', ()) + getattr(self.metaclass(), 'can_admin', ())
         return user.is_superuser or user.roles.filter(name__in=names)
 
-    def has_delete_permission(self, user):
+    def can_delete(self, user):
         names = getattr(self.metaclass(), 'can_delete', ()) + getattr(self.metaclass(), 'can_admin', ())
         return user.is_superuser or user.roles.filter(name__in=names)
 
     @classmethod
-    def has_list_permission(cls, user):
+    def can_list(cls, user):
         names = getattr(cls.metaclass(), 'can_list', ()) + getattr(cls.metaclass(), 'can_admin', ())
         return user.is_superuser or user.roles.filter(name__in=names)
 
@@ -109,8 +109,8 @@ class ModelMixin(object):
                 self.save()
                 self.notify('Cadastro realizado com sucesso')
 
-            def has_permission(self):
-                return self.instance.has_add_permission(self.request.user)
+            def can_view(self, user):
+                return self.instance.can_add(user)
         return Add
 
     @classmethod
@@ -137,8 +137,8 @@ class ModelMixin(object):
                 self.save()
                 self.notify('Edição realizada com sucesso')
 
-            def has_permission(self):
-                return self.instance.has_edit_permission(self.request.user)
+            def can_view(self, user):
+                return self.instance.can_edit(user)
 
         return Edit
 
@@ -159,8 +159,8 @@ class ModelMixin(object):
                 self.instance.delete()
                 self.notify('Exclusão realizada com sucesso')
 
-            def has_permission(self):
-                return self.instance.has_delete_permission(self.request.user)
+            def can_view(self, user):
+                return self.instance.can_delete(user)
 
         return Delete
 

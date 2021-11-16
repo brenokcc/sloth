@@ -116,7 +116,7 @@ def load_menu(user):
                         if name == 'all':
                             item['url'] = '#'
             attr = model.objects._queryset_class.all
-            if user.is_superuser or item['subitems'] or model.has_list_permission(user):
+            if user.is_superuser or item['subitems'] or model.can_list(user):
                 items.append(item)
     return items
 

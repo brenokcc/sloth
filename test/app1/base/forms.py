@@ -74,9 +74,6 @@ class FazerAlgumaCoisa(forms.Form):
         verbose_name = 'Fazer Alguma Coisa'
         style = 'warning'
 
-    def has_permission(self):
-        return True
-
 
 class EditarSiglaEstado(forms.ModelForm):
     class Meta:
@@ -136,9 +133,6 @@ class InformarEndereco(forms.ModelForm):
         style = 'success'
         fields = 'endereco',
 
-    def has_permission(self):
-        return super().has_permission()
-
 
 class ExcluirEndereco(forms.ModelForm):
     class Meta:
@@ -149,9 +143,6 @@ class ExcluirEndereco(forms.ModelForm):
     def save(self):
         self.instance.endereco.delete()
         self.notify()
-
-    def has_permission(self):
-        return True
 
 
 class CadastrarFerias(forms.ModelForm):

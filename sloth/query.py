@@ -130,7 +130,10 @@ class QuerySet(models.QuerySet):
             for i, name in enumerate(['all'] + self.metadata['attach']):
                 attr = getattr(getattr(self.model.objects, '_queryset_class'), name)
                 verbose_name = getattr(attr, 'verbose_name', name)
-                obj = getattr(self.model.objects, name)().apply_role_lookups(self.metadata['request'].user)
+                if self.metadata['request']:
+                    obj = getattr(self.model.objects, name)().apply_role_lookups(self.metadata['request'].user)
+                else:
+                    obj = getattr(self.model.objects, name)()
                 if isinstance(obj, QuerySet):
                     if verbose_name == 'all':
                         verbose_name = 'Tudo'
@@ -203,8 +206,9 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
-            if self.metadata['request'] is None or form_cls(
-                    request=self.metadata['request'], instance=obj, fake=True).has_permission():
+            if self.metadata['request'] is None or form_cls.check_permission(
+                    request=self.metadata['request'], instance=obj
+            ):
                 actions.append(form_cls.__name__)
         return actions
 
@@ -238,8 +242,9 @@ class QuerySet(models.QuerySet):
             for action_type in ('global_actions', 'actions', 'batch_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
-                    if action_type == 'actions' or self.metadata['request'] is None or form_cls(
-                            request=self.metadata['request'], fake=True, instance=self.model()).has_permission():
+                    if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_permission(
+                            request=self.metadata['request'], instance=self.model()
+                    ):
                         action = form_cls.get_metadata(
                             path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                         )

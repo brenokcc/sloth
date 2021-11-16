@@ -11,7 +11,7 @@ class AdicionarGestor(forms.ModelForm):
         fields = 'nome', 'cpf'
         verbose_name = 'Adicionar Gestor'
         relation = 'instituicao'
-        can_execute = 'Administrador',
+        can_view = 'Administrador',
 
 
 class AdicionarSubcategoria(forms.ModelForm):
@@ -20,7 +20,7 @@ class AdicionarSubcategoria(forms.ModelForm):
         fields = 'nome',
         verbose_name = 'Adicionar Subcategoria'
         relation = 'categoria'
-        can_execute = 'Administrador',
+        can_view = 'Administrador',
 
 
 class AdicionarPergunta(forms.ModelForm):
@@ -33,7 +33,7 @@ class AdicionarPergunta(forms.ModelForm):
             'Dados Gerais': ('texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
-        can_execute = 'Administrador',
+        can_view = 'Administrador',
 
 
 class AdicionarCampus(forms.ModelForm):
@@ -42,7 +42,7 @@ class AdicionarCampus(forms.ModelForm):
         fields = 'nome', 'sigla'
         verbose_name = 'Adicionar Campus'
         relation = 'instituicao'
-        can_execute = 'Administrador',
+        can_view = 'Administrador',
 
 
 class DetalharDemanda(forms.ModelForm):
@@ -50,7 +50,7 @@ class DetalharDemanda(forms.ModelForm):
         model = Demanda
         fields = 'descricao', 'classificacao', 'valor'
         verbose_name = 'Detalhar Demanda'
-        can_execute = 'Gestor',
+        can_view = 'Gestor',
 
 
 class ResponderQuestionario(forms.ModelForm):
@@ -59,55 +59,53 @@ class ResponderQuestionario(forms.ModelForm):
         model = Demanda
         verbose_name = 'Responder Questionário'
         fields = []
-        can_execute = 'Gestor',
+        can_view = 'Gestor',
 
-    def has_permission(self):
+    def can_view(self, user):
         return self.instance.get_questionario() is not None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.fake:
-            for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
-                tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
-                key = '{}'.format(pergunta_questionario.pk)
-                self.initial[key] = pergunta_questionario.resposta
-                if tipo_resposta == Pergunta.TEXTO_CURTO:
-                    self.fields[key] = forms.CharField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.TEXTO_LONGO:
-                    self.fields[key] = forms.CharField(
-                        label=pergunta_questionario.pergunta.texto, widget=forms.Textarea(),
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
-                    self.fields[key] = forms.DecimalField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
-                    self.fields[key] = forms.IntegerField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.DATA:
-                    self.fields[key] = forms.DateField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.BOOLEANO:
-                    self.fields[key] = forms.BooleanField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False
-                    )
-                elif tipo_resposta == Pergunta.OPCOES:
-                    self.fields[key] = forms.ChoiceField(
-                        label=pergunta_questionario.pergunta.texto,
-                        required=False,
-                        choices=[[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
-                    )
-            self.load_fieldsets()
+        for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
+            tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
+            key = '{}'.format(pergunta_questionario.pk)
+            self.initial[key] = pergunta_questionario.resposta
+            if tipo_resposta == Pergunta.TEXTO_CURTO:
+                self.fields[key] = forms.CharField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.TEXTO_LONGO:
+                self.fields[key] = forms.CharField(
+                    label=pergunta_questionario.pergunta.texto, widget=forms.Textarea(),
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
+                self.fields[key] = forms.DecimalField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
+                self.fields[key] = forms.IntegerField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.DATA:
+                self.fields[key] = forms.DateField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.BOOLEANO:
+                self.fields[key] = forms.BooleanField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False
+                )
+            elif tipo_resposta == Pergunta.OPCOES:
+                self.fields[key] = forms.ChoiceField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False,
+                    choices=[[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
+                )
 
     def get_fieldsets(self):
         return {

@@ -5,6 +5,12 @@ $.datepicker.regional['pt-BR'] = {
     dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
     dayNamesMin: ['Do', 'Se', 'Te', 'Qu', 'Qu', 'Se', 'Sa']
 }
+$.datepicker.setDefaults(
+  $.extend(
+    {'dateFormat':'dd/mm/yyyy'},
+    $.datepicker.regional['pt-BR']
+  )
+);
 jQuery.expr[':'].icontains = function(a, i, m) {
   return jQuery(a).text().toUpperCase()
       .indexOf(m[3].toUpperCase()) >= 0;
@@ -152,9 +158,7 @@ jQuery.fn.extend({
                 {width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax}
             ).on("select2:open", function (e) { });
         });
-        $(this).find('.date-input').not('.hasDatepicker').datepicker(
-            $.datepicker.regional['pt-BR']
-        ).datepicker("option", "dateFormat", 'mm/dd/yy');
+        $(this).find('.date-input').not('.hasDatepicker').datepicker();
         $(this).find('.masked-input').each(function( index ) {
             $(this).mask($(this).data('mask'), {reverse: $(this).data('reverse')})
         });

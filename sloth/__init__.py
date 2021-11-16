@@ -36,8 +36,8 @@ def __new__(mcs, name, bases, attrs, **kwargs):
         if 'objects' not in attrs and not all(['objects' in dir(cls) for cls in bases]):
             attrs.update(objects=BaseManager.from_queryset(QuerySet)())
 
-    if bases == (Model,):
-        bases = Model, ModelMixin
+    if ModelMixin not in bases:
+        bases = bases + (ModelMixin, )
     cls = ___new___(mcs, name, bases, attrs, **kwargs)
     if cls._meta.proxy_for_model:
         PROXIED_MODELS.append(cls._meta.proxy_for_model)

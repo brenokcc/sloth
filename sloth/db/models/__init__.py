@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import *
 from django.db.models import base
 from sloth.core.query import QuerySet
+from sloth.core.base import ModelMixin
 
 
 class CharField(CharField):
@@ -34,6 +35,17 @@ class OneToOneField(OneToOneField):
 class OneToManyField(ManyToManyField):
     one_to_many = True
 
+    def __init__(self, *args, min=0, max=3, **kwargs):
+        self.min = min
+        self.max = max
+        super().__init__(*args, **kwargs)
+
+    def formfield(self, **kwargs):
+        field = super().formfield(**kwargs)
+        field.min = self.min
+        field.max = self.max
+        return field
+
 
 class DecimalField(models.DecimalField):
     def __init__(self, *args, **kwargs):
@@ -54,7 +66,7 @@ class Manager(QuerySet):
     pass
 
 
-class Model(six.with_metaclass(base.ModelBase, models.Model)):
+class Model(six.with_metaclass(base.ModelBase, models.Model, ModelMixin)):
 
     class Meta:
         abstract = True

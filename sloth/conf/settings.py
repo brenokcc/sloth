@@ -21,6 +21,7 @@ OAUTH2_PROVIDER = {
 
 LOGO = '/static/images/bootstrap.png'
 INDEX_TEMPLATE = 'adm/index.html'
+LOGIN_IMAGE = '/static/images/bootstrap.png'
 NAME = 'Admin'
 CSS = []
 JS = []

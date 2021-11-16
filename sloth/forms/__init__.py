@@ -71,9 +71,11 @@ class FormMixin:
             ).first() or {}
             key = one_to_one_field_name.upper()
             self.fields[key] = fields.BooleanField(
-                required=one_to_one_field.required, initial=bool(initial)
+                required=one_to_one_field.required, initial=bool(initial) or one_to_one_field.required
             )
             self.fields[key].widget.attrs['class'] = 'field-controller'
+            if one_to_one_field.required:
+                self.fields[key].widget.attrs['class'] += ' d-none'
             for name, field in form_cls.base_fields.items():
                 ont_to_one_key = '{}__{}'.format(one_to_one_field_name, name)
                 field_list.append(ont_to_one_key)
@@ -108,7 +110,7 @@ class FormMixin:
             pks = []
             if self.instance.pk:
                 pks.extend(getattr(self.instance, one_to_many_field_name).values_list('pk', flat=True))
-            pks.extend(['' for _ in range(1, 6)])
+            pks.extend(['' for _ in range(len(pks)+1, one_to_many_field.max+1)])
             for i, pk in enumerate(pks):
                 initial = one_to_many_field.queryset.model.objects.filter(
                     pk=pk
@@ -116,18 +118,21 @@ class FormMixin:
                     *form_cls.base_fields.keys()
                 ).first() if pk else {}
                 key = '{}--{}'.format(one_to_many_field_name.upper(), i)
+                required = i < one_to_many_field.min
                 self.fields[key] = fields.CharField(
                     label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i+1),
-                    required=False, initial=pk, widget=fields.CheckboxInput()
+                    required=required, initial=(pk or 'on') if required else pk, widget=fields.CheckboxInput()
                 )
                 self.fields[key].widget.attrs['class'] = 'field-controller'
+                if required:
+                    self.fields[key].widget.attrs['class'] += ' d-none'
                 field_list.append(key)
                 inline_field_list = []
                 for name, field in form_cls.base_fields.items():
                     field = deepcopy(field)
                     one_to_many_key = '{}__{}__{}'.format(one_to_many_field_name, name, i)
                     inline_field_list.append(one_to_many_key)
-                    field.required = False
+                    field.required = field.required and required or False
                     field.widget.attrs['class'] = key
                     self.fields[one_to_many_key] = field
                     self.initial[one_to_many_key] = initial.get(name)
@@ -311,11 +316,11 @@ class FormMixin:
         )
 
     def is_valid(self):
+        self.load_fieldsets()
         if 'choices' in self.request.GET:
             raise JsonReadyResponseException(
                 self.choices(self.request.GET['choices'], q=self.request.GET.get('term'))
             )
-        self.load_fieldsets()
         return super().is_valid()
 
     def choices(self, field_name, q=None):

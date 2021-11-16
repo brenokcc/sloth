@@ -30,8 +30,8 @@ class EstadoManager(models.Manager):
 class Estado(models.Model):
     sigla = models.CharField('Sigla')
     cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
-    endereco = models.OneToOneField('base.Endereco', verbose_name='Endereço', null=True, blank=True)
-    telefones = models.OneToManyField(Telefone, verbose_name='Telefones')
+    endereco = models.OneToOneField('base.Endereco', verbose_name='Endereço', null=True, blank=False)
+    telefones = models.OneToManyField(Telefone, verbose_name='Telefones', min=2, max=2)
 
     objects = EstadoManager()
 

@@ -13,11 +13,11 @@ USE_TZ = False
 DECIMAL_SEPARATOR = ','
 USE_THOUSAND_SEPARATOR = True
 
-# OAUTH2_PROVIDER_APPLICATION_MODEL = 'sloth.Application'
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 
-# OAUTH2_PROVIDER = {
-#     'SCOPES_BACKEND_CLASS': 'sloth.backends.Scopes'
-# }
+OAUTH2_PROVIDER = {
+    'SCOPES_BACKEND_CLASS': 'sloth.backends.Scopes'
+}
 
 LOGO = '/static/images/bootstrap.png'
 INDEX_TEMPLATE = 'adm/index.html'

@@ -2,7 +2,7 @@
 
 from oauth2_provider.scopes import BaseScopes
 
-from ..models import Scope
+from ..api.models import Scope
 
 
 class Scopes(BaseScopes):

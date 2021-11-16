@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', api.obj_view),
     path('api/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', api.obj_view),
 
-    # path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ] + static(
     settings.STATIC_URL, document_root=settings.STATIC_ROOT
 ) + static(

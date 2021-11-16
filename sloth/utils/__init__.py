@@ -100,7 +100,7 @@ def load_menu(user):
             for name, attr in model.objects._queryset_class.__dict__.items():
                 if hasattr(attr, 'decorated'):
                     roles = getattr(attr, 'roles')
-                    if user.is_superuser or user.roles.filter(name__in=roles).exists():
+                    if user is None or user.is_superuser or user.roles.filter(name__in=roles).exists():
                         attr_verbose_name = getattr(attr, 'verbose_name')
                         attr_icon = getattr(attr, 'icon', None)
                         attr_description = attr_verbose_name
@@ -116,7 +116,7 @@ def load_menu(user):
                         if name == 'all':
                             item['url'] = '#'
             attr = model.objects._queryset_class.all
-            if user.is_superuser or item['subitems'] or model.can_list(user):
+            if user is None or user.is_superuser or item['subitems'] or model.can_list(user):
                 items.append(item)
     return items
 

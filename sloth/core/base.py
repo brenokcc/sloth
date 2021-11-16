@@ -1,8 +1,8 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
-from .forms import ModelForm
-from .values import ValueSet
-from .query import QuerySet
+from sloth.forms import ModelForm
+from sloth.core.values import ValueSet
+from sloth.core.query import QuerySet
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
 SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
@@ -311,7 +311,7 @@ class ModelMixin(object):
         return tuples
 
     def sync_roles(self, role_tuples):
-        role = apps.get_model('sloth', 'Role')
+        role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
         if role_tuples != role_tuples2:
             for user_id, name, scope_type, scope_key, scope_value in role_tuples2:

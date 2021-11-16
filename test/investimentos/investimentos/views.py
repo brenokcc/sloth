@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .models import Demanda, Ciclo
-from sloth.gadgets import Cards, Gadget
+from sloth.admin.gadgets import Cards, Gadget
 
 
 class Cartoes(Cards):

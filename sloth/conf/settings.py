@@ -16,7 +16,7 @@ USE_THOUSAND_SEPARATOR = True
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 
 OAUTH2_PROVIDER = {
-    'SCOPES_BACKEND_CLASS': 'sloth.backends.Scopes'
+    'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
 
 LOGO = '/static/images/bootstrap.png'

@@ -13,10 +13,10 @@ from django.db.models import Q
 from django.db.models.aggregates import Sum
 from django.template.loader import render_to_string
 
-from .utils.http import XlsResponse, CsvResponse
-from .statistics import QuerySetStatistics
-from .exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from .utils import getattrr, serialize, pretty
+from sloth.utils.http import XlsResponse, CsvResponse
+from sloth.core.statistics import QuerySetStatistics
+from sloth.exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
+from sloth.utils import getattrr, serialize, pretty
 
 
 class QuerySet(models.QuerySet):

@@ -17,5 +17,6 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    path('', include('sloth.urls')),
+    path('', include('sloth.api.urls')),
+    path('', include('sloth.admin.urls')),
 ]

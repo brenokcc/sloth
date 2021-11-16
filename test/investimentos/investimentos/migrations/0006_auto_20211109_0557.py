@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import sloth.base
+import sloth.core.base
 import sloth.db.models
 
 
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Opção de Resposta',
                 'verbose_name_plural': 'Opções de Resposta',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.AlterField(
             model_name='ano',
@@ -45,6 +45,6 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Perguntas',
                 'fieldsets': {'Dados Gerais': ('texto', 'tipo_resposta', 'obrigtoria'), 'Opções': ('opcoes',)},
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
     ]

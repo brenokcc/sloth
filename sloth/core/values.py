@@ -4,10 +4,9 @@ from uuid import uuid1
 
 from django.template.loader import render_to_string
 
-from .query import QuerySet
-from .statistics import QuerySetStatistics
-from . import formatters
-from .utils import getattrr, serialize, pretty
+from sloth.core.query import QuerySet
+from sloth.core.statistics import QuerySetStatistics
+from sloth.utils import getattrr, serialize, pretty
 
 
 class ValueSet(dict):

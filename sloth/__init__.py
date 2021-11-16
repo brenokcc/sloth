@@ -3,8 +3,8 @@ from django.db.models import options
 from django.db.models import manager, Model
 from django.db.models.base import ModelBase
 
-from .base import ModelMixin
-from .query import QuerySet
+from sloth.core.base import ModelMixin
+from sloth.core.query import QuerySet
 
 
 PROXIED_MODELS = []

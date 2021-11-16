@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import sloth.base
+import sloth.core.base
 import sloth.db.models
 
 
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Questionário',
                 'verbose_name_plural': 'Questionários',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='PerguntaQuestionario',
@@ -42,6 +42,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Resposta de Questionário',
                 'verbose_name_plural': 'Respostas de Questionário',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
     ]

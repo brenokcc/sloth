@@ -12,7 +12,7 @@ from .. import views
 from ..forms import FormMixin, LoginForm
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from .. import gadgets
+from . import gadgets
 
 
 def view(func):

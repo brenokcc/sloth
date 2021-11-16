@@ -267,7 +267,6 @@ class FormMixin:
         return cls.can_view(form, request.user)
 
     def __str__(self):
-        self.load_fieldsets()
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
             if isinstance(field.widget, widgets.CheckboxInput):
@@ -316,6 +315,7 @@ class FormMixin:
             raise JsonReadyResponseException(
                 self.choices(self.request.GET['choices'], q=self.request.GET.get('term'))
             )
+        self.load_fieldsets()
         return super().is_valid()
 
     def choices(self, field_name, q=None):

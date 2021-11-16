@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import sloth.base
+import sloth.core.base
 import sloth.db.models
 
 
@@ -34,6 +34,6 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Ciclos de Demandas',
                 'fieldsets': {'Dados Gerais': ('ciclo', 'instituicao')},
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
     ]

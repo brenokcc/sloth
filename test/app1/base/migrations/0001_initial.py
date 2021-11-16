@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import sloth.base
+import sloth.core.base
 import sloth.db.models
 
 
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Endereços',
                 'fieldsets': {'Dados Gerais': ('logradouro', ('numero', 'municipio'))},
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Estado',
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Estados',
                 'add_form': 'EstadoForm',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Instituto',
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Instituto',
                 'list_template': 'adm/queryset/cards',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Municipio',
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Municipio',
                 'verbose_name_plural': 'Municipios',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Servidor',
@@ -88,7 +88,7 @@ class Migration(migrations.Migration):
                 'icon': 'file-earmark-person',
                 'form': 'ServidorForm',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Telefone',
@@ -101,7 +101,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Telefone',
                 'verbose_name_plural': 'Telefones',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='UnidadeOrganizacional',
@@ -115,7 +115,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Campus',
                 'verbose_name_plural': 'Campi',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Setor',
@@ -130,7 +130,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Setor',
                 'verbose_name_plural': 'Setor',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.AddField(
             model_name='servidor',
@@ -160,7 +160,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Frequências',
                 'list_template': 'adm/queryset/timeline',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.CreateModel(
             name='Ferias',
@@ -175,7 +175,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Férias',
                 'verbose_name_plural': 'Férias',
             },
-            bases=(models.Model, sloth.base.ModelMixin),
+            bases=(models.Model, sloth.core.base.ModelMixin),
         ),
         migrations.AddField(
             model_name='estado',

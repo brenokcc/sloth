@@ -52,7 +52,6 @@
   position: relative;
   top: -300px;
   left: 2px;
-  width: 596px;
   height: 300px;
   z-index: 1;
   margin-bottom: -270px;
@@ -100,7 +99,7 @@
 }
 </style>
 <h3>Column Chart</h3>
-<div style="padding-left:50px; width:{{ data|column_chart_width }}; overflow-x: auto; margin:auto">
+<div style="padding-left:50px; width:{{ data|column_chart_width }}; margin:auto">
     <table class="column-chart">
         <tbody>
             {% for key, series in data.items %}

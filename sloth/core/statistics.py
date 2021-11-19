@@ -33,6 +33,8 @@ class QuerySetStatistics(object):
 
     def contextualize(self, request):
         self.metadata.update(request=request)
+        if request:
+            self.qs = self.qs.apply_role_lookups(request.user)
         return self
 
     def _calc(self):
@@ -120,7 +122,11 @@ class QuerySetStatistics(object):
         formatter = {True: 'Sim', False: 'Não', None: ''}
         verbose_name = None
         if self.metadata['attr']:
-            verbose_name = getattr(getattr(self.qs, self.metadata['attr']), 'verbose_name')
+            attr_name = self.metadata['attr']
+            if hasattr(self.qs, attr_name):
+                verbose_name = getattr(getattr(self.qs, attr_name), 'verbose_name')
+            else:  # the method in in an object
+                verbose_name = getattr(getattr(self.qs._hints['instance'], attr_name), 'verbose_name')
 
         def format_value(value):
             return float(value) if isinstance(value, Decimal) else value

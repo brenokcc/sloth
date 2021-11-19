@@ -1,0 +1,21 @@
+{% load tags %}
+<style>
+    .x-badge{
+        padding: 15px;
+        font-size: 20px;
+    }
+</style>
+{% for ciclo in self.ciclos %}
+    <h2>{{ ciclo.descricao }}</h2>
+    <p>Período de solicitação de {{ ciclo.inicio }} até {{ ciclo.fim }}.</p>
+        <div align="center" style="margin-bottom: 30px">
+            <span class="x-badge badge rounded-pill bg-primary">Limite:<br>R$ {{ ciclo.maximo|format }}</span>
+            <span class="x-badge badge rounded-pill bg-danger">Solicitado:<br>R$ {{ ciclo.utilizado|format }}</span>
+            <span class="x-badge badge rounded-pill bg-success">Disponível:<br>R$ {{ ciclo.disponivel|format }}</span>
+        </div>
+    <div align="center">
+        <a href="/adm/investimentos/ciclo/{{ ciclo.id }}/" class="action-button btn btn-outline-primary">
+            Acessar Ciclo de Investimento
+        </a>
+    </div>
+{% endfor %}

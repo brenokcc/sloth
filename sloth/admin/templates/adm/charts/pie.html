@@ -62,7 +62,7 @@
       {% for serie in data %}
       <li>
         <div class="percent" style="background-color: {{ serie.color }}">{{ serie.percentage }}%</div>
-        <span class="choice">{{ serie.description }}</span>
+        <span class="choice">{{ serie.description }} ({{ serie.value }})</span>
       </li>
       {% endfor %}
     </ul>

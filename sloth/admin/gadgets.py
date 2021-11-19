@@ -49,10 +49,11 @@ class Cards(Gadget):
         self.items = []
         super().__init__(request)
         for model in apps.get_models():
-            if hasattr(model.metaclass(), 'icon'):
-                self.items.append(dict(
-                    url=model.get_list_url('/adm'),
-                    label=model.metaclass().verbose_name_plural,
-                    count=model.objects.count(),
-                    icon=model.metaclass().icon
-                ))
+            if model.can_list(request.user):
+                if hasattr(model.metaclass(), 'icon'):
+                    self.items.append(dict(
+                        url=model.get_list_url('/adm'),
+                        label=model.metaclass().verbose_name_plural,
+                        count=model.objects.count(),
+                        icon=model.metaclass().icon
+                    ))

@@ -71,6 +71,9 @@ class Model(six.with_metaclass(base.ModelBase, models.Model, ModelMixin)):
     class Meta:
         abstract = True
 
+    def pre_save(self, *args, **kwargs):
+        pass
+
     def save(self, *args, **kwargs):
         if hasattr(self, '_roles'):
             tuples = self.get_role_tuples()
@@ -78,6 +81,9 @@ class Model(six.with_metaclass(base.ModelBase, models.Model, ModelMixin)):
             self.sync_roles(tuples)
         else:
             super().save(*args, **kwargs)
+
+    def post_save(self, *args, **kwargs):
+        pass
 
     def delete(self, *args, **kwargs):
         if hasattr(self, '_roles'):

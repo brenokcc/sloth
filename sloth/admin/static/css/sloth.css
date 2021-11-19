@@ -38,16 +38,21 @@
 .fieldset-tab{
     margin-top: 10px;
 }
-.fieldset-tab .fieldset-title{
-    visibility: hidden;
+.fieldset-tab .valueset-title, .fieldset-tab .statistics-title{
+    display: none;
+}
+.fieldset-tab .card{
+    border: 0;
 }
 .fieldset-title {
     display: inline-block;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 .fieldset-field{
     display: inline-block;
     vertical-align: top;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 .fieldset-data{
     clear: both;
@@ -225,7 +230,7 @@ textarea{
 }
 .form-submit{
     float: right;
-    margin: 25px;
+    margin-top: 25px;
 }
 .width-100, .n.width-50, .n.width-33, .n.width-25, .s.width-25{
     width: 98.5%;

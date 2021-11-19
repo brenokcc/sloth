@@ -27,6 +27,7 @@ class FormMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fieldsets = {}
         self.one_to_one = {}
         self.one_to_many = {}
         self.relation_field_name = getattr(self.Meta, 'relation', None)
@@ -42,11 +43,12 @@ class FormMixin:
         # creates default fieldset if necessary
         if fieldsets is None:
             fieldsets = getattr(self.Meta, 'fieldsets', None)
-            if fieldsets is None and self.instance:
-                fieldsets = getattr(self.instance.metaclass(), 'fieldsets', None)
 
         if fieldsets is None:
-            fieldsets = {'Dados Gerais': list(self.fields.keys())}
+            if self.fields:
+                fieldsets = {'Dados Gerais': list(self.fields.keys())}
+            else:
+                fieldsets = {}
         else:
             fieldsets = dict(fieldsets)
 
@@ -160,6 +162,9 @@ class FormMixin:
                 self.fieldsets[title] = field_list
 
     def save(self, *args, **kwargs):
+        if hasattr(self.instance, 'pre_save'):
+            self.instance.pre_save()
+
         # save one-to-one fields
         for name in self.one_to_one:
             instance = getattr(self.instance, name)
@@ -199,6 +204,9 @@ class FormMixin:
                     instance.save()
                     qs.add(instance)
             qs.filter(pk__in=pks).delete()
+
+        if hasattr(self.instance, 'post_save'):
+            self.instance.post_save()
 
     def serialize(self, wrap=False, verbose=False):
         if self.message:

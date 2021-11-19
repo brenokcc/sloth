@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from sloth import forms
+from sloth.utils.formatter import format_value
 
-from .models import Subcategoria, Campus, Demanda, Pergunta, Gestor
+from .models import Campus, Demanda, Pergunta, Gestor, PerguntaQuestionario
 
 
 class AdicionarGestor(forms.ModelForm):
@@ -11,15 +12,6 @@ class AdicionarGestor(forms.ModelForm):
         fields = 'nome', 'cpf'
         verbose_name = 'Adicionar Gestor'
         relation = 'instituicao'
-        can_view = 'Administrador',
-
-
-class AdicionarSubcategoria(forms.ModelForm):
-    class Meta:
-        model = Subcategoria
-        fields = 'nome',
-        verbose_name = 'Adicionar Subcategoria'
-        relation = 'categoria'
         can_view = 'Administrador',
 
 
@@ -45,12 +37,59 @@ class AdicionarCampus(forms.ModelForm):
         can_view = 'Administrador',
 
 
+class AlterarPrioridade(forms.ModelForm):
+    class Meta:
+        model = Demanda
+        fields = 'prioridade',
+        verbose_name = 'Alterar Prioridade'
+        can_view = 'Gestor',
+
+    def get_prioridade_queryset(self, queryset):
+        return queryset.filter(
+            numero__lte=self.instance.ciclo.get_limite_demandas()
+        ).exclude(numero=self.instance.prioridade.numero)
+
+
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
         fields = 'descricao', 'classificacao', 'valor'
         verbose_name = 'Detalhar Demanda'
         can_view = 'Gestor',
+
+    def can_view(self, user):
+        return not self.instance.finalizada
+
+    def clean_valor(self):
+        valor = self.cleaned_data['valor']
+        instituicao = self.instance.instituicao
+        total = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).exclude(pk=self.instance.pk).sum('valor')
+        if total + valor > self.instance.ciclo.teto:
+            raise forms.ValidationError(
+                'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
+        return valor
+
+    def get_classificacao_queryset(self, queryset):
+        pks = []
+        for limite in self.instance.ciclo.limites.all():
+            instituicao = self.instance.instituicao
+            n = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).filter(
+                classificacao=limite.classificacao).exclude(pk=self.instance.pk).count()
+            print(limite, n, 888)
+            if n < limite.quantidade:
+                pks.append(limite.classificacao.id)
+        return queryset.filter(pk__in=pks)
+
+
+class CancelarFinalizacao(forms.ModelForm):
+    class Meta:
+        model = Demanda
+        verbose_name = 'Cancelar Finalização'
+        can_view = 'Gestor',
+
+    def save(self, *args, **kwargs):
+        self.instance.finalizada = False
+        super().save(*args, **kwargs)
 
 
 class ResponderQuestionario(forms.ModelForm):
@@ -59,10 +98,9 @@ class ResponderQuestionario(forms.ModelForm):
         model = Demanda
         verbose_name = 'Responder Questionário'
         fields = []
-        can_view = 'Gestor',
 
     def can_view(self, user):
-        return self.instance.get_questionario() is not None
+        return user.roles.filter(name='Gestor').exists() and self.instance.get_questionario() is not None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,8 +153,12 @@ class ResponderQuestionario(forms.ModelForm):
     def process(self):
         for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
             key = '{}'.format(pergunta_questionario.pk)
-            pergunta_questionario.resposta = self.cleaned_data[key] or None
+            resposta = format_value(self.cleaned_data[key]) if self.cleaned_data[key] else None
+            pergunta_questionario.resposta = resposta
             pergunta_questionario.save()
+        if self.instance.get_progresso_questionario() == 100:
+            self.instance.finalizada = True
+            self.instance.save()
         self.notify()
 
 

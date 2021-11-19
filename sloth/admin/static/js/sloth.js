@@ -7,7 +7,7 @@ $.datepicker.regional['pt-BR'] = {
 }
 $.datepicker.setDefaults(
   $.extend(
-    {'dateFormat':'dd/mm/yyyy'},
+    {'dateFormat':'dd/mm/yy'},
     $.datepicker.regional['pt-BR']
   )
 );

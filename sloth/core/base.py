@@ -313,13 +313,13 @@ class ModelMixin(object):
     def sync_roles(self, role_tuples):
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
-        if role_tuples != role_tuples2:
-            for user_id, name, scope_type, scope_key, scope_value in role_tuples2:
-                role.objects.get_or_create(
-                    user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
-                )
-            deleted_role_tuples = role_tuples - role_tuples2
-            for user_id, name, scope_type, scope_key, scope_value in deleted_role_tuples:
-                role.objects.filter(
-                    user_id=user_id, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
-                ).delete()
+
+        for user_id, name, scope_type, scope_key, scope_value in role_tuples2:
+            role.objects.get_or_create(
+                user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
+            )
+        deleted_role_tuples = role_tuples - role_tuples2
+        for user_id, name, scope_type, scope_key, scope_value in deleted_role_tuples:
+            role.objects.filter(
+                user_id=user_id, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+            ).delete()

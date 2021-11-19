@@ -40,7 +40,7 @@
                     {% with field=self|formfield:item.name %}
                     <div class="form-field width-{{ item.width }}">
                         {% if item.name|is_one_to_many_field_controller %}
-                            {{ field }} <strong>{{ field.field.label }}</strong>
+                            {{ field }} <i>{{ field.field.label }}</i>
                         {% else %}
                             <label>
                                 {{ field.field.label }}{% if field.field.required %}*{% endif %}

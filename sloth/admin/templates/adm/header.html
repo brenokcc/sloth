@@ -1,16 +1,18 @@
 {% if request.user.is_authenticated and not request.GET.modal %}
-    <nav class="navbar navbar-expand">
+    <nav class="navbar navbar-expand" style="">
       <div class="container-fluid">
         <a class="navbar-brand" href="/adm/">
+          {% if settings.LOGO %}
           <img height="30" src="{{ settings.LOGO }}">
+          {% endif %}
         </a>
         <div class="collapse navbar-collapse">
           <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)">
           {% include "adm/menu.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
-              <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}">
-                <img width="30" class="img-circle" src="/static/images/user.png">
+              <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap">
+                {{ request.user }}
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 {% if request.user.is_superuser %}

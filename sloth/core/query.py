@@ -131,9 +131,9 @@ class QuerySet(models.QuerySet):
                 attr = getattr(getattr(self.model.objects, '_queryset_class'), name)
                 verbose_name = getattr(attr, 'verbose_name', name)
                 if self.metadata['request']:
-                    obj = getattr(self.model.objects, name)().apply_role_lookups(self.metadata['request'].user)
+                    obj = getattr(self._clone(), name)().apply_role_lookups(self.metadata['request'].user)
                 else:
-                    obj = getattr(self.model.objects, name)()
+                    obj = getattr(self._clone(), name)()
                 if isinstance(obj, QuerySet):
                     if verbose_name == 'all':
                         verbose_name = 'Tudo'
@@ -181,16 +181,12 @@ class QuerySet(models.QuerySet):
     def export(self, limit=100):
         data = []
         header = []
-        for attr_name in self._get_list_display():
-            attr = getattrr(self.model, attr_name)[0]
-            if hasattr(attr, 'field'):
-                header.append(str(attr.field.verbose_name))
-            elif hasattr(attr, 'verbose_name'):
-                header.append(attr.verbose_name)
-            else:
-                header.append(attr_name)
-        data.append(header)
-        for obj in self[0:limit]:
+        for i, obj in enumerate(self[0:limit]):
+            if i == 0:
+                for attr_name in self._get_list_display():
+                    attr, value = getattrr(obj, attr_name)
+                    header.append(getattr(attr, 'verbose_name', attr_name))
+                data.append(header)
             row = []
             values = obj.values(*self._get_list_display()).load(verbose=False, size=False).values()
             for value in values:
@@ -220,13 +216,14 @@ class QuerySet(models.QuerySet):
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
+            values = self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             pagination = dict(interval=self.metadata['interval'], total=self.metadata['total'])
             data = dict(
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
                 metadata=dict(search=search, display=display, filters=filters, pagination=pagination),
-                data=self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
+                data=values
             )
             if attach:
                 data.update(attach=attach)
@@ -340,6 +337,7 @@ class QuerySet(models.QuerySet):
             self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
             start = (self.metadata['page'] - 1) * self._get_list_per_page()
             end = start + self._get_list_per_page()
+            self.metadata['interval'] = '{} - {}'.format(start + 1, end)
             return self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
 
     # rendering function
@@ -395,7 +393,7 @@ class QuerySet(models.QuerySet):
     def process_request(self, request):
         page = 1
         attr_name = request.GET['subset']
-        attach = self if attr_name == 'all' else getattr(self.model.objects, attr_name)()
+        attach = self if attr_name == 'all' else getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach
             if self.metadata['ignore']:
@@ -441,8 +439,10 @@ class QuerySet(models.QuerySet):
         return total
 
     def sum(self, z, x=None, y=None):
-        if y:
-            statistcs = QuerySetStatistics(self, x, y=y, func=Sum, z=z)
-        else:
-            statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
-        return statistcs.contextualize(self.metadata['request'])
+        if x:
+            if y:
+                statistcs = QuerySetStatistics(self, x, y=y, func=Sum, z=z)
+            else:
+                statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
+            return statistcs.contextualize(self.metadata['request'])
+        return self.aggregate(sum=Sum(z))['sum'] or 0

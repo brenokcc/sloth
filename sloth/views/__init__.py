@@ -43,14 +43,46 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                 if z:
                     attr = getattr(obj, y)
                     if z.split('-')[0].isdigit():  # queryset action
-                        form_cls = model.action_form_cls(w)
-                        instances = attr().filter(pk__in=z.split('-'))
-                        form = form_cls(request=request, instantiator=obj, instances=instances)
-                        if form.can_view(request.user):
-                            if form.is_valid():
-                                form.process()
-                            return form
-                        raise PermissionDenied()
+                        if w:
+                            qs = attr().filter(pk__in=z.split('-'))
+                            model = qs.model
+                            if w.lower() == 'edit':  # /base/estado/1/get_cidades/1/edit/
+                                form_cls = model.edit_form_cls()
+                                form = form_cls(request=request, instances=qs, instantiator=obj)
+                                if form.can_view(request.user):
+                                    if form.is_valid():
+                                        form.process()
+                                    return form
+                                raise PermissionDenied()
+                            elif w.lower() == 'delete':  # /base/estado/1/get_cidades/1/delete/
+                                form_cls = model.delete_form_cls()
+                                form = form_cls(request=request, instances=qs, instantiator=obj)
+                                if form.can_view(request.user):
+                                    if form.is_valid():
+                                        form.process()
+                                    return form
+                                raise PermissionDenied()
+                            else:  # /base/estado/1/get_cidades/1/alterar_nome/
+                                form_cls = model.action_form_cls(w)
+                                form = form_cls(request=request, instances=qs, instantiator=obj)
+                                if form.can_view(request.user):
+                                    if form.is_valid():
+                                        form.process()
+                                    return form
+                                raise PermissionDenied()
+                        else:
+                            instance = attr().get(pk=z)
+                            if instance.can_view(request.user):
+                                return instance.view().contextualize(request)
+                            raise PermissionDenied()
+                            # form_cls = model.action_form_cls(z)
+                            # instances = attr().filter(pk__in=z.split('-'))
+                            # form = form_cls(request=request, instantiator=obj, instances=instances)
+                            # if form.can_view(request.user):
+                            #     if form.is_valid():
+                            #         form.process()
+                            #     return form
+                            # raise PermissionDenied()
                     else:  # pks is instance action
                         form_cls = model.action_form_cls(z)
                         # if it is a relation action, do not set the instance attribute
@@ -93,7 +125,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             # object subset
                             if obj.can_view_attr(request.user, y):
                                 attr = getattr(obj, y)
-                                output = attr().attr(x).contextualize(request)
+                                output = attr().attr(y).contextualize(request)
                                 return output
                         raise PermissionDenied()
             else:

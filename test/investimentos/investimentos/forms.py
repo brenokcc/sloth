@@ -5,7 +5,7 @@ from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
 
-from .models import Campus, Demanda, Pergunta, Gestor, PerguntaQuestionario
+from .models import Campus, Demanda, Pergunta, Gestor
 
 
 class AdicionarGestor(forms.ModelForm):
@@ -46,16 +46,28 @@ class AlterarPrioridade(forms.ModelForm):
         verbose_name = 'Alterar Prioridade'
         can_view = 'Gestor',
 
+    def can_view(self, user):
+        return self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
+
     def get_prioridade_queryset(self, queryset):
         return queryset.filter(
             numero__lte=self.instance.ciclo.get_limite_demandas()
         ).exclude(numero=self.instance.prioridade.numero)
 
+    def save(self, *args, **kwargs):
+        prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
+        demanda = self.instance.ciclo.demanda_set.get(
+            instituicao=self.instance.instituicao, prioridade=self.instance.prioridade
+        )
+        demanda.prioridade = prioridade
+        demanda.save()
+        super().save(*args, **kwargs)
+
 
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'classificacao', 'valor', 'unidades_beneficiadas'
+        fields = 'classificacao', 'descricao', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Detalhar Demanda'
         can_view = 'Gestor',
 
@@ -116,7 +128,7 @@ class ResponderQuestionario(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
+        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all():
             tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
             key = '{}'.format(pergunta_questionario.pk)
             self.initial[key] = pergunta_questionario.resposta
@@ -149,7 +161,7 @@ class ResponderQuestionario(forms.ModelForm):
                 self.fields[key] = forms.ChoiceField(
                     label=pergunta_questionario.pergunta.texto,
                     required=False,
-                    choices=[['Sim', 'Sim'], ['Não', 'Não']]
+                    choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']]
                 )
             elif tipo_resposta == Pergunta.ARQUIVO:
                 self.fields[key] = forms.FileField(
@@ -160,7 +172,7 @@ class ResponderQuestionario(forms.ModelForm):
                 self.fields[key] = forms.ChoiceField(
                     label=pergunta_questionario.pergunta.texto,
                     required=False,
-                    choices=[[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
+                    choices=[['', '']] + [[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
                 )
 
     def get_fieldsets(self):
@@ -169,17 +181,20 @@ class ResponderQuestionario(forms.ModelForm):
         }
 
     def process(self):
-        for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
+        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all():
             key = '{}'.format(pergunta_questionario.pk)
             if pergunta_questionario.pergunta.tipo_resposta == Pergunta.ARQUIVO:
                 arquivo = self.cleaned_data[key]
-                nome_aquivo = '{}.{}'.format(pergunta_questionario.pk, arquivo.name.split('.')[-1])
-                diretorio = os.path.join(settings.MEDIA_ROOT, 'arquivos')
-                os.makedirs(diretorio, exist_ok=True)
-                caminho = os.path.join(settings.MEDIA_ROOT, 'arquivos', nome_aquivo)
-                with open(caminho, 'wb+') as file:
-                    file.write(arquivo.read())
-                resposta = os.path.join(settings.MEDIA_URL, 'arquivos', nome_aquivo)
+                if arquivo:
+                    nome_aquivo = '{}.{}'.format(pergunta_questionario.pk, arquivo.name.split('.')[-1])
+                    diretorio = os.path.join(settings.MEDIA_ROOT, 'arquivos')
+                    os.makedirs(diretorio, exist_ok=True)
+                    caminho = os.path.join(settings.MEDIA_ROOT, 'arquivos', nome_aquivo)
+                    with open(caminho, 'wb+') as file:
+                        file.write(arquivo.read())
+                    resposta = os.path.join(settings.MEDIA_URL, 'arquivos', nome_aquivo)
+                else:
+                    resposta = None
             else:
                 resposta = format_value(self.cleaned_data[key]) if self.cleaned_data[key] else None
             pergunta_questionario.resposta = resposta

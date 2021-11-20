@@ -193,4 +193,4 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        return model.objects.all().contextualize(request).default_actions()
+        return model.objects.all().contextualize(request).default_actions().collapsed(False)

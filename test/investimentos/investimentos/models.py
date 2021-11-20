@@ -82,7 +82,7 @@ class Categoria(models.Model):
     def get_quantidade_perguntas(self):
         return self.pergunta_set.count()
 
-    @meta('Perguntas por Tipo de Resposta')
+    @meta('Perguntas por Tipo')
     def get_quantidade_perguntas_por_tipo_resposta(self):
         return self.pergunta_set.count('tipo_resposta')
 
@@ -215,7 +215,7 @@ class Gestor(models.Model):
 
 class LimiteDemanda(models.Model):
     classificacao = models.ForeignKey(Categoria, verbose_name='Classificação')
-    quantidade = models.PositiveIntegerField(verbose_name='Quantidade')
+    quantidade = models.PositiveIntegerField(verbose_name='Quantidade Máxima de Demandas')
 
     class Meta:
         verbose_name = 'Limite de Demanda'
@@ -280,8 +280,8 @@ class Ciclo(models.Model):
                 questionario = Questionario.objects.create(demanda=demanda)
             for pergunta in demanda.classificacao.pergunta_set.all():
                 lookups = dict(questionario=questionario, pergunta=pergunta)
-                if not PerguntaQuestionario.objects.filter(**lookups).exists():
-                    PerguntaQuestionario.objects.create(**lookups)
+                if not RespostaQuestionario.objects.filter(**lookups).exists():
+                    RespostaQuestionario.objects.create(**lookups)
 
     def post_save(self, *args, **kwargs):
         if not self.instituicoes.exists():
@@ -307,7 +307,7 @@ class Ciclo(models.Model):
 
     @meta('Solicitações')
     def get_solicitacoes(self):
-        return self.demanda_set.all().ignore('ciclo').collapsed(False)
+        return self.demanda_set.all().order_by('prioridade__numero').ignore('ciclo').collapsed(False)
 
     @meta('Configuração Geral')
     def get_configuracao_geral(self):
@@ -323,14 +323,14 @@ class Ciclo(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('get_configuracao', 'get_solicitacoes', 'get_resumo')
+        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo')
 
     def view(self):
         return self.values('get_dados_gerais', 'get_detalhamento')
 
 
 class DemandaManager(models.Manager):
-    @meta('Todas', roles=('Gestor',))
+    @meta('Todas')
     def all(self):
         return self.list_display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'finalizada'
@@ -376,7 +376,7 @@ class Demanda(models.Model):
         can_view = 'Administrador', 'Gestor'
 
     def __str__(self):
-        return 'Demanda '.format(self.pk)
+        return self.descricao or 'Demanda {}'.format(self.pk)
 
     def get_questionario(self):
         return self.questionario_set.first()
@@ -387,11 +387,11 @@ class Demanda(models.Model):
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
-        return self.get_questionario().perguntaquestionario_set.filter(pergunta__obrigatoria=True).count() if self.get_questionario() else 0
+        return self.get_questionario().respostaquestionario_set.filter(pergunta__obrigatoria=True).count() if self.get_questionario() else 0
 
     @meta('Total de Respostas')
     def get_total_respostas(self):
-        return self.get_questionario().perguntaquestionario_set.filter(pergunta__obrigatoria=True, resposta__isnull=False).count() if self.get_questionario() else 0
+        return self.get_questionario().respostaquestionario_set.filter(pergunta__obrigatoria=True, resposta__isnull=False).count() if self.get_questionario() else 0
 
     @meta('Questionário')
     def get_dados_questionario(self):
@@ -429,7 +429,7 @@ class Questionario(models.Model):
         return '{} - {}'.format(self.demanda.instituicao, self.demanda.ciclo)
 
 
-class PerguntaQuestionario(models.Model):
+class RespostaQuestionario(models.Model):
     questionario = models.ForeignKey(Questionario, verbose_name='Questionário')
     pergunta = models.ForeignKey(Pergunta, verbose_name='Pergunta')
     resposta = models.TextField(verbose_name='Resposta', null=True)

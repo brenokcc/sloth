@@ -64,7 +64,7 @@ class ValueSet(dict):
                     if isinstance(value, QuerySet):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
-                        value.contextualize(self.metadata['request'])
+                        value = value.contextualize(self.metadata['request'])
                         verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                         if wrap:
                             value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)

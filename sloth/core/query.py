@@ -40,7 +40,7 @@ class QuerySet(models.QuerySet):
         lookups = []
         for name, scopes in self.metadata['lookups']:
             for scope_key, scope_value_attr in scopes.items():
-                self.metadata['ignore'].append(scope_key)
+                # self.metadata['ignore'].append(scope_key)
                 role = user.roles.filter(name=name, scope_key=scope_key).first()
                 if role:
                     lookups.append(Q(**{scope_value_attr: role.scope_value}))

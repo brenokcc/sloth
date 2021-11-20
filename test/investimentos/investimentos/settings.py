@@ -125,4 +125,5 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 LOGO = '/static/images/logo.png'
 NAME = 'SETEC'
 CSS = ['/static/css/investimentos.css']
+JS = ['/static/js/investimentos.js']
 LOGIN_IMAGE = None

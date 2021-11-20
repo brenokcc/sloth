@@ -68,8 +68,10 @@ class QuerySetStatistics(object):
 
     def calc(self):
         self._values_dict = {}
-        values_list = self.qs.values_list(self.x, self.y).annotate(
-            self.func(self.z)) if self.y else self.qs.values_list(self.x).annotate(self.func(self.z))
+        if self.y:
+            values_list = self.qs.values_list(self.x, self.y).annotate(self.func(self.z))
+        else:
+            values_list = self.qs.values_list(self.x).annotate(self.func(self.z))
 
         self._xfield = self.qs.model.get_field(self.x.replace('__year', '').replace('__month', ''))
         if self._xdict == {}:
@@ -136,12 +138,12 @@ class QuerySetStatistics(object):
                 data = []
                 self.cursor = 0
                 for j, (xk, xv) in enumerate(self._xdict.items()):
-                    data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
-                series.update(**{formatter.get(yv, str(yv)): data})
+                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
+                series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
         else:
             data = list()
             for j, (xk, xv) in enumerate(self._xdict.items()):
-                data.append([formatter.get(xv, str(xv)), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
+                data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
             if data:
                 series['default'] = data
 

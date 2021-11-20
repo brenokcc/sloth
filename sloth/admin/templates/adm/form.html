@@ -5,7 +5,7 @@
     {{ self.get_metadata.name }}
 </h2>
 {% endif %}
-<form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %}" enctype="multipart/form-data">
+<form action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
     {% csrf_token %}
 
     {% if self.non_field_errors %}
@@ -20,7 +20,7 @@
     {% endfor %}
 
     {% for title, itens in fieldsets.items %}
-    <div>
+    <div class="{{ title|slugify }}">
         {% if title %}
         <h5>
             {% for item in itens %}
@@ -46,7 +46,7 @@
                                 {{ field.field.label }}{% if field.field.required %}*{% endif %}
                             </label> {{ field }}
                             {% if field.help_text %}
-                            <span class="help">{{ field.help_text|safe }}</span>
+                        <span class="help"><i>{{ field.help_text|safe }}</i></span>
                             {% endif %}
                             {% if field.errors %}
                                 <div class="errors" role="alert">

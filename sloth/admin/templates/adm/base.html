@@ -24,9 +24,6 @@
     <script src="/static/js/sloth.js"></script>
     <script src="/static/js/jquery.binarytransport.js"></script>
     <script src="/static/js/jquery.mask.min.js"></script>
-    {% for url in settings.JS %}
-      <link rel="stylesheet" href="{{ url }}" />
-    {% endfor %}
 
     {% block extrahead %} {% endblock %}
   </head>
@@ -42,7 +39,9 @@
 {% block content %}
 {% endblock %}
 {% include "adm/messages.html" %}
-
+{% for url in settings.JS %}
+      <script src="{{ url }}"></script>
+{% endfor %}
 {% if not request.is_ajax %}
     </main>
     {% include "adm/footer.html" %}

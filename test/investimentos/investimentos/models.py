@@ -66,7 +66,7 @@ class Categoria(models.Model):
         return self.nome
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_perguntas')
+        return self.values('get_dados_gerais', 'get_perguntas').append('get_quantidade_perguntas_por_tipo_resposta')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -76,11 +76,15 @@ class Categoria(models.Model):
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
-        ).actions('delete').template('adm/queryset/accordion')
+        ).actions('edit', 'delete').template('adm/queryset/accordion')
 
     @meta('Quantidade de Perguntas')
     def get_quantidade_perguntas(self):
         return self.pergunta_set.count()
+
+    @meta('Perguntas por Tipo de Resposta')
+    def get_quantidade_perguntas_por_tipo_resposta(self):
+        return self.pergunta_set.count('tipo_resposta')
 
 
 class OpcaoResposta(models.Model):
@@ -101,22 +105,24 @@ class Pergunta(models.Model):
     NUMERO_INTEIRO = 4
     DATA = 5
     BOOLEANO = 6
-    OPCOES = 7
+    ARQUIVO = 7
+    OPCOES = 8
 
     TIPOS_RESPOSTA_CHOICES = [
         [1, 'Texto Curto'],
         [2, 'Texto Longo'],
-        [3, 'Número Decimal'],
+        [3, 'Valor Monetário'],
         [4, 'Número Inteiro'],
         [5, 'Data'],
         [6, 'Sim/Não'],
-        [7, 'Múltiplas Escolhas'],
+        [7, 'Arquivo'],
+        [8, 'Múltiplas Escolhas'],
     ]
     categoria = models.ForeignKey(Categoria, verbose_name='Categoria')
     texto = models.CharField(verbose_name='Texto')
     obrigatoria = models.BooleanField(verbose_name='Obrigatória', blank=True)
     tipo_resposta = models.IntegerField(verbose_name='Tipo de Resposta', choices=TIPOS_RESPOSTA_CHOICES)
-    opcoes = models.OneToManyField(OpcaoResposta, verbose_name='Opções de Resposta', blank=True)
+    opcoes = models.OneToManyField(OpcaoResposta, verbose_name='Opções de Resposta', blank=True, max=5)
 
     class Meta:
         verbose_name = 'Pergunta'
@@ -131,6 +137,11 @@ class Pergunta(models.Model):
     @meta('Tipo de Resposta')
     def get_tipo_resposta(self):
         return self.get_tipo_resposta_display()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        for ciclo in Ciclo.objects.abertos():
+            ciclo.gerar_questionarios()
 
 
 class Instituicao(models.Model):
@@ -222,14 +233,14 @@ class CicloManager(models.Manager):
     @meta('Ciclos Abertos', roles=('Administrador',))
     def abertos(self):
         hoje = datetime.date.today()
-        return super().filter(inicio__gte=hoje, fim__lte=hoje + timedelta(days=1))
+        return super().filter(inicio__lte=hoje, fim__gte=hoje + timedelta(days=1))
 
 
 class Ciclo(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
     inicio = models.DateField(verbose_name='Início das Solicitações')
     fim = models.DateField(verbose_name='Fim das Solicitações')
-    teto = models.DecimalField(verbose_name='Limite de Investimento (R$)')
+    teto = models.DecimalField(verbose_name='Limite de Investimento por Instituição (R$)')
     instituicoes = models.ManyToManyField(Instituicao, verbose_name='Demandantes', blank=True, help_text='Não informar, caso deseje incluir todas as instituições.')
     limites = models.OneToManyField(LimiteDemanda, verbose_name='Limites de Demanda', max=5)
 
@@ -296,7 +307,7 @@ class Ciclo(models.Model):
 
     @meta('Solicitações')
     def get_solicitacoes(self):
-        return self.demanda_set.all().ignore('ciclo')
+        return self.demanda_set.all().ignore('ciclo').collapsed(False)
 
     @meta('Configuração Geral')
     def get_configuracao_geral(self):
@@ -338,12 +349,12 @@ class DemandaManager(models.Manager):
         return self.list_display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'get_progresso_questionario'
         ).filter(classificacao__isnull=False, finalizada=False).actions(
-            'ResponderQuestionario'
+            'ResponderQuestionario', 'AlterarDetalhamento'
         ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Finalizadas')
     def finalizadas(self):
-        return self.filter(finalizada=True).actions('CancelarFinalizacao')
+        return self.filter(finalizada=True).actions('Reabir')
 
 
 class Demanda(models.Model):
@@ -352,7 +363,9 @@ class Demanda(models.Model):
     descricao = models.TextField(verbose_name='Descrição')
     prioridade = models.ForeignKey(Prioridade, verbose_name='Prioridade')
     classificacao = models.ForeignKey(Categoria, verbose_name='Classificação', null=True)
-    valor = models.DecimalField(verbose_name='Valor (R$)', null=True)
+    valor = models.DecimalField(verbose_name='Valor a Empenhar no Exercício (R$)', null=True)
+    unidades_beneficiadas = models.ManyToManyField(Campus, verbose_name='Unidades Beneficiadas', blank=True,
+                                                   help_text='Não informar caso todas as unidades sejam beneficiadas.')
     finalizada = models.BooleanField(verbose_name='Finalizada', default=False)
 
     objects = DemandaManager()

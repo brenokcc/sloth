@@ -290,6 +290,12 @@ class FormMixin:
             if isinstance(field, DateField):
                 classes.append('date-input')
 
+            if isinstance(field, DecimalField):
+                field.localize = True
+                field.widget.is_localized = True
+                field.widget.input_type = 'text'
+                field.widget.rmask = '#.##0,00'
+
             if isinstance(field, ModelChoiceField):
                 initial = self.initial.get(name)
                 pks = []

@@ -60,7 +60,6 @@ class ModelMixin(object):
 
     def view(self):
         names = [field.name for field in self.metaclass().fields]
-        print(names)
         return self.values(*names)
 
     def serialize(self, wrap=True, verbose=True):

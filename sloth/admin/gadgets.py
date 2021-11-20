@@ -15,7 +15,7 @@ def initilize():
             module = '{}.{}'.format(app_label, 'views')
             try:
                 __import__(module, fromlist=app_label.split('.'))
-                print('{} initilized!'.format(module))
+                # print('{} initilized!'.format(module))
             except ImportError:
                 # print(app_label, module, 'ERROR')
                 pass

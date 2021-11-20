@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+import os
+import uuid
+from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
 
@@ -53,7 +55,7 @@ class AlterarPrioridade(forms.ModelForm):
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'classificacao', 'valor'
+        fields = 'descricao', 'classificacao', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Detalhar Demanda'
         can_view = 'Gestor',
 
@@ -75,17 +77,27 @@ class DetalharDemanda(forms.ModelForm):
             instituicao = self.instance.instituicao
             n = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).filter(
                 classificacao=limite.classificacao).exclude(pk=self.instance.pk).count()
-            print(limite, n, 888)
             if n < limite.quantidade:
                 pks.append(limite.classificacao.id)
         return queryset.filter(pk__in=pks)
 
+    def get_unidades_beneficiadas_queryset(self, queryset):
+        return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)
 
-class CancelarFinalizacao(forms.ModelForm):
+
+class AlterarDetalhamento(DetalharDemanda):
     class Meta:
         model = Demanda
-        verbose_name = 'Cancelar Finalização'
+        fields = 'descricao', 'valor', 'unidades_beneficiadas'
+        verbose_name = 'Alterar Detalhamento'
         can_view = 'Gestor',
+
+
+class Reabir(forms.ModelForm):
+    class Meta:
+        model = Demanda
+        verbose_name = 'Reabir para Edição'
+        can_view = 'Administrador',
 
     def save(self, *args, **kwargs):
         self.instance.finalizada = False
@@ -134,9 +146,15 @@ class ResponderQuestionario(forms.ModelForm):
                     required=False
                 )
             elif tipo_resposta == Pergunta.BOOLEANO:
-                self.fields[key] = forms.BooleanField(
+                self.fields[key] = forms.ChoiceField(
                     label=pergunta_questionario.pergunta.texto,
-                    required=False
+                    required=False,
+                    choices=[['Sim', 'Sim'], ['Não', 'Não']]
+                )
+            elif tipo_resposta == Pergunta.ARQUIVO:
+                self.fields[key] = forms.FileField(
+                    label=pergunta_questionario.pergunta.texto,
+                    required=False,
                 )
             elif tipo_resposta == Pergunta.OPCOES:
                 self.fields[key] = forms.ChoiceField(
@@ -153,7 +171,17 @@ class ResponderQuestionario(forms.ModelForm):
     def process(self):
         for pergunta_questionario in self.instance.get_questionario().perguntaquestionario_set.all():
             key = '{}'.format(pergunta_questionario.pk)
-            resposta = format_value(self.cleaned_data[key]) if self.cleaned_data[key] else None
+            if pergunta_questionario.pergunta.tipo_resposta == Pergunta.ARQUIVO:
+                arquivo = self.cleaned_data[key]
+                nome_aquivo = '{}.{}'.format(pergunta_questionario.pk, arquivo.name.split('.')[-1])
+                diretorio = os.path.join(settings.MEDIA_ROOT, 'arquivos')
+                os.makedirs(diretorio, exist_ok=True)
+                caminho = os.path.join(settings.MEDIA_ROOT, 'arquivos', nome_aquivo)
+                with open(caminho, 'wb+') as file:
+                    file.write(arquivo.read())
+                resposta = os.path.join(settings.MEDIA_URL, 'arquivos', nome_aquivo)
+            else:
+                resposta = format_value(self.cleaned_data[key]) if self.cleaned_data[key] else None
             pergunta_questionario.resposta = resposta
             pergunta_questionario.save()
         if self.instance.get_progresso_questionario() == 100:

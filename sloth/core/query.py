@@ -27,7 +27,7 @@ class QuerySet(models.QuerySet):
             display=[], filters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
-            global_actions=[], batch_actions=[], lookups=[]
+            global_actions=[], batch_actions=[], lookups=[], collapsed=True
         )
 
     def role_lookups(self, name, **scopes):
@@ -222,7 +222,7 @@ class QuerySet(models.QuerySet):
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
-                metadata=dict(search=search, display=display, filters=filters, pagination=pagination),
+                metadata=dict(search=search, display=display, filters=filters, pagination=pagination, collapsed=self.metadata['collapsed']),
                 data=values
             )
             if attach:
@@ -298,6 +298,10 @@ class QuerySet(models.QuerySet):
 
     def ignore(self, *names):
         self.metadata['ignore'] = list(names)
+        return self
+
+    def collapsed(self, flag=True):
+        self.metadata['collapsed'] = flag
         return self
 
     def attr(self, name):

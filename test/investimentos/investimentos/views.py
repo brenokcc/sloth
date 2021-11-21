@@ -38,7 +38,11 @@ class CiclosAbertos(Gadget):
 class DemandasPorInstituicao(Gadget):
 
     def render(self):
-        return Demanda.objects.contextualize(self.request).count('instituicao').chart('bar')
+        qs = Demanda.objects.contextualize(self.request).sum('valor', 'instituicao')
+        # qs = Ciclo.objects.contextualize(self.request).count('instituicoes', 'inicio__month')
+        # return Pergunta.objects.contextualize(self.request).count('categoria')
+        print(qs.normalize())
+        return qs.chart('bar')
 
 
 class DemandasPorInstituicaoClassificacao(Gadget):

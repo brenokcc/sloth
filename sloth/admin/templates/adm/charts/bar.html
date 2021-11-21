@@ -1,3 +1,4 @@
+{% load tags %}
 <style>
 .bar-chart dl{
   display: flex;
@@ -15,7 +16,6 @@
   font-weight: 600;
   display: flex;
   align-items: center;
-  height: 40px;
   width: 130px;
   background-color: white;
   position: absolute;
@@ -25,7 +25,8 @@
 .bar-chart .percentage {
   line-height: 1;
   width: 100%;
-  height: 40px;
+  height: 20px;
+
   margin-left: 130px;
   background: repeating-linear-gradient(
     to right, #ddd, #ddd 1px, #fff 1px, #fff 5%
@@ -35,12 +36,16 @@
     content: "";
     display: block;
     width: 50px;
-    margin-bottom: 10px;
+    font-size: 14px;
     height: 90%;
     position: relative;
     top: 50%;
     transform: translateY(-50%);
     transition: background-color .3s ease;
+}
+.bar-chart dd:hover {
+    background-color: desaturate(#85144b, 100);
+    opacity: .7;
 }
 .bar-chart .percentage:hover,
 .bar-chart .percentage:focus {
@@ -49,10 +54,10 @@
 {% for serie in data %}
     .bar-chart .percentage-{{ serie.percentage }}:after{
         width: {{ serie.percentage }}%;
-        content:'{{ serie.value }}';
-        padding:10px;
+        content:'{{ serie.value|format }}';
         color: #FFF;
         background-color: {{ serie.color }};
+        text-align:center;
     }
 {% endfor %}
 </style>

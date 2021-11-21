@@ -2,12 +2,13 @@
 
 import json
 from decimal import Decimal
+from uuid import uuid1
 
 from django.db.models.aggregates import Count
 from django.template.loader import render_to_string
 
 COLORS = '#DECF3F', '#5DA5DA', '#B276B2', '#F15854', '#4D4D4D', '#B276B2'
-MONTHS = 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
+MONTHS = 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
 
 
 class QuerySetStatistics(object):
@@ -156,12 +157,13 @@ class QuerySetStatistics(object):
         )
 
     def html(self, uuid=None, request=None):
+        uuid = uuid or uuid1().hex
         if self.metadata['template']:
             data = self.normalize()
-            return render_to_string(self.metadata['template'], dict(data=data))
+            return render_to_string(self.metadata['template'], dict(data=data, uuid=uuid))
         else:
             data = self.serialize(wrap=True, verbose=True)
-            return render_to_string('adm/statistics.html', dict(data=data))
+            return render_to_string('adm/statistics.html', dict(data=data, uuid=uuid))
 
     def __str__(self):
         if self.metadata['request']:
@@ -171,6 +173,7 @@ class QuerySetStatistics(object):
     def normalize(self):
 
         series = self.serialize()['series']
+        print(series)
         if 'default' in series:
             data = []
             total = sum([item[1] for item in series['default']])

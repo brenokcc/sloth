@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from uuid import uuid1
 
 from django.apps import apps
 from django.conf import settings
@@ -42,7 +43,7 @@ class Gadget(metaclass=GadgetType):
     def render(self, **kwargs):
         template_name = '{}.html'.format(self.__class__.__name__.lower())
         context = kwargs or {}
-        context.update(self=self)
+        context.update(uuid=uuid1().hex, self=self)
         return mark_safe(render_to_string([self.template or template_name], context, request=self.request))
 
 

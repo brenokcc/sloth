@@ -1,5 +1,5 @@
 <style>
-    .pie-chart {
+    .pie-chart{{ uuid }} {
       background:
         conic-gradient(
           {% for serie in data %}
@@ -56,7 +56,7 @@
 <div style="width:100%">
     <h3>Pie Chart</h3>
     <div class="pie-center"></div>
-    <div class="pie-chart"></div>
+    <div class="pie-chart{{ uuid }}"></div>
 
     <ul class="pie-legend">
       {% for serie in data %}

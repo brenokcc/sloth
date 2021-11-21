@@ -1,15 +1,19 @@
 {% load tags %}
 <style>
-.column-chart {
+.column-chart{
+    padding-left:50px;
+    overflow-x:scroll;
+}
+.column-chart-table {
   display: block; /* fixes layout wonkiness in FF1.5 */
   position: relative;
   height: 300px;
-  margin: 1.1em 0 0;
+  margin-top: 15px;
   padding: 0;
   background: transparent;
   font-size: 11px;
 }
-.column-chart tr, .column-chart th, .column-chart td {
+.column-chart-table tr, .column-chart-table th, .column-chart-table td {
   position: absolute;
   bottom: 0;
   z-index: 2;
@@ -17,42 +21,41 @@
   padding: 0;
   text-align: center;
 }
-.column-chart td {
+.column-chart-table td {
   transition: all .3s ease;
 }
-.column-chart td:hover {
+.column-chart-table td:hover {
     background-color: desaturate(#85144b, 100);
     opacity: .7;
-    color: white;
 }
-.column-chart tbody tr {
+.column-chart-table tbody tr {
   height: 296px;
   padding-top: 2px;
   border-right: 1px dotted #C4C4C4;
   color: #AAA;
 }
-.column-chart tbody th {
+.column-chart-table tbody th {
     bottom: -30px;
     font-weight: normal; color: #333;
     text-align: center;
 }
-.column-chart .bar {
-  width: 70px;
+.column-chart-table .bar {
+  width: 20px;
   border: 1px solid;
   border-bottom: none;
   color: #000;
   margin-left: 10px;
   border-color: transparent;
 }
-.column-chart .bar p {
+.column-chart-table .bar p {
   padding: 5px;
-  color: #FFF;
+  position: relative;
+  top: -20px;
 }
 .column-chart-ticks {
   position: relative;
   top: -300px;
-  left: 2px;
-  height: 300px;
+  height: 330px;
   z-index: 1;
   margin-bottom: -270px;
   font-size: 10px;
@@ -91,22 +94,17 @@
   padding-left: 10px;
 }
 
-.column-chart-ticks .tick {
-    width: {{ data|column_chart_series_width }};
-}
-.column-chart tr, th{
-    width: {{ data|column_chart_serie_width }};
-}
+
 </style>
 <h3>Column Chart</h3>
-<div style="padding-left:50px;margin:auto;overflow-x:hidden;">
-    <table class="column-chart">
+<div class="column-chart" style="margin-left: max(0px, 50% - {{ data|column_chart_width|divide:2 }}px);">
+    <table class="column-chart-table">
         <tbody>
             {% for key, series in data.items %}
-            <tr class="qtr" style="left:{{ series|length|multiply:100|multiply:forloop.counter0 }};{% if forloop.last %}border-right: none;{% endif %}">
-                <th scope="row">{{ key }}</th>
+            <tr class="qtr" style="width: {{ data|column_chart_serie_width }};left:{{ series|length|multiply:40|multiply:forloop.counter0 }};{% if forloop.last %}border-right: none;{% endif %}">
+                <th scope="row" style="width: {{ data|column_chart_serie_width }}">{{ key }}</th>
                 {% for serie in series %}
-                <td class="bar" style="left: {{ forloop.counter0 }}00px; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;">
+                <td class="bar" style="left: {{ forloop.counter0|multiply:40 }}; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;">
                     <p>{{ serie.value }}</p>
                 </td>
                 {% endfor %}
@@ -115,14 +113,15 @@
         </tbody>
     </table>
     <div class="column-chart-ticks">
-        <div class="tick" style="height: 60px;"><p>100</p></div>
-        <div class="tick" style="height: 60px;"><p>80</p></div>
-        <div class="tick" style="height: 60px;"><p>60</p></div>
-        <div class="tick" style="height: 60px;"><p>40</p></div>
-        <div class="tick" style="height: 60px;"><p>20</p></div>
-        <div class="tick" style="height: 60px; border-bottom:none"><p>0</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};"><p>100</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};"><p>80</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};"><p>60</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};"><p>40</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};"><p>20</p></div>
+        <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};border-bottom:none"><p>0</p></div>
     </div>
-    {% for key, series in data.items %}
+</div>
+{% for key, series in data.items %}
     {% if forloop.first %}
     <ul class="column-chart-legend">
       {% for serie in series %}
@@ -133,6 +132,5 @@
       {% endfor %}
     </ul>
     {% endif %}
-    {% endfor %}
-</div>
+{% endfor %}
 <div class="clearfix"></div>

@@ -84,7 +84,7 @@ class Categoria(models.Model):
 
     @meta('Perguntas por Tipo')
     def get_quantidade_perguntas_por_tipo_resposta(self):
-        return self.pergunta_set.count('tipo_resposta')
+        return self.pergunta_set.count('tipo_resposta').chart('pie')
 
 
 class OpcaoResposta(models.Model):
@@ -355,6 +355,10 @@ class DemandaManager(models.Manager):
     @meta('Finalizadas')
     def finalizadas(self):
         return self.filter(finalizada=True).actions('Reabir')
+
+    @meta('Estatística')
+    def estatistica(self):
+        return self.count('instituicao', 'finalizada').chart('column')
 
 
 class Demanda(models.Model):

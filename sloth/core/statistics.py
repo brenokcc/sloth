@@ -139,13 +139,32 @@ class QuerySetStatistics(object):
                 data = []
                 self.cursor = 0
                 for j, (xk, xv) in enumerate(self._xdict.items()):
-                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
+                    data.append(dict(
+                        description=formatter.get(xv, str(self._xfield_display_value(xv))),
+                        value=format_value(self._values_dict.get((xk, yk), 0)),
+                        color=self.nex_color(),
+                        lookups=[(self.x, xk), (self.y, yk)]
+                    ))
                 series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
+                max_value = 0
+                for key in series:
+                    max_value = max(max([item['value'] for item in series[key]]), max_value)
+                for key in series:
+                    for item in series[key]:
+                        item['percentage'] = int(item['value'] * 100 / max_value)
         else:
             data = list()
             for j, (xk, xv) in enumerate(self._xdict.items()):
-                data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
+                data.append(dict(
+                    description=formatter.get(xv, str(self._xfield_display_value(xv))),
+                    value=format_value(self._values_dict.get((xk, None), 0)),
+                    color=self.nex_color(),
+                    lookups=[(self.x, xk)]
+                ))
             if data:
+                total = sum([item['value'] for item in data])
+                for item in data:
+                    item['percentage'] = int(item['value'] * 100 / total)
                 series['default'] = data
 
         return dict(
@@ -158,43 +177,15 @@ class QuerySetStatistics(object):
 
     def html(self, uuid=None, request=None):
         uuid = uuid or uuid1().hex
-        if self.metadata['template']:
-            data = self.normalize()
-            return render_to_string(self.metadata['template'], dict(data=data, uuid=uuid))
-        else:
-            data = self.serialize(wrap=True, verbose=True)
-            return render_to_string('adm/statistics.html', dict(data=data, uuid=uuid))
+        data = self.serialize(wrap=True, verbose=True)
+        return render_to_string(
+            'adm/statistics.html', dict(data=data, uuid=uuid, template=self.metadata['template'])
+        )
 
     def __str__(self):
         if self.metadata['request']:
             return self.html()
         return super().__str__()
-
-    def normalize(self):
-
-        series = self.serialize()['series']
-        print(series)
-        if 'default' in series:
-            data = []
-            total = sum([item[1] for item in series['default']])
-            for item in series['default']:
-                data.append(dict(
-                    description=item[0], percentage=int(item[1] * 100 / total),
-                    value=item[1], color=item[2]
-                ))
-        else:
-            data = {}
-            max_value = 0
-            for key in series:
-                max_value = max(max([item[1] for item in series[key]]), max_value)
-            for key in series:
-                data[key] = []
-                for item in series[key]:
-                    data[key].append(dict(
-                        description=item[0], percentage=int(item[1] * 100 / max_value),
-                        value=item[1], color=item[2]
-                    ))
-        return data
 
     def chart(self, name):
         self.metadata['template'] = 'adm/charts/{}.html'.format(name)

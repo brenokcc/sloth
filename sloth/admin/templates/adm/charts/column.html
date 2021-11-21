@@ -46,6 +46,7 @@
   color: #000;
   margin-left: 10px;
   border-color: transparent;
+  cursor: pointer;
 }
 .column-chart-table .bar p {
   padding: 5px;
@@ -100,11 +101,11 @@
 <div class="column-chart" style="margin-left: max(0px, 50% - {{ data|column_chart_width|divide:2 }}px);">
     <table class="column-chart-table">
         <tbody>
-            {% for key, series in data.items %}
+            {% for key, series in data.series.items %}
             <tr class="qtr" style="width: {{ data|column_chart_serie_width }};left:{{ series|length|multiply:40|multiply:forloop.counter0 }};{% if forloop.last %}border-right: none;{% endif %}">
                 <th scope="row" style="width: {{ data|column_chart_serie_width }}">{{ key }}</th>
                 {% for serie in series %}
-                <td class="bar" style="left: {{ forloop.counter0|multiply:40 }}; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;">
+                <td class="bar" style="left: {{ forloop.counter0|multiply:40 }}; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;" data-lookups="{{ serie.lookups }}" onclick="showData{{ uuid }}(this)">
                     <p>{{ serie.value }}</p>
                 </td>
                 {% endfor %}
@@ -121,7 +122,7 @@
         <div class="tick" style="height: 60px;width:{{ data|column_chart_series_width }};border-bottom:none"><p>0</p></div>
     </div>
 </div>
-{% for key, series in data.items %}
+{% for key, series in data.series.items %}
     {% if forloop.first %}
     <ul class="column-chart-legend">
       {% for serie in series %}
@@ -134,3 +135,8 @@
     {% endif %}
 {% endfor %}
 <div class="clearfix"></div>
+<script>
+    function showData{{ uuid }}(serie){
+        console.log($(serie).data('lookups'));
+    }
+</script>

@@ -89,14 +89,14 @@ def column_chart_height(percentage):
 
 @register.filter
 def column_chart_serie_width(data):
-    for series in data.values():
+    for series in data['series'].values():
         return 40 * len(series)
 
 
 @register.filter
 def column_chart_series_width(data):
     width = 0
-    for series in data.values():
+    for series in data['series'].values():
         for _ in series:
             width += 40
     return width

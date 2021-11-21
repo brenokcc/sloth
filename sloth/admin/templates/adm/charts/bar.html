@@ -42,6 +42,7 @@
     top: 50%;
     transform: translateY(-50%);
     transition: background-color .3s ease;
+    cursor: pointer;
 }
 .bar-chart dd:hover {
     background-color: desaturate(#85144b, 100);
@@ -51,7 +52,7 @@
 .bar-chart .percentage:focus {
        background-color: #aaa;
 }
-{% for serie in data %}
+{% for serie in data.series.default %}
     .bar-chart .percentage-{{ serie.percentage }}:after{
         width: {{ serie.percentage }}%;
         content:'{{ serie.value|format }}';
@@ -64,9 +65,16 @@
 <h3>Bar Chart</h3>
 <div class="bar-chart">
     <dl class="barchart">
-    {% for serie in data %}
-    <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
+    {% for serie in data.series.default %}
+    <dd class="percentage percentage-{{ serie.percentage }}" data-lookups="{{ serie.lookups }}" onclick="showData{{ uuid }}(this)">
+        <span class="text">{{ serie.description }}</span>
+    </dd>
     {% endfor %}
 </dl>
 </div>
 <div class="clearfix"></div>
+<script>
+    function showData{{ uuid }}(serie){
+        console.log($(serie).data('lookups'));
+    }
+</script>

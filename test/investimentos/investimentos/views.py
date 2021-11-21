@@ -41,8 +41,7 @@ class DemandasPorInstituicao(Gadget):
         qs = Demanda.objects.contextualize(self.request).sum('valor', 'instituicao')
         # qs = Ciclo.objects.contextualize(self.request).count('instituicoes', 'inicio__month')
         # return Pergunta.objects.contextualize(self.request).count('categoria')
-        print(qs.normalize())
-        return qs.chart('bar')
+        return qs.chart('pie')
 
 
 class DemandasPorInstituicaoClassificacao(Gadget):
@@ -50,3 +49,8 @@ class DemandasPorInstituicaoClassificacao(Gadget):
     def render(self):
         return Pergunta.objects.contextualize(self.request).count('categoria', 'tipo_resposta').chart('column')
 
+
+class DemandasPorInstituicaoFinalizada(Gadget):
+
+    def render(self):
+        return Demanda.objects.contextualize(self.request).count('instituicao', 'finalizada').chart('column')

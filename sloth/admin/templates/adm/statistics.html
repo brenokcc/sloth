@@ -1,13 +1,16 @@
 {% load tags %}
-{% if data.name and not compact %}
+{% if data.description and not compact %}
 <div class="card">
     <div class="card-body">
           <div class="statistics-title">
-                <h2>{{ data.name }}</h2>
+                <h2>{{ data.description }}</h2>
           </div>
     </div>
 </div>
 {% endif %}
+{% if data.template %}
+    {% include data.template %}
+{% else %}
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>
@@ -16,29 +19,29 @@
                 <th scope="col" class="align-middle" style="text-align:center">Total</th>
             </tr>
         </thead>
-        {% for name, value, color in data.series.default %}
+        {% for serie in data.series.default %}
         <tr>
-            <th scope="col">{{ name }}</th>
-            <td scope="col" class="align-middle" align="center">{{ value|format }}</td>
+            <th scope="col">{{ serie.description }}</th>
+            <td scope="col" class="align-middle" align="center">{{ serie.value|format }}</td>
         </tr>
         {% endfor %}
     {% else %}
         {% if data.series %}
-            {% for name, series in data.series.items %}
+            {% for description, series in data.series.items %}
                 {% if forloop.first %}
                     <thead>
                     <tr>
                         <td scope="col"></td>
-                        {% for name, value, color in series %}
-                            <th scope="col" class="align-middle" style="text-align:center">{{ name }}</th>
+                        {% for serie in series %}
+                            <th scope="col" class="align-middle" style="text-align:center">{{ serie.description }}</th>
                         {% endfor %}
                     </tr>
                     </thead>
                 {% endif %}
                 <tr>
-                    <th scope="col">{{ name }}</th>
-                    {% for name, value, color in series %}
-                        <td scope="col" class="align-middle" align="center">{{ value|format }}</td>
+                    <th scope="col">{{ description }}</th>
+                    {% for serie in series %}
+                        <td scope="col" class="align-middle" align="center">{{ serie.value|format }}</td>
                     {% endfor %}
                 </tr>
             {% endfor %}
@@ -49,3 +52,4 @@
         {% endif %}
     {% endif %}
 </table>
+{% endif %}

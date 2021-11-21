@@ -242,6 +242,7 @@ class ModelMixin(object):
     @classmethod
     def get_api_paths(cls):
         instance = cls()
+        instance.pk = 0
         instance.init_one_to_one_fields()
         url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
@@ -254,7 +255,10 @@ class ModelMixin(object):
         ]
         for name, attr in cls.__dict__.items():
             if hasattr(attr, 'decorated'):
-                v = getattr(instance, name)()
+                try:
+                    v = getattr(instance, name)()
+                except BaseException:
+                    continue
                 info['{}{{id}}/{}/'.format(url, name)] = [
                     ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}),
                 ]

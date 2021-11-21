@@ -99,7 +99,7 @@
 }
 </style>
 <h3>Column Chart</h3>
-<div style="padding-left:50px; width:{{ data|column_chart_width }}; margin:auto">
+<div style="padding-left:50px;margin:auto;overflow-x:hidden;">
     <table class="column-chart">
         <tbody>
             {% for key, series in data.items %}

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import uuid
 from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value

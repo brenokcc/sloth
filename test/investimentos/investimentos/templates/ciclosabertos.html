@@ -5,7 +5,7 @@
         font-size: 20px;
     }
 </style>
-{% for ciclo in self.ciclos %}
+{% for ciclo in ciclos %}
     <h2>{{ ciclo.descricao }}</h2>
 <p>Período de solicitação de <b>{{ ciclo.inicio }}</b> até <b>{{ ciclo.fim }}</b>.</p>
     <p>Quantidade máxima de demandas por categoria de investimento:</p>

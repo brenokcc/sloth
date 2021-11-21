@@ -103,11 +103,6 @@ def column_chart_series_width(data):
 
 
 @register.filter
-def column_chart_width(data):
-    return column_chart_series_width(data) + 100
-
-
-@register.filter
 def multiply(value, n):
     return value * n
 

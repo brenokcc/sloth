@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.apps import apps
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -37,23 +39,25 @@ class Gadget(metaclass=GadgetType):
         super().__init__()
         self.request = request
 
-    def render(self):
+    def render(self, **kwargs):
         template_name = '{}.html'.format(self.__class__.__name__.lower())
-        return mark_safe(render_to_string([self.template or template_name], dict(self=self), request=self.request))
+        context = kwargs or {}
+        context.update(self=self)
+        return mark_safe(render_to_string([self.template or template_name], context, request=self.request))
 
 
 class Cards(Gadget):
     template = 'adm/gadgets/cards.html'
 
-    def __init__(self, request):
-        self.items = []
-        super().__init__(request)
+    def render(self):
+        items = []
         for model in apps.get_models():
-            if model.can_list(request.user):
+            if model.can_list(self.request.user):
                 if hasattr(model.metaclass(), 'icon'):
-                    self.items.append(dict(
+                    items.append(dict(
                         url=model.get_list_url('/adm'),
                         label=model.metaclass().verbose_name_plural,
                         count=model.objects.count(),
                         icon=model.metaclass().icon
                     ))
+        return super().render(items=items)

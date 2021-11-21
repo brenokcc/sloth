@@ -1,13 +1,13 @@
 <style>
-    .single_quick_activity .count_content {
+    .model-card .content {
         margin-left: 30px;
         text-align: left;
     }
-    .single_quick_activity .count_content a{
+    .model-card .content a{
         text-decoration: none;
         color: #212529;
     }
-    .single_quick_activity {
+    .model-card {
         background-color: #f8f9fa;
         border-radius: 10px;
         -webkit-transition: 0.5s;
@@ -17,7 +17,7 @@
         margin-bottom: 10px;
         height: 120px;
     }
-    .single_quick_activity i{
+    .model-card i{
         font-size: 90px;
         float:left;
         margin-left: 20px;
@@ -26,13 +26,13 @@
 </style>
 
 <div class="row">
-    {% for item in self.items %}
+    {% for item in items %}
         <div class="col-sm-12 col-md-6 col-lg-4">
-            <div class="single_quick_activity">
+            <div class="model-card">
                 <div class="icon">
                     <i class="bi bi-{{ item.icon }}"></i>
                 </div>
-                <div class="count_content">
+                <div class="content">
                     <a href="{{ item.url }}">
                     <h3><span class="counter">{{ item.count }}</span> </h3>
                     <p>{{ item.label }}</p>

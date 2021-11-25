@@ -267,11 +267,12 @@ class Ciclo(models.Model):
 
     def gerar_demandas(self):
         for instituicao in self.instituicoes.all():
-            for i in range(1, self.get_limite_demandas() + 1):
-                prioridade = Prioridade.objects.get_or_create(numero=i)[0]
-                lookups = dict(ciclo=self, instituicao=instituicao, prioridade=prioridade)
-                if not Demanda.objects.filter(**lookups).exists():
-                    Demanda.objects.create(**lookups)
+            for limite in self.limites.all():
+                for i in range(1, limite.quantidade + 1):
+                    prioridade = Prioridade.objects.get_or_create(numero=i)[0]
+                    lookups = dict(ciclo=self, instituicao=instituicao, prioridade=prioridade, classificacao=limite.classificacao)
+                    if not Demanda.objects.filter(**lookups).exists():
+                        Demanda.objects.create(**lookups)
 
     def gerar_questionarios(self):
         for demanda in self.demanda_set.filter(classificacao__isnull=False):
@@ -289,9 +290,6 @@ class Ciclo(models.Model):
                 self.instituicoes.add(instituicao)
         self.gerar_demandas()
         self.gerar_questionarios()
-
-    def get_limite_demandas(self):
-        return self.limites.sum('quantidade')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
@@ -340,7 +338,7 @@ class DemandaManager(models.Manager):
 
     @meta('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento').filter(classificacao__isnull=True).actions(
+        return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento').filter(valor__isnull=True).actions(
             'DetalharDemanda'
         ).role_lookups('Gestor', instituicao='instituicao')
 
@@ -383,7 +381,7 @@ class Demanda(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('descricao', 'classificacao', 'valor')
+        return self.values('descricao', 'valor')
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
@@ -464,3 +462,23 @@ class RespostaQuestionario(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.pergunta, self.resposta)
+
+
+class Mensagem(models.Model):
+    perfil = models.CharField(verbose_name='Perfil', choices=[['Administrador', 'Administrador'], ['Gestor', 'Gestor']])
+    introducao = models.TextField(verbose_name='Introdução')
+    detalhamento = models.TextField(verbose_name='Detalhamento')
+
+    class Meta:
+        icon = 'chat-left-text'
+        verbose_name = 'Mensagem Inicial'
+        verbose_name_plural = 'Mensagens Iniciais'
+        can_list = 'Administrador',
+        can_edit = 'Administrador',
+
+    def __str__(self):
+        return self.introducao
+
+    def can_add(self, user):
+        return Mensagem.objects.count() < 2
+

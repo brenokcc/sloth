@@ -1,20 +1,12 @@
+{% if self.mensagem %}
 <div class="alert alert-primary" role="alert">
-  <h4 class="alert-heading">Caro {% if self.is_gestor %}Gestor{% else %}Administrador{% endif %}...</h4>
+  <h4 class="alert-heading">Caro  {{ self.mensagem.perfil }}...</h4>
   <img src="/static/images/gestor.png" style="float:left"/>
-  <p>O sistema de investimentos SETEC, permite que gestores de instituições de ensino possam <b>solicitar
-    investimentos</b> provendo informações detalhdas das demandas e justificando os motivos pelos quais os recursos devem ser direcionados a suas unidades.</p>
+  {{ self.mensagem.introducao|linebreaks }}
   <hr>
   <div class="mb-0">
-    {% if self.is_gestor %}
-      <p>As solicitações das demandas são realizadas no âmbito de um <b>ciclo de solicitação de investimento</b>,
-      listados abaixo nos seus respectivos períodos de solicitação.</p>
-      <p>Em cada ciclo será possível escolher "n" demandas por <b>categoria de investimento</b>, as quais devem ser detalhadas e devidamente justificadas.</p>
-      <p>Caso algum ciclo de investimento esteja aberto no momento, acesse-o e forneça os dados de detalhamento/justificativas requeridos na aba "Solicitações".
-    {% else %}
-      <p>Antes de cadastrar um <b>ciclo de solicitação de investimento</b>, é necessário que você cadastre as categorias de investimento,
-      bem como as instituições e seus respectivos demandantes (gestores).
-      Uma vez cadastrados, os gestores receberão um e-mail com o link de acesso ao sistema e estarão aptos a realizar suas demandas no período de solicitação informado no cadastro dos ciclos de investimentos.</p>
-    {% endif %}
+     {{ self.mensagem.detalhamento|linebreaks }}
   </div>
 </div>
 <div class="clear-fix"></div>
+{% endif %}

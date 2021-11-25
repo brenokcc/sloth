@@ -67,7 +67,7 @@ class AlterarPrioridade(forms.ModelForm):
 class DetalharDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'classificacao', 'descricao', 'valor', 'unidades_beneficiadas'
+        fields = 'descricao', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Detalhar Demanda'
         can_view = 'Gestor',
 
@@ -82,16 +82,6 @@ class DetalharDemanda(forms.ModelForm):
             raise forms.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
         return valor
-
-    def get_classificacao_queryset(self, queryset):
-        pks = []
-        for limite in self.instance.ciclo.limites.all():
-            instituicao = self.instance.instituicao
-            n = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).filter(
-                classificacao=limite.classificacao).exclude(pk=self.instance.pk).count()
-            if n < limite.quantidade:
-                pks.append(limite.classificacao.id)
-        return queryset.filter(pk__in=pks)
 
     def get_unidades_beneficiadas_queryset(self, queryset):
         return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from .models import Ciclo
+from .models import Ciclo, Mensagem
 from sloth.admin.gadgets import Cards, Gadget
 
 
@@ -8,7 +8,10 @@ class Instrucoes(Gadget):
 
     def __init__(self, request):
         super().__init__(request)
-        self.is_gestor = request.user.roles.filter(name='Gestor').exists()
+        if request.user.roles.filter(name='Gestor').exists():
+            self.mensagem = Mensagem.objects.filter(perfil='Gestor').first()
+        else:
+            self.mensagem = Mensagem.objects.filter(perfil='Administrador').first()
 
 
 class Cartoes(Cards):
@@ -32,16 +35,3 @@ class CiclosAbertos(Gadget):
                     inicio=ciclo.inicio, fim=ciclo.fim, limites=ciclo.limites.all()
                 )
             )
-
-
-# class DemandasPorInstituicao(Gadget):
-#
-#     def render(self):
-#         return Demanda.objects.contextualize(self.request).count('instituicao').chart('pie')
-#
-#
-# class DemandasPorInstituicaoClassificacao(Gadget):
-#
-#     def render(self):
-#         return Demanda.objects.contextualize(self.request).count('instituicao', 'classificacao').chart('column')
-

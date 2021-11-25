@@ -73,6 +73,9 @@
 <div class="clearfix"></div>
 <script>
     function showData{{ uuid }}(serie){
-        console.log($(serie).data('lookups'));
+        var url = document.location.href + '?{{ uuid }}=' + $(serie).data('lookups');
+        $.get(url, function(data, status){
+            console.log(data);
+        });
     }
 </script>

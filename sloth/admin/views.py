@@ -18,7 +18,7 @@ from . import gadgets
 def view(func):
     def decorate(request, *args, **kwargs):
         try:
-            time.sleep(0.5)
+            #time.sleep(0.5)
             if views.is_authenticated(request):
                 response = func(request, *args, **kwargs)
                 response["X-Frame-Options"] = "SAMEORIGIN"

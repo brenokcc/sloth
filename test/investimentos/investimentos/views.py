@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from datetime import date
 from decimal import Decimal
-from .models import Ciclo, Mensagem, Gestor
+from .models import Ciclo, Mensagem, Gestor, Notificacao
 from sloth.admin.gadgets import Cards, Gadget
 
 
@@ -13,6 +14,9 @@ class Instrucoes(Gadget):
             self.mensagem = Mensagem.objects.filter(perfil='Gestor').first()
         else:
             self.mensagem = Mensagem.objects.filter(perfil='Administrador').first()
+        self.notificacoes = Notificacao.objects.filter(
+            inicio__gte=date.today(), fim__lte=date.today()
+        )
 
 
 class Cartoes(Cards):

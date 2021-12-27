@@ -1,7 +1,22 @@
 {% if self.gestor %}
 <div align="right">
-  <strong>{{ self.gestor.instituicao }}</strong>
+  <strong>{{ self.gestor.instituicao.nome }}</strong>
 </div>
+{% endif %}
+{% if self.notificacoes.exists %}
+<div class="mb-0">
+ <div class="alert alert-warning" role="alert">
+
+   {% for notificacao in self.notificacoes %}
+    <div>
+        <i class="bi bi-exclamation-square"></i>
+        {{ notificacao }}
+    </div>
+   {% endfor %}
+
+ </div>
+</div>
+<hr>
 {% endif %}
 {% if self.mensagem %}
 <div class="alert alert-primary" role="alert">
@@ -12,17 +27,19 @@
   <div class="mb-0">
      {{ self.mensagem.detalhamento|linebreaks }}
   </div>
-  {% if self.mensagem.anexos.exists %}
-  <hr>
-  <div class="mb-0">
-     <strong>Anexos:</strong>
-     <ul>
-       {% for anexo in self.mensagem.anexos.all %}
-        <li><a href="/media/{{ anexo.arquivo }}">{{ anexo.descricao }}</a></li>
-       {% endfor %}
-     </ul>
-  </div>
-  {% endif %}
 </div>
+{% if self.mensagem.anexos.exists %}
+<div class="mb-0">
+ <strong>Anexos:</strong>
+ <ul>
+   {% for anexo in self.mensagem.anexos.all %}
+    <li style="list-style:none">
+        <i class="bi bi-file-arrow-down"></i>
+        <a href="/media/{{ anexo.arquivo }}">{{ anexo.descricao }}</a></li>
+   {% endfor %}
+ </ul>
+</div>
+<hr>
+{% endif %}
 <div class="clear-fix"></div>
 {% endif %}

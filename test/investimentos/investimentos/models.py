@@ -170,26 +170,25 @@ class Instituicao(models.Model):
 
     @meta('Gestores')
     def get_gestores(self):
-        return self.gestor_set.ignore('instituicao').global_actions('AdicionarGestor').actions('edit', 'delete')
+        return self.gestor_set.list_display('nome', 'email').global_actions('AdicionarGestor').actions('edit', 'delete')
 
 
 class Campus(models.Model):
     instituicao = models.ForeignKey(Instituicao, verbose_name='Campus')
     nome = models.CharField(verbose_name='Nome')
-    sigla = models.CharField(verbose_name='Sigla')
 
     class Meta:
         verbose_name = 'Campus'
         verbose_name_plural = 'Campi'
 
     def __str__(self):
-        return '{}/{}'.format(self.sigla, self.instituicao)
+        return '{}/{}'.format(self.nome, self.instituicao)
 
 
 @role('Gestor', 'user', instituicao='instituicao')
 class Gestor(models.Model):
     nome = models.CharField('Nome')
-    cpf = models.CharField('CPF', rmask='000.000.000-00')
+    email = models.CharField('E-mail', null=True)
     instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
 
     user = models.ForeignKey(User, verbose_name='Usuário', blank=True)
@@ -198,19 +197,35 @@ class Gestor(models.Model):
         verbose_name = 'Gestor '
         verbose_name_plural = 'Gestores'
         fieldsets = {
-            'Dados Gerais': (('nome', 'cpf'), 'instituicao')
+            'Dados Gerais': (('nome', 'email'), 'instituicao')
         }
         can_add = 'Administrador',
         can_edit = 'Administrador',
         can_delete = 'Administrador',
 
     def save(self, *args, **kwargs):
-        self.user = User.objects.get_or_create(
-            username=self.cpf, defaults={}
-        )[0]
-        self.user.set_password('123')
-        self.user.save()
+        if self.email:
+            self.user = User.objects.get_or_create(
+                username=self.email, defaults={}
+            )[0]
+            self.user.set_password('123')
+            self.user.save()
         super().save()
+
+
+class Notificacao(models.Model):
+    descricao = models.CharField(verbose_name='Descrição')
+    inicio = models.DateField(verbose_name='Início da Exibição')
+    fim = models.DateField(verbose_name='Fim da Exibição')
+
+    class Meta:
+        icon = 'exclamation-square'
+        verbose_name = 'Notificação'
+        verbose_name_plural = 'Notificações'
+        can_admin = 'Administrador',
+
+    def __str__(self):
+        return self.descricao
 
 
 class LimiteDemanda(models.Model):
@@ -220,6 +235,7 @@ class LimiteDemanda(models.Model):
     class Meta:
         verbose_name = 'Limite de Demanda'
         verbose_name_plural = 'Limites de Demanda'
+        can_view = 'Gestor', 'Administrador'
 
     def __str__(self):
         return '{} - {} demandas'.format(self.classificacao, self.quantidade)
@@ -240,7 +256,7 @@ class Ciclo(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
     inicio = models.DateField(verbose_name='Início das Solicitações')
     fim = models.DateField(verbose_name='Fim das Solicitações')
-    teto = models.DecimalField(verbose_name='Limite de Investimento por Instituição (R$)')
+    teto = models.DecimalField(verbose_name='Limite de Investimento por Instituição (R$)', max_digits=15)
     instituicoes = models.ManyToManyField(Instituicao, verbose_name='Demandantes', blank=True, help_text='Não informar, caso deseje incluir todas as instituições.')
     limites = models.OneToManyField(LimiteDemanda, verbose_name='Limites de Demanda', max=5)
 
@@ -352,7 +368,7 @@ class DemandaManager(models.Manager):
 
     @meta('Preenchidas')
     def finalizadas(self):
-        return self.filter(finalizada=True).actions('Reabir')
+        return self.filter(finalizada=True).actions('Reabir', 'AlterarDetalhamentoDemanda')
 
 
 class Demanda(models.Model):
@@ -382,7 +398,7 @@ class Demanda(models.Model):
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('descricao', 'valor')
+        return self.values('descricao', 'valor_total', 'valor')
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
@@ -413,7 +429,7 @@ class Demanda(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if self.classificacao:
+        if self.pk is None and self.classificacao:
             self.ciclo.gerar_questionarios()
 
 
@@ -428,10 +444,26 @@ class Questionario(models.Model):
         return '{} - {}'.format(self.demanda.instituicao, self.demanda.ciclo)
 
 
+class RespostaQuestionarioManager(models.Manager):
+    @meta('Respostas')
+    def all(self):
+        return super().all().attach('aguardando_submissao', 'submetidas')
+
+    @meta('Aguardando Submissão')
+    def aguardando_submissao(self):
+        return super().filter(resposta__isnull=True)
+
+    @meta('Submetidas')
+    def submetidas(self):
+        return super().filter(resposta__isnull=False)
+
+
 class RespostaQuestionario(models.Model):
     questionario = models.ForeignKey(Questionario, verbose_name='Questionário')
     pergunta = models.ForeignKey(Pergunta, verbose_name='Pergunta')
     resposta = models.TextField(verbose_name='Resposta', null=True)
+
+    objects = RespostaQuestionarioManager()
 
     class Meta:
         icon = 'pencil-square'

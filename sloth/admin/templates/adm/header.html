@@ -7,7 +7,7 @@
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">
-          <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)">
+          <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not request.session.menu  %}visibility:hidden{% endif %}">
           {% include "adm/menu.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
@@ -24,6 +24,7 @@
             </li>
           </ul>
         </div>
+
       </div>
     </nav>
 {% endif %}

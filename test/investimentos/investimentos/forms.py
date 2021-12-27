@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import uuid
 from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
@@ -11,7 +10,7 @@ from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal
 class AdicionarGestor(forms.ModelForm):
     class Meta:
         model = Gestor
-        fields = 'nome', 'cpf'
+        fields = 'nome', 'email'
         verbose_name = 'Adicionar Gestor'
         relation = 'instituicao'
         can_view = 'Administrador',
@@ -33,7 +32,7 @@ class AdicionarPergunta(forms.ModelForm):
 class AdicionarCampus(forms.ModelForm):
     class Meta:
         model = Campus
-        fields = 'nome', 'sigla'
+        fields = 'nome',
         verbose_name = 'Adicionar Campus'
         relation = 'instituicao'
         can_view = 'Administrador',
@@ -74,6 +73,12 @@ class PreencherDemanda(forms.ModelForm):
     def can_view(self, user):
         return not self.instance.finalizada
 
+    def clean_valor_total(self):
+        valor_total = self.cleaned_data['valor_total']
+        if False and valor_total < 176000:
+            raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
+        return valor_total
+
     def clean_valor(self):
         valor = self.cleaned_data['valor']
         instituicao = self.instance.instituicao
@@ -81,6 +86,8 @@ class PreencherDemanda(forms.ModelForm):
         if total + valor > self.instance.ciclo.teto:
             raise forms.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
+        if False and valor < 176000:
+            raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
         return valor
 
     def get_unidades_beneficiadas_queryset(self, queryset):
@@ -113,7 +120,7 @@ class DetalharDemanda(forms.ModelForm):
 
     class Meta:
         model = Demanda
-        verbose_name = 'Detalhar e Finalizar'
+        verbose_name = 'Detalhar Demanda'
         fields = []
 
     def can_view(self, user):
@@ -121,7 +128,7 @@ class DetalharDemanda(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all():
+        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all().order_by('id'):
             tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
             key = '{}'.format(pergunta_questionario.pk)
             self.initial[key] = pergunta_questionario.resposta
@@ -201,6 +208,22 @@ class DetalharDemanda(forms.ModelForm):
         self.notify(reload=reload)
 
 
+class AlterarDetalhamentoDemanda(DetalharDemanda):
+
+    class Meta:
+        model = Demanda
+        verbose_name = 'Alterar Detalhamento'
+        fields = []
+
+    def can_view(self, user):
+        if user.roles.filter(name='Gestor').exists():
+            questionario_final = QuestionarioFinal.objects.filter(
+                ciclo=self.instance.ciclo, instituicao=self.instance.instituicao
+            )
+            return not questionario_final.filter(finalizado=True).exists()
+        return False
+
+
 class AlterarSenha(forms.Form):
     password = forms.CharField(label='Senha', widget=forms.PasswordInput())
 
@@ -234,6 +257,7 @@ class ConcluirSolicitacao(forms.Form):
     class Meta:
         verbose_name = 'Concluir Solicitação'
         can_view = 'Gestor',
+        style = 'success'
 
     def __init__(self, *args, **kwargs):
         initial = {}

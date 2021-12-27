@@ -18,7 +18,7 @@
             {% if data.metadata.search %}
             <div class="filter">
                 <label>Busca:</label>
-                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13) reload{{ data.uuid }}()">
+                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}">
             </div>
             {% endif %}
             {% for name, metadata in data.metadata.filters.items %}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from .models import Ciclo, Mensagem
+from .models import Ciclo, Mensagem, Gestor
 from sloth.admin.gadgets import Cards, Gadget
 
 
@@ -9,6 +9,7 @@ class Instrucoes(Gadget):
     def __init__(self, request):
         super().__init__(request)
         if request.user.roles.filter(name='Gestor').exists():
+            self.gestor = Gestor.objects.filter(user=request.user).first()
             self.mensagem = Mensagem.objects.filter(perfil='Gestor').first()
         else:
             self.mensagem = Mensagem.objects.filter(perfil='Administrador').first()

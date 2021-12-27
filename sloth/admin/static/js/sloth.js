@@ -27,7 +27,9 @@ jQuery.fn.extend({
                 if(contentType.indexOf('text')>=0){
                     var reader = new FileReader();
                     reader.onload = function (event) {
-                        if(reader.result == '..'){
+                        if(reader.result == '.'){
+                            document.location.reload();
+                        } else if(reader.result == '..'){
                             $(document).back()
                         } else if(reader.result && reader.result[0] == '/'){
                             $(document).open(reader.result);

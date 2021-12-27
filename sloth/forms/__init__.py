@@ -161,6 +161,26 @@ class FormMixin:
             if field_list:
                 self.fieldsets[title] = field_list
 
+    def get_api_params(self):
+        params = []
+        for name, field in self.fields.items():
+            param_type = 'string'
+            param_format = None
+            if isinstance(field, BooleanField) or name.isupper():  # controller field
+                param_type = 'boolean'
+            elif isinstance(field, DateTimeField):
+                param_format = 'date-time'
+            elif isinstance(field, DateField):
+                param_format = 'date'
+            elif isinstance(field, IntegerField) or isinstance(field, ModelChoiceField):
+                param_type = 'integer'
+                param_format = 'int32'
+            params.append(
+                {'description': field.label, 'name': name, 'in': 'query', 'required': False,
+                 'schema': dict(type=param_type, format=param_format)}
+            )
+        return params
+
     def save(self, *args, **kwargs):
         if hasattr(self.instance, 'pre_save'):
             self.instance.pre_save()
@@ -351,9 +371,9 @@ class FormMixin:
             q=q, items=items
         )
 
-    def notify(self, text='Ação realizada com sucesso', style='sucess', **kwargs):
+    def notify(self, text='Ação realizada com sucesso', style='sucess', reload=False, **kwargs):
         messages.add_message(self.request, messages.INFO, text)
-        self.message = dict(type='message', text=text, style=style, **kwargs)
+        self.message = dict(type='message', text=text, style=style, reload=reload, **kwargs)
 
 
 class Form(FormMixin, Form):

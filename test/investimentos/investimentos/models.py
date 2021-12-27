@@ -291,10 +291,6 @@ class Ciclo(models.Model):
         self.gerar_demandas()
         self.gerar_questionarios()
 
-    @meta('Dados Gerais')
-    def get_dados_gerais(self):
-        return self.values('descricao',)
-
     @meta('Limite de Demandas por Categoria')
     def get_limites_demandas(self):
         return self.limites.all()
@@ -305,7 +301,7 @@ class Ciclo(models.Model):
 
     @meta('Solicitações')
     def get_solicitacoes(self):
-        return self.demanda_set.all().order_by('prioridade__numero').ignore('ciclo').collapsed(False)
+        return self.demanda_set.all().list_filter('prioridade', 'classificacao').list_dynamic_filter('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False)
 
     @meta('Configuração Geral')
     def get_configuracao_geral(self):
@@ -317,40 +313,44 @@ class Ciclo(models.Model):
 
     @meta('Resumo')
     def get_resumo(self):
-        return self.values('get_total_por_instituicao')
+        return self.values('get_total_por_instituicao', 'get_questionario_final')
+
+    @meta('Questionário Final')
+    def get_questionario_final(self):
+        return self.questionariofinal_set.all().list_display('rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted').role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo')
+        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_detalhamento')
+        return self.values('get_detalhamento')
 
 
 class DemandaManager(models.Manager):
     @meta('Todas')
     def all(self):
         return self.list_display(
-            'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'finalizada'
+            'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'finalizada'
         ).attach(
-            'aguardando_detalhamento', 'aguardando_esclarecimentos', 'finalizadas'
+            'aguardando_dados_gerais', 'aguardando_detalhamento', 'finalizadas'
         ).actions('AlterarPrioridade').role_lookups('Gestor', instituicao='instituicao')
+
+    @meta('Aguardando Dados Gerais')
+    def aguardando_dados_gerais(self):
+        return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais').filter(valor__isnull=True).actions(
+            'PreencherDemanda'
+        ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento').filter(valor__isnull=True).actions(
-            'DetalharDemanda'
-        ).role_lookups('Gestor', instituicao='instituicao')
-
-    @meta('Aguardando Justificativas')
-    def aguardando_esclarecimentos(self):
         return self.list_display(
-            'ciclo', 'instituicao', 'get_prioridade', 'get_detalhamento', 'get_progresso_questionario'
-        ).filter(classificacao__isnull=False, finalizada=False).actions(
-            'ResponderQuestionario', 'AlterarDetalhamento'
+            'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'get_progresso_questionario'
+        ).filter(valor__isnull=False, finalizada=False).actions(
+            'DetalharDemanda', 'AlterarPreenchimento'
         ).role_lookups('Gestor', instituicao='instituicao')
 
-    @meta('Finalizadas')
+    @meta('Preenchidas')
     def finalizadas(self):
         return self.filter(finalizada=True).actions('Reabir')
 
@@ -358,9 +358,10 @@ class DemandaManager(models.Manager):
 class Demanda(models.Model):
     ciclo = models.ForeignKey(Ciclo, verbose_name='Ciclo')
     instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
-    descricao = models.TextField(verbose_name='Descrição')
+    descricao = models.CharField(verbose_name='Descrição', max_length=512)
     prioridade = models.ForeignKey(Prioridade, verbose_name='Prioridade')
-    classificacao = models.ForeignKey(Categoria, verbose_name='Classificação', null=True)
+    classificacao = models.ForeignKey(Categoria, verbose_name='Categoria', null=True)
+    valor_total = models.DecimalField(verbose_name='Valor Total (R$)', null=True)
     valor = models.DecimalField(verbose_name='Valor a Empenhar no Exercício (R$)', null=True)
     unidades_beneficiadas = models.ManyToManyField(Campus, verbose_name='Unidades Beneficiadas', blank=True,
                                                    help_text='Não informar caso todas as unidades sejam beneficiadas.')
@@ -379,8 +380,8 @@ class Demanda(models.Model):
     def get_questionario(self):
         return self.questionario_set.first()
 
-    @meta('Detalhamento')
-    def get_detalhamento(self):
+    @meta('Dados Gerais')
+    def get_dados_gerais(self):
         return self.values('descricao', 'valor')
 
     @meta('Perguntas Obrigatórias')
@@ -464,10 +465,23 @@ class RespostaQuestionario(models.Model):
         return '{} - {}'.format(self.pergunta, self.resposta)
 
 
+class Anexo(models.Model):
+    descricao = models.CharField(verbose_name='Descrição')
+    arquivo = models.FileField(verbose_name='Arquivo', upload_to='anexos')
+
+    class Meta:
+        verbose_name = 'Anexo'
+        verbose_name_plural = 'Anexos'
+
+    def __str__(self):
+        return self.descricao
+
+
 class Mensagem(models.Model):
     perfil = models.CharField(verbose_name='Perfil', choices=[['Administrador', 'Administrador'], ['Gestor', 'Gestor']])
     introducao = models.TextField(verbose_name='Introdução')
     detalhamento = models.TextField(verbose_name='Detalhamento')
+    anexos = models.OneToManyField(Anexo, verbose_name='Anexos')
 
     class Meta:
         icon = 'chat-left-text'
@@ -482,3 +496,33 @@ class Mensagem(models.Model):
     def can_add(self, user):
         return Mensagem.objects.count() < 2
 
+
+class QuestionarioFinal(models.Model):
+
+    ciclo = models.ForeignKey(Ciclo, verbose_name='Ciclo')
+    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
+    rco_pendente = models.CharField(
+        verbose_name='RCO Pendente',
+        choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
+    )
+    detalhe_rco_pendente = models.TextField(
+        verbose_name='Detalhe de RCO Pendente',
+        null=True, blank=True
+    )
+    devolucao_ted = models.CharField(
+        verbose_name='Devolução de TED',
+        choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
+    )
+    detalhe_devolucao_ted = models.TextField(
+        verbose_name='Detalhe de Devolução de TED',
+        null=True, blank=True
+    )
+    finalizado = models.BooleanField(verbose_name='Finalizado', default=False)
+
+    class Meta:
+        verbose_name = 'Questionário Final'
+        verbose_name_plural = 'Questionários Finais'
+        can_view = 'Administrador', 'Gestor'
+
+    def __str__(self):
+        return 'Questionário final'

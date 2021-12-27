@@ -55,6 +55,25 @@ class ValueSet(dict):
     def debug(self):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
+    def get_api_schema(self, recursive=False):
+        schema = dict()
+        for attr_name, width in self.metadata['names'].items():
+            try:
+                attr, value = getattrr(self.instance, attr_name)
+            except BaseException as e:
+                continue
+            if isinstance(value, QuerySet):
+                dict(type='array', items=dict(type='object', properties=schema))
+            elif isinstance(value, QuerySetStatistics):
+                pass
+            elif isinstance(value, ValueSet):
+                schema[attr_name] = dict(type='object', properties=value.get_api_schema(recursive=True))
+            else:
+                schema[attr_name] = self.instance.get_attr_api_type(attr_name)
+        if recursive:
+            return schema
+        return dict(type='object', properties=schema)
+
     def load(self, wrap=False, verbose=False, formatted=False, valueset=None, size=True):
         if self.metadata['names']:
             for attr_name, width in self.metadata['names'].items():

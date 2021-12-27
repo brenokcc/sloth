@@ -36,19 +36,21 @@ class OpenApi(dict):
         self.load()
 
     def load(self):
+        selected_app_label = self.request.GET.get('app')
+        selected_model_name = self.request.GET.get('model')
         for app_label, app_config in apps.app_configs.items():
             if app_label in ('contenttypes', 'sessions', 'messages', 'staticfiles', 'oauth2_provider'):
                 continue
-            if self.request.GET.get('app') and self.request.GET['app'] != app_label:
+            if selected_app_label and selected_app_label != app_label:
                 continue
             api_models = []
             for model in app_config.get_models():
                 model_name = model.metaclass().model_name
                 verbose_name = model.metaclass().verbose_name
-                if self.request.GET.get('model') and self.request.GET['model'] != model_name:
+                if selected_model_name and selected_model_name != model_name:
                     continue
                 api_models.append((model_name, verbose_name))
-                self['paths'].update(model.get_api_paths())
+                self['paths'].update(model.get_api_paths(self.request))
             if api_models:
                 self['tags'].append(dict(name=app_label))
                 self.apps[app_label] = api_models

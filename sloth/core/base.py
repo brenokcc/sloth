@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
+
 from sloth.forms import ModelForm
 from sloth.core.values import ValueSet
 from sloth.core.query import QuerySet
@@ -240,42 +241,79 @@ class ModelMixin(object):
         return getattr(attr, 'verbose_name', lookup), False
 
     @classmethod
-    def get_api_paths(cls):
+    def get_attr_api_type(cls, lookup):
+        from django.db import models
+        param_type = 'string'
+        param_format = None
+        field = cls.get_field(lookup)
+        if field:
+            if isinstance(field, models.BooleanField):  # controller field
+                param_type = 'boolean'
+            elif isinstance(field, models.DateTimeField):
+                param_format = 'date-time'
+            elif isinstance(field, models.DateField):
+                param_format = 'date'
+            elif isinstance(field, models.IntegerField) or isinstance(field, models.ForeignKey):
+                param_type = 'integer'
+                param_format = 'int32'
+        return dict(type=param_type, format=param_format)
+
+    @classmethod
+    def get_api_paths(cls, request):
         instance = cls()
+        instance.id = -1
         instance.init_one_to_one_fields()
         url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
         info = dict()
-        info[url] = [('get', 'List', 'List objects', {'type': 'string'})]
+        # info[url] = [('get', 'List', 'List objects', {'type': 'string'}, None)]
         info['{}{{id}}/'.format(url)] = [
-            ('get', 'View', 'View object', {'type': 'string'}),
-            ('post', 'Add', 'Add object', {'type': 'string'}),
-            ('put', 'Edit', 'Edit object', {'type': 'string'}),
+            ('get', 'View', 'View object', instance.view().get_api_schema(), None),
+            # ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
+            # ('put', 'Edit', 'Edit object', {'type': 'string'}, None),
         ]
         for name, attr in cls.__dict__.items():
             if hasattr(attr, 'decorated'):
-                v = getattr(instance, name)()
+                try:
+                    v = getattr(instance, name)()
+                except BaseException as e:
+                    continue
                 info['{}{{id}}/{}/'.format(url, name)] = [
-                    ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}),
+                    ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}, None),
                 ]
                 if isinstance(v, ValueSet):
                     for action in v.metadata['actions']:
                         info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
-                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}),
+                            ('post', action, 'Execute {}'.format(action), v.get_api_schema(), None),
                         ]
                 elif isinstance(v, QuerySet):
                     for action in v.metadata['actions']:
+                        forms_cls = cls.action_form_cls(action)
                         info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
-                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}),
+                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
                         ]
 
         paths = {}
         for url, data in info.items():
             paths[url] = {}
-            for method, summary, description, schema in data:
+            for method, summary, description, schema, form_cls in data:
+                params = []
+                if '{id}' in url:
+                    params.append(
+                        {'description': 'Identificador', 'name': 'id', 'in': 'path', 'required': True, 'schema': dict(type='integer')}
+                    )
+                if '{ids}' in url:
+                    params.append(
+                        {'description': 'Identificadores', 'name': 'ids', 'in': 'path', 'required': True, 'schema': dict(type='string')}
+                    )
+                if form_cls:
+                    form = form_cls(request=request)
+                    form.load_fieldsets()
+                    params.extend(form.get_api_params())
                 paths[url][method] = {
                     'summary': summary,
                     'description': description,
+                    'parameters': params,
                     'responses': {
                         '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
                     },

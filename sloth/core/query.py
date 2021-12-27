@@ -24,7 +24,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, search=[], ordering=[],
+            display=[], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True
@@ -92,7 +92,9 @@ class QuerySet(models.QuerySet):
 
     def _get_filters(self, verbose=False):
         filters = {}
-        for lookup in self._get_list_filter():
+        list_filter = self._get_list_filter()
+        list_filter.extend(self.metadata['dfilters'])
+        for lookup in list_filter:
             field = self.model.get_field(lookup)
             field_type_name = type(field).__name__
             filter_type = 'choices'
@@ -102,6 +104,10 @@ class QuerySet(models.QuerySet):
                 filter_type = 'datetime'
             elif 'Date' in field_type_name:
                 filter_type = 'date'
+            if lookup in self.metadata['dfilters']:
+                qs = self.order_by(lookup).values_list(lookup).distinct()[1:2]
+                if not qs:
+                    continue
             filters[
                 pretty(str(field.verbose_name)) if verbose else lookup
             ] = dict(key=lookup, name=pretty(str(field.verbose_name)), type=filter_type, choices=None)
@@ -278,6 +284,10 @@ class QuerySet(models.QuerySet):
 
     def list_filter(self, *names):
         self.metadata['filters'] = list(names)
+        return self
+
+    def list_dynamic_filter(self, *names):
+        self.metadata['dfilters'] = list(names)
         return self
 
     def ordering(self, *names):

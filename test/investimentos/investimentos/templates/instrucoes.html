@@ -1,3 +1,8 @@
+{% if self.gestor %}
+<div align="right">
+  <strong>{{ self.gestor.instituicao }}</strong>
+</div>
+{% endif %}
 {% if self.mensagem %}
 <div class="alert alert-primary" role="alert">
   <h4 class="alert-heading">Caro  {{ self.mensagem.perfil }}...</h4>
@@ -7,6 +12,17 @@
   <div class="mb-0">
      {{ self.mensagem.detalhamento|linebreaks }}
   </div>
+  {% if self.mensagem.anexos.exists %}
+  <hr>
+  <div class="mb-0">
+     <strong>Anexos:</strong>
+     <ul>
+       {% for anexo in self.mensagem.anexos.all %}
+        <li><a href="/media/{{ anexo.arquivo }}">{{ anexo.descricao }}</a></li>
+       {% endfor %}
+     </ul>
+  </div>
+  {% endif %}
 </div>
 <div class="clear-fix"></div>
 {% endif %}

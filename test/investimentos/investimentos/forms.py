@@ -5,7 +5,7 @@ from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
 
-from .models import Campus, Demanda, Pergunta, Gestor
+from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal
 
 
 class AdicionarGestor(forms.ModelForm):
@@ -51,24 +51,24 @@ class AlterarPrioridade(forms.ModelForm):
 
     def get_prioridade_queryset(self, queryset):
         return queryset.filter(
-            numero__lte=self.instance.ciclo.get_limite_demandas()
+            numero__lte=self.instance.ciclo.get_limites_demandas().get(classificacao=self.instance.classificacao).quantidade
         ).exclude(numero=self.instance.prioridade.numero)
 
     def save(self, *args, **kwargs):
         prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
         demanda = self.instance.ciclo.demanda_set.get(
-            instituicao=self.instance.instituicao, prioridade=self.instance.prioridade
+            instituicao=self.instance.instituicao, prioridade=self.instance.prioridade, classificacao=self.instance.classificacao
         )
         demanda.prioridade = prioridade
         demanda.save()
         super().save(*args, **kwargs)
 
 
-class DetalharDemanda(forms.ModelForm):
+class PreencherDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'valor', 'unidades_beneficiadas'
-        verbose_name = 'Detalhar Demanda'
+        fields = 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
+        verbose_name = 'Preencher Dados Gerais'
         can_view = 'Gestor',
 
     def can_view(self, user):
@@ -87,11 +87,11 @@ class DetalharDemanda(forms.ModelForm):
         return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)
 
 
-class AlterarDetalhamento(DetalharDemanda):
+class AlterarPreenchimento(PreencherDemanda):
     class Meta:
         model = Demanda
         fields = 'descricao', 'valor', 'unidades_beneficiadas'
-        verbose_name = 'Alterar Detalhamento'
+        verbose_name = 'Alterar Dados Gerais'
         can_view = 'Gestor',
 
 
@@ -103,14 +103,17 @@ class Reabir(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         self.instance.finalizada = False
+        QuestionarioFinal.objects.filter(
+            ciclo=self.instance.ciclo, instituicao=self.instance.instituicao
+        ).update(finalizado=False)
         super().save(*args, **kwargs)
 
 
-class ResponderQuestionario(forms.ModelForm):
+class DetalharDemanda(forms.ModelForm):
 
     class Meta:
         model = Demanda
-        verbose_name = 'Responder Questionário'
+        verbose_name = 'Detalhar e Finalizar'
         fields = []
 
     def can_view(self, user):
@@ -192,7 +195,10 @@ class ResponderQuestionario(forms.ModelForm):
         if self.instance.get_progresso_questionario() == 100:
             self.instance.finalizada = True
             self.instance.save()
-        self.notify()
+        reload = not Demanda.objects.filter(
+            ciclo=self.instance.ciclo, instituicao=self.instance.instituicao, finalizada=False
+        ).exists()
+        self.notify(reload=reload)
 
 
 class AlterarSenha(forms.Form):
@@ -204,3 +210,70 @@ class AlterarSenha(forms.Form):
     def proces(self):
         self.instantiator.user.set_password(self.cleaned_data['password'])
         self.instantiator.user.save()
+
+
+class ConcluirSolicitacao(forms.Form):
+
+    rco_pendente = forms.ChoiceField(
+        label='A instituição possui RCO pendente de entregue para a SETEC?',
+        choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
+    )
+    detalhe_rco_pendente = forms.CharField(
+        label='Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC',
+        required=False, widget=forms.Textarea()
+    )
+    devolucao_ted = forms.ChoiceField(
+        label='A instituição devolveu algum valor de TED em 2021?',
+        choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
+    )
+    detalhe_devolucao_ted = forms.CharField(
+        label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021?',
+        required=False, widget=forms.Textarea()
+    )
+
+    class Meta:
+        verbose_name = 'Concluir Solicitação'
+        can_view = 'Gestor',
+
+    def __init__(self, *args, **kwargs):
+        initial = {}
+        gestor = Gestor.objects.filter(user=kwargs['request'].user).first()
+        ciclo = kwargs['instantiator']
+        instituicao = gestor.instituicao
+        questionario_final = QuestionarioFinal.objects.filter(
+            ciclo=ciclo, instituicao=instituicao
+        ).first()
+        if questionario_final:
+            initial.update(
+                rco_pendente=questionario_final.rco_pendente,
+                detalhe_rco_pendente=questionario_final.detalhe_rco_pendente,
+                devolucao_ted=questionario_final.devolucao_ted,
+                detalhe_devolucao_ted=questionario_final.detalhe_devolucao_ted,
+            )
+        kwargs.update(initial=initial)
+        super().__init__(*args, **kwargs)
+
+    def can_view(self, user):
+        if user.roles.filter(name='Gestor').exists():
+            gestor = Gestor.objects.filter(user=user).first()
+            ciclo = self.instantiator
+            instituicao = gestor.instituicao
+            demandas_finalizadas = not Demanda.objects.filter(ciclo=ciclo, instituicao=instituicao, finalizada=False).exists()
+            questionario_final = QuestionarioFinal.objects.filter(ciclo=ciclo, instituicao=instituicao, finalizado=True).first()
+            return demandas_finalizadas and not questionario_final
+        return False
+
+    def process(self):
+        gestor = Gestor.objects.filter(user=self.request.user).first()
+        ciclo = self.instantiator
+        instituicao = gestor.instituicao
+        questionario_final = QuestionarioFinal.objects.filter(
+            ciclo=ciclo, instituicao=instituicao
+        ).first() or QuestionarioFinal(ciclo=ciclo, instituicao=instituicao)
+        questionario_final.rco_pendente = self.cleaned_data['rco_pendente']
+        questionario_final.detalhe_rco_pendente = self.cleaned_data['detalhe_rco_pendente']
+        questionario_final.devolucao_ted = self.cleaned_data['devolucao_ted']
+        questionario_final.detalhe_devolucao_ted = self.cleaned_data['detalhe_devolucao_ted']
+        questionario_final.finalizado = True
+        questionario_final.save()
+        self.notify('Solicitação concluída com sucesso.')

@@ -5,6 +5,7 @@
         font-size: 20px;
     }
 </style>
+{% if self.ciclos %}
 {% for ciclo in self.ciclos %}
     <h2>{{ ciclo.descricao }}</h2>
 <p>Período de solicitação de <b>{{ ciclo.inicio }}</b> até <b>{{ ciclo.fim }}</b>.</p>
@@ -25,3 +26,11 @@
         </a>
     </div>
 {% endfor %}
+{% else %}
+<div class="alert alert-warning" role="alert">
+    <div>
+        <i class="bi bi-exclamation-square"></i>
+        Não há ciclo disponível no momento.
+    </div>
+ </div>
+{% endif %}

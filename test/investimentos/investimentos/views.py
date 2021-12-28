@@ -15,8 +15,8 @@ class Instrucoes(Gadget):
         else:
             self.mensagem = Mensagem.objects.filter(perfil='Administrador').first()
         self.notificacoes = Notificacao.objects.filter(
-            inicio__gte=date.today(), fim__lte=date.today()
-        )
+            inicio__gte=date.today()
+        ).exclude(fim__lt=date.today())
 
 
 class Cartoes(Cards):

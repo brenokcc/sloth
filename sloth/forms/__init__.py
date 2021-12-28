@@ -475,3 +475,24 @@ class LoginForm(Form):
             auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
             self.request.session['menu'] = load_menu(self.user)
             self.request.session.save()
+
+
+class PasswordForm(Form):
+    password = CharField(label='Senha', widget=widgets.PasswordInput())
+    password2 = CharField(label='Confirmação', widget=widgets.PasswordInput())
+
+    class Meta:
+        verbose_name = 'Alterar Senha'
+
+    def clean(self):
+        password = self.cleaned_data.get('password')
+        password2 = self.cleaned_data.get('password2')
+        if password != password2:
+            raise forms.ValidationError('Senhas não conferem.')
+        return self.cleaned_data
+
+    def process(self):
+        self.request.user.set_password(self.cleaned_data.get('password'))
+        self.request.user.save()
+        auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
+        self.notify('Senha alterada com sucesso.')

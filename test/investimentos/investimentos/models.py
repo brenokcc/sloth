@@ -228,6 +228,34 @@ class Notificacao(models.Model):
         return self.descricao
 
 
+class DuvidaManager(models.Manager):
+    @meta('Dúvidas')
+    def all(self):
+        return super().all().actions('ResponderDuvida')
+
+
+class Duvida(models.Model):
+    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituicao', null=True)
+    pergunta = models.TextField(verbose_name='Pergunta')
+    data_pergunta = models.DateTimeField(verbose_name='Data da Pergunta')
+    resposta = models.TextField(verbose_name='Resposta', null=True)
+    data_resposta = models.DateTimeField(verbose_name='Data da Resposta', null=True)
+
+    objects = DuvidaManager()
+
+    class Meta:
+        icon = 'question-square'
+        verbose_name = 'Dúvida'
+        verbose_name_plural = 'Dúvidas'
+        can_list = 'Gestor', 'Administrador'
+        can_add = 'Gestor',
+        can_view = 'Gestor', 'Administrador'
+        add_form = 'DuvidaForm'
+
+    def __str__(self):
+        return self.pergunta
+
+
 class LimiteDemanda(models.Model):
     classificacao = models.ForeignKey(Categoria, verbose_name='Classificação')
     quantidade = models.PositiveIntegerField(verbose_name='Quantidade Máxima de Demandas')
@@ -249,7 +277,7 @@ class CicloManager(models.Manager):
     @meta('Ciclos Abertos', roles=('Administrador',))
     def abertos(self):
         hoje = datetime.date.today()
-        return super().filter(inicio__lte=hoje, fim__gte=hoje + timedelta(days=1))
+        return super().filter(inicio__lte=hoje).exclude(fim__lt=datetime.date.today())
 
 
 class Ciclo(models.Model):
@@ -268,6 +296,7 @@ class Ciclo(models.Model):
         verbose_name_plural = 'Ciclos de Solicitação de Investimento'
         can_admin = 'Administrador',
         can_view = 'Gestor',
+        can_list = 'Gestor',
         fieldsets = {
             'Dados Gerais': ('descricao', 'instituicoes'),
             'Período de Solicitação': (('inicio', 'fim'),),
@@ -355,7 +384,7 @@ class DemandaManager(models.Manager):
     @meta('Aguardando Dados Gerais')
     def aguardando_dados_gerais(self):
         return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais').filter(valor__isnull=True).actions(
-            'PreencherDemanda'
+            'PreencherDemanda', 'NaoInformarDemanda'
         ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Aguardando Detalhamento')
@@ -431,6 +460,15 @@ class Demanda(models.Model):
         super().save(*args, **kwargs)
         if self.pk is None and self.classificacao:
             self.ciclo.gerar_questionarios()
+
+    @meta('Resposta do Questionário')
+    def get_respostas_questionario(self):
+        return RespostaQuestionario.objects.filter(
+            questionario__demanda=self
+        ).list_display('pergunta', 'resposta').order_by('id')
+
+    def view(self):
+        return self.values('get_dados_gerais', 'get_respostas_questionario')
 
 
 class Questionario(models.Model):

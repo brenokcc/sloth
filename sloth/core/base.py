@@ -95,7 +95,10 @@ class ModelMixin(object):
         class Add(form_cls or ModelForm):
             class Meta:
                 model = cls
-                exclude = ()
+                if form_cls and hasattr(form_cls.Meta, 'fields'):
+                    fields = form_cls.Meta.fields
+                else:
+                    exclude = ()
                 verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 icon = 'plus'
                 style = 'success'

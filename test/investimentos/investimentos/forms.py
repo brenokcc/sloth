@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+from datetime import datetime
+
 from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
 
-from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal
+from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal, Duvida
 
 
 class AdicionarGestor(forms.ModelForm):
@@ -61,6 +63,25 @@ class AlterarPrioridade(forms.ModelForm):
         demanda.prioridade = prioridade
         demanda.save()
         super().save(*args, **kwargs)
+
+
+class NaoInformarDemanda(forms.ModelForm):
+    class Meta:
+        model = Demanda
+        fields = ()
+        verbose_name = 'Não-Informar'
+        style = 'danger'
+        can_view = 'Gestor',
+
+    def save(self, *args, **kwargs):
+        self.instance.valor = 0
+        self.instance.valor_total = 0
+        self.instance.descricao = 'Não-Informado'
+        self.instance.finalizada = True
+        super().save(*args, **kwargs)
+
+    def can_view(self, user):
+        return not self.instance.finalizada
 
 
 class PreencherDemanda(forms.ModelForm):
@@ -216,7 +237,7 @@ class AlterarDetalhamentoDemanda(DetalharDemanda):
         fields = []
 
     def can_view(self, user):
-        if user.roles.filter(name='Gestor').exists():
+        if self.instance.valor and user.roles.filter(name='Gestor').exists():
             questionario_final = QuestionarioFinal.objects.filter(
                 ciclo=self.instance.ciclo, instituicao=self.instance.instituicao
             )
@@ -301,3 +322,37 @@ class ConcluirSolicitacao(forms.Form):
         questionario_final.finalizado = True
         questionario_final.save()
         self.notify('Solicitação concluída com sucesso.')
+
+
+class DuvidaForm(forms.ModelForm):
+    class Meta:
+        model = Duvida
+        verbose_name = 'Tirar Dúvida'
+        fields = 'pergunta',
+
+    def can_view(self, user):
+        if user.roles.filter(name='Gestor').exists():
+            return True
+        return False
+
+    def save(self, *args, **kwargs):
+        gestor = Gestor.objects.filter(user=self.request.user).first()
+        self.instance.data_pergunta = datetime.now()
+        self.instance.instituicao = gestor.instituicao
+        return super().save(*args, **kwargs)
+
+
+class ResponderDuvida(forms.ModelForm):
+    class Meta:
+        model = Duvida
+        verbose_name = 'Responder Dúvida'
+        fields = 'resposta',
+
+    def can_view(self, user):
+        if user.roles.filter(name='Administrador').exists():
+            return True
+        return False
+
+    def save(self, *args, **kwargs):
+        self.instance.data_resposta = datetime.now()
+        return super().save(*args, **kwargs)

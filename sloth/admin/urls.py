@@ -13,6 +13,7 @@ urlpatterns = [
     path('adm/icons/', views.icons),
     path('adm/login/', views.login),
     path('adm/logout/', views.logout),
+    path('adm/password/', views.password),
     path('adm/<str:app_label>/<str:model_name>/', views.obj_view),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/', views.obj_view),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/', views.obj_view),

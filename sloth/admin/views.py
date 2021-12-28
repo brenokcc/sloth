@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from .. import views
-from ..forms import FormMixin, LoginForm
+from ..forms import FormMixin, LoginForm, PasswordForm
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import gadgets
@@ -51,6 +51,14 @@ def login(request):
         form.process()
         return HttpResponseRedirect('/adm/')
     return render(request, ['adm/login.html'], dict(form=form, settings=settings))
+
+
+def password(request):
+    form = PasswordForm(request=request)
+    if form.is_valid():
+        form.process()
+        return HttpResponseRedirect('..')
+    return render(request, ['adm/default.html'], dict(form=form, settings=settings))
 
 
 def logout(request):

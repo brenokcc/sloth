@@ -16,7 +16,7 @@ body, table{
     background-color: #1351C9 !important;
     color: #FFF !important;
 }
-.single_quick_activity a{
+.single_quick_activity a, .single_quick_activity h3{
     color: #FFF !important;
 }
 .btn-outline-primary {

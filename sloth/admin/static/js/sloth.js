@@ -30,11 +30,11 @@ jQuery.fn.extend({
                         if(reader.result == '.'){
                             document.location.reload();
                         } else if(reader.result == '..'){
-                            $(document).back()
+                            $(document).back();
                         } else if(reader.result && reader.result[0] == '/'){
                             $(document).open(reader.result);
                         } else {
-                            callback(reader.result)
+                            callback(reader.result);
                         }
                     };
                     reader.readAsText(new Blob( [ new Uint8Array(blob ) ], { type: "text/html" } ));
@@ -89,6 +89,7 @@ jQuery.fn.extend({
                 if(window['onreload']) window['onreload']();
             } else{
                 $(document).open(document.referrer);
+                window.history.pushState("string", "Title", document.referrer);
             }
         }
     },

@@ -3,6 +3,7 @@
     .x-badge{
         padding: 15px;
         font-size: 20px;
+        border-radius: 10px;
     }
 </style>
 {% if self.ciclos %}
@@ -16,9 +17,9 @@
         {% endfor %}
     </ul>
     <div align="center" style="margin-bottom: 30px">
-        <span class="x-badge badge rounded-pill bg-primary">Limite:<br>R$ {{ ciclo.maximo|format }}</span>
-        <span class="x-badge badge rounded-pill bg-danger">Solicitado:<br>R$ {{ ciclo.utilizado|format }}</span>
-        <span class="x-badge badge rounded-pill bg-success">Disponível:<br>R$ {{ ciclo.disponivel|format }}</span>
+        <span class="x-badge badge" style="background-color: #1351C9">Limite:<br>R$ {{ ciclo.maximo|format }}</span>
+        <span class="x-badge badge" style="background-color: #fabd0f">Solicitado:<br>R$ {{ ciclo.utilizado|format }}</span>
+        <span class="x-badge badge" style="background-color: #46ad44">Disponível:<br>R$ {{ ciclo.disponivel|format }}</span>
     </div>
     <div align="center">
         <a href="/adm/investimentos/ciclo/{{ ciclo.id }}/" class="action-button btn btn-outline-primary">

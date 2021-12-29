@@ -292,8 +292,8 @@ class Ciclo(models.Model):
 
     class Meta:
         icon = 'arrow-clockwise'
-        verbose_name = 'Ciclo de Solicitação de Investimento'
-        verbose_name_plural = 'Ciclos de Solicitação de Investimento'
+        verbose_name = 'Ciclo de Demandas'
+        verbose_name_plural = 'Ciclos de Demandas'
         can_admin = 'Administrador',
         can_view = 'Gestor',
         can_list = 'Gestor',

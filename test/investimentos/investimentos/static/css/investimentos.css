@@ -1,6 +1,39 @@
-.navbar{
-    background-color: #004c99;
+@import url('http://fonts.cdnfonts.com/css/rawline');
+body, table{
+    color: #444;
+    font-family: Rawline, Raleway, sans-serif;
 }
-.navbar .nav-link{
-    color: #FFF;
+.navbar{
+    background-color: #FFF;
+    -webkit-box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+    -moz-box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+    box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+}
+.nav-link, a, h1, h2, h3, h4, h5{
+    color: #1351b4;
+}
+.single_quick_activity{
+    background-color: #1351C9 !important;
+    color: #FFF !important;
+}
+.single_quick_activity a{
+    color: #FFF !important;
+}
+.btn-outline-primary {
+    color: #1351b4;
+    border-color: #1351b4;
+}
+.btn-outline-primary:hover, .nav-pills .nav-link.active{
+    color:#fff;
+    background-color:#1351b4;
+    border-color:#1351b4
+}
+.bg-primary{
+    background-color:#1351b4 !important;
+}
+.table thead{
+    background-color: #ededed;
+}
+.table thead *{
+    border-bottom-color: #ededed !important;
 }

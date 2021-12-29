@@ -40,9 +40,12 @@ def view(func):
     return decorate
 
 
-@view
 def icons(request):
     return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
+
+
+def public(request):
+    return render(request, ['adm/public.html'])
 
 
 def login(request):
@@ -65,7 +68,7 @@ def logout(request):
     request.session.clear()
     request.session.save()
     auth.logout(request)
-    return HttpResponseRedirect('/adm/login/')
+    return HttpResponseRedirect('/')
 
 
 def index(request):

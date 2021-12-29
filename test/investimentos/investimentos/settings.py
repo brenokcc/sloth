@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'investimentos',
     'oauth2_provider',
     'sloth.api',
     'sloth.admin',
@@ -40,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'investimentos',
 ]
 
 MIDDLEWARE = [
@@ -107,8 +107,8 @@ BASE_DIR = path.abspath(path.dirname(path.dirname(__file__)))
 MEDIA_URL = '/media/'
 STATIC_ROOT = path.join(BASE_DIR, 'static')
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
-LOGO = '/static/images/logo.png'
-NAME = 'SETEC'
+LOGO = '/static/images/govbr.png'
+NAME = 'COLETA SETEC'
 CSS = ['/static/css/investimentos.css']
 JS = ['/static/js/investimentos.js']
-LOGIN_IMAGE = None
+LOGIN_IMAGE = None # '/static/images/govbr.png'

@@ -15,6 +15,7 @@ class Command(BaseCommand):
             gestor.nome = 'Gestor'
             gestor.instituicao = instituicao
             gestor.save()
+            Campus.objects.get_or_create(instituicao=instituicao, nome='Reitoria')
         for linha in CAMPI.split('\n'):
             instituicao, nome = linha.split(';')
             instituicao = instituicao.upper()

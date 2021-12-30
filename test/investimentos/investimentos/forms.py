@@ -69,14 +69,14 @@ class NaoInformarDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
         fields = ()
-        verbose_name = 'Não-Informar'
+        verbose_name = 'Não Informar'
         style = 'danger'
         can_view = 'Gestor',
 
     def save(self, *args, **kwargs):
         self.instance.valor = 0
         self.instance.valor_total = 0
-        self.instance.descricao = 'Não-Informado'
+        self.instance.descricao = 'Não Informado'
         self.instance.finalizada = True
         super().save(*args, **kwargs)
 
@@ -166,7 +166,7 @@ class DetalharDemanda(forms.ModelForm):
             elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
                 self.fields[key] = forms.DecimalField(
                     label=pergunta_questionario.pergunta.texto,
-                    required=False
+                    required=False, localize=True
                 )
             elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
                 self.fields[key] = forms.IntegerField(

@@ -44,10 +44,6 @@ def icons(request):
     return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
 
-def public(request):
-    return render(request, ['adm/public.html'])
-
-
 def login(request):
     form = LoginForm(request=request)
     if form.is_valid():

@@ -109,6 +109,15 @@ STATIC_ROOT = path.join(BASE_DIR, 'static')
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
 LOGO = '/static/images/govbr.png'
 NAME = 'COLETA SETEC'
+LOGIN_BACKGROUND = '/static/images/public.png'
+DESCRIPTION = 'Sistema de Coleta de Demandas da Rede Federal de Educação Profissional, Científica e Tecnológica'
 CSS = ['/static/css/investimentos.css']
 JS = ['/static/js/investimentos.js']
-LOGIN_IMAGE = None # '/static/images/govbr.png'
+LOGIN_IMAGE = None
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+try:
+    import local_settings.py
+except ImportError:
+    pass
+

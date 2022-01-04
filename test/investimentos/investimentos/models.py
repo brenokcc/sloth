@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 from datetime import timedelta
-
+from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from sloth.db import models, meta, role
 
@@ -254,6 +254,17 @@ class Duvida(models.Model):
 
     def __str__(self):
         return self.pergunta
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            send_mail(
+                'COLETA SETEC - Dúvida',
+                'Nova dúvida cadastrada [{}]: \n{}.'.format(self.instituicao, self.pergunta),
+                'naoresponder.ifrn.edu.br',
+                ['cgpgsetec@mec.gov.br'],
+                fail_silently=False,
+            )
+        super().save(*args, **kwargs)
 
 
 class LimiteDemanda(models.Model):

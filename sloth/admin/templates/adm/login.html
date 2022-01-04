@@ -1,7 +1,31 @@
 {% extends super_template|default:"adm/base.html" %}
 
+{% block extrahead %}
+<style>
+  main{ margin: 0px !important; }
+
+  @media only screen and (max-width: 800px) {
+    .image-section{
+      display: none !important;
+    }
+    .form-section{
+      width: 100% !important;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<section class="vh-100">
+
+{% if settings.LOGIN_BACKGROUND %}
+  <section class="vh-100 image-section" style="width:50%;background-image:url({{ settings.LOGIN_BACKGROUND }});background-size:cover;background-repeat:no-repeat;float:left">
+    {% if settings.DESCRIPTION %}
+      <div style="font-size: 30;color: #FFF;font-family:Helvetica Neue,Helvetica,Arial,sans-serif; margin-top:40%;text-align:center">{{ settings.DESCRIPTION }}</div>
+    {% endif %}
+  </section>
+{% endif %}
+
+<section class="vh-100 form-section" style="{% if settings.LOGIN_BACKGROUND %}width:50%;float:left{% endif %}">
   <div class="container py-5 h-100">
     <div class="row d-flex align-items-center justify-content-center">
       <div align="center">

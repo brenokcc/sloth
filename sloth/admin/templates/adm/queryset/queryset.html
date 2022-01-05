@@ -29,7 +29,7 @@
                     {% if metadata.choices %}
                         <option value=""></option>
                         {% for choice in metadata.choices %}
-                            <option value="{{ choice.id }}">{{ choice.text }}</option>
+                            <option value="{{ choice.id|stringformat:'s' }}">{{ choice.text }}</option>
                         {% endfor %}
                     {% else %}
                         {% if metadata.value %}

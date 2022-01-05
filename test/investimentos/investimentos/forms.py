@@ -259,7 +259,7 @@ class AlterarSenha(forms.Form):
 class ConcluirSolicitacao(forms.Form):
 
     rco_pendente = forms.ChoiceField(
-        label='A instituição possui RCO pendente de entregue para a SETEC?',
+        label='A instituição possui RCO pendente de entrega para a SETEC?',
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
     detalhe_rco_pendente = forms.CharField(
@@ -271,7 +271,7 @@ class ConcluirSolicitacao(forms.Form):
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
     detalhe_devolucao_ted = forms.CharField(
-        label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021?',
+        label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021',
         required=False, widget=forms.Textarea()
     )
 

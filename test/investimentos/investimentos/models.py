@@ -297,7 +297,7 @@ class Ciclo(models.Model):
     fim = models.DateField(verbose_name='Fim das Solicitações')
     teto = models.DecimalField(verbose_name='Limite de Investimento por Instituição (R$)', max_digits=15)
     instituicoes = models.ManyToManyField(Instituicao, verbose_name='Demandantes', blank=True, help_text='Não informar, caso deseje incluir todas as instituições.')
-    limites = models.OneToManyField(LimiteDemanda, verbose_name='Limites de Demanda', max=5)
+    limites = models.OneToManyField(LimiteDemanda, verbose_name='Limites de Demanda', max=10)
 
     objects = CicloManager()
 

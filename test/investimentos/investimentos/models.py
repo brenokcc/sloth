@@ -518,7 +518,7 @@ class RespostaQuestionario(models.Model):
     class Meta:
         icon = 'pencil-square'
         verbose_name = 'Resposta de Questionário'
-        verbose_name_plural = 'Respostas dos Questionário'
+        verbose_name_plural = 'Respostas dos Questionários'
         can_list = 'Administrador',
         list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
         list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'

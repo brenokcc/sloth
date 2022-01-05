@@ -96,14 +96,14 @@ class PreencherDemanda(forms.ModelForm):
 
     def clean_valor_total(self):
         valor_total = self.cleaned_data['valor_total']
-        if False and valor_total < 176000:
+        if valor_total < 176000:
             raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
         return valor_total
 
     def clean_valor(self):
         valor = self.cleaned_data['valor']
         instituicao = self.instance.instituicao
-        total = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).exclude(pk=self.instance.pk).sum('valor')
+        total = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
         if total + valor > self.instance.ciclo.teto:
             raise forms.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')

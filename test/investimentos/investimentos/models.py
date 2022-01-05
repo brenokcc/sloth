@@ -54,6 +54,7 @@ class Prioridade(models.Model):
 
 class Categoria(models.Model):
     nome = models.CharField(verbose_name='Nome')
+    contabilizar = models.BooleanField('Contatilizar', default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.')
 
     class Meta:
         icon = 'folder'

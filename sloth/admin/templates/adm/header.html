@@ -4,6 +4,8 @@
         <a class="navbar-brand" href="/adm/">
           {% if settings.LOGO %}
           <img height="30" src="{{ settings.LOGO }}">
+          {% else %}
+            {{ settings.NAME }}
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">

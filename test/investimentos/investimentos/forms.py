@@ -107,7 +107,7 @@ class PreencherDemanda(forms.ModelForm):
         if total + valor > self.instance.ciclo.teto:
             raise forms.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
-        if False and valor < 176000:
+        if valor < 176000:
             raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
         return valor
 
@@ -118,7 +118,7 @@ class PreencherDemanda(forms.ModelForm):
 class AlterarPreenchimento(PreencherDemanda):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'valor', 'unidades_beneficiadas'
+        fields = 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Alterar Dados Gerais'
         can_view = 'Gestor',
 

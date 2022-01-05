@@ -31,7 +31,7 @@ class CiclosAbertos(Gadget):
         super().__init__(request)
         self.ciclos = []
         for ciclo in Ciclo.objects.abertos():
-            demandas = ciclo.demanda_set.all().contextualize(request)
+            demandas = ciclo.demanda_set.exclude(classificacao__contabilizar=False).all().contextualize(request)
             utilizado = Decimal(sum([demanda.valor for demanda in demandas if demanda.valor]))
             self.ciclos.append(
                 dict(

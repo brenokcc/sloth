@@ -98,7 +98,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                 else:
                     if y.lower() == 'edit':  # /base/estado/1/edit/
                         form_cls = model.edit_form_cls()
-                        form = form_cls(request=request, instance=obj)
+                        form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.can_view(request.user):
                             if form.is_valid():
                                 form.process()
@@ -106,7 +106,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         raise PermissionDenied()
                     if y.lower() == 'delete':  # /base/estado/1/delete/
                         form_cls = model.delete_form_cls()
-                        form = form_cls(request=request, instance=obj)
+                        form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.can_view(request.user):
                             if form.is_valid():
                                 form.process()
@@ -115,7 +115,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     else:  # /base/estado/1/editar_sigla/
                         form_cls = model.action_form_cls(y)
                         if form_cls:  # instance action
-                            form = form_cls(request=request, instance=obj)
+                            form = form_cls(request=request, instance=obj, instantiator=obj)
                             if form.can_view(request.user):
                                 if form.is_valid():
                                     form.process()

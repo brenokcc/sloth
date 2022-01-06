@@ -209,7 +209,7 @@
 {% if data.metadata.pagination.pages|length > 1 %}
     <div>
       {% for page in data.metadata.pagination.pages %}
-       <a href="javascript:" style="text-decoration:none;{% if page == data.metadata.pagination.page %}font-weight:bold{% endif %}" onclick="$('#pagination-{{ data.uuid }}').val({{ page }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">{{ page }}</a>
+       <a href="javascript:" style="text-decoration:none;{% if page == data.metadata.pagination.page %}font-weight:bold{% endif %}" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">{{ page|stringformat:'s' }}</a>
       {% endfor %}
     </div>
 {% endif %}

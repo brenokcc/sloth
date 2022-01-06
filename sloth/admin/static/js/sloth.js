@@ -49,6 +49,7 @@ jQuery.fn.extend({
                     else if (contentType.indexOf('csv') >= 0) a.download = 'Download.csv';
                     document.body.appendChild(a);
                     a.click();
+                    $(document).back();
                 }
             },
             async: true,

@@ -374,14 +374,14 @@ class Ciclo(models.Model):
 
     @meta('Questionário Final')
     def get_questionario_final(self):
-        return self.questionariofinal_set.all().list_display('rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted').role_lookups('Gestor', instituicao='instituicao')
+        return self.questionariofinal_set.all().list_display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted').role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Detalhamento')
     def get_detalhamento(self):
         return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao')
 
     def view(self):
-        return self.values('get_detalhamento')
+        return self.values('get_detalhamento').actions('ExportarResultado')
 
 
 class DemandaManager(models.Manager):

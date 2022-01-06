@@ -5,8 +5,9 @@ from datetime import datetime
 from django.conf import settings
 from sloth import forms
 from sloth.utils.formatter import format_value
+from sloth.utils.http import XlsResponse
 
-from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal, Duvida
+from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal, Duvida, Instituicao, Categoria, Prioridade
 
 
 class AdicionarGestor(forms.ModelForm):
@@ -356,3 +357,52 @@ class ResponderDuvida(forms.ModelForm):
     def save(self, *args, **kwargs):
         self.instance.data_resposta = datetime.now()
         return super().save(*args, **kwargs)
+
+
+class ExportarResultado(forms.Form):
+
+    instituicao = forms.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
+    categoria = forms.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
+    prioridade = forms.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
+
+    class Meta:
+        verbose_name = 'Exportar Resultado'
+
+    def process(self):
+        dados = list()
+        demandas = list([['DEMANDA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
+        questionario = list([['DEMANDA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
+        fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA']])
+        dados.append(('Demandas', demandas))
+        dados.append(('Questionário', questionario))
+        dados.append(('Fechamento', fechamento))
+        instituicao = self.cleaned_data['instituicao']
+        categoria = self.cleaned_data['categoria']
+        prioridade = self.cleaned_data['prioridade']
+        qs = self.instantiator.demanda_set.all()
+        qs = qs.filter(instituicao=instituicao) if instituicao else qs
+        qs = qs.filter(classificacao=categoria) if categoria else qs
+        qs = qs.filter(prioridade=prioridade) if prioridade else qs
+        demanda = None
+        for demanda in qs.filter(valor__isnull=False).exclude(valor=0):
+            l1 = [demanda.descricao, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+            demandas.append(l1)
+            for resposta_questionario in demanda.get_respostas_questionario():
+                l2 = list(l1)
+                l2.append(resposta_questionario.pergunta.texto)
+                if resposta_questionario.resposta is not None:
+                    l2.append(resposta_questionario.resposta)
+                questionario.append(l2)
+
+        if demanda is not None:
+            instituicoes = demanda.ciclo.instituicoes.all()
+            if instituicao:
+                instituicoes = instituicoes.filter(pk=instituicao.pk)
+            for instituicao1 in instituicoes:
+                questionario_final = demanda.ciclo.get_questionario_final().filter(instituicao=instituicao1).first()
+                if questionario_final:
+                    fechamento.append([instituicao1.sigla, 'A instituição possui RCO pendente de entrega para a SETEC?', questionario_final.rco_pendente or ''])
+                    fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC', questionario_final.detalhe_rco_pendente or ''])
+                    fechamento.append([instituicao1.sigla, 'A instituição devolveu algum valor de TED em 2021?', questionario_final.devolucao_ted or ''])
+                    fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021', questionario_final.detalhe_devolucao_ted or ''])
+        self.http_response(XlsResponse(dados))

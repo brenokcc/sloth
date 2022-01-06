@@ -92,6 +92,8 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
     if isinstance(data, FormMixin):
         context.update(form=data)
+        if data.response:
+            return data.response
         if data.message:
             if data.message.get('reload'):
                 return HttpResponse('.')

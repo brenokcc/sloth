@@ -375,12 +375,16 @@ class FormMixin:
         messages.add_message(self.request, messages.INFO, text)
         self.message = dict(type='message', text=text, style=style, reload=reload, **kwargs)
 
+    def http_response(self, response):
+        self.response = response
+
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop('instance', None)
         self.instances = kwargs.pop('instances', ())
         self.message = None
+        self.response = None
         self.instantiator = kwargs.pop('instantiator', None)
         self.request = kwargs.pop('request', None)
         if 'data' not in kwargs:
@@ -417,6 +421,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.get('instance', None)
         self.message = None
+        self.response = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())

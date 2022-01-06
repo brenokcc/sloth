@@ -28,7 +28,7 @@ class CsvResponse(HttpResponse):
         with open(path, 'w', encoding='iso8859-1') as output:
             writer = csv.writer(output)
             for row in rows:
-                writer.writerow([col for col in row])
+                writer.writerow([col.replace(' – ',  ' - ') for col in row])
         file = open(path, 'rb')
         content = file.read()
         file.close()

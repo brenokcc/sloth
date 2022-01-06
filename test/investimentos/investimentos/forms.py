@@ -367,6 +367,7 @@ class ExportarResultado(forms.Form):
 
     class Meta:
         verbose_name = 'Exportar Resultado'
+        can_view = 'Administrador',
 
     def process(self):
         dados = list()

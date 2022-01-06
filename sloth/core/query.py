@@ -120,14 +120,6 @@ class QuerySet(models.QuerySet):
             filters['Ordernação'] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
-        pagination = []
-        for page in range(0, self.count() // self._get_list_per_page() + 1):
-            start = page * self._get_list_per_page()
-            end = start + self._get_list_per_page()
-            pagination.append(dict(id=page + 1, text='{} - {}'.format(start + 1, end)))
-        filters['Paginação'] = dict(
-            key='pagination', name='Paginação', type='choices', choices=pagination
-        )
         return filters
 
     def _get_attach(self, verbose=False):
@@ -223,7 +215,15 @@ class QuerySet(models.QuerySet):
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
             values = self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
-            pagination = dict(interval=self.metadata['interval'], total=self.metadata['total'])
+            pages = []
+            for page in range(0, self.count() // self._get_list_per_page() + 1):
+                pages.append(page + 1)
+            pagination = dict(
+                interval=self.metadata['interval'],
+                total=self.metadata['total'],
+                page=self.metadata['page'],
+                pages=pages
+            )
             data = dict(
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
@@ -422,8 +422,6 @@ class QuerySet(models.QuerySet):
             if value:
                 if item['key'] == 'ordering':
                     qs = qs.order_by(value)
-                elif item['key'] == 'pagination':
-                    page = int(value)
                 else:
                     if item['type'] == 'date':
                         value = datetime.datetime.strptime(value, '%d/%m/%Y')
@@ -432,6 +430,8 @@ class QuerySet(models.QuerySet):
                     qs = qs.filter(**{item['key']: value})
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
+        if 'page' in request.GET:
+            page = int(request.GET['page'])
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()

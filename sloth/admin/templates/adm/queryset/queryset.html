@@ -13,6 +13,7 @@
     <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}" style="{% if data.metadata.collapsed or compact or request|mobile %}display:none{% endif %}">
         <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
             <input type="hidden" name="uuid" value="{{ data.uuid }}">
+            <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
             <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
             <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
             {% if data.metadata.search %}
@@ -94,7 +95,7 @@
             </div>
             {% endfor %}
             <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
+                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
@@ -109,7 +110,7 @@
         <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item">
-            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('.pagination-{{ data.uuid }}').val('').trigger('change');reload{{ data.uuid }}('{{ subset.key }}')">
+            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
                 <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
@@ -182,7 +183,7 @@
 {% endif %}
 
 {% if data.metadata.pagination.total %}
-<div class="clearfix">
+<div class="clearfix" id="pagination-info-{{ data.uuid }}">
     <div class="float-start">
         <div class="mt-3 mb-3">
         Exibindo {{ data.metadata.pagination.interval }} de {{ data.metadata.pagination.total }} registro{% if data.metadata.pagination.total > 1 %}s{% endif %}.
@@ -205,8 +206,15 @@
     {% include "adm/queryset/datatable.html" with data=data %}
 {% endif %}
 {% include "adm/queryset/actions/batch.html" %}
-
+{% if data.metadata.pagination.pages|length > 1 %}
+    <div>
+      {% for page in data.metadata.pagination.pages %}
+       <a href="javascript:" style="text-decoration:none;{% if page == data.metadata.pagination.page %}font-weight:bold{% endif %}" onclick="$('#pagination-{{ data.uuid }}').val({{ page }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">{{ page }}</a>
+      {% endfor %}
+    </div>
+{% endif %}
 {% if uuid is None %}
     </div>
 </div>
 {% endif %}
+

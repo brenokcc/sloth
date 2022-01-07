@@ -88,9 +88,14 @@ class NaoInformarDemanda(forms.ModelForm):
 class PreencherDemanda(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
+        fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Preencher Dados Gerais'
         can_view = 'Gestor',
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['classificacao'].widget.attrs.update(disabled=True)
+        self.fields['prioridade'].widget.attrs.update(disabled=True)
 
     def can_view(self, user):
         return not self.instance.finalizada
@@ -119,7 +124,7 @@ class PreencherDemanda(forms.ModelForm):
 class AlterarPreenchimento(PreencherDemanda):
     class Meta:
         model = Demanda
-        fields = 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
+        fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Alterar Dados Gerais'
         can_view = 'Gestor',
 

@@ -431,7 +431,7 @@ class QuerySet(models.QuerySet):
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
         if 'page' in request.GET:
-            page = int(request.GET['page'])
+            page = int(request.GET['page'] or 0)
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()

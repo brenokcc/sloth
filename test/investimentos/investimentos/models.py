@@ -123,7 +123,7 @@ class Pergunta(models.Model):
     texto = models.CharField(verbose_name='Texto')
     obrigatoria = models.BooleanField(verbose_name='Obrigatória', blank=True)
     tipo_resposta = models.IntegerField(verbose_name='Tipo de Resposta', choices=TIPOS_RESPOSTA_CHOICES)
-    opcoes = models.OneToManyField(OpcaoResposta, verbose_name='Opções de Resposta', blank=True, max=5)
+    opcoes = models.OneToManyField(OpcaoResposta, verbose_name='Opções de Resposta', blank=True, max=10)
 
     class Meta:
         verbose_name = 'Pergunta'
@@ -519,7 +519,7 @@ class RespostaQuestionario(models.Model):
         icon = 'pencil-square'
         verbose_name = 'Resposta de Questionário'
         verbose_name_plural = 'Respostas dos Questionários'
-        can_list = 'Administrador',
+        can_view = 'Administrador',
         list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
         list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
 

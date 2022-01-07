@@ -20,7 +20,7 @@
 {% endif %}
 {% if self.mensagem %}
 <div class="alert alert-primary" role="alert">
-  <h4 class="alert-heading">{{ self.mensagem.perfil }},</h4>
+  <h4 class="alert-heading">Senhor(a) {{ self.mensagem.perfil }}(a),</h4>
   <img src="/static/images/gestor.png" style="float:left"/>
   {{ self.mensagem.introducao|linebreaks }}
   <hr>

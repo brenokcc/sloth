@@ -94,8 +94,8 @@ class PreencherDemanda(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['classificacao'].widget.attrs.update(disabled=True)
-        self.fields['prioridade'].widget.attrs.update(disabled=True)
+        self.fields['classificacao'].widget.attrs.update(readonly='readonly')
+        self.fields['prioridade'].widget.attrs.update(readonly='readonly')
 
     def can_view(self, user):
         return not self.instance.finalizada

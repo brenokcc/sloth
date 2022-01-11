@@ -229,45 +229,6 @@ class Notificacao(models.Model):
         return self.descricao
 
 
-class DuvidaManager(models.Manager):
-    @meta('Dúvidas')
-    def all(self):
-        return super().all().actions('ResponderDuvida')
-
-
-class Duvida(models.Model):
-    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituicao', null=True)
-    pergunta = models.TextField(verbose_name='Pergunta')
-    data_pergunta = models.DateTimeField(verbose_name='Data da Pergunta')
-    resposta = models.TextField(verbose_name='Resposta', null=True)
-    data_resposta = models.DateTimeField(verbose_name='Data da Resposta', null=True)
-
-    objects = DuvidaManager()
-
-    class Meta:
-        icon = 'question-square'
-        verbose_name = 'Dúvida'
-        verbose_name_plural = 'Dúvidas'
-        can_list = 'Gestor', 'Administrador'
-        can_add = 'Gestor',
-        can_view = 'Gestor', 'Administrador'
-        add_form = 'DuvidaForm'
-
-    def __str__(self):
-        return self.pergunta
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            send_mail(
-                'COLETA SETEC - Dúvida',
-                'Nova dúvida cadastrada [{}]: \n{}.'.format(self.instituicao, self.pergunta),
-                'naoresponder.ifrn.edu.br',
-                ['cgpgsetec@mec.gov.br'],
-                fail_silently=False,
-            )
-        super().save(*args, **kwargs)
-
-
 class LimiteDemanda(models.Model):
     classificacao = models.ForeignKey(Categoria, verbose_name='Classificação')
     quantidade = models.PositiveIntegerField(verbose_name='Quantidade Máxima de Demandas')
@@ -608,3 +569,42 @@ class QuestionarioFinal(models.Model):
 
     def __str__(self):
         return 'Questionário final'
+
+
+class DuvidaManager(models.Manager):
+    @meta('Dúvidas')
+    def all(self):
+        return super().all().actions('ResponderDuvida')
+
+
+class Duvida(models.Model):
+    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituicao', null=True)
+    pergunta = models.TextField(verbose_name='Pergunta')
+    data_pergunta = models.DateTimeField(verbose_name='Data da Pergunta')
+    resposta = models.TextField(verbose_name='Resposta', null=True)
+    data_resposta = models.DateTimeField(verbose_name='Data da Resposta', null=True)
+
+    objects = DuvidaManager()
+
+    class Meta:
+        icon = 'question-square'
+        verbose_name = 'Dúvida'
+        verbose_name_plural = 'Dúvidas'
+        can_list = 'Gestor', 'Administrador'
+        can_add = 'Gestor',
+        can_view = 'Gestor', 'Administrador'
+        add_form = 'DuvidaForm'
+
+    def __str__(self):
+        return self.pergunta
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            send_mail(
+                'COLETA SETEC - Dúvida',
+                'Nova dúvida cadastrada [{}]: \n{}.'.format(self.instituicao, self.pergunta),
+                'naoresponder.ifrn.edu.br',
+                ['cgpgsetec@mec.gov.br'],
+                fail_silently=False,
+            )
+        super().save(*args, **kwargs)

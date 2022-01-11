@@ -13,9 +13,12 @@
     <p>Quantidade máxima de demandas por categoria de investimento:</p>
     <ul>
         {% for limite in ciclo.limites %}
-            <li><b>{{ limite.classificacao }}:</b> {{ limite.quantidade }} demanda(s)</li>
+            <li><b>{{ limite.classificacao }}:</b> {{ limite.quantidade }} demanda(s) {% if not limite.classificacao.contabilizar %}*{% endif %}</li>
         {% endfor %}
     </ul>
+    <p>
+        * <i>Valores das demandas não serão contabilizados no cálculo do limite geral das demandas</i>.
+    </p>
     <div align="center" style="margin-bottom: 30px">
         <span class="x-badge badge" style="background-color: #1351C9">Limite:<br>R$ {{ ciclo.maximo|format }}</span>
         <span class="x-badge badge" style="background-color: #fabd0f">Solicitado:<br>R$ {{ ciclo.utilizado|format }}</span>

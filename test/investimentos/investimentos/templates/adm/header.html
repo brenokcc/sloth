@@ -1,7 +1,7 @@
 {% if request.user.is_authenticated and not request.GET.modal %}
     <nav class="navbar navbar-expand" style="">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/adm/">
+        <a class="navbar-brand" href="/">
           {% if settings.LOGO %}
           <img height="30" src="{{ settings.LOGO }}">
           {% else %}
@@ -9,6 +9,9 @@
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">
+          <a href="/adm/" style="margin-right:10px">
+            <i class="bi bi-house"></i>
+          </a>
           <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not request.session.menu or not request.user.is_superuser  %}visibility:hidden{% endif %}">
           {% include "adm/menu.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">

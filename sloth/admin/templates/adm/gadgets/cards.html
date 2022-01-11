@@ -28,17 +28,19 @@
 <div class="row">
     {% for item in self.items %}
         <div class="col-sm-12 col-md-6 col-lg-4">
+            <a href="{{ item.url }}">
             <div class="single_quick_activity">
                 <div class="icon">
                     <i class="bi bi-{{ item.icon }}"></i>
                 </div>
                 <div class="count_content">
-                    <a href="{{ item.url }}">
+
                     <h3><span class="counter">{{ item.count }}</span> </h3>
                     <p>{{ item.label }}</p>
-                        </a>
+
                 </div>
             </div>
+            </a>
         </div>
     {% endfor %}
 </div>

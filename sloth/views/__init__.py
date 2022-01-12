@@ -71,7 +71,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                     return form
                                 raise PermissionDenied()
                         else:
-                            instance = attr().get(pk=z)
+                            instance = attr().contextualize(request).get(pk=z)
                             if instance.can_view(request.user):
                                 return instance.view().contextualize(request)
                             raise PermissionDenied()

@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='ciclo',
             name='teto',
-            field=sloth.db.models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Limite de Investimento por Instituição (R$)'),
+            field=sloth.db.models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Limite Orçamentário (R$)'),
         ),
     ]

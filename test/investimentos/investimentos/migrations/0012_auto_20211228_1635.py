@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='duvida',
             name='instituicao',
-            field=sloth.db.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='investimentos.instituicao', verbose_name='Instituicao'),
+            field=sloth.db.models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='investimentos.instituicao', verbose_name='Instituição'),
         ),
     ]

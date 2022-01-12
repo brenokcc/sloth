@@ -49,7 +49,7 @@ class AlterarPrioridade(forms.ModelForm):
         can_view = 'Gestor',
 
     def can_view(self, user):
-        return self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
+        return self.instance.ciclo.is_aberto() and self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
 
     def get_prioridade_queryset(self, queryset):
         return queryset.filter(
@@ -82,7 +82,7 @@ class NaoInformarDemanda(forms.ModelForm):
         super().save(*args, **kwargs)
 
     def can_view(self, user):
-        return not self.instance.finalizada
+        return self.instance.ciclo.is_aberto() and not self.instance.finalizada
 
 
 class PreencherDemanda(forms.ModelForm):
@@ -94,11 +94,13 @@ class PreencherDemanda(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        disponivel = self.instance.ciclo.teto - self.instance.ciclo.demanda_set.filter(instituicao=self.instance.instituicao).exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
         self.fields['classificacao'].widget.attrs.update(readonly='readonly')
         self.fields['prioridade'].widget.attrs.update(readonly='readonly')
+        self.fields['valor'].help_text = 'Valor Disponível R$: {}'.format(format_value(disponivel))
 
     def can_view(self, user):
-        return not self.instance.finalizada
+        return self.instance.ciclo.is_aberto() and not self.instance.finalizada
 
     def clean_valor_total(self):
         valor_total = self.cleaned_data['valor_total']
@@ -108,9 +110,8 @@ class PreencherDemanda(forms.ModelForm):
 
     def clean_valor(self):
         valor = self.cleaned_data['valor']
-        instituicao = self.instance.instituicao
-        total = self.instance.ciclo.demanda_set.filter(instituicao=instituicao).exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
-        if total + valor > self.instance.ciclo.teto:
+        total = self.instance.ciclo.demanda_set.filter(instituicao=self.instance.instituicao).exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
+        if self.instance.classificacao.contabilizar and total + valor > self.instance.ciclo.teto:
             raise forms.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
         if valor < 176000:
@@ -151,7 +152,7 @@ class DetalharDemanda(forms.ModelForm):
         fields = []
 
     def can_view(self, user):
-        return user.roles.filter(name='Gestor').exists() and self.instance.get_questionario() is not None
+        return self.instance.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists() and self.instance.get_questionario() is not None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -247,7 +248,7 @@ class AlterarDetalhamentoDemanda(DetalharDemanda):
             questionario_final = QuestionarioFinal.objects.filter(
                 ciclo=self.instance.ciclo, instituicao=self.instance.instituicao
             )
-            return not questionario_final.filter(finalizado=True).exists()
+            return self.instance.ciclo.is_aberto() and not questionario_final.filter(finalizado=True).exists()
         return False
 
 
@@ -265,11 +266,11 @@ class AlterarSenha(forms.Form):
 class ConcluirSolicitacao(forms.Form):
 
     rco_pendente = forms.ChoiceField(
-        label='A instituição possui RCO pendente de entrega para a SETEC?',
+        label='A instituição possui RCO (Relatório de Cumprimento do Objeto) pendente de entrega para a SETEC?',
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
     detalhe_rco_pendente = forms.CharField(
-        label='Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC',
+        label='Número do(s) TED(s) e o resumo da situação caso possua RCO (Relatório de Cumprimento do Objeto) pendente de entregue para a SETEC',
         required=False, widget=forms.Textarea()
     )
     devolucao_ted = forms.ChoiceField(
@@ -373,6 +374,7 @@ class ExportarResultado(forms.Form):
     class Meta:
         verbose_name = 'Exportar Resultado'
         can_view = 'Administrador',
+        icon = 'bi-file-exce'
 
     def process(self):
         dados = list()

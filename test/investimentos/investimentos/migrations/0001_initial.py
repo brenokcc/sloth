@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 ('descricao', sloth.db.models.CharField(max_length=255, verbose_name='Descrição')),
                 ('inicio', models.DateField(verbose_name='Início das Solicitações')),
                 ('fim', models.DateField(verbose_name='Fim das Solicitações')),
-                ('teto', sloth.db.models.DecimalField(decimal_places=2, max_digits=9, verbose_name='Limite de Investimento por Instituição (R$)')),
+                ('teto', sloth.db.models.DecimalField(decimal_places=2, max_digits=9, verbose_name='Limite Orçamentário (R$)')),
             ],
             options={
                 'verbose_name': 'Ciclo de Solicitação de Investimento',

@@ -1,0 +1,10 @@
+{% load tags %}
+{% if data.data %}
+    {% for row in data.data %}
+        <p><strong>{{ row.data.Pergunta }}</strong><br>Resposta: <i>{{ row.data.Resposta }}</i></p>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-primary" role="alert" style="margin-top:30px;">
+      Nehum registro encontrado.
+    </div>
+{% endif %}

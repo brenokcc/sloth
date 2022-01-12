@@ -257,7 +257,7 @@ class Ciclo(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
     inicio = models.DateField(verbose_name='Início das Solicitações')
     fim = models.DateField(verbose_name='Fim das Solicitações')
-    teto = models.DecimalField(verbose_name='Limite de Investimento por Instituição (R$)', max_digits=15)
+    teto = models.DecimalField(verbose_name='Limite Orçamentário (R$)', max_digits=15)
     instituicoes = models.ManyToManyField(Instituicao, verbose_name='Demandantes', blank=True, help_text='Não informar, caso deseje incluir todas as instituições.')
     limites = models.OneToManyField(LimiteDemanda, verbose_name='Limites de Demanda', max=10)
 
@@ -281,7 +281,7 @@ class Ciclo(models.Model):
 
     def is_aberto(self):
         hoje = datetime.date.today()
-        return self.inicio >= hoje and self.fim <= hoje + timedelta(days=1)
+        return self.inicio <= hoje and self.fim >= hoje
 
     def gerar_demandas(self):
         for instituicao in self.instituicoes.all():
@@ -319,11 +319,14 @@ class Ciclo(models.Model):
 
     @meta('Solicitações')
     def get_solicitacoes(self):
-        return self.demanda_set.all().list_filter('prioridade', 'classificacao').list_dynamic_filter('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False)
+        return self.demanda_set.all().list_filter('prioridade', 'classificacao').list_dynamic_filter('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Configuração Geral')
     def get_configuracao_geral(self):
         return self.values('teto', ('inicio', 'fim'))
+
+    def can_get_configuracao(self, user):
+        return user.is_superuser or user.roles.filter(name='Administrador').exists()
 
     @meta('Configuração')
     def get_configuracao(self):
@@ -339,10 +342,10 @@ class Ciclo(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao')
+        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado')
 
     def view(self):
-        return self.values('get_detalhamento').actions('ExportarResultado')
+        return self.values('get_detalhamento')
 
 
 class DemandaManager(models.Manager):
@@ -438,7 +441,7 @@ class Demanda(models.Model):
     def get_respostas_questionario(self):
         return RespostaQuestionario.objects.filter(
             questionario__demanda=self
-        ).list_display('pergunta', 'resposta').order_by('id')
+        ).list_display('pergunta', 'resposta').order_by('id').template('respostas_questionario.html')
 
     def view(self):
         return self.values('get_dados_gerais', 'get_respostas_questionario')
@@ -480,7 +483,7 @@ class RespostaQuestionario(models.Model):
         icon = 'pencil-square'
         verbose_name = 'Resposta de Questionário'
         verbose_name_plural = 'Respostas dos Questionários'
-        can_view = 'Administrador',
+        can_view = 'Administrador', 'Gestor'
         list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
         list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
 
@@ -578,7 +581,7 @@ class DuvidaManager(models.Manager):
 
 
 class Duvida(models.Model):
-    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituicao', null=True)
+    instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição', null=True)
     pergunta = models.TextField(verbose_name='Pergunta')
     data_pergunta = models.DateTimeField(verbose_name='Data da Pergunta')
     resposta = models.TextField(verbose_name='Resposta', null=True)

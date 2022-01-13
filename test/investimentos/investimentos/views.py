@@ -37,6 +37,7 @@ class CiclosAbertos(Gadget):
                 dict(
                     id=ciclo.id, descricao=ciclo.descricao, maximo=ciclo.teto,
                     utilizado=utilizado, disponivel=ciclo.teto - utilizado,
-                    inicio=ciclo.inicio, fim=ciclo.fim, limites=ciclo.limites.all()
+                    inicio=ciclo.inicio, fim=ciclo.fim, limites=ciclo.limites.all(),
+                    obs=ciclo.limites.filter(classificacao__contabilizar=False).exists()
                 )
             )

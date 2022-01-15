@@ -202,6 +202,8 @@ class DetalharDemanda(forms.ModelForm):
                     required=False,
                     choices=[['', '']] + [[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
                 )
+            if pergunta_questionario.pergunta.obrigatoria:
+                self.fields[key].label = '{} (Obrigatória)'.format(self.fields[key].label)
 
     def get_fieldsets(self):
         return {

@@ -54,6 +54,6 @@ class Cards(Gadget):
                     self.items.append(dict(
                         url=model.get_list_url('/adm'),
                         label=model.metaclass().verbose_name_plural,
-                        count=model.objects.count(),
+                        count=model.objects.all().apply_role_lookups(request.user).count(),
                         icon=model.metaclass().icon
                     ))

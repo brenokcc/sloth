@@ -245,7 +245,7 @@ class LimiteDemanda(models.Model):
 class CicloManager(models.Manager):
     @meta('Ciclos', roles=('Administrador',))
     def all(self):
-        return super().all()
+        return super().role_lookups('Gestor', instituicao='instituicoes')
 
     @meta('Ciclos Abertos', roles=('Administrador',))
     def abertos(self):
@@ -577,7 +577,7 @@ class QuestionarioFinal(models.Model):
 class DuvidaManager(models.Manager):
     @meta('Dúvidas')
     def all(self):
-        return super().all().actions('ResponderDuvida')
+        return super().all().actions('ResponderDuvida').role_lookups('Gestor', instituicao='instituicao')
 
 
 class Duvida(models.Model):

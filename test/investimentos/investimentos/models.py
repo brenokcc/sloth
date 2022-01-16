@@ -77,7 +77,7 @@ class Categoria(models.Model):
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
-        ).actions('edit', 'delete').template('adm/queryset/accordion')
+        ).order_by('ordem').actions('edit', 'delete').template('adm/queryset/accordion')
 
     @meta('Quantidade de Perguntas')
     def get_quantidade_perguntas(self):
@@ -120,6 +120,7 @@ class Pergunta(models.Model):
         [8, 'Múltiplas Escolhas'],
     ]
     categoria = models.ForeignKey(Categoria, verbose_name='Categoria')
+    ordem = models.IntegerField(verbose_name='Ordem', null=True)
     texto = models.CharField(verbose_name='Texto')
     obrigatoria = models.BooleanField(verbose_name='Obrigatória', blank=True)
     tipo_resposta = models.IntegerField(verbose_name='Tipo de Resposta', choices=TIPOS_RESPOSTA_CHOICES)
@@ -133,7 +134,8 @@ class Pergunta(models.Model):
         can_edit = 'Administrador',
 
     def __str__(self):
-        return '{}'.format(self.texto)
+        ordem = '{}) '.format(self.ordem) if self.ordem else ''
+        return '{}{}'.format(ordem, self.texto)
 
     @meta('Tipo de Resposta')
     def get_tipo_resposta(self):

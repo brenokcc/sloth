@@ -156,49 +156,49 @@ class DetalharDemanda(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all().order_by('id'):
+        for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all().order_by('pergunta__ordem'):
             tipo_resposta = pergunta_questionario.pergunta.tipo_resposta
             key = '{}'.format(pergunta_questionario.pk)
             self.initial[key] = pergunta_questionario.resposta
             if tipo_resposta == Pergunta.TEXTO_CURTO:
                 self.fields[key] = forms.CharField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.TEXTO_LONGO:
                 self.fields[key] = forms.CharField(
-                    label=pergunta_questionario.pergunta.texto, widget=forms.Textarea(),
+                    label=str(pergunta_questionario.pergunta), widget=forms.Textarea(),
                     required=False
                 )
             elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
                 self.fields[key] = forms.DecimalField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False, localize=True
                 )
             elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
                 self.fields[key] = forms.IntegerField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.DATA:
                 self.fields[key] = forms.DateField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.BOOLEANO:
                 self.fields[key] = forms.ChoiceField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False,
                     choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']]
                 )
             elif tipo_resposta == Pergunta.ARQUIVO:
                 self.fields[key] = forms.FileField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False,
                 )
             elif tipo_resposta == Pergunta.OPCOES:
                 self.fields[key] = forms.ChoiceField(
-                    label=pergunta_questionario.pergunta.texto,
+                    label=str(pergunta_questionario.pergunta),
                     required=False,
                     choices=[['', '']] + [[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
                 )
@@ -399,7 +399,7 @@ class ExportarResultado(forms.Form):
             demandas.append(l1)
             for resposta_questionario in demanda.get_respostas_questionario():
                 l2 = list(l1)
-                l2.append(resposta_questionario.pergunta.texto)
+                l2.append(str(resposta_questionario.pergunta))
                 if resposta_questionario.resposta is not None:
                     l2.append(resposta_questionario.resposta)
                 questionario.append(l2)

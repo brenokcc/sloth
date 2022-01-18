@@ -26,7 +26,7 @@ class AdicionarPergunta(forms.ModelForm):
         relation = 'categoria'
         exclude = ()
         fieldsets = {
-            'Dados Gerais': ('texto', 'tipo_resposta', 'obrigatoria'),
+            'Dados Gerais': ('ordem', 'pergunta', 'texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
         can_view = 'Administrador',

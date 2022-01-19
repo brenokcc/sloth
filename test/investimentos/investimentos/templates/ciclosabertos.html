@@ -13,7 +13,7 @@
     <p>Quantidade máxima de demandas por categoria de investimento:</p>
     <ul>
         {% for limite in ciclo.limites %}
-            <li><b>{{ limite.classificacao }}:</b> {{ limite.quantidade }} demanda(s) {% if not limite.classificacao.contabilizar %}*{% endif %}</li>
+            <li><b>{{ limite.classificacao }}:</b> Até {{ limite.quantidade }} demanda(s) {% if not limite.classificacao.contabilizar %}*{% endif %}</li>
         {% endfor %}
     </ul>
     {% if ciclo.obs %}

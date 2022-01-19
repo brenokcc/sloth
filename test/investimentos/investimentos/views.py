@@ -9,14 +9,18 @@ class Instrucoes(Gadget):
 
     def __init__(self, request):
         super().__init__(request)
+        self.mensagem = None
         if request.user.roles.filter(name='Gestor').exists():
             self.gestor = Gestor.objects.filter(user=request.user).first()
-            self.mensagem = Mensagem.objects.filter(perfil='Gestor').first()
+            self.mensagem = Mensagem.objects.filter(perfil='Gestor').exclude(notificados=request.user).first()
         else:
-            self.mensagem = Mensagem.objects.filter(perfil='Administrador').first()
+            self.mensagem = Mensagem.objects.filter(perfil='Administrador').exclude(notificados=request.user).first()
         self.notificacoes = Notificacao.objects.filter(
             inicio__gte=date.today()
         ).exclude(fim__lt=date.today())
+        if self.mensagem and 'ocultar' in request.GET:
+            self.mensagem.notificados.add(request.user)
+            self.mensagem = None
 
 
 class Cartoes(Cards):

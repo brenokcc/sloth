@@ -27,6 +27,11 @@
   <div class="mb-0">
      {{ self.mensagem.detalhamento|linebreaks }}
   </div>
+  <div align="right">
+    <a href="?ocultar=" class="action-button btn btn-outline-primary">
+        Entendi! Não exibir mais a mensagem.
+    </a>
+  </div>
 </div>
 {% if self.mensagem.anexos.exists %}
 <div class="mb-0">

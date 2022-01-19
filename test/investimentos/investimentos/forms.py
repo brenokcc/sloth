@@ -268,11 +268,11 @@ class AlterarSenha(forms.Form):
 class ConcluirSolicitacao(forms.Form):
 
     rco_pendente = forms.ChoiceField(
-        label='A instituição possui RCO (Relatório de Cumprimento do Objeto) pendente de entrega para a SETEC?',
+        label='A instituição possui RCO pendente de entrega para a SETEC?',
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
     detalhe_rco_pendente = forms.CharField(
-        label='Número do(s) TED(s) e o resumo da situação caso possua RCO (Relatório de Cumprimento do Objeto) pendente de entregue para a SETEC',
+        label='Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC',
         required=False, widget=forms.Textarea()
     )
     devolucao_ted = forms.ChoiceField(
@@ -283,11 +283,19 @@ class ConcluirSolicitacao(forms.Form):
         label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021',
         required=False, widget=forms.Textarea()
     )
+    prioridade_1 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 1')
+    prioridade_2 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 2')
+    prioridade_3 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 3')
 
     class Meta:
         verbose_name = 'Concluir Solicitação'
         can_view = 'Gestor',
         style = 'success'
+        fieldsets = {
+            'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3'),
+            'Relatório de Cumprimento do Objeto (RCO)': ('rco_pendente', 'detalhe_rco_pendente'),
+            'Transferência Eletrônica Disponível (TED)': ('devolucao_ted', 'detalhe_devolucao_ted'),
+        }
 
     def __init__(self, *args, **kwargs):
         initial = {}
@@ -303,9 +311,15 @@ class ConcluirSolicitacao(forms.Form):
                 detalhe_rco_pendente=questionario_final.detalhe_rco_pendente,
                 devolucao_ted=questionario_final.devolucao_ted,
                 detalhe_devolucao_ted=questionario_final.detalhe_devolucao_ted,
+                prioridade_1=questionario_final.prioridade_1_id,
+                prioridade_2=questionario_final.prioridade_2_id,
+                prioridade_3=questionario_final.prioridade_3_id
             )
         kwargs.update(initial=initial)
         super().__init__(*args, **kwargs)
+        self.fields['prioridade_1'].queryset = ciclo.demanda_set.filter(instituicao=instituicao, descricao__isnull=False)
+        self.fields['prioridade_2'].queryset = ciclo.demanda_set.filter(instituicao=instituicao, descricao__isnull=False)
+        self.fields['prioridade_3'].queryset = ciclo.demanda_set.filter(instituicao=instituicao, descricao__isnull=False)
 
     def can_view(self, user):
         if user.roles.filter(name='Gestor').exists():
@@ -328,6 +342,9 @@ class ConcluirSolicitacao(forms.Form):
         questionario_final.detalhe_rco_pendente = self.cleaned_data['detalhe_rco_pendente']
         questionario_final.devolucao_ted = self.cleaned_data['devolucao_ted']
         questionario_final.detalhe_devolucao_ted = self.cleaned_data['detalhe_devolucao_ted']
+        questionario_final.prioridade_1 = self.cleaned_data['prioridade_1']
+        questionario_final.prioridade_2 = self.cleaned_data['prioridade_2']
+        questionario_final.prioridade_3 = self.cleaned_data['prioridade_3']
         questionario_final.finalizado = True
         questionario_final.save()
         self.notify('Solicitação concluída com sucesso.')

@@ -340,7 +340,7 @@ class Ciclo(models.Model):
 
     @meta('Questionário Final')
     def get_questionario_final(self):
-        return self.questionariofinal_set.all().list_display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted').role_lookups('Gestor', instituicao='instituicao')
+        return self.questionariofinal_set.all().list_display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3').role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Detalhamento')
     def get_detalhamento(self):
@@ -531,6 +531,8 @@ class Mensagem(models.Model):
     detalhamento = models.TextField(verbose_name='Detalhamento')
     anexos = models.OneToManyField(Anexo, verbose_name='Anexos')
 
+    notificados = models.ManyToManyField(User, verbose_name='Notificados')
+
     class Meta:
         icon = 'chat-left-text'
         verbose_name = 'Mensagem Inicial'
@@ -565,6 +567,10 @@ class QuestionarioFinal(models.Model):
         verbose_name='Detalhe de Devolução de TED',
         null=True, blank=True
     )
+    prioridade_1 = models.ForeignKey(Demanda, verbose_name='Prioridade 1', null=True, blank=True, related_name='r1')
+    prioridade_2 = models.ForeignKey(Demanda, verbose_name='Prioridade 2', null=True, blank=True, related_name='r2')
+    prioridade_3 = models.ForeignKey(Demanda, verbose_name='Prioridade 3', null=True, blank=True, related_name='r3')
+
     finalizado = models.BooleanField(verbose_name='Finalizado', default=False)
 
     class Meta:

@@ -34,7 +34,9 @@ class CiclosAbertos(Gadget):
     def __init__(self, request):
         super().__init__(request)
         self.ciclos = []
-        for ciclo in Ciclo.objects.abertos():
+        gestor = Gestor.objects.filter(user=request.user).first()
+        instituicao = gestor and gestor.instituicao or None
+        for ciclo in Ciclo.objects.abertos().filter(instituicoes=instituicao):
             demandas = ciclo.demanda_set.exclude(classificacao__contabilizar=False).all().contextualize(request)
             utilizado = Decimal(sum([demanda.valor for demanda in demandas if demanda.valor]))
             self.ciclos.append(

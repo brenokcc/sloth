@@ -283,9 +283,9 @@ class ConcluirSolicitacao(forms.Form):
         label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021',
         required=False, widget=forms.Textarea()
     )
-    prioridade_1 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 1')
-    prioridade_2 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 2')
-    prioridade_3 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 3')
+    prioridade_1 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 1', help_text='Dentre as demandas informadas, elenque a 1ª mais prioritária para este exercício.')
+    prioridade_2 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.')
+    prioridade_3 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.')
 
     class Meta:
         verbose_name = 'Concluir Solicitação'

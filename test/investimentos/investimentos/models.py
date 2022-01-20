@@ -531,7 +531,7 @@ class Mensagem(models.Model):
     detalhamento = models.TextField(verbose_name='Detalhamento')
     anexos = models.OneToManyField(Anexo, verbose_name='Anexos')
 
-    notificados = models.ManyToManyField(User, verbose_name='Notificados')
+    notificados = models.ManyToManyField(User, verbose_name='Notificados', blank=True)
 
     class Meta:
         icon = 'chat-left-text'

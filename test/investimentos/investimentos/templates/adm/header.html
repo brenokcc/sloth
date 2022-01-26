@@ -12,10 +12,10 @@
           <a href="/adm/" style="margin-right:10px">
             <i class="bi bi-house"></i>
           </a>
-          <a href="/media/tutorial/tutorial.pdf" target="_blank" style="margin-right:10px">
+          <a href="/media/tutorial/tutorial.pdf" target="_blank" style="margin-right:10px" data-toggle="tooltip" data-placement="bottom" title="Tutorial PDF">
             <i class="bi bi-book"></i>
           </a>
-          <a href="/videos/" target="_blank" style="margin-right:10px">
+          <a href="/videos/" target="_blank" style="margin-right:10px" data-toggle="tooltip" data-placement="bottom" title="Vídeos">
             <i class="bi bi-person-video3"></i>
           </a>
           <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not request.session.menu or not request.user.is_superuser  %}visibility:hidden{% endif %}">

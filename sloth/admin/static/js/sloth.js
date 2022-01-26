@@ -167,6 +167,7 @@ jQuery.fn.extend({
             $(this).mask($(this).data('mask'), {reverse: $(this).data('reverse')})
         });
         $(this).responsive();
+        $(this).find('[data-toggle="tooltip"]').tooltip();
         return this;
     }
 });

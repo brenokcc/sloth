@@ -1,8 +1,9 @@
 
 from django.urls import path, include
+from . import views
 
 urlpatterns = [
-    # path('adm/', index),
+    path('videos/', views.videos),
     path('', include('sloth.api.urls')),
     path('', include('sloth.admin.urls')),
 ]

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import date
 from decimal import Decimal
+from django.conf import settings
+from django.shortcuts import render
 from .models import Ciclo, Mensagem, Gestor, Notificacao
 from sloth.admin.gadgets import Cards, Gadget
 
@@ -47,3 +49,7 @@ class CiclosAbertos(Gadget):
                     obs=ciclo.limites.filter(classificacao__contabilizar=False).exists()
                 )
             )
+
+
+def videos(request):
+    return render(request, ['videos.html'], dict(settings=settings))

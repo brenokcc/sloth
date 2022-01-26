@@ -294,7 +294,7 @@ class ConcluirSolicitacao(forms.Form):
         fieldsets = {
             'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3'),
             'Relatório de Cumprimento do Objeto (RCO)': ('rco_pendente', 'detalhe_rco_pendente'),
-            'Transferência Eletrônica Disponível (TED)': ('devolucao_ted', 'detalhe_devolucao_ted'),
+            'Transferência Eletrônica Descentralizada (TED)': ('devolucao_ted', 'detalhe_devolucao_ted'),
         }
 
     def __init__(self, *args, **kwargs):

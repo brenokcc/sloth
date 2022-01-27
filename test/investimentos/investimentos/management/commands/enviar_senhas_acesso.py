@@ -12,7 +12,7 @@ MENSAGEM = '''
 <p>Seguem as informações de acesso ao <b>Sistema de Coleta de Demandas da Rede Federal de Educação Profissional, Científica e Tecnológica</b>.</p>
 
 <p>
-<i>URL</i>: https://coletasetec.ifrn.edu.br/ <br>
+<i>URL</i>: <a href="https://coletasetec.ifrn.edu.br/">https://coletasetec.ifrn.edu.br/</a> <br>
 <i>Login</i>: {email} <br>
 <i>Senha</i>: {senha} <br>
 </p>

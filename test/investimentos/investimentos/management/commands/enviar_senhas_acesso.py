@@ -19,8 +19,8 @@ MENSAGEM = '''
 
 <p>Por questões de segurança, orienta-se que no primeiro acesso seja feita a alteração da senha. Para isso, no canto superior direito do sistema, clique no e-mail da instituição e selecione a opção “Alterar Senha”.</p>
 
-<p>Para acessar o tutorial do sistema em PDF, acesse https://coletasetec.ifrn.edu.br/tutorial/tutoria.pdf.<br>
-Caso prefira o tutorial no formato de vídeo, acesse https://coletasetec.ifrn.edu.br/videos/.</p>
+<p>Para acessar o tutorial do sistema em PDF, acesse <a href="https://coletasetec.ifrn.edu.br/media/tutorial/tutorial.pdf">https://coletasetec.ifrn.edu.br/media/tutorial/tutorial.pdf</a>.<br>
+Caso prefira o tutorial no formato de vídeo, acesse <a href="https://coletasetec.ifrn.edu.br/videos/">https://coletasetec.ifrn.edu.br/videos/</a>.</p>
 
 <p>
 <b>Diretoria de Desenvolvimento da Rede Federal<br>
@@ -40,8 +40,8 @@ class Command(BaseCommand):
             subject = '[SETEC] Credenciais de Acesso – Sistema de Coleta de Demandas'
             html_content = MENSAGEM.format(email=gestor.email, senha=senha)
             text_content = strip_tags(html_content)
-            from_email = None
-            to = [gestor.email]
+            from_email = 'naoresponder.ifrn.edu.br'
+            to = gestor.email
             msg = EmailMultiAlternatives(subject, text_content, from_email, [to])
             msg.attach_alternative(html_content, "text/html")
             try:

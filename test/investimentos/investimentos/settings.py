@@ -116,11 +116,4 @@ JS = ['/static/js/investimentos.js']
 LOGIN_IMAGE = None
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-if os.path.exists('/var/opt/sloth/test/investimentos'):
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'naoresponder.ifrn.edu.br'
-    EMAIL_PORT = 587
-    EMAIL_HOST_USER = 'coletasetec@naoresponder.ifrn.edu.br'
-    EMAIL_HOST_PASSWORD = 'utt9bIEY2bE0EuL0'
-    EMAIL_USE_TLS = True
 

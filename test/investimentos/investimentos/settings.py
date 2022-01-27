@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from sloth.conf.settings import *
 
@@ -116,8 +116,11 @@ JS = ['/static/js/investimentos.js']
 LOGIN_IMAGE = None
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-try:
-    import local_settings.py
-except ImportError:
-    pass
+if os.path.exists('/var/opt/sloth/test/investimentos'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'naoresponder.ifrn.edu.br'
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = 'coletasetec@naoresponder.ifrn.edu.br'
+    EMAIL_HOST_PASSWORD = 'utt9bIEY2bE0EuL0'
+    EMAIL_USE_TLS = True
 

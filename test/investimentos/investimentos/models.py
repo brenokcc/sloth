@@ -25,8 +25,9 @@ class Administrador(models.Model):
         self.user = User.objects.get_or_create(
             username=self.cpf, defaults={}
         )[0]
-        self.user.set_password('123')
-        self.user.save()
+        if self.pk is None:
+            self.user.set_password('123')
+            self.user.save()
         super().save()
 
 
@@ -211,8 +212,9 @@ class Gestor(models.Model):
             self.user = User.objects.get_or_create(
                 username=self.email, defaults={}
             )[0]
-            self.user.set_password('123')
-            self.user.save()
+            if self.pk is None:
+                self.user.set_password('123')
+                self.user.save()
         super().save()
 
 

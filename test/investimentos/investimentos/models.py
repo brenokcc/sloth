@@ -386,8 +386,8 @@ class Demanda(models.Model):
     descricao = models.CharField(verbose_name='Descrição', max_length=512)
     prioridade = models.ForeignKey(Prioridade, verbose_name='Prioridade')
     classificacao = models.ForeignKey(Categoria, verbose_name='Categoria', null=True)
-    valor_total = models.DecimalField(verbose_name='Valor Total (R$)', null=True)
-    valor = models.DecimalField(verbose_name='Valor a Empenhar no Exercício (R$)', null=True)
+    valor_total = models.DecimalField(verbose_name='Valor Total (R$)', null=True, max_digits=15)
+    valor = models.DecimalField(verbose_name='Valor a Empenhar no Exercício (R$)', null=True, max_digits=15)
     unidades_beneficiadas = models.ManyToManyField(Campus, verbose_name='Unidades Beneficiadas', blank=True,
                                                    help_text='Não informar caso todas as unidades sejam beneficiadas.')
     finalizada = models.BooleanField(verbose_name='Finalizada', default=False)

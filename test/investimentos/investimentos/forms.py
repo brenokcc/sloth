@@ -384,6 +384,26 @@ class ResponderDuvida(forms.ModelForm):
         return super().save(*args, **kwargs)
 
 
+class RestaurarDemanda(forms.ModelForm):
+    class Meta:
+        model = Demanda
+        verbose_name = 'Restaurar'
+        fields = ()
+        style = 'danger'
+
+    def can_view(self, user):
+        return 1
+        if user.roles.filter(name='Administrador').exists() and self.instance.descricao:
+            return True
+        return False
+
+    def save(self, *args, **kwargs):
+        self.instance.descricao = ''
+        self.instance.valor = None
+        self.instance.valor_total = None
+        return super().save(*args, **kwargs)
+
+
 class ExportarResultado(forms.Form):
 
     instituicao = forms.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)

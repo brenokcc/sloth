@@ -372,7 +372,7 @@ class DemandaManager(models.Manager):
         return self.list_display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'get_progresso_questionario'
         ).filter(valor__isnull=False, finalizada=False).actions(
-            'DetalharDemanda', 'AlterarPreenchimento'
+            'DetalharDemanda', 'AlterarPreenchimento', 'RestaurarDemanda'
         ).role_lookups('Gestor', instituicao='instituicao')
 
     @meta('Preenchidas')

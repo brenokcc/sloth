@@ -392,7 +392,6 @@ class RestaurarDemanda(forms.ModelForm):
         style = 'danger'
 
     def can_view(self, user):
-        return 1
         if user.roles.filter(name='Administrador').exists() and self.instance.descricao:
             return True
         return False

@@ -416,8 +416,8 @@ class ExportarResultado(forms.Form):
 
     def process(self):
         dados = list()
-        demandas = list([['DEMANDA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
-        questionario = list([['DEMANDA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
+        demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
+        questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
         fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA']])
         dados.append(('Demandas', demandas))
         dados.append(('Questionário', questionario))
@@ -431,7 +431,7 @@ class ExportarResultado(forms.Form):
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
         demanda = None
         for demanda in qs.filter(valor__isnull=False).exclude(valor=0):
-            l1 = [demanda.descricao, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
             demandas.append(l1)
             for resposta_questionario in demanda.get_respostas_questionario():
                 l2 = list(l1)

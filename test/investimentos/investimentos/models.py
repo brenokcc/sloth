@@ -346,7 +346,7 @@ class Ciclo(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado')
+        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado', 'ExportarResultadoPorCategoria')
 
     def view(self):
         return self.values('get_detalhamento')

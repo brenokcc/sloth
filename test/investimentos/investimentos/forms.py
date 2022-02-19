@@ -452,3 +452,46 @@ class ExportarResultado(forms.Form):
                     fechamento.append([instituicao1.sigla, 'A instituição devolveu algum valor de TED em 2021?', questionario_final.devolucao_ted or ''])
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021', questionario_final.detalhe_devolucao_ted or ''])
         self.http_response(XlsResponse(dados))
+
+
+class ExportarResultadoPorCategoria(forms.Form):
+
+    instituicao = forms.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
+    categoria = forms.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
+    prioridade = forms.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
+
+    class Meta:
+        verbose_name = 'Exportar Resultado por Categoria'
+        can_view = 'Administrador',
+        icon = 'bi-file-exce'
+
+    def process(self):
+        dados = list()
+        demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']
+        instituicao = self.cleaned_data['instituicao']
+        categoria = self.cleaned_data['categoria']
+        prioridade = self.cleaned_data['prioridade']
+        qs = self.instantiator.demanda_set.all()
+        qs = qs.filter(instituicao=instituicao) if instituicao else qs
+        qs = qs.filter(classificacao=categoria) if categoria else qs
+        qs = qs.filter(prioridade=prioridade) if prioridade else qs
+        ids = qs.order_by('classificacao').values_list('classificacao', flat=True).distinct()
+        for i, classificacao in enumerate(Categoria.objects.filter(id__in=ids)):
+            linhas = list()
+            cabecalho = list(demandas)
+            perguntas = classificacao.pergunta_set.order_by('ordem').all()
+            for pergunta in perguntas:
+                cabecalho.append(pergunta.texto.upper())
+            linhas.append(cabecalho)
+            for demanda in qs.filter(valor__isnull=False).exclude(valor=0).filter(classificacao=classificacao):
+                linha = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+                for pergunta in perguntas:
+                    resposta_questionario = demanda.get_respostas_questionario().filter(pergunta=pergunta).first()
+                    if resposta_questionario:
+                        if resposta_questionario.resposta is None:
+                            linha.append('')
+                        else:
+                            linha.append(resposta_questionario.resposta)
+                linhas.append(linha)
+            dados.append((str(i+1), linhas))
+        self.http_response(XlsResponse(dados))

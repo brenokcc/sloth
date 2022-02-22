@@ -416,7 +416,7 @@ class ExportarResultado(forms.Form):
 
     def process(self):
         dados = list()
-        demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
+        demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
         questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
         fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA']])
         dados.append(('Demandas', demandas))
@@ -431,7 +431,7 @@ class ExportarResultado(forms.Form):
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
         demanda = None
         for demanda in qs.filter(valor__isnull=False).exclude(valor=0):
-            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
             demandas.append(l1)
             for resposta_questionario in demanda.get_respostas_questionario():
                 l2 = list(l1)
@@ -467,7 +467,7 @@ class ExportarResultadoPorCategoria(forms.Form):
 
     def process(self):
         dados = list()
-        demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']
+        demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']
         instituicao = self.cleaned_data['instituicao']
         categoria = self.cleaned_data['categoria']
         prioridade = self.cleaned_data['prioridade']
@@ -484,7 +484,7 @@ class ExportarResultadoPorCategoria(forms.Form):
                 cabecalho.append(pergunta.texto.upper())
             linhas.append(cabecalho)
             for demanda in qs.filter(valor__isnull=False).exclude(valor=0).filter(classificacao=classificacao):
-                linha = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+                linha = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
                 for pergunta in perguntas:
                     resposta_questionario = demanda.get_respostas_questionario().filter(pergunta=pergunta).first()
                     if resposta_questionario:

@@ -30,6 +30,9 @@ class QuerySet(models.QuerySet):
             global_actions=[], batch_actions=[], lookups=[], collapsed=True
         )
 
+    def normalize_email(self, *args, **kwargs):
+        pass
+
     def role_lookups(self, name, **scopes):
         self.metadata['lookups'].append((name, scopes))
         return self

@@ -11,13 +11,13 @@ def meta(verbose_name, template=None, roles=()):
     return decorate
 
 
-def role(verbose_name, user, **scopes):
+def role(verbose_name, username, email=None, password=None, **scopes):
     def decorate(cls):
         if not hasattr(cls, '_roles'):
             setattr(cls, '_roles', [])
         roles = getattr(cls, '_roles')
         roles.append(
-            dict(name=verbose_name, user=user, scopes=scopes)
+            dict(name=verbose_name, username=username, email=email, password=password, scopes=scopes)
         )
         return cls
     return decorate

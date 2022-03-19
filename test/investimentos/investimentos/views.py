@@ -13,7 +13,7 @@ class Instrucoes(Gadget):
         super().__init__(request)
         self.mensagem = None
         if request.user.roles.filter(name='Gestor').exists():
-            self.gestor = Gestor.objects.filter(user=request.user).first()
+            self.gestor = Gestor.objects.filter(email=request.user.username).first()
             self.mensagem = Mensagem.objects.filter(perfil='Gestor').exclude(notificados=request.user).first()
         else:
             self.mensagem = Mensagem.objects.filter(perfil='Administrador').exclude(notificados=request.user).first()
@@ -36,7 +36,7 @@ class CiclosAbertos(Gadget):
     def __init__(self, request):
         super().__init__(request)
         self.ciclos = []
-        gestor = Gestor.objects.filter(user=request.user).first()
+        gestor = Gestor.objects.filter(email=request.user.username).first()
         instituicao = gestor and gestor.instituicao or None
         for ciclo in Ciclo.objects.abertos().filter(instituicoes=instituicao):
             demandas = ciclo.demanda_set.exclude(classificacao__contabilizar=False).all().contextualize(request)

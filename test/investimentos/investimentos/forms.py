@@ -299,7 +299,7 @@ class ConcluirSolicitacao(forms.Form):
 
     def __init__(self, *args, **kwargs):
         initial = {}
-        gestor = Gestor.objects.filter(user=kwargs['request'].user).first()
+        gestor = Gestor.objects.filter(email=kwargs['request'].user.username).first()
         ciclo = kwargs['instantiator']
         instituicao = gestor.instituicao
         questionario_final = QuestionarioFinal.objects.filter(
@@ -323,7 +323,7 @@ class ConcluirSolicitacao(forms.Form):
 
     def can_view(self, user):
         if user.roles.filter(name='Gestor').exists():
-            gestor = Gestor.objects.filter(user=user).first()
+            gestor = Gestor.objects.filter(email=user.username).first()
             ciclo = self.instantiator
             instituicao = gestor.instituicao
             demandas_finalizadas = not Demanda.objects.filter(ciclo=ciclo, instituicao=instituicao, finalizada=False).exists()
@@ -332,7 +332,7 @@ class ConcluirSolicitacao(forms.Form):
         return False
 
     def process(self):
-        gestor = Gestor.objects.filter(user=self.request.user).first()
+        gestor = Gestor.objects.filter(email=self.request.user.username).first()
         ciclo = self.instantiator
         instituicao = gestor.instituicao
         questionario_final = QuestionarioFinal.objects.filter(
@@ -362,7 +362,7 @@ class DuvidaForm(forms.ModelForm):
         return False
 
     def save(self, *args, **kwargs):
-        gestor = Gestor.objects.filter(user=self.request.user).first()
+        gestor = Gestor.objects.filter(email=self.request.user.username).first()
         self.instance.data_pergunta = datetime.now()
         self.instance.instituicao = gestor.instituicao
         return super().save(*args, **kwargs)

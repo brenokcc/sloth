@@ -6,12 +6,10 @@ from django.contrib.auth.models import User
 from sloth.db import models, meta, role
 
 
-@role('Administrador', 'user')
+@role('Administrador', username='cpf')
 class Administrador(models.Model):
     nome = models.CharField('Nome')
     cpf = models.CharField('CPF', rmask='000.000.000-00')
-
-    user = models.ForeignKey(User, verbose_name='Usuário', blank=True)
 
     class Meta:
         icon = 'person-workspace'
@@ -20,15 +18,6 @@ class Administrador(models.Model):
         fieldsets = {
             'Dados Gerais': ('nome', 'cpf')
         }
-
-    def save(self, *args, **kwargs):
-        self.user = User.objects.get_or_create(
-            username=self.cpf, defaults={}
-        )[0]
-        if self.pk is None:
-            self.user.set_password('123')
-            self.user.save()
-        super().save()
 
 
 class Ano(models.Model):
@@ -189,13 +178,11 @@ class Campus(models.Model):
         return '{}/{}'.format(self.nome, self.instituicao)
 
 
-@role('Gestor', 'user', instituicao='instituicao')
+@role('Gestor', username='email', instituicao='instituicao')
 class Gestor(models.Model):
     nome = models.CharField('Nome')
     email = models.CharField('E-mail', null=True)
     instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
-
-    user = models.ForeignKey(User, verbose_name='Usuário', blank=True)
 
     class Meta:
         verbose_name = 'Gestor '
@@ -206,16 +193,6 @@ class Gestor(models.Model):
         can_add = 'Administrador',
         can_edit = 'Administrador',
         can_delete = 'Administrador',
-
-    def save(self, *args, **kwargs):
-        if self.email:
-            self.user = User.objects.get_or_create(
-                username=self.email, defaults={}
-            )[0]
-            if self.pk is None:
-                self.user.set_password('123')
-                self.user.save()
-        super().save()
 
 
 class Notificacao(models.Model):

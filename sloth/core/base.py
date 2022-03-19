@@ -335,26 +335,34 @@ class ModelMixin(object):
         lookups = list()
         tuples = set()
         for role in self._roles:
-            lookups.append(role['user'])
+            lookups.append(role['username'])
             lookups.extend(role['scopes'].values())
         values = model.objects.filter(pk=self.pk).values(*set(lookups)).first()
         if values:
             for role in self._roles:
-                user_id = values[role['user']]
-                tuples.add((user_id, role['name'], None, None, None))
+                username = values[role['username']]
+                tuples.add((username, role['name'], None, None, None))
                 for scope_key, lookup in role['scopes'].items():
                     scope_type = content_type.objects.get_for_model(
                         model if lookup == 'id' else model.get_field(lookup).related_model
                     )
                     scope_value = values[lookup]
-                    tuples.add((user_id, role['name'], scope_type.id, scope_key, scope_value))
+                    tuples.add((username, role['name'], scope_type.id, scope_key, scope_value))
         return tuples
 
     def sync_roles(self, role_tuples):
+        from django.contrib.auth.models import User
+        user_id = None
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
-
-        for user_id, name, scope_type, scope_key, scope_value in role_tuples2:
+        for username, name, scope_type, scope_key, scope_value in role_tuples2:
+            if user_id is None:
+                user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
+                if user_id is None:
+                    user = User.objects.create(username=username)
+                    user.set_password('123')
+                    user.save()
+                    user_id = user.id
             role.objects.get_or_create(
                 user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
             )

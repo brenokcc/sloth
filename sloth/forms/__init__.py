@@ -289,15 +289,26 @@ class FormMixin:
         meta = getattr(self, 'Meta', None)
         return getattr(meta, 'method', 'post') if meta else 'post'
 
-    def can_view(self, user):
-        names = getattr(self.Meta, 'can_view', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    def check_permission(self, user):
+        print(1111)
+        if self.request.user.is_superuser:
+            return True
+        else:
+            if hasattr(self, 'has_permission'):
+                print(type(self), 222)
+                return self.has_permission(self.request.user)
+            else:
+                group_names = getattr(self.Meta, 'groups', ())
+                print(group_names, 8888)
+                return self.request.user.roles.filter(name__in=group_names)
 
     @classmethod
-    def check_permission(cls, request, instance=None, instantiator=None):
+    def check_fake_permission(cls, request, instance=None, instantiator=None):
         form = FakeForm(request, instance=instance, instantiator=instantiator)
         setattr(form, 'Meta', cls.Meta)
-        return cls.can_view(form, request.user)
+        if hasattr(cls, 'has_permission'):
+            return request.user.is_superuser or cls.has_permission(form, request.user)
+        return cls.check_permission(form, request.user)
 
     def __str__(self):
         for name, field in self.fields.items():

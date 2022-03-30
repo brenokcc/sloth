@@ -24,7 +24,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
-            display=[], filters={}, dfilters={}, search=[], ordering=[],
+            display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True
@@ -203,7 +203,7 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
-            if self.metadata['request'] is None or form_cls.check_permission(
+            if self.metadata['request'] is None or form_cls.check_fake_permission(
                     request=self.metadata['request'], instance=obj
             ):
                 actions.append(form_cls.__name__)
@@ -231,7 +231,7 @@ class QuerySet(models.QuerySet):
                 uuid=uuid1().hex, type='queryset',
                 name=verbose_name, icon=icon, count=self.count(),
                 actions=dict(model=[], instance=[], queryset=[]),
-                metadata=dict(search=search, display=display, filters=filters, pagination=pagination, collapsed=self.metadata['collapsed']),
+                metadata=dict(search=search, display=display, filters=filters, pagination=pagination, collapsed=self.metadata['collapsed'], view=self.metadata['view']),
                 data=values
             )
             if attach:
@@ -248,7 +248,7 @@ class QuerySet(models.QuerySet):
             for action_type in ('global_actions', 'actions', 'batch_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
-                    if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_permission(
+                    if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_fake_permission(
                             request=self.metadata['request'], instance=self.model()
                     ):
                         action = form_cls.get_metadata(
@@ -268,6 +268,10 @@ class QuerySet(models.QuerySet):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
     # metadata functions
+
+    def view(self, *names):
+        self.metadata['view'] = list(names)
+        return self
 
     def list_display(self, *names):
         self.metadata['display'] = list(names)
@@ -434,7 +438,7 @@ class QuerySet(models.QuerySet):
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
         if 'page' in request.GET:
-            page = int(request.GET['page'] or 0)
+            page = int(request.GET['page'] or 1)
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()

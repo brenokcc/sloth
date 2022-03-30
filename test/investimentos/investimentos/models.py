@@ -326,7 +326,7 @@ class Ciclo(models.Model):
         return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado', 'ExportarResultadoPorCategoria')
 
     def view(self):
-        return self.values('get_detalhamento')
+        return self.values('get_configuracao_geral', 'get_detalhamento')
 
 
 class DemandaManager(models.Manager):
@@ -350,7 +350,7 @@ class DemandaManager(models.Manager):
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'get_progresso_questionario'
         ).filter(valor__isnull=False, finalizada=False).actions(
             'DetalharDemanda', 'AlterarPreenchimento', 'RestaurarDemanda'
-        ).role_lookups('Gestor', instituicao='instituicao')
+        ).role_lookups('Gestor', instituicao='instituicao').view('get_dados_gerais')
 
     @meta('Preenchidas')
     def finalizadas(self):

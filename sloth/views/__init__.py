@@ -49,7 +49,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             if w.lower() == 'edit':  # /base/estado/1/get_cidades/1/edit/
                                 form_cls = model.edit_form_cls()
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
-                                if form.can_view(request.user):
+                                if form.check_permission(request.user):
                                     if form.is_valid():
                                         form.process()
                                     return form
@@ -57,7 +57,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             elif w.lower() == 'delete':  # /base/estado/1/get_cidades/1/delete/
                                 form_cls = model.delete_form_cls()
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
-                                if form.can_view(request.user):
+                                if form.check_permission(request.user):
                                     if form.is_valid():
                                         form.process()
                                     return form
@@ -65,41 +65,49 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             else:  # /base/estado/1/get_cidades/1/alterar_nome/
                                 form_cls = model.action_form_cls(w)
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
-                                if form.can_view(request.user):
+                                if form.check_permission(request.user):
                                     if form.is_valid():
                                         form.process()
                                     return form
                                 raise PermissionDenied()
                         else:
-                            instance = attr().contextualize(request).get(pk=z)
+                            qs = attr()
+                            instance = qs.contextualize(request).get(pk=z)
                             if instance.can_view(request.user):
-                                return instance.view().contextualize(request)
+                                return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
                             # instances = attr().filter(pk__in=z.split('-'))
                             # form = form_cls(request=request, instantiator=obj, instances=instances)
-                            # if form.can_view(request.user):
+                            # if form.check_permission(request.user):
                             #     if form.is_valid():
                             #         form.process()
                             #     return form
                             # raise PermissionDenied()
-                    else:  # pks is instance action
-                        form_cls = model.action_form_cls(z)
-                        # if it is a relation action, do not set the instance attribute
-                        if getattr(form_cls.Meta, 'relation', None):
-                            form = form_cls(request=request, instantiator=obj)
-                        else:
-                            form = form_cls(request=request, instance=obj, instantiator=obj)
-                        if form.can_view(request.user):
-                            if form.is_valid():
-                                form.process()
-                            return form
-                        raise PermissionDenied()
+                    else:
+                        if w:  # /base/estado/1/get_cidades/sem_prefeito/1/
+                            qs = getattr(attr(), z)()
+                            instance = qs.contextualize(request).get(pk=w)
+                            if instance.can_view(request.user):
+                                return instance.show(*qs.metadata['view']).contextualize(request)
+                            raise PermissionDenied()
+                        else:  # /base/estado/1/alterar_nome/
+                            form_cls = model.action_form_cls(z)
+                            # if it is a relation action, do not set the instance attribute
+                            if getattr(form_cls.Meta, 'relation', None):
+                                form = form_cls(request=request, instantiator=obj)
+                            else:
+                                form = form_cls(request=request, instance=obj, instantiator=obj)
+                            if form.check_permission(request.user):
+                                if form.is_valid():
+                                    form.process()
+                                return form
+                            raise PermissionDenied()
                 else:
                     if y.lower() == 'edit':  # /base/estado/1/edit/
                         form_cls = model.edit_form_cls()
                         form = form_cls(request=request, instance=obj, instantiator=obj)
-                        if form.can_view(request.user):
+                        if form.check_permission(request.user):
                             if form.is_valid():
                                 form.process()
                             return form
@@ -107,7 +115,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     if y.lower() == 'delete':  # /base/estado/1/delete/
                         form_cls = model.delete_form_cls()
                         form = form_cls(request=request, instance=obj, instantiator=obj)
-                        if form.can_view(request.user):
+                        if form.check_permission(request.user):
                             if form.is_valid():
                                 form.process()
                             return form
@@ -116,7 +124,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         form_cls = model.action_form_cls(y)
                         if form_cls:  # instance action
                             form = form_cls(request=request, instance=obj, instantiator=obj)
-                            if form.can_view(request.user):
+                            if form.check_permission(request.user):
                                 if form.is_valid():
                                     form.process()
                                 return form
@@ -135,7 +143,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
         elif x.lower() == 'add':
             form_cls = model.add_form_cls()
             form = form_cls(request=request)
-            if form.can_view(request.user):
+            if form.check_permission(request.user):
                 if form.is_valid():
                     form.process()
                 return form
@@ -149,7 +157,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             form_cls = model.action_form_cls(z)
                             instances = attr().filter(pk__in=y.split('-'))
                             form = form_cls(request=request, instances=instances)
-                            if form.can_view(request.user):
+                            if form.check_permission(request.user):
                                 if form.is_valid():
                                     result = form.process()
                                     if result is not None:
@@ -165,7 +173,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         form_cls = model.action_form_cls(z)
                         instances = attr().filter(pk__in=y.split('-'))
                         form = form_cls(request=request, instances=instances)
-                        if form.can_view(request.user):
+                        if form.check_permission(request.user):
                             if form.is_valid():
                                 result = form.process()
                                 if result is not None:
@@ -179,7 +187,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     form_cls = model.action_form_cls(y)
                     instances = model.objects.all().filter(pk__in=x.split('-'))
                     form = form_cls(request=request, instances=instances)
-                    if form.can_view(request.user):
+                    if form.check_permission(request.user):
                         if form.is_valid():
                             form.process()
                         return form
@@ -187,7 +195,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                 else:
                     form_cls = model.action_form_cls(x)
                     form = form_cls(request=request)
-                    if form.can_view(request.user):
+                    if form.check_permission(request.user):
                         if form.is_valid():
                             form.process()
                         return form

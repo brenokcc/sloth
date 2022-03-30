@@ -63,6 +63,12 @@ class ModelMixin(object):
         names = [field.name for field in self.metaclass().fields]
         return self.values(*names)
 
+    def show(self, *names):
+        print(names, 4444)
+        if 'self' in names:
+            return self.view()
+        return self.values(*names)
+
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)
 
@@ -87,43 +93,30 @@ class ModelMixin(object):
 
     @classmethod
     def add_form_cls(cls):
-        cls_name = getattr(cls.metaclass(), 'add_form', None)
-        if cls_name is None:
-            cls_name = getattr(cls.metaclass(), 'form', None)
+        cls_name = getattr(cls.metaclass(), 'add_form', getattr(cls.metaclass(), 'form', None))
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
-        class Add(form_cls or ModelForm):
+        class Add(ModelForm):
             class Meta:
                 model = cls
-                if form_cls and hasattr(form_cls.Meta, 'fields'):
-                    fields = form_cls.Meta.fields
-                else:
-                    exclude = ()
+                exclude = ()
                 verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 icon = 'plus'
                 style = 'success'
                 submit_label = 'Cadastrar'
-                if form_cls and hasattr(form_cls.Meta, 'fieldsets'):
-                    fieldsets = form_cls.Meta.fieldsets
-                elif hasattr(cls.metaclass(), 'fieldsets'):
+                if hasattr(cls.metaclass(), 'fieldsets'):
                     fieldsets = cls.metaclass().fieldsets
 
-            def process(self):
-                self.save()
-                self.notify('Cadastro realizado com sucesso')
-
-            def can_view(self, user):
+            def has_permission(self, user):
                 return self.instance.can_add(user)
-        return Add
+        return form_cls or Add
 
     @classmethod
     def edit_form_cls(cls):
-        cls_name = getattr(cls.metaclass(), 'edit_form', None)
-        if cls_name is None:
-            cls_name = getattr(cls.metaclass(), 'form', None)
+        cls_name = getattr(cls.metaclass(), 'edit_form', getattr(cls.metaclass(), 'form', None))
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
-        class Edit(form_cls or ModelForm):
+        class Edit(ModelForm):
             class Meta:
                 model = cls
                 exclude = ()
@@ -131,19 +124,13 @@ class ModelMixin(object):
                 submit_label = 'Editar'
                 icon = 'pencil'
                 style = 'primary'
-                if form_cls and hasattr(form_cls.Meta, 'fieldsets'):
-                    fieldsets = form_cls.Meta.fieldsets
-                elif hasattr(cls.metaclass(), 'fieldsets'):
+                if hasattr(cls.metaclass(), 'fieldsets'):
                     fieldsets = cls.metaclass().fieldsets
 
-            def process(self):
-                self.save()
-                self.notify('Edição realizada com sucesso')
-
-            def can_view(self, user):
+            def has_permission(self, user):
                 return self.instance.can_edit(user)
 
-        return Edit
+        return form_cls or Edit
 
     @classmethod
     def delete_form_cls(cls):
@@ -152,17 +139,15 @@ class ModelMixin(object):
             class Meta:
                 model = cls
                 fields = ()
-                name = 'Excluir {}'.format(cls.metaclass().verbose_name)
-                verbose_name = 'Excluir'
+                verbose_name = 'Excluir {}'.format(cls.metaclass().verbose_name)
                 icon = 'x'
                 style = 'danger'
                 submit_label = 'Excluir'
 
-            def process(self):
+            def save(self):
                 self.instance.delete()
-                self.notify('Exclusão realizada com sucesso')
 
-            def can_view(self, user):
+            def has_permission(self, user):
                 return self.instance.can_delete(user)
 
         return Delete

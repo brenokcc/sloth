@@ -16,7 +16,7 @@ class AdicionarGestor(forms.ModelForm):
         fields = 'nome', 'email'
         verbose_name = 'Adicionar Gestor'
         relation = 'instituicao'
-        can_view = 'Administrador',
+        groups = 'Administrador',
 
 
 class AdicionarPergunta(forms.ModelForm):
@@ -29,7 +29,7 @@ class AdicionarPergunta(forms.ModelForm):
             'Dados Gerais': ('ordem', 'pergunta', 'texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
-        can_view = 'Administrador',
+        groups = 'Administrador',
 
 
 class AdicionarCampus(forms.ModelForm):
@@ -38,7 +38,7 @@ class AdicionarCampus(forms.ModelForm):
         fields = 'nome',
         verbose_name = 'Adicionar Campus'
         relation = 'instituicao'
-        can_view = 'Administrador',
+        groups = 'Administrador',
 
 
 class AlterarPrioridade(forms.ModelForm):
@@ -46,9 +46,9 @@ class AlterarPrioridade(forms.ModelForm):
         model = Demanda
         fields = 'prioridade',
         verbose_name = 'Alterar Prioridade'
-        can_view = 'Gestor',
+        groups = 'Gestor',
 
-    def can_view(self, user):
+    def has_permission(self, user):
         return self.instance.ciclo.is_aberto() and self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
 
     def get_prioridade_queryset(self, queryset):
@@ -72,7 +72,7 @@ class NaoInformarDemanda(forms.ModelForm):
         fields = ()
         verbose_name = 'Não Informar'
         style = 'danger'
-        can_view = 'Gestor',
+        groups = 'Gestor',
 
     def save(self, *args, **kwargs):
         self.instance.valor = 0
@@ -81,7 +81,7 @@ class NaoInformarDemanda(forms.ModelForm):
         self.instance.finalizada = True
         super().save(*args, **kwargs)
 
-    def can_view(self, user):
+    def has_permission(self, user):
         return self.instance.ciclo.is_aberto() and not self.instance.finalizada
 
 
@@ -90,7 +90,7 @@ class PreencherDemanda(forms.ModelForm):
         model = Demanda
         fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Preencher Dados Gerais'
-        can_view = 'Gestor',
+        groups = 'Gestor',
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,7 +99,7 @@ class PreencherDemanda(forms.ModelForm):
         self.fields['prioridade'].widget.attrs.update(readonly='readonly')
         self.fields['valor'].help_text = 'Valor Disponível R$: {}'.format(format_value(disponivel))
 
-    def can_view(self, user):
+    def has_permission(self, user):
         return self.instance.ciclo.is_aberto() and not self.instance.finalizada
 
     def clean_valor_total(self):
@@ -127,14 +127,14 @@ class AlterarPreenchimento(PreencherDemanda):
         model = Demanda
         fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Alterar Dados Gerais'
-        can_view = 'Gestor',
+        groups = 'Gestor',
 
 
 class Reabir(forms.ModelForm):
     class Meta:
         model = Demanda
         verbose_name = 'Reabir para Edição'
-        can_view = 'Administrador',
+        groups = 'Administrador',
 
     def save(self, *args, **kwargs):
         self.instance.finalizada = False
@@ -151,7 +151,7 @@ class DetalharDemanda(forms.ModelForm):
         verbose_name = 'Detalhar Demanda'
         fields = []
 
-    def can_view(self, user):
+    def has_permission(self, user):
         return self.instance.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists() and self.instance.get_questionario() is not None
 
     def __init__(self, *args, **kwargs):
@@ -245,7 +245,7 @@ class AlterarDetalhamentoDemanda(DetalharDemanda):
         verbose_name = 'Alterar Detalhamento'
         fields = []
 
-    def can_view(self, user):
+    def has_permission(self, user):
         if self.instance.valor and user.roles.filter(name='Gestor').exists():
             questionario_final = QuestionarioFinal.objects.filter(
                 ciclo=self.instance.ciclo, instituicao=self.instance.instituicao
@@ -289,7 +289,7 @@ class ConcluirSolicitacao(forms.Form):
 
     class Meta:
         verbose_name = 'Concluir Solicitação'
-        can_view = 'Gestor',
+        groups = 'Gestor',
         style = 'success'
         fieldsets = {
             'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3'),
@@ -321,7 +321,7 @@ class ConcluirSolicitacao(forms.Form):
         self.fields['prioridade_2'].queryset = ciclo.demanda_set.filter(instituicao=instituicao, descricao__isnull=False)
         self.fields['prioridade_3'].queryset = ciclo.demanda_set.filter(instituicao=instituicao, descricao__isnull=False)
 
-    def can_view(self, user):
+    def has_permission(self, user):
         if user.roles.filter(name='Gestor').exists():
             gestor = Gestor.objects.filter(email=user.username).first()
             ciclo = self.instantiator
@@ -355,11 +355,7 @@ class DuvidaForm(forms.ModelForm):
         model = Duvida
         verbose_name = 'Tirar Dúvida'
         fields = 'pergunta',
-
-    def can_view(self, user):
-        if user.roles.filter(name='Gestor').exists():
-            return True
-        return False
+        groups = 'Gestor',
 
     def save(self, *args, **kwargs):
         gestor = Gestor.objects.filter(email=self.request.user.username).first()
@@ -374,7 +370,7 @@ class ResponderDuvida(forms.ModelForm):
         verbose_name = 'Responder Dúvida'
         fields = 'resposta',
 
-    def can_view(self, user):
+    def has_permission(self, user):
         if user.roles.filter(name='Administrador').exists():
             return True
         return False
@@ -391,7 +387,7 @@ class RestaurarDemanda(forms.ModelForm):
         fields = ()
         style = 'danger'
 
-    def can_view(self, user):
+    def has_permission(self, user):
         if user.roles.filter(name='Administrador').exists() and self.instance.descricao:
             return True
         return False
@@ -411,7 +407,7 @@ class ExportarResultado(forms.Form):
 
     class Meta:
         verbose_name = 'Exportar Resultado'
-        can_view = 'Administrador',
+        groups = 'Administrador',
         icon = 'bi-file-exce'
 
     def process(self):
@@ -462,7 +458,7 @@ class ExportarResultadoPorCategoria(forms.Form):
 
     class Meta:
         verbose_name = 'Exportar Resultado por Categoria'
-        can_view = 'Administrador',
+        groups = 'Administrador',
         icon = 'bi-file-exce'
 
     def process(self):

@@ -419,9 +419,11 @@ class ExportarResultado(forms.Form):
         demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
         questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
         fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA']])
+        prioridades = list([['INSTITUIÇÃO', 'PRIORIDADES', 'DEMANDA']]) 
         dados.append(('Demandas', demandas))
         dados.append(('Questionário', questionario))
         dados.append(('Fechamento', fechamento))
+        dados.append(('Prioridades', prioridades))
         instituicao = self.cleaned_data['instituicao']
         categoria = self.cleaned_data['categoria']
         prioridade = self.cleaned_data['prioridade']
@@ -451,6 +453,9 @@ class ExportarResultado(forms.Form):
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC', questionario_final.detalhe_rco_pendente or ''])
                     fechamento.append([instituicao1.sigla, 'A instituição devolveu algum valor de TED em 2021?', questionario_final.devolucao_ted or ''])
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021', questionario_final.detalhe_devolucao_ted or ''])
+                    prioridades.append([instituicao1.sigla, 1, questionario_final.prioridade_1.descricao if questionario_final.prioridade_1.descricao else ''])
+                    prioridades.append([instituicao1.sigla, 2, questionario_final.prioridade_2.descricao if questionario_final.prioridade_2.descricao else ''])
+                    prioridades.append([instituicao1.sigla, 3, questionario_final.prioridade_3.descricao if questionario_final.prioridade_3.descricao else ''])
         self.http_response(XlsResponse(dados))
 
 

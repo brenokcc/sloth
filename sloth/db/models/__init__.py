@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import six
+
 from django.db import models
 from django.db.models import *
 from django.db.models import base
@@ -66,7 +66,7 @@ class Manager(QuerySet):
     pass
 
 
-class Model(six.with_metaclass(base.ModelBase, models.Model, ModelMixin)):
+class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
 
     class Meta:
         abstract = True

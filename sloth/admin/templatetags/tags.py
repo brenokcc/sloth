@@ -8,6 +8,11 @@ from sloth.utils.formatter import format_value
 register = Library()
 
 
+@register.filter
+def is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+
 @register.filter('format')
 def _format(value):
     return format_value(value)

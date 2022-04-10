@@ -4,7 +4,6 @@
         {% for row in data.data %}
             <div class="float-end">
                 {% include "adm/queryset/checkbox.html" %}
-                {% include "adm/queryset/viewer.html" %}
             </div>
             <dl>
             {% for k, v in row.data.items %}
@@ -27,7 +26,6 @@
                 {% include "adm/queryset/checkbox.html" %}
             </th>
             {% endif %}
-            <td scope="col" width="30px"></td>
             {% for label, display in data.metadata.display.items %}
             <th scope="col">{{ display.name }}</th>
             {% endfor %}
@@ -44,9 +42,6 @@
                 {% include "adm/queryset/checkbox.html" %}
             </th>
             {% endif %}
-            <td class="align-middle">
-                {% include "adm/queryset/viewer.html" %}
-            </td>
             {% for k, v in row.data.items %}
             <td class="align-middle">{{ v|format }}</td>
             {% endfor %}

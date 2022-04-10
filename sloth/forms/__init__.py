@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from copy import deepcopy
 from functools import lru_cache
 import math
@@ -255,7 +256,7 @@ class FormMixin:
         meta = getattr(cls, 'Meta', None)
         if meta:
             target = 'model'
-            name = getattr(meta, 'verbose_name', form_name)
+            name = getattr(meta, 'verbose_name', re.sub("([a-z])([A-Z])","\g<1> \g<2>", form_name))
             submit = getattr(meta, 'submit_label', name)
             icon = getattr(meta, 'icon', None)
             ajax = getattr(meta, 'ajax', True)
@@ -290,16 +291,13 @@ class FormMixin:
         return getattr(meta, 'method', 'post') if meta else 'post'
 
     def check_permission(self, user):
-        print(1111)
         if self.request.user.is_superuser:
             return True
         else:
             if hasattr(self, 'has_permission'):
-                print(type(self), 222)
                 return self.has_permission(self.request.user)
             else:
                 group_names = getattr(self.Meta, 'groups', ())
-                print(group_names, 8888)
                 return self.request.user.roles.filter(name__in=group_names)
 
     @classmethod

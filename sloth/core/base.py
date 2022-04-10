@@ -162,13 +162,16 @@ class ModelMixin(object):
             return cls.delete_form_cls()
         else:
             config = apps.get_app_config(cls.metaclass().app_label)
-            forms = __import__(
-                '{}.forms'.format(config.module.__package__),
-                fromlist=config.module.__package__.split()
-            )
-            for name in dir(forms):
-                if name.lower() == action.lower():
-                    return getattr(forms, name)
+            try:
+                forms = __import__(
+                    '{}.forms'.format(config.module.__package__),
+                    fromlist=config.module.__package__.split()
+                )
+                for name in dir(forms):
+                    if name.lower() == action.lower():
+                        return getattr(forms, name)
+            except ModuleNotFoundError:
+                pass
             return None
 
     @classmethod
@@ -226,7 +229,7 @@ class ModelMixin(object):
         if field:
             return str(field.verbose_name), True
         attr = getattr(cls, lookup)
-        return getattr(attr, 'verbose_name', lookup), False
+        return getattr(attr, '__verbose_name__', lookup), False
 
     @classmethod
     def get_attr_api_type(cls, lookup):

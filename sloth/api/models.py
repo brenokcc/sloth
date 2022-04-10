@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-
+from sloth.db import verbose_name
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from sloth.db import meta
 
 
 class UserManager(models.Manager):
-    @meta('Usuários')
     def all(self):
-        return super().all().list_display('username', 'is_superuser', 'get_roles')
+        return super().all().list_display('username', 'is_superuser', 'get_roles').verbose_name('Usuários')
 
 
 class User(DjangoUser):
@@ -25,21 +23,19 @@ class User(DjangoUser):
         list_display = 'username',
         fieldsets = {
             'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'),
-            'Dados de Acesso': ('is_superuser')
+            'Dados de Acesso': ('is_superuser',)
         }
 
     def view(self):
         return self.values('get_general_info', 'get_access_info')
 
-    @meta('Dados Gerais')
     def get_general_info(self):
-        return self.values(('first_name', 'last_name'), 'username', 'email')
+        return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
 
-    @meta('Dados de Acesso')
     def get_access_info(self):
-        return self.values('is_superuser',)
+        return self.values('is_superuser',).verbose_name('Dados de Acesso')
 
-    @meta('Papeis')
+    @verbose_name('Papéis')
     def get_roles(self):
         return [role.name for role in self.roles.all()]
 
@@ -80,9 +76,8 @@ class Role(models.Model):
         else:
             return '{}:{}'.format(self.name, self.user.get_username())
 
-    @meta('Referência')
     def get_scope(self):
-        return self.scope
+        return self.values('scope').verbose_name('Referência')
 
 
 class Scope(models.Model):
@@ -108,17 +103,14 @@ class Application(AbstractApplication):
     def __str__(self):
         return self.name
 
-    @meta('Tokens de Acesso')
     def get_access_tokens(self):
-        return self.accesstoken_set.all()
+        return self.accesstoken_set.all().verbose_name('Tokens de Acesso')
 
-    @meta('Dados Gerais')
     def general_data(self):
-        return self.values('id', 'name')
+        return self.values('id', 'name').verbose_name('Dados Gerais')
 
-    @meta('Dados de Acesso')
     def access_data(self):
-        return self.values('client_id', 'client_secret', 'authorization_grant_type')
+        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
 
     def view(self):
         return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')

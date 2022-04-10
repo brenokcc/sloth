@@ -27,7 +27,7 @@ class QuerySet(models.QuerySet):
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
             actions=[], attach=[], template=None, request=None, attr=None,
-            global_actions=[], batch_actions=[], lookups=[], collapsed=True
+            global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None
         )
 
     def normalize_email(self, *args, **kwargs):
@@ -90,7 +90,7 @@ class QuerySet(models.QuerySet):
         display = {}
         for lookup in self._get_list_display():
             verbose_name, sort = self.model.get_attr_verbose_name(lookup)
-            display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name, sort=sort)
+            display[verbose_name if verbose else lookup] = dict(key=lookup, name=pretty(verbose_name), sort=sort)
         return display
 
     def _get_filters(self, verbose=False):
@@ -129,14 +129,13 @@ class QuerySet(models.QuerySet):
         attach = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                attr = getattr(getattr(self.model.objects, '_queryset_class'), name)
-                verbose_name = getattr(attr, 'verbose_name', name)
                 if self.metadata['request']:
                     obj = getattr(self._clone(), name)().apply_role_lookups(self.metadata['request'].user)
                 else:
                     obj = getattr(self._clone(), name)()
+                verbose_name = obj.metadata['verbose_name']
                 if isinstance(obj, QuerySet):
-                    if verbose_name == 'all':
+                    if name == 'all':
                         verbose_name = 'Tudo'
                     attach[verbose_name if verbose else name] = dict(
                         name=verbose_name, key=name, count=obj.count(), active=i == 0
@@ -176,7 +175,7 @@ class QuerySet(models.QuerySet):
         data = []
         for obj in self:
             item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
-            data.append(dict(id=obj.id, description=str(obj), data=item, actions=self.get_obj_actions(obj)) if wrap else item)
+            data.append(dict(id=obj.id, description=str(obj), data=item, actions=self.get_obj_actions(obj) + ['view']) if wrap else item)
         return data
 
     def export(self, limit=100):
@@ -219,8 +218,10 @@ class QuerySet(models.QuerySet):
             attach = self._get_attach(verbose)
             values = self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             pages = []
-            for page in range(0, self.count() // self._get_list_per_page() + 1):
-                pages.append(page + 1)
+            n = self.count() // self._get_list_per_page() + 1
+            for page in range(0, n):
+                if page == 0 or page == n - 1 or (self.metadata['page'] - 5 < page < self.metadata['page'] + 5):
+                    pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
                 total=self.metadata['total'],
@@ -237,7 +238,7 @@ class QuerySet(models.QuerySet):
             if attach:
                 data.update(attach=attach)
             if path is None:
-                if self.metadata['request'] and self.metadata['request'].is_ajax():
+                if self.metadata['request'] and self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest':
                     path = self.metadata['request'].path[4:]
                 else:
                     path = '/{}/{}/'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
@@ -255,6 +256,14 @@ class QuerySet(models.QuerySet):
                             path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                         )
                         data['actions'][action['target']].append(action)
+
+            data['actions']['instance'].append(
+                dict(
+                    type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
+                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path)
+                )
+            )
+
             template = self.metadata['template']
             if template is None:
                 template = getattr(self.model.metaclass(), 'list_template', None)
@@ -268,6 +277,10 @@ class QuerySet(models.QuerySet):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
     # metadata functions
+
+    def verbose_name(self, name):
+        self.metadata['verbose_name'] = name
+        return self
 
     def view(self, *names):
         self.metadata['view'] = list(names)

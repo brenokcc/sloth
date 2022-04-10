@@ -1,4 +1,5 @@
-{% if not request.is_ajax %}
+{% load tags %}
+{% if not request|is_ajax %}
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -42,7 +43,7 @@
 {% for url in settings.JS %}
       <script src="{{ url }}"></script>
 {% endfor %}
-{% if not request.is_ajax %}
+{% if not request|is_ajax %}
     </main>
     {% include "adm/footer.html" %}
     {% include "adm/modal.html" %}

@@ -82,7 +82,7 @@ def index(request):
                 if hasattr(cls.Meta, 'width'):
                     width = cls.Meta.width
             components.append((width, cls(request).render()))
-        return render(request, [settings.INDEX_TEMPLATE], dict(settings=settings, components=components))
+        return render(request, [getattr(settings, 'INDEX_TEMPLATE', 'adm/index.html')], dict(settings=settings, components=components))
     return HttpResponseRedirect('/adm/login/')
 
 

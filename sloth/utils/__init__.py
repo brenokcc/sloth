@@ -82,7 +82,7 @@ def pretty(name):
             else:
                 output.append(token)
         name = ' '.join(output)
-    return name
+    return name.capitalize()
 
 
 def load_menu(user):

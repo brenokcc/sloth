@@ -24,7 +24,7 @@ class QuerySetStatistics(object):
         self._ydict = {}
         self._values_dict = None
         self.cursor = 0
-        self.metadata = dict(request=None, attr=None, template='')
+        self.metadata = dict(request=None, attr=None, template='', verbose_name=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}

@@ -95,11 +95,11 @@
             </div>
             {% endfor %}
             <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
+                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
-                    Filtrar
+                    <i class="bi bi-funnel"></i> Filtrar
                 </button>
             </div>
         </form>
@@ -139,6 +139,7 @@
                     $('#queryset-data-{{ data.uuid }}').html(html).initialize();
                     $(document.body).removeClass('page-loading');
                     $('#queryset-{{ data.uuid }}').find('.submit-panel').find('.spinner-border').addClass('d-none');
+                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('i').removeClass('d-none');
                     $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').addClass('d-none');
                 }
             });

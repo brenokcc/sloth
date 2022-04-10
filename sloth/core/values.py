@@ -14,7 +14,7 @@ class ValueSet(dict):
         self.instance = instance
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type='fieldset', attr=None,
-            attach=[], append=[], image=image, template=None, request=None, primitive=False
+            attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -42,6 +42,10 @@ class ValueSet(dict):
 
     def template(self, name):
         self.metadata['template'] = name
+        return self
+
+    def verbose_name(self, name):
+        self.metadata['verbose_name'] = name
         return self
 
     def attr(self, name):
@@ -83,32 +87,32 @@ class ValueSet(dict):
                     if isinstance(value, QuerySet):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
+                        verbose_name = value.metadata['verbose_name']
                         value = value.contextualize(self.metadata['request'])
-                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                         if wrap:
                             value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
-                            value['name'] = verbose_name
+                            value['name'] = verbose_name if verbose else attr_name
                         else:
                             value = [str(o) for o in value]
                     elif isinstance(value, QuerySetStatistics):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
+                        verbose_name = value.metadata['verbose_name']
                         value.contextualize(self.metadata['request'])
-                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                         value = value.serialize(path=path, wrap=wrap)
                         if wrap:
-                            value['name'] = verbose_name
+                            value['name'] = verbose_name if verbose else attr_name
                     elif isinstance(value, ValueSet):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
+                        verbose_name = value.metadata['verbose_name']
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']
                         template = getattr(value, 'metadata')['template']
-                        verbose_name = getattr(attr, 'verbose_name', attr_name) if verbose else attr_name
                         key = attr_name
                         value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
-                        value = dict(uuid=uuid1().hex, type=self.metadata['type'], name=verbose_name, key=key,
+                        value = dict(uuid=uuid1().hex, type=self.metadata['type'], name=verbose_name if verbose else attr_name, key=key,
                                      actions=[], data=value, path=path) if wrap else value
                         if wrap:
                             for form_name in actions:
@@ -130,6 +134,7 @@ class ValueSet(dict):
                             if template:
                                 value['template'] = '{}.html'.format(template)
                     else:
+                        verbose_name = None
                         self.metadata['primitive'] = True
                         if formatted and getattr(attr, 'template', None):
                             template = attr.template
@@ -145,7 +150,7 @@ class ValueSet(dict):
                             value = dict(value=value, width=width)
 
                     if verbose:
-                        attr_name = pretty(self.metadata['model'].get_attr_verbose_name(attr_name)[0])
+                        attr_name = verbose_name or pretty(self.metadata['model'].get_attr_verbose_name(attr_name)[0])
 
                     self[attr_name] = value
         else:

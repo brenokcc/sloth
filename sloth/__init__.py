@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import options
-from django.db.models import manager, Model
+from django.db.models import manager
 from django.db.models.base import ModelBase
 
 from sloth.core.base import ModelMixin

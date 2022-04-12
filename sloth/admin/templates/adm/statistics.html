@@ -1,13 +1,5 @@
 {% load tags %}
-{% if data.name and not compact %}
-<div class="card">
-    <div class="card-body">
-          <div class="statistics-title">
-                <h2>{{ data.name }}</h2>
-          </div>
-    </div>
-</div>
-{% endif %}
+
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>

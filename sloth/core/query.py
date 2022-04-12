@@ -246,6 +246,13 @@ class QuerySet(models.QuerySet):
                         path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
+            data['actions']['instance'].append(
+                dict(
+                    type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
+                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path)
+                )
+            )
+
             for action_type in ('global_actions', 'actions', 'batch_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.model.action_form_cls(form_name)
@@ -256,13 +263,6 @@ class QuerySet(models.QuerySet):
                             path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                         )
                         data['actions'][action['target']].append(action)
-
-            data['actions']['instance'].append(
-                dict(
-                    type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path)
-                )
-            )
 
             template = self.metadata['template']
             if template is None:

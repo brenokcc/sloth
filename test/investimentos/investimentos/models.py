@@ -224,11 +224,11 @@ class LimiteDemanda(models.Model):
 
 
 class CicloManager(models.Manager):
-    @meta('Ciclos', roles=('Administrador',))
+    @meta('Ciclos')
     def all(self):
         return super().role_lookups('Gestor', instituicao='instituicoes')
 
-    @meta('Ciclos Abertos', roles=('Administrador',))
+    @meta('Ciclos Abertos')
     def abertos(self):
         hoje = datetime.date.today()
         return super().filter(inicio__lte=hoje).exclude(fim__lt=datetime.date.today())

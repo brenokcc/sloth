@@ -87,7 +87,7 @@ class ValueSet(dict):
                     if isinstance(value, QuerySet):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
-                        verbose_name = value.metadata['verbose_name']
+                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
                             value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
@@ -97,15 +97,15 @@ class ValueSet(dict):
                     elif isinstance(value, QuerySetStatistics):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
-                        verbose_name = value.metadata['verbose_name']
+                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
-                        value = value.serialize(path=path, wrap=wrap)
+                        value = value.serialize(path=path, wrap=wrap, lazy=valueset is not None)
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
                     elif isinstance(value, ValueSet):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
-                        verbose_name = value.metadata['verbose_name']
+                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']

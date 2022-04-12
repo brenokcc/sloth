@@ -64,6 +64,8 @@ def serialize(obj):
 
 def pretty(name):
     if name.islower():
+        if name.startswith('get_'):
+            name = name[4:].replace('_', ' ')
         regex_roman_numbers = r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$'
         name = re.sub(r'\.', '. ', name or '')  # adding spaces to short names
         name = re.sub(r'\s+', ' ', name)  # removing multiple spaces

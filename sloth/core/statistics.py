@@ -31,6 +31,10 @@ class QuerySetStatistics(object):
         if y and '__month' in y:
             self._ydict = {i + 1: month for i, month in enumerate(MONTHS)}
 
+    def verbose_name(self, name):
+        self.metadata['verbose_name'] = name
+        return self
+
     def contextualize(self, request):
         self.metadata.update(request=request)
         if request:
@@ -118,17 +122,12 @@ class QuerySetStatistics(object):
     def debug(self):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
-    def serialize(self, wrap=True, verbose=True, path=None):
-        self._calc()
+    def serialize(self, wrap=True, verbose=True, path=None, lazy=False):
+        if not lazy:
+            self._calc()
         series = dict()
         formatter = {True: 'Sim', False: 'Não', None: ''}
-        verbose_name = None
-        if self.metadata['attr']:
-            attr_name = self.metadata['attr']
-            if hasattr(self.qs, attr_name):
-                verbose_name = getattr(getattr(self.qs, attr_name), 'verbose_name')
-            else:  # the method in in an object
-                verbose_name = getattr(getattr(self.qs._hints['instance'], attr_name), 'verbose_name')
+        verbose_name = self.metadata['verbose_name']
 
         def format_value(value):
             return float(value) if isinstance(value, Decimal) else value

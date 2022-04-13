@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from .. import views
-from ..forms import FormMixin, LoginForm, PasswordForm
+from ..forms import Action, LoginForm, PasswordForm
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import gadgets
@@ -90,7 +90,7 @@ def index(request):
 def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = dict(settings=settings)
     data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
-    if isinstance(data, FormMixin):
+    if isinstance(data, Action):
         context.update(form=data)
         if data.response:
             html = data.response.get('html')

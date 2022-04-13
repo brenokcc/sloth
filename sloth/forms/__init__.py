@@ -18,17 +18,59 @@ from ..exceptions import JsonReadyResponseException
 from ..utils import load_menu
 
 
-class FakeForm:
+class PermissionChecker:
 
     def __init__(self, request, instance=None, instantiator=None):
         self.request = request
         self.instance = instance
         self.instantiator = instantiator
 
+    def has_permission(self, user):
+        pass
 
-class FormMixin:
+
+class ActionMetaclass(models.ModelFormMetaclass):
+    def __new__(mcs, name, bases, attrs):
+        if 'Meta' in attrs:
+            if hasattr(attrs['Meta'], 'model'):
+                bases += ModelForm,
+            else:
+                bases += Form,
+            if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
+                form_fields = []
+                fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
+                for tuples in fieldsets.values():
+                    for names in tuples:
+                        if isinstance(names, str):
+                            form_fields.append(names)
+                        else:
+                            form_fields.extend(names)
+                setattr(attrs['Meta'], 'fields', form_fields)
+        elif name != 'Action':
+            raise NotImplementedError('class {} must have a Meta class.'.format(name))
+        return super().__new__(mcs, name, bases, attrs)
+
+
+class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
+        if ModelForm in self.__class__.__bases__:
+            self.instance = kwargs.get('instance', None)
+        else:
+            self.instance = kwargs.pop('instance', None)
+        self.request = kwargs.pop('request', None)
+        self.instantiator = kwargs.pop('instantiator', None)
+        self.instances = kwargs.pop('instances', ())
+        if self.instances:
+            kwargs.update(instance=self.instances[0])
+        if 'data' not in kwargs:
+            if self.base_fields:
+                data = self.request.POST or None
+            else:
+                data = self.request.POST
+            kwargs['data'] = data
+            kwargs['files'] = self.request.FILES or None
+
         super().__init__(*args, **kwargs)
         self.response = {}
         self.fieldsets = {}
@@ -300,10 +342,10 @@ class FormMixin:
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        form = FakeForm(request, instance=instance, instantiator=instantiator)
-        has_permission = cls.has_permission(form, request.user)
+        checker = PermissionChecker(request, instance=instance, instantiator=instantiator)
+        has_permission = cls.has_permission(checker, request.user)
         if has_permission is None:
-            return cls.check_permission(form, request.user)
+            return cls.check_permission(checker, request.user)
         return has_permission
 
     def __str__(self):
@@ -378,18 +420,18 @@ class FormMixin:
             q=q, items=items
         )
 
-    def redirect(self, url='..', message=None, style='sucess', data=None):
+    def redirect(self, url='..', message=None, style='sucess'):
         self.response.update(type='redirect', url=url)
         if message is None:
             message = getattr(self.metaclass, 'message', None)
         if message:
             messages.add_message(self.request, messages.INFO, message)
             self.response.update(message=message, style=style)
-        if data:
-            data.update(form=self)
-            self.response.update(
-                html=render_to_string(['{}.html'.format(self.__class__.__name__)], data, request=self.request)
-            )
+
+    def display(self, data=None, **kwargs):
+        self.response.update(
+            html=render_to_string(['{}.html'.format(self.__class__.__name__)], data or kwargs, request=self.request)
+        )
 
     def download(self, file_path_or_bytes, file_name=None):
         download_dir_path = os.path.join(settings.MEDIA_ROOT, 'download')
@@ -406,49 +448,6 @@ class FormMixin:
             print(file_path_or_bytes, file_path)
         self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
 
-
-class ModelFormMetaclass(models.ModelFormMetaclass):
-    def __new__(mcs, name, bases, attrs):
-        if 'Meta' in attrs:
-            if hasattr(attrs['Meta'], 'model'):
-                bases += ModelForm,
-            else:
-                bases += Form,
-            if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
-                form_fields = []
-                fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
-                for tuples in fieldsets.values():
-                    for names in tuples:
-                        if isinstance(names, str):
-                            form_fields.append(names)
-                        else:
-                            form_fields.extend(names)
-                setattr(attrs['Meta'], 'fields', form_fields)
-        elif name != 'Action':
-            raise NotImplementedError('class {} must have a Meta class.'.format(name))
-        return super().__new__(mcs, name, bases, attrs)
-
-
-class Action(FormMixin, metaclass=ModelFormMetaclass):
-
-    def __init__(self, *args, **kwargs):
-        if ModelForm in self.__class__.__bases__:
-            self.instance = kwargs.get('instance', None)
-        else:
-            self.instance = kwargs.pop('instance', None)
-        self.request = kwargs.pop('request', None)
-        self.instantiator = kwargs.pop('instantiator', None)
-        self.instances = kwargs.pop('instances', ())
-        if self.instances:
-            kwargs.update(instance=self.instances[0])
-        if 'data' not in kwargs:
-            if self.base_fields or hasattr(self, 'get_fieldsets'):
-                data = self.request.POST or None
-            else:
-                data = self.request.POST
-            kwargs['data'] = data
-            kwargs['files'] = self.request.FILES or None
-        super().__init__(*args, **kwargs)
 
     def submit(self):
         if self.instances:

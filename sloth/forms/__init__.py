@@ -407,27 +407,13 @@ class FormMixin:
         self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
 
 
-class Form(FormMixin, Form):
-    def __init__(self, *args, **kwargs):
-        self.instance = kwargs.pop('instance', None)
-        self.instances = kwargs.pop('instances', ())
-        self.instantiator = kwargs.pop('instantiator', None)
-        self.request = kwargs.pop('request', None)
-        if 'data' not in kwargs:
-            if self.base_fields or hasattr(self, 'get_fieldsets'):
-                data = self.request.POST or None
-            else:
-                data = self.request.POST
-            kwargs['data'] = data
-        super().__init__(*args, **kwargs)
-
-    def submit(self):
-        self.redirect(message='Ação realizada com sucesso.')
-
-
 class ModelFormMetaclass(models.ModelFormMetaclass):
     def __new__(mcs, name, bases, attrs):
         if 'Meta' in attrs:
+            if hasattr(attrs['Meta'], 'model'):
+                bases += ModelForm,
+            else:
+                bases += Form,
             if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
                 form_fields = []
                 fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
@@ -438,14 +424,18 @@ class ModelFormMetaclass(models.ModelFormMetaclass):
                         else:
                             form_fields.extend(names)
                 setattr(attrs['Meta'], 'fields', form_fields)
-
+        elif name != 'Action':
+            raise NotImplementedError('class {} must have a Meta class.'.format(name))
         return super().__new__(mcs, name, bases, attrs)
 
 
-class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
+class Action(FormMixin, metaclass=ModelFormMetaclass):
 
     def __init__(self, *args, **kwargs):
-        self.instance = kwargs.get('instance', None)
+        if ModelForm in self.__class__.__bases__:
+            self.instance = kwargs.get('instance', None)
+        else:
+            self.instance = kwargs.pop('instance', None)
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
@@ -471,7 +461,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
         self.redirect(message='Ação realizada com sucesso.')
 
 
-class LoginForm(Form):
+class LoginForm(Action):
     username = CharField(label='Login')
     password = CharField(label='Senha', widget=widgets.PasswordInput())
 
@@ -506,7 +496,7 @@ class LoginForm(Form):
             self.request.session.save()
 
 
-class PasswordForm(Form):
+class PasswordForm(Action):
     password = CharField(label='Senha', widget=widgets.PasswordInput())
     password2 = CharField(label='Confirmação', widget=widgets.PasswordInput())
 

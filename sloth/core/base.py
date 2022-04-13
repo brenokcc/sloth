@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 
-from sloth.forms import ModelForm
+from sloth.forms import Action
 from sloth.core.values import ValueSet
 from sloth.core.query import QuerySet
 
@@ -96,7 +96,7 @@ class ModelMixin(object):
         cls_name = getattr(cls.metaclass(), 'add_form', getattr(cls.metaclass(), 'form', None))
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
-        class Add(ModelForm):
+        class Add(Action):
             class Meta:
                 model = cls
                 exclude = ()
@@ -116,7 +116,7 @@ class ModelMixin(object):
         cls_name = getattr(cls.metaclass(), 'edit_form', getattr(cls.metaclass(), 'form', None))
         form_cls = cls.action_form_cls(cls_name) if cls_name else None
 
-        class Edit(ModelForm):
+        class Edit(Action):
             class Meta:
                 model = cls
                 exclude = ()
@@ -135,7 +135,7 @@ class ModelMixin(object):
     @classmethod
     def delete_form_cls(cls):
 
-        class Delete(ModelForm):
+        class Delete(Action):
             class Meta:
                 model = cls
                 fields = ()

@@ -3,7 +3,7 @@ import datetime
 from datetime import timedelta
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
-from sloth.db import models, meta, role
+from sloth.db import models, verbose_name, role
 
 
 @role('Administrador', username='cpf')
@@ -59,21 +59,21 @@ class Categoria(models.Model):
     def view(self):
         return self.values('get_dados_gerais', 'get_perguntas').append('get_quantidade_perguntas_por_tipo_resposta')
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('nome')
 
-    @meta('Questionário')
+    @verbose_name('Questionário')
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
         ).order_by('ordem').actions('edit', 'delete').template('adm/queryset/accordion')
 
-    @meta('Quantidade de Perguntas')
+    @verbose_name('Quantidade de Perguntas')
     def get_quantidade_perguntas(self):
         return self.pergunta_set.count()
 
-    @meta('Perguntas por Tipo')
+    @verbose_name('Perguntas por Tipo')
     def get_quantidade_perguntas_por_tipo_resposta(self):
         return self.pergunta_set.count('tipo_resposta')
 
@@ -127,7 +127,7 @@ class Pergunta(models.Model):
         ordem = '{}) '.format(self.ordem) if self.ordem else ''
         return '{}{}'.format(ordem, self.texto)
 
-    @meta('Tipo de Resposta')
+    @verbose_name('Tipo de Resposta')
     def get_tipo_resposta(self):
         return self.get_tipo_resposta_display()
 
@@ -153,15 +153,15 @@ class Instituicao(models.Model):
     def view(self):
         return self.values('get_dados_gerais', 'get_gestores', 'get_campi')
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('nome', 'sigla')
 
-    @meta('Campi')
+    @verbose_name('Campi')
     def get_campi(self):
         return self.campus_set.ignore('instituicao').global_actions('AdicionarCampus').actions('edit', 'delete')
 
-    @meta('Gestores')
+    @verbose_name('Gestores')
     def get_gestores(self):
         return self.gestor_set.list_display('nome', 'email').global_actions('AdicionarGestor').actions('edit', 'delete')
 
@@ -224,11 +224,11 @@ class LimiteDemanda(models.Model):
 
 
 class CicloManager(models.Manager):
-    @meta('Ciclos')
+    @verbose_name('Ciclos')
     def all(self):
         return super().role_lookups('Gestor', instituicao='instituicoes')
 
-    @meta('Ciclos Abertos')
+    @verbose_name('Ciclos Abertos')
     def abertos(self):
         hoje = datetime.date.today()
         return super().filter(inicio__lte=hoje).exclude(fim__lt=datetime.date.today())
@@ -290,38 +290,38 @@ class Ciclo(models.Model):
         self.gerar_demandas()
         self.gerar_questionarios()
 
-    @meta('Limite de Demandas por Categoria')
+    @verbose_name('Limite de Demandas por Categoria')
     def get_limites_demandas(self):
         return self.limites.all()
 
-    @meta('Total Solicitado por Categoria')
+    @verbose_name('Total Solicitado por Categoria')
     def get_total_por_instituicao(self):
         return self.demanda_set.all().filter(valor__isnull=False).sum('valor', 'classificacao', 'instituicao')
 
-    @meta('Solicitações')
+    @verbose_name('Solicitações')
     def get_solicitacoes(self):
         return self.demanda_set.all().list_filter('prioridade', 'classificacao').list_dynamic_filter('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).role_lookups('Gestor', instituicao='instituicao')
 
-    @meta('Configuração Geral')
+    @verbose_name('Configuração Geral')
     def get_configuracao_geral(self):
         return self.values('teto', ('inicio', 'fim'))
 
     def can_get_configuracao(self, user):
         return user.is_superuser or user.roles.filter(name='Administrador').exists()
 
-    @meta('Configuração')
+    @verbose_name('Configuração')
     def get_configuracao(self):
         return self.values('get_configuracao_geral', 'get_limites_demandas')
 
-    @meta('Resumo')
+    @verbose_name('Resumo')
     def get_resumo(self):
         return self.values('get_total_por_instituicao', 'get_questionario_final')
 
-    @meta('Questionário Final')
+    @verbose_name('Questionário Final')
     def get_questionario_final(self):
         return self.questionariofinal_set.all().list_display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3').role_lookups('Gestor', instituicao='instituicao')
 
-    @meta('Detalhamento')
+    @verbose_name('Detalhamento')
     def get_detalhamento(self):
         return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado', 'ExportarResultadoPorCategoria')
 
@@ -330,7 +330,7 @@ class Ciclo(models.Model):
 
 
 class DemandaManager(models.Manager):
-    @meta('Todas')
+    @verbose_name('Todas')
     def all(self):
         return self.list_display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'finalizada'
@@ -338,13 +338,13 @@ class DemandaManager(models.Manager):
             'aguardando_dados_gerais', 'aguardando_detalhamento', 'finalizadas'
         ).actions('AlterarPrioridade').role_lookups('Gestor', instituicao='instituicao')
 
-    @meta('Aguardando Dados Gerais')
+    @verbose_name('Aguardando Dados Gerais')
     def aguardando_dados_gerais(self):
         return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais').filter(valor__isnull=True).actions(
             'PreencherDemanda', 'NaoInformarDemanda'
         ).role_lookups('Gestor', instituicao='instituicao')
 
-    @meta('Aguardando Detalhamento')
+    @verbose_name('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
         return self.list_display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'get_progresso_questionario'
@@ -352,7 +352,7 @@ class DemandaManager(models.Manager):
             'DetalharDemanda', 'AlterarPreenchimento', 'RestaurarDemanda'
         ).role_lookups('Gestor', instituicao='instituicao').view('get_dados_gerais')
 
-    @meta('Preenchidas')
+    @verbose_name('Preenchidas')
     def finalizadas(self):
         return self.filter(finalizada=True).actions('Reabir', 'AlterarDetalhamentoDemanda')
 
@@ -382,23 +382,23 @@ class Demanda(models.Model):
     def get_questionario(self):
         return self.questionario_set.first()
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('descricao', 'valor_total', 'valor')
 
-    @meta('Perguntas Obrigatórias')
+    @verbose_name('Perguntas Obrigatórias')
     def get_total_perguntas(self):
         return self.get_questionario().respostaquestionario_set.filter(pergunta__obrigatoria=True).count() if self.get_questionario() else 0
 
-    @meta('Total de Respostas')
+    @verbose_name('Total de Respostas')
     def get_total_respostas(self):
         return self.get_questionario().respostaquestionario_set.filter(pergunta__obrigatoria=True, resposta__isnull=False).count() if self.get_questionario() else 0
 
-    @meta('Questionário')
+    @verbose_name('Questionário')
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @meta('Respostas do Questionário', template='adm/formatters/progress')
+    @verbose_name('Respostas do Questionário', template='adm/formatters/progress')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()
         total_respostas = self.get_total_respostas()
@@ -406,7 +406,7 @@ class Demanda(models.Model):
             return int(total_respostas * 100 / total_perguntas)
         return 0
 
-    @meta('Prioridade', template='prioridade')
+    @verbose_name('Prioridade', template='prioridade')
     def get_prioridade(self):
         return self.prioridade
 
@@ -418,7 +418,7 @@ class Demanda(models.Model):
         if self.pk is None and self.classificacao:
             self.ciclo.gerar_questionarios()
 
-    @meta('Resposta do Questionário')
+    @verbose_name('Resposta do Questionário')
     def get_respostas_questionario(self):
         return RespostaQuestionario.objects.filter(
             questionario__demanda=self
@@ -440,15 +440,15 @@ class Questionario(models.Model):
 
 
 class RespostaQuestionarioManager(models.Manager):
-    @meta('Respostas')
+    @verbose_name('Respostas')
     def all(self):
         return super().all().attach('aguardando_submissao', 'submetidas')
 
-    @meta('Aguardando Submissão')
+    @verbose_name('Aguardando Submissão')
     def aguardando_submissao(self):
         return super().filter(resposta__isnull=True)
 
-    @meta('Submetidas')
+    @verbose_name('Submetidas')
     def submetidas(self):
         return super().filter(resposta__isnull=False)
 
@@ -468,23 +468,23 @@ class RespostaQuestionario(models.Model):
         list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
         list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
 
-    @meta('Demanda')
+    @verbose_name('Demanda')
     def get_demanda(self):
         return self.questionario.demanda.descricao
 
-    @meta('Classificação')
+    @verbose_name('Classificação')
     def get_categoria_demanda(self):
         return self.questionario.demanda.classificacao
 
-    @meta('Prioridade')
+    @verbose_name('Prioridade')
     def get_prioridade_demanda(self):
         return self.questionario.demanda.prioridade
 
-    @meta('Ciclo')
+    @verbose_name('Ciclo')
     def get_ciclo(self):
         return self.questionario.demanda.ciclo
 
-    @meta('Instituição')
+    @verbose_name('Instituição')
     def get_instituicao(self):
         return self.questionario.demanda.instituicao
 
@@ -562,7 +562,7 @@ class QuestionarioFinal(models.Model):
 
 
 class DuvidaManager(models.Manager):
-    @meta('Dúvidas')
+    @verbose_name('Dúvidas')
     def all(self):
         return super().all().actions('ResponderDuvida').role_lookups('Gestor', instituicao='instituicao')
 

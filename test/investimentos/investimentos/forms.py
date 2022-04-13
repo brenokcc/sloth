@@ -3,14 +3,14 @@ import os
 from datetime import datetime
 
 from django.conf import settings
-from sloth import forms
+from sloth import actions
 from sloth.utils.formatter import format_value
 from sloth.utils.http import XlsResponse
 
 from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal, Duvida, Instituicao, Categoria, Prioridade
 
 
-class AdicionarGestor(forms.ModelForm):
+class AdicionarGestor(actions.Action):
     class Meta:
         model = Gestor
         fields = 'nome', 'email'
@@ -19,7 +19,7 @@ class AdicionarGestor(forms.ModelForm):
         groups = 'Administrador',
 
 
-class AdicionarPergunta(forms.ModelForm):
+class AdicionarPergunta(actions.Action):
     class Meta:
         model = Pergunta
         verbose_name = 'Adicionar Pergunta'
@@ -32,7 +32,7 @@ class AdicionarPergunta(forms.ModelForm):
         groups = 'Administrador',
 
 
-class AdicionarCampus(forms.ModelForm):
+class AdicionarCampus(actions.Action):
     class Meta:
         model = Campus
         fields = 'nome',
@@ -41,7 +41,7 @@ class AdicionarCampus(forms.ModelForm):
         groups = 'Administrador',
 
 
-class AlterarPrioridade(forms.ModelForm):
+class AlterarPrioridade(actions.Action):
     class Meta:
         model = Demanda
         fields = 'prioridade',
@@ -66,7 +66,7 @@ class AlterarPrioridade(forms.ModelForm):
         super().save(*args, **kwargs)
 
 
-class NaoInformarDemanda(forms.ModelForm):
+class NaoInformarDemanda(actions.Action):
     class Meta:
         model = Demanda
         fields = ()
@@ -85,7 +85,7 @@ class NaoInformarDemanda(forms.ModelForm):
         return self.instance.ciclo.is_aberto() and not self.instance.finalizada
 
 
-class PreencherDemanda(forms.ModelForm):
+class PreencherDemanda(actions.Action):
     class Meta:
         model = Demanda
         fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
@@ -105,17 +105,17 @@ class PreencherDemanda(forms.ModelForm):
     def clean_valor_total(self):
         valor_total = self.cleaned_data['valor_total']
         if valor_total < 176000:
-            raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
+            raise actions.ValidationError('O valor deve ser maior que R$ 176.000,00')
         return valor_total
 
     def clean_valor(self):
         valor = self.cleaned_data['valor']
         total = self.instance.ciclo.demanda_set.filter(instituicao=self.instance.instituicao).exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
         if self.instance.classificacao.contabilizar and total + valor > self.instance.ciclo.teto:
-            raise forms.ValidationError(
+            raise actions.ValidationError(
                 'Esse valor faz com que o limite de investimento para a instituição seja ultrapassado.')
         if valor < 176000:
-            raise forms.ValidationError('O valor deve ser maior que R$ 176.000,00')
+            raise actions.ValidationError('O valor deve ser maior que R$ 176.000,00')
         return valor
 
     def get_unidades_beneficiadas_queryset(self, queryset):
@@ -130,9 +130,10 @@ class AlterarPreenchimento(PreencherDemanda):
         groups = 'Gestor',
 
 
-class Reabir(forms.ModelForm):
+class Reabir(actions.Action):
     class Meta:
         model = Demanda
+        fields = ()
         verbose_name = 'Reabir para Edição'
         groups = 'Administrador',
 
@@ -144,7 +145,7 @@ class Reabir(forms.ModelForm):
         super().save(*args, **kwargs)
 
 
-class DetalharDemanda(forms.ModelForm):
+class DetalharDemanda(actions.Action):
 
     class Meta:
         model = Demanda
@@ -161,43 +162,43 @@ class DetalharDemanda(forms.ModelForm):
             key = '{}'.format(pergunta_questionario.pk)
             self.initial[key] = pergunta_questionario.resposta
             if tipo_resposta == Pergunta.TEXTO_CURTO:
-                self.fields[key] = forms.CharField(
+                self.fields[key] = actions.CharField(
                     label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.TEXTO_LONGO:
-                self.fields[key] = forms.CharField(
-                    label=str(pergunta_questionario.pergunta), widget=forms.Textarea(),
+                self.fields[key] = actions.CharField(
+                    label=str(pergunta_questionario.pergunta), widget=actions.Textarea(),
                     required=False
                 )
             elif tipo_resposta == Pergunta.NUMERO_DECIMAL:
-                self.fields[key] = forms.DecimalField(
+                self.fields[key] = actions.DecimalField(
                     label=str(pergunta_questionario.pergunta),
                     required=False, localize=True
                 )
             elif tipo_resposta == Pergunta.NUMERO_INTEIRO:
-                self.fields[key] = forms.IntegerField(
+                self.fields[key] = actions.IntegerField(
                     label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.DATA:
-                self.fields[key] = forms.DateField(
+                self.fields[key] = actions.DateField(
                     label=str(pergunta_questionario.pergunta),
                     required=False
                 )
             elif tipo_resposta == Pergunta.BOOLEANO:
-                self.fields[key] = forms.ChoiceField(
+                self.fields[key] = actions.ChoiceField(
                     label=str(pergunta_questionario.pergunta),
                     required=False,
                     choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']]
                 )
             elif tipo_resposta == Pergunta.ARQUIVO:
-                self.fields[key] = forms.FileField(
+                self.fields[key] = actions.FileField(
                     label=str(pergunta_questionario.pergunta),
                     required=False,
                 )
             elif tipo_resposta == Pergunta.OPCOES:
-                self.fields[key] = forms.ChoiceField(
+                self.fields[key] = actions.ChoiceField(
                     label=str(pergunta_questionario.pergunta),
                     required=False,
                     choices=[['', '']] + [[str(x), str(x)] for x in pergunta_questionario.pergunta.opcoes.all()]
@@ -254,8 +255,8 @@ class AlterarDetalhamentoDemanda(DetalharDemanda):
         return False
 
 
-class AlterarSenha(forms.Form):
-    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
+class AlterarSenha(actions.Action):
+    password = actions.CharField(label='Senha', widget=actions.PasswordInput())
 
     class Meta:
         verbose_name = 'Alterar Senha'
@@ -265,27 +266,27 @@ class AlterarSenha(forms.Form):
         self.instantiator.user.save()
 
 
-class ConcluirSolicitacao(forms.Form):
+class ConcluirSolicitacao(actions.Action):
 
-    rco_pendente = forms.ChoiceField(
+    rco_pendente = actions.ChoiceField(
         label='A instituição possui RCO pendente de entrega para a SETEC?',
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
-    detalhe_rco_pendente = forms.CharField(
+    detalhe_rco_pendente = actions.CharField(
         label='Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC',
-        required=False, widget=forms.Textarea()
+        required=False, widget=actions.Textarea()
     )
-    devolucao_ted = forms.ChoiceField(
+    devolucao_ted = actions.ChoiceField(
         label='A instituição devolveu algum valor de TED em 2021?',
         choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
     )
-    detalhe_devolucao_ted = forms.CharField(
+    detalhe_devolucao_ted = actions.CharField(
         label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021',
-        required=False, widget=forms.Textarea()
+        required=False, widget=actions.Textarea()
     )
-    prioridade_1 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 1', help_text='Dentre as demandas informadas, elenque a 1ª mais prioritária para este exercício.')
-    prioridade_2 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.')
-    prioridade_3 = forms.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.')
+    prioridade_1 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 1', help_text='Dentre as demandas informadas, elenque a 1ª mais prioritária para este exercício.')
+    prioridade_2 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.')
+    prioridade_3 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.')
 
     class Meta:
         verbose_name = 'Concluir Solicitação'
@@ -350,7 +351,7 @@ class ConcluirSolicitacao(forms.Form):
         self.redirect(message='Solicitação concluída com sucesso.')
 
 
-class DuvidaForm(forms.ModelForm):
+class DuvidaForm(actions.Action):
     class Meta:
         model = Duvida
         verbose_name = 'Tirar Dúvida'
@@ -364,7 +365,7 @@ class DuvidaForm(forms.ModelForm):
         return super().save(*args, **kwargs)
 
 
-class ResponderDuvida(forms.ModelForm):
+class ResponderDuvida(actions.Action):
     class Meta:
         model = Duvida
         verbose_name = 'Responder Dúvida'
@@ -380,7 +381,7 @@ class ResponderDuvida(forms.ModelForm):
         return super().save(*args, **kwargs)
 
 
-class RestaurarDemanda(forms.ModelForm):
+class RestaurarDemanda(actions.Action):
     class Meta:
         model = Demanda
         verbose_name = 'Restaurar'
@@ -399,11 +400,11 @@ class RestaurarDemanda(forms.ModelForm):
         return super().save(*args, **kwargs)
 
 
-class ExportarResultado(forms.Form):
+class ExportarResultado(actions.Action):
 
-    instituicao = forms.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
-    categoria = forms.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
-    prioridade = forms.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
+    instituicao = actions.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
+    categoria = actions.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
+    prioridade = actions.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
 
     class Meta:
         verbose_name = 'Exportar Resultado'
@@ -450,11 +451,11 @@ class ExportarResultado(forms.Form):
         self.http_response(XlsResponse(dados))
 
 
-class ExportarResultadoPorCategoria(forms.Form):
+class ExportarResultadoPorCategoria(actions.Action):
 
-    instituicao = forms.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
-    categoria = forms.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
-    prioridade = forms.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
+    instituicao = actions.ModelChoiceField(Instituicao.objects, label='Instituição', required=False)
+    categoria = actions.ModelChoiceField(Categoria.objects, label='Categoria', required=False)
+    prioridade = actions.ModelChoiceField(Prioridade.objects, label='Prioridade', required=False)
 
     class Meta:
         verbose_name = 'Exportar Resultado por Categoria'

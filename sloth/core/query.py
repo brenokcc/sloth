@@ -133,7 +133,7 @@ class QuerySet(models.QuerySet):
                     obj = getattr(self._clone(), name)().apply_role_lookups(self.metadata['request'].user)
                 else:
                     obj = getattr(self._clone(), name)()
-                verbose_name = obj.metadata['verbose_name']
+                verbose_name = obj.metadata['verbose_name'] or pretty(name)
                 if isinstance(obj, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'

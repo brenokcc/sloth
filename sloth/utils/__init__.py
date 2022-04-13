@@ -63,9 +63,10 @@ def serialize(obj):
 
 
 def pretty(name):
+    if name.startswith('get_'):
+        name = name[4:].replace('_', ' ')
+    name = name.replace('_', ' ')
     if name.islower():
-        if name.startswith('get_'):
-            name = name[4:].replace('_', ' ')
         regex_roman_numbers = r'^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$'
         name = re.sub(r'\.', '. ', name or '')  # adding spaces to short names
         name = re.sub(r'\s+', ' ', name)  # removing multiple spaces
@@ -84,7 +85,7 @@ def pretty(name):
             else:
                 output.append(token)
         name = ' '.join(output)
-    return name.capitalize()
+    return name.title()
 
 
 def load_menu(user):

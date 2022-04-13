@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-def verbose_name(name):
+def verbose_name(name, template=None):
     def decorate(func):
         setattr(func, '__verbose_name__', name)
         return func

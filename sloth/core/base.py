@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 
-from sloth.forms import Action
+from sloth.actions import Action
 from sloth.core.values import ValueSet
 from sloth.core.query import QuerySet
 

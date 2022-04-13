@@ -142,7 +142,7 @@ class ExcluirEndereco(forms.ModelForm):
 
     def save(self):
         self.instance.endereco.delete()
-        self.notify()
+        self.redirect(message='Endereço excluído com sucesso.')
 
 
 class CadastrarFerias(forms.ModelForm):

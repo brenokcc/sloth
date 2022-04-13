@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
+import os
 from copy import deepcopy
 from functools import lru_cache
 import math
+from django.conf import settings
 from django.forms import *
 from django.forms import fields
 from django.forms import widgets
@@ -28,10 +30,12 @@ class FormMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.response = {}
         self.fieldsets = {}
         self.one_to_one = {}
         self.one_to_many = {}
-        self.relation_field_name = getattr(self.Meta, 'relation', None)
+        self.metaclass = getattr(self, 'Meta')
+        self.relation_field_name = getattr(self.metaclass, 'relation', None)
         if self.relation_field_name and self.relation_field_name in self.fields:
             del self.fields[self.relation_field_name]
 
@@ -43,7 +47,7 @@ class FormMixin:
         fieldsets = self.get_fieldsets()
         # creates default fieldset if necessary
         if fieldsets is None:
-            fieldsets = getattr(self.Meta, 'fieldsets', None)
+            fieldsets = getattr(self.metaclass, 'fieldsets', None)
 
         if fieldsets is None:
             if self.fields:
@@ -230,8 +234,8 @@ class FormMixin:
             self.instance.post_save()
 
     def serialize(self, wrap=False, verbose=False):
-        if self.message:
-            return self.message
+        if self.response:
+            return self.response
         if wrap:
             data = dict(type='form')
             form_fields = {}
@@ -253,25 +257,21 @@ class FormMixin:
     @lru_cache
     def get_metadata(cls, path=None, inline=False, batch=False):
         form_name = cls.__name__
-        meta = getattr(cls, 'Meta', None)
-        if meta:
+        metaclass = getattr(cls, 'Meta', None)
+        if metaclass:
             target = 'model'
-            name = getattr(meta, 'verbose_name', re.sub("([a-z])([A-Z])","\g<1> \g<2>", form_name))
-            submit = getattr(meta, 'submit_label', name)
-            icon = getattr(meta, 'icon', None)
-            ajax = getattr(meta, 'ajax', True)
-            style = getattr(meta, 'style', 'primary')
-            method = getattr(meta, 'method', 'post')
-            relation = getattr(meta, 'relation', None)
+            name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", form_name))
+            submit = getattr(metaclass, 'submit_label', name)
+            icon = getattr(metaclass, 'icon', None)
+            ajax = getattr(metaclass, 'ajax', True)
+            modal = getattr(metaclass, 'modal', True)
+            style = getattr(metaclass, 'style', 'primary')
+            method = getattr(metaclass, 'method', 'post')
+            relation = getattr(metaclass, 'relation', None)
         else:
-            target = 'model'
-            name = 'Enviar'
-            submit = name
-            icon = None
-            ajax = True
-            style = 'primary'
-            method = 'get'
-            relation = None
+            target, name, submit, icon, ajax, modal, style, method, relation = (
+                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
+            )
         if path:
             if inline or batch:
                 target = 'queryset' if batch else 'instance'
@@ -282,31 +282,29 @@ class FormMixin:
                 path = '{}{}/'.format(path, form_name)
         metadata = dict(
             type='form', key=form_name, name=name, submit=submit, target=target,
-            method=method, icon=icon, style=style, ajax=ajax, path=path
+            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal
         )
         return metadata
 
     def get_method(self):
-        meta = getattr(self, 'Meta', None)
-        return getattr(meta, 'method', 'post') if meta else 'post'
+        return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
+
+    def has_permission(self, user):
+        pass
 
     def check_permission(self, user):
-        if self.request.user.is_superuser:
-            return True
-        else:
-            if hasattr(self, 'has_permission'):
-                return self.has_permission(self.request.user)
-            else:
-                group_names = getattr(self.Meta, 'groups', ())
-                return self.request.user.roles.filter(name__in=group_names)
+        has_permission = self.has_permission(user)
+        if has_permission is None:
+            return user.is_superuser or user.roles.filter(name__in=getattr(self.metaclass, 'groups', ()))
+        return has_permission
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
         form = FakeForm(request, instance=instance, instantiator=instantiator)
-        setattr(form, 'Meta', cls.Meta)
-        if hasattr(cls, 'has_permission'):
-            return request.user.is_superuser or cls.has_permission(form, request.user)
-        return cls.check_permission(form, request.user)
+        has_permission = cls.has_permission(form, request.user)
+        if has_permission is None:
+            return cls.check_permission(form, request.user)
+        return has_permission
 
     def __str__(self):
         for name, field in self.fields.items():
@@ -380,20 +378,39 @@ class FormMixin:
             q=q, items=items
         )
 
-    def notify(self, text='Ação realizada com sucesso', style='sucess', reload=False, **kwargs):
-        messages.add_message(self.request, messages.INFO, text)
-        self.message = dict(type='message', text=text, style=style, reload=reload, **kwargs)
+    def redirect(self, url='..', message=None, style='sucess', data=None):
+        self.response.update(type='redirect', url=url)
+        if message is None:
+            message = getattr(self.metaclass, 'message', None)
+        if message:
+            messages.add_message(self.request, messages.INFO, message)
+            self.response.update(message=message, style=style)
+        if data:
+            data.update(form=self)
+            self.response.update(
+                html=render_to_string(['{}.html'.format(self.__class__.__name__)], data, request=self.request)
+            )
 
-    def http_response(self, response):
-        self.response = response
+    def download(self, file_path_or_bytes, file_name=None):
+        download_dir_path = os.path.join(settings.MEDIA_ROOT, 'download')
+        os.makedirs(download_dir_path, exist_ok=True)
+        if type(file_path_or_bytes) == bytes:
+            file_path = os.path.join(download_dir_path, file_name)
+            with open(file_path, 'w+b') as file:
+                file.write(file_path_or_bytes)
+        else:
+            if file_name is None:
+                file_name = file_path_or_bytes.split('/')[-1]
+            file_path = os.path.join(download_dir_path, file_name)
+            os.symlink(file_path_or_bytes, file_path)
+            print(file_path_or_bytes, file_path)
+        self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
 
 
 class Form(FormMixin, Form):
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop('instance', None)
         self.instances = kwargs.pop('instances', ())
-        self.message = None
-        self.response = None
         self.instantiator = kwargs.pop('instantiator', None)
         self.request = kwargs.pop('request', None)
         if 'data' not in kwargs:
@@ -404,8 +421,8 @@ class Form(FormMixin, Form):
             kwargs['data'] = data
         super().__init__(*args, **kwargs)
 
-    def process(self):
-        self.notify()
+    def submit(self):
+        self.redirect(message='Ação realizada com sucesso.')
 
 
 class ModelFormMetaclass(models.ModelFormMetaclass):
@@ -429,8 +446,6 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
 
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.get('instance', None)
-        self.message = None
-        self.response = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
@@ -445,7 +460,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
             kwargs['files'] = self.request.FILES or None
         super().__init__(*args, **kwargs)
 
-    def process(self):
+    def submit(self):
         if self.instances:
             for instance in self.instances:
                 self.instance = instance
@@ -453,7 +468,7 @@ class ModelForm(FormMixin, ModelForm, metaclass=ModelFormMetaclass):
                 self.save()
         else:
             self.save()
-        self.notify()
+        self.redirect(message='Ação realizada com sucesso.')
 
 
 class LoginForm(Form):
@@ -484,7 +499,7 @@ class LoginForm(Form):
                     raise ValidationError('Login e senha não conferem.')
         return self.cleaned_data
 
-    def process(self):
+    def submit(self):
         if self.user:
             auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
             self.request.session['menu'] = load_menu(self.user)
@@ -505,8 +520,8 @@ class PasswordForm(Form):
             raise forms.ValidationError('Senhas não conferem.')
         return self.cleaned_data
 
-    def process(self):
+    def submit(self):
         self.request.user.set_password(self.cleaned_data.get('password'))
         self.request.user.save()
         auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.notify('Senha alterada com sucesso.')
+        self.redirect(message='Senha alterada com sucesso.')

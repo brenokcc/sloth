@@ -249,7 +249,7 @@ class QuerySet(models.QuerySet):
             data['actions']['instance'].append(
                 dict(
                     type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path)
+                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path), modal=False
                 )
             )
 

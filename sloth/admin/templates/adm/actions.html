@@ -27,7 +27,7 @@
                data-url="/adm{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
-               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.key == 'view' %}{% else %}popup{% endif %} {% if target == 'instance' and action.key not in enabled %}disabled{% endif %}">
+               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %} {% if target == 'instance' and action.key not in enabled %}disabled{% endif %}">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
                 {{ action.submit }}
             </a>

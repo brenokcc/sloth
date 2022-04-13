@@ -51,7 +51,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.process()
+                                        form.submit()
                                     return form
                                 raise PermissionDenied()
                             elif w.lower() == 'delete':  # /base/estado/1/get_cidades/1/delete/
@@ -59,7 +59,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.process()
+                                        form.submit()
                                     return form
                                 raise PermissionDenied()
                             else:  # /base/estado/1/get_cidades/1/alterar_nome/
@@ -67,7 +67,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.process()
+                                        form.submit()
                                     return form
                                 raise PermissionDenied()
                         else:
@@ -81,7 +81,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             # form = form_cls(request=request, instantiator=obj, instances=instances)
                             # if form.check_permission(request.user):
                             #     if form.is_valid():
-                            #         form.process()
+                            #         form.submit()
                             #     return form
                             # raise PermissionDenied()
                     else:
@@ -100,7 +100,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form = form_cls(request=request, instance=obj, instantiator=obj)
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    form.process()
+                                    form.submit()
                                 return form
                             raise PermissionDenied()
                 else:
@@ -109,7 +109,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.check_permission(request.user):
                             if form.is_valid():
-                                form.process()
+                                form.submit()
                             return form
                         raise PermissionDenied()
                     if y.lower() == 'delete':  # /base/estado/1/delete/
@@ -117,7 +117,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.check_permission(request.user):
                             if form.is_valid():
-                                form.process()
+                                form.submit()
                             return form
                         raise PermissionDenied()
                     else:  # /base/estado/1/editar_sigla/
@@ -126,7 +126,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             form = form_cls(request=request, instance=obj, instantiator=obj)
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    form.process()
+                                    form.submit()
                                 return form
                             raise PermissionDenied()
                         else:
@@ -145,7 +145,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
             form = form_cls(request=request)
             if form.check_permission(request.user):
                 if form.is_valid():
-                    form.process()
+                    form.submit()
                 return form
             raise PermissionDenied()
         else:
@@ -159,7 +159,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             form = form_cls(request=request, instances=instances)
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    result = form.process()
+                                    result = form.submit()
                                     if result is not None:
                                         return result
                                 return form
@@ -175,7 +175,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         form = form_cls(request=request, instances=instances)
                         if form.check_permission(request.user):
                             if form.is_valid():
-                                result = form.process()
+                                result = form.submit()
                                 if result is not None:
                                     return result
                             return form
@@ -189,7 +189,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     form = form_cls(request=request, instances=instances)
                     if form.check_permission(request.user):
                         if form.is_valid():
-                            form.process()
+                            form.submit()
                         return form
                     raise PermissionDenied()
                 else:
@@ -197,7 +197,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     form = form_cls(request=request)
                     if form.check_permission(request.user):
                         if form.is_valid():
-                            form.process()
+                            form.submit()
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/

@@ -31,8 +31,15 @@ jQuery.fn.extend({
                             document.location.reload();
                         } else if(reader.result == '..'){
                             $(document).back();
-                        } else if(reader.result && reader.result[0] == '/'){
-                            $(document).open(reader.result);
+                        } else if(reader.result.startsWith('/media/download/')){
+                            var a = document.createElement("a");
+                            a.href = reader.result;
+                            document.body.appendChild(a);
+                            a.click();
+                            $(document).back();
+                        }  else if(reader.result.startsWith('/')){
+                            //$(document).open(reader.result);
+                            document.location.href = reader.result;
                         } else {
                             callback(reader.result);
                         }

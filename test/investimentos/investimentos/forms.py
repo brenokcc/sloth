@@ -210,7 +210,7 @@ class DetalharDemanda(forms.ModelForm):
             'Perguntas': list(self.fields.keys())
         }
 
-    def process(self):
+    def submit(self):
         for pergunta_questionario in self.instance.get_questionario().respostaquestionario_set.all():
             key = '{}'.format(pergunta_questionario.pk)
             if pergunta_questionario.pergunta.tipo_resposta == Pergunta.ARQUIVO:
@@ -235,7 +235,7 @@ class DetalharDemanda(forms.ModelForm):
         reload = not Demanda.objects.filter(
             ciclo=self.instance.ciclo, instituicao=self.instance.instituicao, finalizada=False
         ).exists()
-        self.notify(reload=reload)
+        self.redirect('.' if reload else '..')
 
 
 class AlterarDetalhamentoDemanda(DetalharDemanda):
@@ -331,7 +331,7 @@ class ConcluirSolicitacao(forms.Form):
             return demandas_finalizadas and not questionario_final
         return False
 
-    def process(self):
+    def submit(self):
         gestor = Gestor.objects.filter(email=self.request.user.username).first()
         ciclo = self.instantiator
         instituicao = gestor.instituicao
@@ -347,7 +347,7 @@ class ConcluirSolicitacao(forms.Form):
         questionario_final.prioridade_3 = self.cleaned_data['prioridade_3']
         questionario_final.finalizado = True
         questionario_final.save()
-        self.notify('Solicitação concluída com sucesso.')
+        self.redirect(message='Solicitação concluída com sucesso.')
 
 
 class DuvidaForm(forms.ModelForm):
@@ -410,7 +410,7 @@ class ExportarResultado(forms.Form):
         groups = 'Administrador',
         icon = 'bi-file-exce'
 
-    def process(self):
+    def submit(self):
         dados = list()
         demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
         questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
@@ -461,7 +461,7 @@ class ExportarResultadoPorCategoria(forms.Form):
         groups = 'Administrador',
         icon = 'bi-file-exce'
 
-    def process(self):
+    def submit(self):
         dados = list()
         demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']
         instituicao = self.cleaned_data['instituicao']

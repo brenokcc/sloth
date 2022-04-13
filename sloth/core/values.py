@@ -118,7 +118,7 @@ class ValueSet(dict):
                             for form_name in actions:
                                 form_cls = self.instance.action_form_cls(form_name)
                                 if self.metadata['request'] is None or form_cls.check_fake_permission(
-                                        request=self.metadata['request'], instantiator=self.instance,
+                                        request=self.metadata['request'], instance=self.instance, instantiator=self.instance,
                                 ):
                                     action = form_cls.get_metadata(path)
                                     value['actions'].append(action)

@@ -47,7 +47,7 @@ def icons(request):
 def login(request):
     form = LoginForm(request=request)
     if form.is_valid():
-        form.process()
+        form.submit()
         return HttpResponseRedirect('/adm/')
     return render(request, ['adm/login.html'], dict(form=form, settings=settings))
 
@@ -55,7 +55,7 @@ def login(request):
 def password(request):
     form = PasswordForm(request=request)
     if form.is_valid():
-        form.process()
+        form.submit()
         return HttpResponseRedirect('..')
     return render(request, ['adm/default.html'], dict(form=form, settings=settings))
 
@@ -93,11 +93,10 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
     if isinstance(data, FormMixin):
         context.update(form=data)
         if data.response:
-            return data.response
-        if data.message:
-            if data.message.get('reload'):
-                return HttpResponse('.')
-            return HttpResponse('..')
+            html = data.response.get('html')
+            if html:
+                return HttpResponse(data.response['html'])
+            return HttpResponse(data.response['url'])
     else:
         context.update(data=data)
     return render(request, ['adm/default.html'], context)

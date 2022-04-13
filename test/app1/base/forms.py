@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from sloth import forms
+from sloth import actions
 
 from .models import Servidor, Ferias, Estado, Frequencia, Municipio
 
 
-class AdicionarMunicipioEstado(forms.ModelForm):
+class AdicionarMunicipioEstado(actions.Action):
 
     class Meta:
         model = Municipio
@@ -14,14 +14,14 @@ class AdicionarMunicipioEstado(forms.ModelForm):
         verbose_name = 'Adicionar Município'
 
 
-class HomologarFrequencia(forms.ModelForm):
+class HomologarFrequencia(actions.Action):
     class Meta:
         verbose_name = 'Homologar'
         model = Frequencia
         fields = 'homologado',
 
 
-class RegistrarPonto(forms.ModelForm):
+class RegistrarPonto(actions.Action):
 
     class Meta:
         model = Frequencia
@@ -29,13 +29,13 @@ class RegistrarPonto(forms.ModelForm):
         relation = 'servidor'
 
 
-class DefinirSetor(forms.ModelForm):
+class DefinirSetor(actions.Action):
     class Meta:
         model = Servidor
         fields = 'setor',
 
 
-class EstadoForm(forms.ModelForm):
+class EstadoForm(actions.Action):
     class Meta:
         verbose_name = 'Cadastrar Estado'
         model = Estado
@@ -44,7 +44,7 @@ class EstadoForm(forms.ModelForm):
         }
 
 
-class ServidorForm(forms.ModelForm):
+class ServidorForm(actions.Action):
 
     class Meta:
         verbose_name = 'Cadastrar Servidor'
@@ -55,7 +55,7 @@ class ServidorForm(forms.ModelForm):
         }
 
 
-class InformarCidadesMetropolitanas(forms.ModelForm):
+class InformarCidadesMetropolitanas(actions.Action):
 
     class Meta:
         model = Estado
@@ -67,43 +67,43 @@ class InformarCidadesMetropolitanas(forms.ModelForm):
         return queryset.filter(estado=self.instance)
 
 
-class FazerAlgumaCoisa(forms.Form):
-    mensagem = forms.CharField(label='Mensagem', widget=forms.Textarea())
+class FazerAlgumaCoisa(actions.Action):
+    mensagem = actions.CharField(label='Mensagem', widget=actions.Textarea())
 
     class Meta:
         verbose_name = 'Fazer Alguma Coisa'
         style = 'warning'
 
 
-class EditarSiglaEstado(forms.ModelForm):
+class EditarSiglaEstado(actions.Action):
     class Meta:
         verbose_name = 'Editar Sigla'
         model = Estado
         fields = 'sigla',
 
 
-class CorrigirNomeServidor1(forms.ModelForm):
+class CorrigirNomeServidor1(actions.Action):
     class Meta:
         verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
-class CorrigirNomeServidor(forms.ModelForm):
+class CorrigirNomeServidor(actions.Action):
     class Meta:
         verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
 
 
-class EditarFerias(forms.ModelForm):
+class EditarFerias(actions.Action):
     class Meta:
         verbose_name = 'Editar'
         model = Ferias
         fields = 'inicio', 'fim'
 
 
-class AtivarServidor(forms.ModelForm):
+class AtivarServidor(actions.Action):
     class Meta:
         verbose_name = 'Ativar'
         model = Servidor
@@ -114,7 +114,7 @@ class AtivarServidor(forms.ModelForm):
         super().save()
 
 
-class InativarServidores(forms.ModelForm):
+class InativarServidores(actions.Action):
     class Meta:
         title = 'Inativar'
         model = Servidor
@@ -125,7 +125,7 @@ class InativarServidores(forms.ModelForm):
         super().save()
 
 
-class InformarEndereco(forms.ModelForm):
+class InformarEndereco(actions.Action):
     class Meta:
         model = Servidor
         verbose_name = 'Informar'
@@ -134,7 +134,7 @@ class InformarEndereco(forms.ModelForm):
         fields = 'endereco',
 
 
-class ExcluirEndereco(forms.ModelForm):
+class ExcluirEndereco(actions.Action):
     class Meta:
         verbose_name = 'Excluir'
         model = Servidor
@@ -145,21 +145,21 @@ class ExcluirEndereco(forms.ModelForm):
         self.redirect(message='Endereço excluído com sucesso.')
 
 
-class CadastrarFerias(forms.ModelForm):
+class CadastrarFerias(actions.Action):
     class Meta:
         verbose_name = 'Cadastrar'
         model = Ferias
         exclude = ()
 
 
-class AlterarFerias(forms.ModelForm):
+class AlterarFerias(actions.Action):
     class Meta:
         verbose_name = 'Alterar'
         model = Ferias
         fields = 'inicio', 'fim'
 
 
-class ExcluirFerias(forms.ModelForm):
+class ExcluirFerias(actions.Action):
     class Meta:
         verbose_name = 'Excluir'
         model = Ferias

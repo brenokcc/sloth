@@ -163,7 +163,7 @@ class Instituicao(models.Model):
 
     @verbose_name('Gestores')
     def get_gestores(self):
-        return self.gestor_set.list_display('nome', 'email').global_actions('AdicionarGestor').actions('edit', 'delete')
+        return self.gestor_set.display('nome', 'email').global_actions('AdicionarGestor').actions('edit', 'delete')
 
 
 class Campus(models.Model):
@@ -300,7 +300,7 @@ class Ciclo(models.Model):
 
     @verbose_name('Solicitações')
     def get_solicitacoes(self):
-        return self.demanda_set.all().list_filter('prioridade', 'classificacao').list_dynamic_filter('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).role_lookups('Gestor', instituicao='instituicao')
+        return self.demanda_set.all().filters('prioridade', 'classificacao').dynamic_filters('instituicao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).role_lookups('Gestor', instituicao='instituicao')
 
     @verbose_name('Configuração Geral')
     def get_configuracao_geral(self):
@@ -319,7 +319,7 @@ class Ciclo(models.Model):
 
     @verbose_name('Questionário Final')
     def get_questionario_final(self):
-        return self.questionariofinal_set.all().list_display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3').role_lookups('Gestor', instituicao='instituicao')
+        return self.questionariofinal_set.all().display('instituicao', 'rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3').role_lookups('Gestor', instituicao='instituicao')
 
     @verbose_name('Detalhamento')
     def get_detalhamento(self):
@@ -332,7 +332,7 @@ class Ciclo(models.Model):
 class DemandaManager(models.Manager):
     @verbose_name('Todas')
     def all(self):
-        return self.list_display(
+        return self.display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'finalizada'
         ).attach(
             'aguardando_dados_gerais', 'aguardando_detalhamento', 'finalizadas'
@@ -340,13 +340,13 @@ class DemandaManager(models.Manager):
 
     @verbose_name('Aguardando Dados Gerais')
     def aguardando_dados_gerais(self):
-        return self.list_display('ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais').filter(valor__isnull=True).actions(
+        return self.display('ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais').filter(valor__isnull=True).actions(
             'PreencherDemanda', 'NaoInformarDemanda'
         ).role_lookups('Gestor', instituicao='instituicao')
 
     @verbose_name('Aguardando Detalhamento')
     def aguardando_detalhamento(self):
-        return self.list_display(
+        return self.display(
             'ciclo', 'instituicao', 'get_prioridade', 'get_dados_gerais', 'get_progresso_questionario'
         ).filter(valor__isnull=False, finalizada=False).actions(
             'DetalharDemanda', 'AlterarPreenchimento', 'RestaurarDemanda'
@@ -422,7 +422,7 @@ class Demanda(models.Model):
     def get_respostas_questionario(self):
         return RespostaQuestionario.objects.filter(
             questionario__demanda=self
-        ).list_display('pergunta', 'resposta').order_by('id').template('respostas_questionario.html')
+        ).display('pergunta', 'resposta').order_by('id').template('respostas_questionario.html')
 
     def view(self):
         return self.values('get_dados_gerais', 'get_respostas_questionario')

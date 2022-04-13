@@ -279,18 +279,19 @@ class QuerySet(models.QuerySet):
     # metadata functions
 
     def verbose_name(self, name):
-        self.metadata['verbose_name'] = name
+        self.metadata['verbose_name'] = pretty(name)
         return self
 
     def view(self, *names):
         self.metadata['view'] = list(names)
         return self
 
-    def list_display(self, *names):
+    def display(self, *names):
         self.metadata['display'] = list(names)
         return self
 
-    def search(self, q=None):
+    def search(self, *names, q=None):
+        self.metadata['search'] = list(names)
         if q:
             lookups = []
             for search_field in self._get_list_search() or self.model.default_search_fields():
@@ -298,15 +299,11 @@ class QuerySet(models.QuerySet):
             return self.filter(reduce(operator.__or__, lookups))
         return self
 
-    def search_fields(self, *names):
-        self.metadata['search'] = list(names)
-        return self
-
-    def list_filter(self, *names):
+    def filters(self, *names):
         self.metadata['filters'] = list(names)
         return self
 
-    def list_dynamic_filter(self, *names):
+    def dynamic_filters(self, *names):
         self.metadata['dfilters'] = list(names)
         return self
 

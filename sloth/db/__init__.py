@@ -4,6 +4,7 @@
 def verbose_name(name, template=None):
     def decorate(func):
         setattr(func, '__verbose_name__', name)
+        setattr(func, '__template__', template)
         return func
     return decorate
 

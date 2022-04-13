@@ -45,7 +45,7 @@ class ValueSet(dict):
         return self
 
     def verbose_name(self, name):
-        self.metadata['verbose_name'] = name
+        self.metadata['verbose_name'] = pretty(name)
         return self
 
     def attr(self, name):
@@ -136,8 +136,8 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
-                        if formatted and getattr(attr, 'template', None):
-                            template = attr.template
+                        if formatted and getattr(attr, '__template__', None):
+                            template = attr.__template__
                             template = template if template.endswith('.html') else '{}.html'.format(template)
                             value = render_to_string(
                                 template, dict(value=value, instance=self.instance)

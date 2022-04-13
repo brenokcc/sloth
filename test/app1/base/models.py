@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
 
-from sloth.db import models, meta, role
+from sloth.db import models, verbose_name, role
 
 
 class Telefone(models.Model):
@@ -18,9 +18,9 @@ class Telefone(models.Model):
 
 class EstadoManager(models.Manager):
 
-    @meta('Todos')
+    @verbose_name('Todos')
     def all(self):
-        return super().all().list_display(
+        return super().all().display(
             'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
         ).actions(
             'EditarSiglaEstado',
@@ -43,7 +43,7 @@ class Estado(models.Model):
     def __str__(self):
         return self.sigla
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('id', ('sigla', 'endereco'))
 
@@ -55,7 +55,7 @@ class Estado(models.Model):
     def _can_view_sigla(self, user):
         return not user.is_superuser
 
-    @meta('Cidades')
+    @verbose_name('Cidades')
     def get_cidades(self):
         return self.municipio_set.get_queryset().actions('Edit').global_actions(
             'AdicionarMunicipioEstado'
@@ -64,15 +64,15 @@ class Estado(models.Model):
 
 class MunicipioManager(models.Manager):
 
-    @meta('Todos')
+    @verbose_name('Todos')
     def all(self):
         return self.attach('potiguares', 'get_qtd_por_estado')
 
-    @meta('Potiguares')
+    @verbose_name('Potiguares')
     def potiguares(self):
         return self.filter(estado__sigla='RN')
 
-    @meta('Quantidade por Estado')
+    @verbose_name('Quantidade por Estado')
     def get_qtd_por_estado(self):
         return self.count('estado')
 
@@ -90,15 +90,15 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @meta('Progresso', template='adm/formatters/progress')
+    @verbose_name('Progresso', template='adm/formatters/progress')
     def get_progresso(self):
         return 27
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('id', ('nome', 'estado'), 'get_progresso')
 
-    @meta('Dados Gerais2')
+    @verbose_name('Dados Gerais2')
     def get_dados_gerais2(self):
         return self.values(('get_a', 'get_b', 'get_c', 'get_d'))
 
@@ -108,26 +108,26 @@ class Municipio(models.Model):
         # return self.values(('nome', 'estado'), 'get_progresso')
         return self.values('get_dados_gerais', 'get_dados')
 
-    @meta('Dados')
+    @verbose_name('Dados')
     def get_dados(self):
         return self.values('get_dados_gerais', 'get_dados_gerais2')
 
     def has_edit_permission(self, user):
         return self.pk % 2 == 0
 
-    @meta('Nome')
+    @verbose_name('Nome')
     def get_a(self):
         return 'Carlos Breno Pereira Silva'
 
-    @meta('Data de Nascimento')
+    @verbose_name('Data de Nascimento')
     def get_b(self):
         return '27/08/1984'
 
-    @meta('CPF')
+    @verbose_name('CPF')
     def get_c(self):
         return '047.704.024-14'
 
-    @meta('R$')
+    @verbose_name('R$')
     def get_d(self):
         return 'R$ 23.00,99'
 
@@ -194,13 +194,13 @@ class Setor(models.Model):
 
 class ServidorManager(models.Manager):
 
-    @meta('Todos')
+    @verbose_name('Todos')
     def all(self):
-        return self.list_display(
+        return self.display(
             'foto', 'get_dados_gerais', 'ativo', 'naturalidade'
-        ).list_filter(
+        ).filters(
             'data_nascimento', 'ativo', 'naturalidade'
-        ).search_fields('nome').ordering(
+        ).search('nome').ordering(
             'nome', 'ativo', 'data_nascimento'
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
@@ -210,19 +210,19 @@ class ServidorManager(models.Manager):
             'FazerAlgumaCoisa'
         ).template('adm/queryset/cards')
 
-    @meta('Com Endereço')
+    @verbose_name('Com Endereço')
     def com_endereco(self):
-        return self.list_display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
+        return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
-    @meta('Sem Endereço')
+    @verbose_name('Sem Endereço')
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
 
-    @meta('Ativos')
+    @verbose_name('Ativos')
     def ativos(self):
         return self.filter(ativo=True).batch_actions('InativarServidores')
 
-    @meta('Inativos')
+    @verbose_name('Inativos')
     def inativos(self):
         return self.filter(ativo=False).actions('AtivarServidor')
 
@@ -255,19 +255,19 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Foto', template='adm/formatters/image')
+    @verbose_name('Foto', template='adm/formatters/image')
     def get_foto(self):
         return self.foto # or '/static/images/profile.png'
 
-    @meta('Progresso', template='adm/formatters/progress')
+    @verbose_name('Progresso', template='adm/formatters/progress')
     def get_progresso(self):
         return 27
 
-    @meta('Dados Gerais')
+    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('nome', ('cpf', 'data_nascimento'), 'get_progresso').actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
 
-    @meta('Endereço')
+    @verbose_name('Endereço')
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
@@ -280,22 +280,22 @@ class Servidor(models.Model):
             'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
         )
 
-    @meta('Frequências')
+    @verbose_name('Frequências')
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
             'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('adm/queryset/accordion')
 
-    @meta('Férias')
+    @verbose_name('Férias')
     def get_ferias(self):
-        return self.ferias_set.list_display(
+        return self.ferias_set.display(
             'ano', 'inicio', 'fim'
         ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
 
-    @meta('Recursos Humanos')
+    @verbose_name('Recursos Humanos')
     def get_dados_recursos_humanos(self):
         return self.values('get_ferias', 'get_endereco', 'get_frequencias').actions('FazerAlgumaCoisa')
 
-    @meta('Férias por Ano')
+    @verbose_name('Férias por Ano')
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
 
@@ -308,17 +308,17 @@ class Servidor(models.Model):
 
 class FeriasManager(models.Manager):
 
-    @meta('Ferias')
+    @verbose_name('Ferias')
     def all(self):
-        return self.list_display(
+        return self.display(
             'servidor', 'ano', 'get_periodo2'
-        ).search_fields(
+        ).search(
             'servidor__matricula', 'servidor__nome'
-        ).list_filter('servidor', 'ano').ordering(
+        ).filters('servidor', 'ano').ordering(
             'inicio', 'fim'
         ).actions('EditarFerias').attach('total_por_ano_servidor')
 
-    @meta('Total por Ano e Servidor')
+    @verbose_name('Total por Ano e Servidor')
     def total_por_ano_servidor(self):
         return self.count('ano', 'servidor')
 
@@ -335,11 +335,11 @@ class Ferias(models.Model):
         verbose_name = 'Férias'
         verbose_name_plural = 'Férias'
 
-    @meta('Período')
+    @verbose_name('Período')
     def get_periodo(self):
         return 'de {} a {}'.format(self.inicio, self.fim)
 
-    @meta('Período')
+    @verbose_name('Período')
     def get_periodo2(self):
         return self.values('inicio', 'fim')
 

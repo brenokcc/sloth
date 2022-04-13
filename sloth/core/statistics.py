@@ -32,7 +32,7 @@ class QuerySetStatistics(object):
             self._ydict = {i + 1: month for i, month in enumerate(MONTHS)}
 
     def verbose_name(self, name):
-        self.metadata['verbose_name'] = name
+        self.metadata['verbose_name'] = pretty(name)
         return self
 
     def contextualize(self, request):

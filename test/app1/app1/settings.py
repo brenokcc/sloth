@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from sloth.conf.settings import *
 
@@ -113,7 +113,7 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-BASE_DIR = path.abspath(path.dirname(path.dirname(__file__)))
+BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 MEDIA_URL = '/media/'
-STATIC_ROOT = path.join(BASE_DIR, 'static')
-MEDIA_ROOT = path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

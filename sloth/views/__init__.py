@@ -32,7 +32,7 @@ def is_authenticated(request):
     return True
 
 
-def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
     model = apps.get_model(app_label, model_name)
     # print(dict(x=x, y=y, z=z, w=w))
     if x:
@@ -70,7 +70,7 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                         form.submit()
                                     return form
                                 raise PermissionDenied()
-                        else:
+                        else:  # /base/estado/1/get_cidades/1/
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
                             if instance.can_view(request.user):
@@ -91,15 +91,14 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             if instance.can_view(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
-                        else:  # base/servidor/3/get_ferias/CadastrarFerias/
+                        else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
+                            relation = attr()
                             form_cls = model.action_form_cls(z)
-                            # if it is a relation action, do not set the instance attribute
-                            # if getattr(form_cls.Meta, 'relation', None):
-                            #     form = form_cls(request=request, instantiator=obj)
-                            # else:
-                            #     form = form_cls(request=request, instance=obj, instantiator=obj)
+                            if hasattr(relation, 'all'):  # if it is a queryset
+                                form = form_cls(request=request, instantiator=obj)
+                            else:  # it is a valueset
+                                form = form_cls(request=request, instance=obj, instantiator=obj)
                             parent = getattr(form_cls.Meta, 'parent', None)
-                            form = form_cls(request=request, instantiator=obj)
                             if parent:
                                 setattr(form.instance, parent, obj)
                                 if parent in form.fields:

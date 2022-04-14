@@ -55,5 +55,5 @@ def index(request):
 
 @csrf_exempt
 @endpoint
-def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
-    return views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
+    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)

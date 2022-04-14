@@ -1,6 +1,6 @@
 <div class="row clearfix">
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
-
+        <div>
         <div class="valueset-title">
             {% if name %}
                 <h2>
@@ -16,16 +16,19 @@
                   {% include "adm/actions.html" with uuid=uuid target="model" actions=actions   %}
               {% endif %}
         </div>
+        </div>
 
-        {% if attach %}
-        <ul class="nav justify-content-center">
-            {% for item in attach %}
-              <li class="nav-item">
-                <a class="nav-link" href="/adm{{ item.path }}">{{ item.name }}</a>
-              </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
+        <div style="clear:both">
+            {% if attach %}
+            <ul class="nav justify-content-center">
+                {% for item in attach %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="/adm{{ item.path }}">{{ item.name }}</a>
+                  </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
 
         {% for name, item in data.items %}
             <div class="fieldset">

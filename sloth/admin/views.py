@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import time
 
 from django.conf import settings
 from django.contrib import auth
@@ -18,7 +17,7 @@ from . import gadgets
 def view(func):
     def decorate(request, *args, **kwargs):
         try:
-            #time.sleep(0.5)
+            import time; time.sleep(0.5)
             if views.is_authenticated(request):
                 response = func(request, *args, **kwargs)
                 response["X-Frame-Options"] = "SAMEORIGIN"
@@ -87,9 +86,9 @@ def index(request):
 
 
 @view
-def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
     context = dict(settings=settings)
-    data = views.obj_view(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    data = views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
     if isinstance(data, Action):
         context.update(form=data)
         if data.response:

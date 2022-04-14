@@ -55,7 +55,7 @@ def serialize(obj):
         elif isinstance(obj, list):
             return [str(o) for o in obj]
         elif hasattr(obj, 'all'):
-            return [str(o) for o in obj]
+            return [str(o) for o in obj.filter()]
         elif isinstance(obj, FieldFile):
             return obj and obj.url or '/static/images/no-image.png'
         return str(obj)
@@ -85,7 +85,7 @@ def pretty(name):
             else:
                 output.append(token)
         name = ' '.join(output)
-    return name.title()
+    return name
 
 
 def load_menu(user):

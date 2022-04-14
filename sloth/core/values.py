@@ -84,7 +84,9 @@ class ValueSet(dict):
                 if self.metadata['request'] is None or self.instance.check_attr_access(attr_name, self.metadata['request'].user):
                     attr, value = getattrr(self.instance, attr_name)
                     path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
-                    if isinstance(value, QuerySet):
+                    if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):
+                        if not isinstance(value, QuerySet):
+                            value = value.filter()
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
@@ -186,7 +188,7 @@ class ValueSet(dict):
                 action = self.instance.action_form_cls(form_name).get_metadata(path)
                 output['actions'].append(action)
             for attr_name in self.metadata['attach']:
-                name = getattr(getattr(self.instance, attr_name), 'verbose_name', attr_name)
+                name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 path = '/{}/{}/{}/{}/'.format(
                     self.instance.metaclass().app_label,
                     self.instance.metaclass().model_name,

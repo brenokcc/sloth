@@ -208,7 +208,9 @@ class QuerySet(models.QuerySet):
                 actions.append(form_cls.__name__)
         return actions
 
-    def serialize(self, path=None, wrap=False, verbose=True, formatted=False):
+    def serialize(self, path=None, wrap=False, verbose=True, formatted=False, lazy=False):
+        if lazy:
+            return {}
         if wrap:
             verbose_name = str(self.model.metaclass().verbose_name_plural)
             icon = getattr(self.model.metaclass(), 'icon', None)

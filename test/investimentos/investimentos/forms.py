@@ -15,7 +15,7 @@ class AdicionarGestor(actions.Action):
         model = Gestor
         fields = 'nome', 'email'
         verbose_name = 'Adicionar Gestor'
-        relation = 'instituicao'
+        parent ='instituicao'
         groups = 'Administrador',
 
 
@@ -23,7 +23,7 @@ class AdicionarPergunta(actions.Action):
     class Meta:
         model = Pergunta
         verbose_name = 'Adicionar Pergunta'
-        relation = 'categoria'
+        parent ='categoria'
         exclude = ()
         fieldsets = {
             'Dados Gerais': ('ordem', 'pergunta', 'texto', 'tipo_resposta', 'obrigatoria'),
@@ -37,7 +37,7 @@ class AdicionarCampus(actions.Action):
         model = Campus
         fields = 'nome',
         verbose_name = 'Adicionar Campus'
-        relation = 'instituicao'
+        parent ='instituicao'
         groups = 'Administrador',
 
 

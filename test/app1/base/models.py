@@ -18,7 +18,6 @@ class Telefone(models.Model):
 
 class EstadoManager(models.Manager):
 
-    @verbose_name('Todos')
     def all(self):
         return super().all().display(
             'sigla', 'cidades_metropolitanas', 'endereco', 'telefones'
@@ -43,7 +42,6 @@ class Estado(models.Model):
     def __str__(self):
         return self.sigla
 
-    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('id', ('sigla', 'endereco'))
 
@@ -55,7 +53,6 @@ class Estado(models.Model):
     def _can_view_sigla(self, user):
         return not user.is_superuser
 
-    @verbose_name('Cidades')
     def get_cidades(self):
         return self.municipio_set.get_queryset().actions('Edit').global_actions(
             'AdicionarMunicipioEstado'
@@ -94,11 +91,9 @@ class Municipio(models.Model):
     def get_progresso(self):
         return 27
 
-    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
         return self.values('id', ('nome', 'estado'), 'get_progresso')
 
-    @verbose_name('Dados Gerais2')
     def get_dados_gerais2(self):
         return self.values(('get_a', 'get_b', 'get_c', 'get_d'))
 
@@ -108,7 +103,6 @@ class Municipio(models.Model):
         # return self.values(('nome', 'estado'), 'get_progresso')
         return self.values('get_dados_gerais', 'get_dados')
 
-    @verbose_name('Dados')
     def get_dados(self):
         return self.values('get_dados_gerais', 'get_dados_gerais2')
 
@@ -194,7 +188,6 @@ class Setor(models.Model):
 
 class ServidorManager(models.Manager):
 
-    @verbose_name('Todos')
     def all(self):
         return self.display(
             'foto', 'get_dados_gerais', 'ativo', 'naturalidade'
@@ -210,19 +203,15 @@ class ServidorManager(models.Manager):
             'FazerAlgumaCoisa'
         ).template('adm/queryset/cards')
 
-    @verbose_name('Com Endereço')
     def com_endereco(self):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
-    @verbose_name('Sem Endereço')
     def sem_endereco(self):
         return self.filter(endereco__isnull=True)
 
-    @verbose_name('Ativos')
     def ativos(self):
         return self.filter(ativo=True).batch_actions('InativarServidores')
 
-    @verbose_name('Inativos')
     def inativos(self):
         return self.filter(ativo=False).actions('AtivarServidor')
 
@@ -263,15 +252,17 @@ class Servidor(models.Model):
     def get_progresso(self):
         return 27
 
-    @verbose_name('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', ('cpf', 'data_nascimento'), 'get_progresso').actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
+        return self.values(
+            'nome', ('cpf', 'data_nascimento'), 'get_progresso'
+        ).actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
 
-    @verbose_name('Endereço')
     def get_endereco(self):
         return self.endereco.values(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
-        ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.values('endereco')
+        ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.values(
+            'endereco'
+        ).actions('InformarEndereco')
 
     def view(self):
         return self.values(
@@ -280,22 +271,18 @@ class Servidor(models.Model):
             'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
         )
 
-    @verbose_name('Frequências')
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
             'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('adm/queryset/accordion')
 
-    @verbose_name('Férias')
     def get_ferias(self):
         return self.ferias_set.display(
             'ano', 'inicio', 'fim'
         ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
 
-    @verbose_name('Recursos Humanos')
     def get_dados_recursos_humanos(self):
         return self.values('get_ferias', 'get_endereco', 'get_frequencias').actions('FazerAlgumaCoisa')
 
-    @verbose_name('Férias por Ano')
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
 
@@ -308,7 +295,6 @@ class Servidor(models.Model):
 
 class FeriasManager(models.Manager):
 
-    @verbose_name('Ferias')
     def all(self):
         return self.display(
             'servidor', 'ano', 'get_periodo2'
@@ -318,7 +304,6 @@ class FeriasManager(models.Manager):
             'inicio', 'fim'
         ).actions('EditarFerias').attach('total_por_ano_servidor')
 
-    @verbose_name('Total por Ano e Servidor')
     def total_por_ano_servidor(self):
         return self.count('ano', 'servidor')
 
@@ -335,11 +320,9 @@ class Ferias(models.Model):
         verbose_name = 'Férias'
         verbose_name_plural = 'Férias'
 
-    @verbose_name('Período')
     def get_periodo(self):
         return 'de {} a {}'.format(self.inicio, self.fim)
 
-    @verbose_name('Período')
     def get_periodo2(self):
         return self.values('inicio', 'fim')
 

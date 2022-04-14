@@ -91,13 +91,19 @@ def obj_view(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             if instance.can_view(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
-                        else:  # /base/estado/1/alterar_nome/
+                        else:  # base/servidor/3/get_ferias/CadastrarFerias/
                             form_cls = model.action_form_cls(z)
                             # if it is a relation action, do not set the instance attribute
-                            if getattr(form_cls.Meta, 'relation', None):
-                                form = form_cls(request=request, instantiator=obj)
-                            else:
-                                form = form_cls(request=request, instance=obj, instantiator=obj)
+                            # if getattr(form_cls.Meta, 'relation', None):
+                            #     form = form_cls(request=request, instantiator=obj)
+                            # else:
+                            #     form = form_cls(request=request, instance=obj, instantiator=obj)
+                            parent = getattr(form_cls.Meta, 'parent', None)
+                            form = form_cls(request=request, instantiator=obj)
+                            if parent:
+                                setattr(form.instance, parent, obj)
+                                if parent in form.fields:
+                                    del form.fields[parent]
                             if form.check_permission(request.user):
                                 if form.is_valid():
                                     form.submit()

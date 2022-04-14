@@ -1,3 +1,6 @@
+.action-container{
+    text-align: right;
+}
 .btn{
     margin-bottom: 5px;
 }
@@ -49,6 +52,7 @@
     display: inline-block;
     margin-top: 10px;
     margin-bottom: 10px;
+    cursor:pointer;
 }
 .fieldset-field{
     display: inline-block;
@@ -105,7 +109,7 @@
     animation: page-load ease-out 3s;
 }
 .search-and-filters {
-    background-color: #f8f9fa;
+    background-color: #cfe2ff;
     border-radius: 5px;
     clear: both;
     display: flex;
@@ -260,4 +264,13 @@ textarea{
 
 textarea{
     border-color: #ced4da;
+}
+
+.valueset-title{
+        display: inline-block;
+}
+.valueset-action-bar{
+    margin-right: 18px;
+    display: inline-block;
+    float: right;
 }

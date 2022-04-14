@@ -10,7 +10,7 @@ class AdicionarMunicipioEstado(actions.Action):
     class Meta:
         model = Municipio
         exclude = ()
-        relation = 'estado'
+        parent = 'estado'
         verbose_name = 'Adicionar Município'
 
 
@@ -26,7 +26,7 @@ class RegistrarPonto(actions.Action):
     class Meta:
         model = Frequencia
         fields = 'horario', 'homologado',
-        relation = 'servidor'
+        parent = 'servidor'
 
 
 class DefinirSetor(actions.Action):
@@ -128,10 +128,11 @@ class InativarServidores(actions.Action):
 class InformarEndereco(actions.Action):
     class Meta:
         model = Servidor
-        verbose_name = 'Informar'
+        verbose_name = 'Informar Endereço'
         icon = 'archive'
         style = 'success'
         fields = 'endereco',
+        modal = True
 
 
 class ExcluirEndereco(actions.Action):
@@ -140,7 +141,7 @@ class ExcluirEndereco(actions.Action):
         model = Servidor
         fields = ()
 
-    def save(self):
+    def submit(self):
         self.instance.endereco.delete()
         self.redirect(message='Endereço excluído com sucesso.')
 
@@ -148,6 +149,7 @@ class ExcluirEndereco(actions.Action):
 class CadastrarFerias(actions.Action):
     class Meta:
         verbose_name = 'Cadastrar'
+        parent = 'servidor'
         model = Ferias
         exclude = ()
 

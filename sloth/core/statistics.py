@@ -6,6 +6,8 @@ from decimal import Decimal
 from django.db.models.aggregates import Count
 from django.template.loader import render_to_string
 
+from sloth.utils import pretty
+
 COLORS = '#DECF3F', '#5DA5DA', '#B276B2', '#F15854', '#4D4D4D', '#B276B2'
 MONTHS = 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
 

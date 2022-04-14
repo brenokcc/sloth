@@ -77,35 +77,39 @@ class Action(metaclass=ActionMetaclass):
         self.one_to_one = {}
         self.one_to_many = {}
         self.metaclass = getattr(self, 'Meta')
-        self.relation_field_name = getattr(self.metaclass, 'relation', None)
-        if self.relation_field_name and self.relation_field_name in self.fields:
-            del self.fields[self.relation_field_name]
 
     # may be overridden by subclasses in case of dynamic forms
     def get_fieldsets(self):
         return None
 
     def load_fieldsets(self):
+        one_to_one_field_names = self.instance.get_one_to_one_field_names()
+        one_to_many_field_names = self.instance.get_one_to_many_field_names()
         fieldsets = self.get_fieldsets()
         # creates default fieldset if necessary
         if fieldsets is None:
             fieldsets = getattr(self.metaclass, 'fieldsets', None)
 
         if fieldsets is None:
+            fieldsets = {}
             if self.fields:
-                fieldsets = {'Dados Gerais': list(self.fields.keys())}
-            else:
-                fieldsets = {}
+                field_names = [
+                    name for name in self.fields.keys()
+                    if name not in one_to_one_field_names
+                    and name not in one_to_many_field_names
+                ]
+                if field_names:
+                    fieldsets[None] = field_names
         else:
             fieldsets = dict(fieldsets)
 
         # extract one-to-one and one-to-many fields
         if self.instance:
             for name in list(self.fields):
-                if name in self.instance.get_one_to_one_field_names():
+                if name in one_to_one_field_names:
                     # remove one-to-one fields from the form
                     self.one_to_one[name] = self.fields.pop(name)
-                if name in self.instance.get_one_to_many_field_names():
+                if name in one_to_many_field_names:
                     # remove one-to-many fields from the form
                     self.one_to_many[name] = self.fields.pop(name)
 
@@ -248,9 +252,8 @@ class Action(metaclass=ActionMetaclass):
                 setattr(self.instance, name, None)
 
         # save
-        if self.relation_field_name:
-            setattr(self.instance, self.relation_field_name, self.instantiator)
-        super().save(*args, **kwargs)
+        if hasattr(super(), 'save'):
+            super().save(*args, **kwargs)
 
         # save one-to-many fields
         for name in self.one_to_many:
@@ -309,17 +312,14 @@ class Action(metaclass=ActionMetaclass):
             modal = getattr(metaclass, 'modal', True)
             style = getattr(metaclass, 'style', 'primary')
             method = getattr(metaclass, 'method', 'post')
-            relation = getattr(metaclass, 'relation', None)
         else:
-            target, name, submit, icon, ajax, modal, style, method, relation = (
-                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
+            target, name, submit, icon, ajax, modal, style, method = (
+                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get'
             )
         if path:
             if inline or batch:
                 target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, form_name)
-            elif relation:
-                path = '{}{}/?xx'.format(path, form_name)
             else:
                 path = '{}{}/'.format(path, form_name)
         metadata = dict(
@@ -330,6 +330,9 @@ class Action(metaclass=ActionMetaclass):
 
     def get_method(self):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
+
+    def is_modal(self):
+        return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
 
     def has_permission(self, user):
         pass
@@ -420,7 +423,9 @@ class Action(metaclass=ActionMetaclass):
             q=q, items=items
         )
 
-    def redirect(self, url='..', message=None, style='sucess'):
+    def redirect(self, url=None, message=None, style='sucess'):
+        if url is None:
+            url = '..' if self.fields or self.is_modal() else '.'
         self.response.update(type='redirect', url=url)
         if message is None:
             message = getattr(self.metaclass, 'message', None)

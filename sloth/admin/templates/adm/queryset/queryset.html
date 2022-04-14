@@ -1,14 +1,16 @@
 {% load tags %}
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
-    <div class="queryset-title">
-        <h2>
-            {% if data.icon %}
-                <i class="bi bi-{{ data.icon }}"></i>
-            {% endif %}
-            {{ data.name }}
-        </h2>
-    </div>
+    {% if data.metadata.collapsed or compact %}
+        <div class="queryset-title" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+            <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
+        </div>
+    {% else %}
+        <div class="queryset-title">
+            <h2>{% if data.icon %}<i class="bi bi-{{ data.icon }}"></i>{% endif %} {{ data.name }}</h2>
+        </div>
+    {% endif %}
+    <div class="queryset-container" id="queryset-container{{ data.uuid }}">
     {% include "adm/queryset/actions/global.html" %}
     <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}" style="{% if data.metadata.collapsed or compact or request|mobile %}display:none{% endif %}">
         <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
@@ -208,13 +210,34 @@
 {% endif %}
 {% include "adm/queryset/actions/batch.html" %}
 {% if data.metadata.pagination.pages|length > 1 %}
-    <div>
-      {% for page in data.metadata.pagination.pages %}
-       <a href="javascript:" style="text-decoration:none;{% if page == data.metadata.pagination.page %}font-weight:bold{% endif %}" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">{{ page|stringformat:'s' }}</a>
-      {% endfor %}
-    </div>
+
+    <nav aria-label="Page navigation example">
+  <ul class="pagination">
+    {% for page in data.metadata.pagination.pages %}
+      {% if forloop.last and page > 5 %}
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+        </li>
+      {% endif %}
+    <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
+        <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
+            {% if forloop.first or forloop.last %}
+                {% if forloop.first %}
+                    Primeira
+                {% else %}
+                    Última
+                {% endif %}
+            {% else %}
+                {{ page }}
+            {% endif %}
+        </a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
 {% endif %}
 {% if uuid is None %}
+    </div>
     </div>
 </div>
 {% endif %}

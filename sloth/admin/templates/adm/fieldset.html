@@ -5,7 +5,7 @@
     {% else %}
       <div class="card">
         <div class="card-body">
-          <div class="fieldset-title" onclick="$('#{{ fieldset.name|slugify }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+          <div class="fieldset-title {{ title_class }}" onclick="$('#{{ fieldset.name|slugify }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
               <h5>
                   <i class="bi bi-chevron-down"></i>
                   {{ fieldset.name }}

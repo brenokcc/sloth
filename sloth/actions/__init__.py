@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-import re
+import math
 import os
+import re
 from copy import deepcopy
 from functools import lru_cache
-import math
+
 from django.conf import settings
+from django.contrib import auth
+from django.contrib import messages
 from django.forms import *
 from django.forms import fields
-from django.forms import widgets
 from django.forms import models
-from django.utils.safestring import mark_safe
-from django.contrib import messages
-from django.contrib import auth
+from django.forms import widgets
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from ..exceptions import JsonReadyResponseException
 from ..utils import load_menu

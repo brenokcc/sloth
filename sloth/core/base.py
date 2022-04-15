@@ -56,7 +56,6 @@ class ModelMixin(object):
         return user.is_superuser or user.roles.contains(*self.get_permission_roles('delete', 'admin'))
 
     def has_list_permission(self, user):
-        print(self.get_permission_roles('list', 'admin'), user.roles.contains(*self.get_permission_roles('list', 'admin')))
         return user.is_superuser or user.roles.contains(*self.get_permission_roles('list', 'admin'))
 
     def values(self, *names):
@@ -155,7 +154,7 @@ class ModelMixin(object):
             config = apps.get_app_config(cls.metaclass().app_label)
             try:
                 forms = __import__(
-                    '{}.forms'.format(config.module.__package__),
+                    '{}.actions'.format(config.module.__package__),
                     fromlist=config.module.__package__.split()
                 )
                 for name in dir(forms):

@@ -94,7 +94,6 @@ def load_menu(user):
     if user:
         for model in apps.get_models():
             if model not in PROXIED_MODELS:
-                print(model)
                 app_label = model.metaclass().app_label
                 model_name = model.metaclass().model_name
                 model_verbose_name_plural = model.metaclass().verbose_name_plural

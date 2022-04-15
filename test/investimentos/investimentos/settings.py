@@ -103,10 +103,10 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ALLOWED_HOSTS = ['*']
-BASE_DIR = path.abspath(path.dirname(path.dirname(__file__)))
+BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 MEDIA_URL = '/media/'
-STATIC_ROOT = path.join(BASE_DIR, 'static')
-MEDIA_ROOT = path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 LOGO = '/static/images/coleta-setec.png'
 NAME = 'COLETA SETEC'
 LOGIN_BACKGROUND = '/static/images/public.png'

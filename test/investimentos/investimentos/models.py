@@ -19,6 +19,9 @@ class Administrador(models.Model):
             'Dados Gerais': ('nome', 'cpf')
         }
 
+    def __str__(self):
+        return self.nome
+
 
 class Ano(models.Model):
     ano = models.IntegerField(verbose_name='Ano')

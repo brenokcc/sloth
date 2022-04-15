@@ -24,7 +24,7 @@ class AdicionarPergunta(actions.Action):
         verbose_name = 'Adicionar Pergunta'
         parent = 'categoria'
         fieldsets = {
-            'Dados Gerais': ('ordem', 'pergunta', 'texto', 'tipo_resposta', 'obrigatoria'),
+            'Dados Gerais': ('ordem', 'texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
         has_permission = 'Administrador',

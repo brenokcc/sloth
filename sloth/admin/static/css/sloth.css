@@ -3,6 +3,7 @@
 }
 .btn{
     margin-bottom: 5px;
+    white-space: nowrap;
 }
 .btn-circle {
     width: 30px;

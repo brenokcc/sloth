@@ -4,4 +4,6 @@ __pycache__
 db.sqlite3
 media
 .DS_Store
+sloth.egg-info
+dist
 

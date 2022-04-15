@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-
 from django.conf import settings
 from sloth import actions
 from sloth.utils.formatter import format_value
@@ -15,21 +14,20 @@ class AdicionarGestor(actions.Action):
         model = Gestor
         fields = 'nome', 'email'
         verbose_name = 'Adicionar Gestor'
-        parent ='instituicao'
-        groups = 'Administrador',
+        parent = 'instituicao'
+        has_permission = 'Administrador',
 
 
 class AdicionarPergunta(actions.Action):
     class Meta:
         model = Pergunta
         verbose_name = 'Adicionar Pergunta'
-        parent ='categoria'
-        exclude = ()
+        parent = 'categoria'
         fieldsets = {
             'Dados Gerais': ('ordem', 'pergunta', 'texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
-        groups = 'Administrador',
+        has_permission = 'Administrador',
 
 
 class AdicionarCampus(actions.Action):
@@ -37,8 +35,8 @@ class AdicionarCampus(actions.Action):
         model = Campus
         fields = 'nome',
         verbose_name = 'Adicionar Campus'
-        parent ='instituicao'
-        groups = 'Administrador',
+        parent = 'instituicao'
+        has_permission = 'Administrador',
 
 
 class AlterarPrioridade(actions.Action):
@@ -46,7 +44,7 @@ class AlterarPrioridade(actions.Action):
         model = Demanda
         fields = 'prioridade',
         verbose_name = 'Alterar Prioridade'
-        groups = 'Gestor',
+        has_permission = 'Gestor',
 
     def has_permission(self, user):
         return self.instance.ciclo.is_aberto() and self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
@@ -72,7 +70,7 @@ class NaoInformarDemanda(actions.Action):
         fields = ()
         verbose_name = 'Não Informar'
         style = 'danger'
-        groups = 'Gestor',
+        has_permission = 'Gestor',
 
     def save(self, *args, **kwargs):
         self.instance.valor = 0
@@ -90,7 +88,7 @@ class PreencherDemanda(actions.Action):
         model = Demanda
         fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Preencher Dados Gerais'
-        groups = 'Gestor',
+        has_permission = 'Gestor',
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -127,7 +125,7 @@ class AlterarPreenchimento(PreencherDemanda):
         model = Demanda
         fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Alterar Dados Gerais'
-        groups = 'Gestor',
+        has_permission = 'Gestor',
 
 
 class Reabir(actions.Action):
@@ -135,7 +133,7 @@ class Reabir(actions.Action):
         model = Demanda
         fields = ()
         verbose_name = 'Reabir para Edição'
-        groups = 'Administrador',
+        has_permission = 'Administrador',
 
     def save(self, *args, **kwargs):
         self.instance.finalizada = False
@@ -290,7 +288,7 @@ class ConcluirSolicitacao(actions.Action):
 
     class Meta:
         verbose_name = 'Concluir Solicitação'
-        groups = 'Gestor',
+        has_permission = 'Gestor',
         style = 'success'
         fieldsets = {
             'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3'),
@@ -356,7 +354,7 @@ class DuvidaForm(actions.Action):
         model = Duvida
         verbose_name = 'Tirar Dúvida'
         fields = 'pergunta',
-        groups = 'Gestor',
+        has_permission = 'Gestor',
 
     def save(self, *args, **kwargs):
         gestor = Gestor.objects.filter(email=self.request.user.username).first()
@@ -408,7 +406,7 @@ class ExportarResultado(actions.Action):
 
     class Meta:
         verbose_name = 'Exportar Resultado'
-        groups = 'Administrador',
+        has_permission = 'Administrador',
         icon = 'bi-file-exce'
 
     def submit(self):
@@ -459,7 +457,7 @@ class ExportarResultadoPorCategoria(actions.Action):
 
     class Meta:
         verbose_name = 'Exportar Resultado por Categoria'
-        groups = 'Administrador',
+        has_permission = 'Administrador',
         icon = 'bi-file-exce'
 
     def submit(self):

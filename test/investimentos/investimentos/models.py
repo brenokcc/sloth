@@ -51,7 +51,9 @@ class Categoria(models.Model):
         verbose_name = 'Categoria de Investimento'
         verbose_name_plural = 'Categorias de Investimento'
         list_display = 'nome', 'get_quantidade_perguntas'
-        can_admin = 'Administrador',
+
+    class Permission:
+        admin = 'Administrador',
 
     def __str__(self):
         return self.nome
@@ -120,8 +122,10 @@ class Pergunta(models.Model):
         verbose_name = 'Pergunta'
         verbose_name_plural = 'Perguntas'
         list_display = 'categoria', 'texto', 'obrigatoria', 'get_tipo_resposta'
-        can_delete = 'Administrador',
-        can_edit = 'Administrador',
+
+    class Permission:
+        delete = 'Administrador',
+        edit = 'Administrador',
 
     def __str__(self):
         ordem = '{}) '.format(self.ordem) if self.ordem else ''
@@ -142,10 +146,12 @@ class Instituicao(models.Model):
     sigla = models.CharField(verbose_name='Sigla')
 
     class Meta:
+        icon = 'building'
         verbose_name = 'Instituição'
         verbose_name_plural = 'Instituições'
-        can_admin = 'Administrador',
-        icon = 'building'
+
+    class Permission:
+        admin = 'Administrador',
 
     def __str__(self):
         return self.sigla
@@ -190,9 +196,11 @@ class Gestor(models.Model):
         fieldsets = {
             'Dados Gerais': (('nome', 'email'), 'instituicao')
         }
-        can_add = 'Administrador',
-        can_edit = 'Administrador',
-        can_delete = 'Administrador',
+
+    class Permission:
+        add = 'Administrador',
+        edit = 'Administrador',
+        delete = 'Administrador',
 
 
 class Notificacao(models.Model):
@@ -204,7 +212,9 @@ class Notificacao(models.Model):
         icon = 'exclamation-square'
         verbose_name = 'Notificação'
         verbose_name_plural = 'Notificações'
-        can_admin = 'Administrador',
+
+    class Permission:
+        admin = 'Administrador',
 
     def __str__(self):
         return self.descricao
@@ -217,7 +227,9 @@ class LimiteDemanda(models.Model):
     class Meta:
         verbose_name = 'Limite de Demanda'
         verbose_name_plural = 'Limites de Demanda'
-        can_view = 'Gestor', 'Administrador'
+
+    class Permission:
+        view = 'Gestor', 'Administrador'
 
     def __str__(self):
         return '{} - {} demandas'.format(self.classificacao, self.quantidade)
@@ -248,14 +260,16 @@ class Ciclo(models.Model):
         icon = 'arrow-clockwise'
         verbose_name = 'Ciclo de Demandas'
         verbose_name_plural = 'Ciclos de Demandas'
-        can_admin = 'Administrador',
-        can_view = 'Gestor',
-        can_list = 'Gestor',
         fieldsets = {
             'Dados Gerais': ('descricao', 'instituicoes'),
             'Período de Solicitação': (('inicio', 'fim'),),
             'Limite Financeiro': ('teto',),
         }
+
+    class Permission:
+        admin = 'Administrador',
+        view = 'Gestor',
+        list = 'Gestor',
 
     def __str__(self):
         return self.descricao
@@ -306,8 +320,8 @@ class Ciclo(models.Model):
     def get_configuracao_geral(self):
         return self.values('teto', ('inicio', 'fim'))
 
-    def can_get_configuracao(self, user):
-        return user.is_superuser or user.roles.filter(name='Administrador').exists()
+    def has_get_configuracao_permission(self, user):
+        return user.is_superuser or user.roles.contains('Administrador')
 
     @verbose_name('Configuração')
     def get_configuracao(self):
@@ -374,7 +388,9 @@ class Demanda(models.Model):
     class Meta:
         verbose_name = 'Demanda'
         verbose_name_plural = 'Demandas'
-        can_view = 'Administrador', 'Gestor'
+
+    class Permission:
+        view = 'Administrador', 'Gestor'
 
     def __str__(self):
         return self.descricao or 'Demanda {}'.format(self.pk)
@@ -464,9 +480,11 @@ class RespostaQuestionario(models.Model):
         icon = 'pencil-square'
         verbose_name = 'Resposta de Questionário'
         verbose_name_plural = 'Respostas dos Questionários'
-        can_view = 'Administrador', 'Gestor'
         list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
         list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
+
+    class Permission:
+        view = 'Administrador', 'Gestor'
 
     @verbose_name('Demanda')
     def get_demanda(self):
@@ -516,13 +534,15 @@ class Mensagem(models.Model):
         icon = 'chat-left-text'
         verbose_name = 'Mensagem Inicial'
         verbose_name_plural = 'Mensagens Iniciais'
-        can_list = 'Administrador',
-        can_edit = 'Administrador',
+
+    class Permission:
+        list = 'Administrador',
+        edit = 'Administrador',
 
     def __str__(self):
         return self.introducao
 
-    def can_add(self, user):
+    def has_add_permission(self, user):
         return Mensagem.objects.count() < 2
 
 
@@ -555,7 +575,9 @@ class QuestionarioFinal(models.Model):
     class Meta:
         verbose_name = 'Questionário Final'
         verbose_name_plural = 'Questionários Finais'
-        can_view = 'Administrador', 'Gestor'
+
+    class Permission:
+        view = 'Administrador', 'Gestor'
 
     def __str__(self):
         return 'Questionário final'
@@ -580,10 +602,12 @@ class Duvida(models.Model):
         icon = 'question-square'
         verbose_name = 'Dúvida'
         verbose_name_plural = 'Dúvidas'
-        can_list = 'Gestor', 'Administrador'
-        can_add = 'Gestor',
-        can_view = 'Gestor', 'Administrador'
         add_form = 'DuvidaForm'
+
+    class Permission:
+        list = 'Gestor', 'Administrador'
+        add = 'Gestor',
+        view = 'Gestor', 'Administrador'
 
     def __str__(self):
         return self.pergunta

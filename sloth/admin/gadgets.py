@@ -49,7 +49,7 @@ class Cards(Gadget):
         self.items = []
         super().__init__(request)
         for model in apps.get_models():
-            if model.can_list(request.user):
+            if model().has_list_permission(request.user):
                 if hasattr(model.metaclass(), 'icon'):
                     self.items.append(dict(
                         url=model.get_list_url('/adm'),

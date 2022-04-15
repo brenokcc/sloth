@@ -9,7 +9,7 @@ from django.db import models
 
 class UserManager(models.Manager):
     def all(self):
-        return super().all().list_display('username', 'is_superuser', 'get_roles').verbose_name('Usuários')
+        return self.display('username', 'is_superuser', 'get_roles').verbose_name('Usuários')
 
 
 class User(DjangoUser):
@@ -27,7 +27,7 @@ class User(DjangoUser):
         }
 
     def view(self):
-        return self.values('get_general_info', 'get_access_info')
+        return self.values('get_general_info', 'get_access_info', 'get_roles')
 
     def get_general_info(self):
         return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
@@ -37,13 +37,19 @@ class User(DjangoUser):
 
     @verbose_name('Papéis')
     def get_roles(self):
-        return [role.name for role in self.roles.all()]
+        return self.roles.ignore('user').actions('DeleteUserRole')
 
     def has_role(self, name):
         return self.user.roles.filter(name=name).exists()
 
     def has_roles(self, name):
         return self.user.roles.filter(name__in=name).exists()
+
+
+class RoleManager(models.Manager):
+
+    def contains(self, *names):
+        return self.filter(name__in=names).exists()
 
 
 class Role(models.Model):
@@ -61,6 +67,8 @@ class Role(models.Model):
     scope_type = models.ForeignKey(ContentType, verbose_name='Tipo do Escopo', null=True, on_delete=models.CASCADE)
     scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True)
 
+    objects = RoleManager()
+
     class Meta:
         verbose_name = 'Papel'
         verbose_name_plural = 'Papéis'
@@ -70,11 +78,11 @@ class Role(models.Model):
 
     def __str__(self):
         if self.scope_key and self.scope_value:
-            return '{}:{}:{}:{}'.format(
-                self.name, self.user.get_username(), self.scope_key, self.scope_value
+            return '{}::{}::{}'.format(
+                self.name, self.scope_key, self.scope_value
             )
         else:
-            return '{}:{}'.format(self.name, self.user.get_username())
+            return '{}'.format(self.name)
 
     def get_scope(self):
         return self.values('scope').verbose_name('Referência')

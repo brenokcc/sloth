@@ -73,7 +73,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         else:  # /base/estado/1/get_cidades/1/
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
-                            if instance.can_view(request.user):
+                            if instance.has_view_permission(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
@@ -88,7 +88,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         if w:  # /base/estado/1/get_cidades/sem_prefeito/1/
                             qs = getattr(attr(), z)()
                             instance = qs.contextualize(request).get(pk=w)
-                            if instance.can_view(request.user):
+                            if instance.has_view_permission(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
@@ -136,13 +136,13 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             raise PermissionDenied()
                         else:
                             # object subset
-                            if obj.can_view_attr(request.user, y):
+                            if obj.has_attr_permission(request.user, y):
                                 attr = getattr(obj, y)
                                 output = attr().attr(y).contextualize(request)
                                 return output
                         raise PermissionDenied()
             else:
-                if obj.can_view(request.user):
+                if obj.has_view_permission(request.user):
                     return obj.view().contextualize(request)
                 raise PermissionDenied()
         elif x.lower() == 'add':
@@ -171,7 +171,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             raise PermissionDenied()
                         else:
                             obj = model.objects.get(pk=y)
-                            if obj.can_view(request.user):
+                            if obj.has_view_permission(request.user):
                                 return obj.view().contextualize(request)
                             raise PermissionDenied()
                     else:  # execute action in a subset

@@ -31,30 +31,33 @@ class ModelMixin(object):
                 names.append(field.name)
         return names
 
-    def can_view(self, user):
-        names = getattr(self.metaclass(), 'can_view', ()) + getattr(self.metaclass(), 'can_admin', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    @classmethod
+    def get_permission_roles(cls, *names):
+        roles = []
+        if hasattr(cls, 'Permission'):
+            for name in names:
+                roles.extend(getattr(cls.Permission, name, ()))
+        return roles
 
-    def can_view_attr(self, user, name):
+    def has_view_permission(self, user):
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('view', 'admin'))
+
+    def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
-    def can_add(self, user):
-        names = getattr(self.metaclass(), 'can_add', ()) + getattr(self.metaclass(), 'can_admin', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    def has_add_permission(self, user):
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('add', 'admin'))
 
-    def can_edit(self, user):
-        names = getattr(self.metaclass(), 'can_edit', ()) + getattr(self.metaclass(), 'can_admin', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    def has_edit_permission(self, user):
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('edit', 'admin'))
 
-    def can_delete(self, user):
-        names = getattr(self.metaclass(), 'can_delete', ()) + getattr(self.metaclass(), 'can_admin', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    def has_delete_permission(self, user):
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('delete', 'admin'))
 
-    @classmethod
-    def can_list(cls, user):
-        names = getattr(cls.metaclass(), 'can_list', ()) + getattr(cls.metaclass(), 'can_admin', ())
-        return user.is_superuser or user.roles.filter(name__in=names)
+    def has_list_permission(self, user):
+        print(self.get_permission_roles('list', 'admin'), user.roles.contains(*self.get_permission_roles('list', 'admin')))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('list', 'admin'))
 
     def values(self, *names):
         return ValueSet(self, names)
@@ -64,7 +67,6 @@ class ModelMixin(object):
         return self.values(*names)
 
     def show(self, *names):
-        print(names, 4444)
         if 'self' in names:
             return self.view()
         return self.values(*names)
@@ -82,15 +84,6 @@ class ModelMixin(object):
     def __str__(self):
         return '{} #{}'.format(self.metaclass().verbose_name, self.pk)
 
-    def check_attr_access(self, attr_name, user):
-        if attr_name.startswith('get_'):
-            attr_name = 'can_{}'.format(attr_name)
-        else:
-            attr_name = 'can_view_{}'.format(attr_name)
-        if not hasattr(self, attr_name) or getattr(self, attr_name)(user):
-            return True
-        return user.is_superuser
-
     @classmethod
     def add_form_cls(cls):
         cls_name = getattr(cls.metaclass(), 'add_form', getattr(cls.metaclass(), 'form', None))
@@ -99,7 +92,6 @@ class ModelMixin(object):
         class Add(Action):
             class Meta:
                 model = cls
-                exclude = ()
                 verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 icon = 'plus'
                 style = 'success'
@@ -108,7 +100,7 @@ class ModelMixin(object):
                     fieldsets = cls.metaclass().fieldsets
 
             def has_permission(self, user):
-                return self.instance.can_add(user)
+                return self.instance.has_add_permission(user)
         return form_cls or Add
 
     @classmethod
@@ -119,7 +111,6 @@ class ModelMixin(object):
         class Edit(Action):
             class Meta:
                 model = cls
-                exclude = ()
                 verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
                 submit_label = 'Editar'
                 icon = 'pencil'
@@ -128,7 +119,7 @@ class ModelMixin(object):
                     fieldsets = cls.metaclass().fieldsets
 
             def has_permission(self, user):
-                return self.instance.can_edit(user)
+                return self.instance.has_edit_permission(user)
 
         return form_cls or Edit
 
@@ -148,7 +139,7 @@ class ModelMixin(object):
                 self.instance.delete()
 
             def has_permission(self, user):
-                return self.instance.can_delete(user)
+                return self.instance.has_delete_permission(user)
 
         return Delete
 
@@ -227,7 +218,7 @@ class ModelMixin(object):
     def get_attr_verbose_name(cls, lookup):
         field = cls.get_field(lookup)
         if field:
-            return str(field.verbose_name), True
+            return str(getattr(field, 'verbose_name', lookup)), True
         attr = getattr(cls, lookup)
         return getattr(attr, '__verbose_name__', lookup), False
 
@@ -322,12 +313,12 @@ class ModelMixin(object):
         model = type(self)
         lookups = list()
         tuples = set()
-        for role in self._roles:
+        for role in self.__roles__:
             lookups.append(role['username'])
             lookups.extend(role['scopes'].values())
         values = model.objects.filter(pk=self.pk).values(*set(lookups)).first()
         if values:
-            for role in self._roles:
+            for role in self.__roles__:
                 username = values[role['username']]
                 tuples.add((username, role['name'], None, None, None))
                 for scope_key, lookup in role['scopes'].items():
@@ -344,16 +335,17 @@ class ModelMixin(object):
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
         for username, name, scope_type, scope_key, scope_value in role_tuples2:
-            if user_id is None:
-                user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
+            if username and scope_value:
                 if user_id is None:
-                    user = User.objects.create(username=username)
-                    user.set_password('123')
-                    user.save()
-                    user_id = user.id
-            role.objects.get_or_create(
-                user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
-            )
+                    user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
+                    if user_id is None:
+                        user = User.objects.create(username=username)
+                        user.set_password('123')
+                        user.save()
+                        user_id = user.id
+                role.objects.get_or_create(
+                    user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
+                )
         deleted_role_tuples = role_tuples - role_tuples2
         for user_id, name, scope_type, scope_key, scope_value in deleted_role_tuples:
             role.objects.filter(

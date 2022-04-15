@@ -31,7 +31,7 @@ class Cartoes(Cards):
 
 class CiclosAbertos(Gadget):
     class Meta:
-        can_view = 'Gestor',
+        has_permission = 'Gestor',
 
     def __init__(self, request):
         super().__init__(request)

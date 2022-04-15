@@ -5,7 +5,7 @@
     {% else %}
       <div class="card">
         <div class="card-body">
-          <div class="fieldset-title" onclick="$('#{{ fieldset.name|slugify }}').slideToggle();">
+          <div class="fieldset-title" onclick="$('#{{ fieldset.name|slugify }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
               <h5>
                   <i class="bi bi-chevron-down"></i>
                   {{ fieldset.name }}
@@ -50,8 +50,15 @@
 {% if fieldset.type == 'statistics' %}
     <div class="card">
         <div class="card-body">
-            <h5>{{ fieldset.name }}</h5>
-            {% include 'adm/statistics.html' with data=fieldset %}
+            <div class="fieldset-title" onclick="$('#{{ fieldset.name|slugify }}-statistics').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+              <h5>
+                  <i class="bi bi-chevron-down"></i>
+                  {{ fieldset.name }}
+              </h5>
+            </div>
+            <div class="card-text fieldset-data" id="{{ fieldset.name|slugify }}-statistics">
+                {% include 'adm/statistics.html' with data=fieldset %}
+            </div>
         </div>
     </div>
 {% endif %}

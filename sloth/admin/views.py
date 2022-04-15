@@ -17,7 +17,7 @@ from . import gadgets
 def view(func):
     def decorate(request, *args, **kwargs):
         try:
-            import time; time.sleep(0.5)
+            # import time; time.sleep(0.5)
             if views.is_authenticated(request):
                 response = func(request, *args, **kwargs)
                 response["X-Frame-Options"] = "SAMEORIGIN"
@@ -74,9 +74,8 @@ def index(request):
         for cls in gadgets.GADGETS.values():
             width = 100
             if hasattr(cls, 'Meta'):
-                if hasattr(cls.Meta, 'can_view'):
-                    names = cls.Meta.can_view
-                    if not request.user.roles.filter(name__in=names).exists():
+                if hasattr(cls.Meta, 'has_permission'):
+                    if not request.user.roles.contains(*cls.Meta.has_permission):
                         continue
                 if hasattr(cls.Meta, 'width'):
                     width = cls.Meta.width

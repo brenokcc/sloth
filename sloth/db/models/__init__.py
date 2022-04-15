@@ -75,7 +75,7 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         pass
 
     def save(self, *args, **kwargs):
-        if hasattr(self, '_roles'):
+        if hasattr(self, '__roles__'):
             tuples = self.get_role_tuples()
             super().save(*args, **kwargs)
             self.sync_roles(tuples)
@@ -86,7 +86,7 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         pass
 
     def delete(self, *args, **kwargs):
-        if hasattr(self, '_roles'):
-            print(self._roles)
+        if hasattr(self, '__roles__'):
+            print(self.__roles__)
         super().delete(*args, **kwargs)
 

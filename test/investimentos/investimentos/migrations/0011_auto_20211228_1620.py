@@ -25,8 +25,6 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Notificações',
                 'icon': 'exclamation-square',
                 'add_form': 'DuvidaForm',
-                'can_list': 'Gestor',
-                'can_admin': ('Administrador',),
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

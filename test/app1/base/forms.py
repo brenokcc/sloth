@@ -9,9 +9,9 @@ class AdicionarMunicipioEstado(actions.Action):
 
     class Meta:
         model = Municipio
-        exclude = ()
         parent = 'estado'
         verbose_name = 'Adicionar Município'
+        has_permission = 'Chefe',
 
 
 class HomologarFrequencia(actions.Action):
@@ -151,7 +151,6 @@ class CadastrarFerias(actions.Action):
         verbose_name = 'Cadastrar'
         parent = 'servidor'
         model = Ferias
-        exclude = ()
 
 
 class AlterarFerias(actions.Action):
@@ -164,5 +163,9 @@ class AlterarFerias(actions.Action):
 class ExcluirFerias(actions.Action):
     class Meta:
         verbose_name = 'Excluir'
-        model = Ferias
-        exclude = ()
+        style = 'danger'
+
+    def submit(self):
+        print(self.instance, 88888)
+        self.instance.delete()
+        self.redirect(message='Férias excluídas com sucesso')

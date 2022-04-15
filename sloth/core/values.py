@@ -59,6 +59,9 @@ class ValueSet(dict):
     def debug(self):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
+    def apply_role_lookups(self, user):
+        return self
+
     def get_api_schema(self, recursive=False):
         schema = dict()
         for attr_name, width in self.metadata['names'].items():
@@ -81,10 +84,13 @@ class ValueSet(dict):
     def load(self, wrap=False, verbose=False, formatted=False, valueset=None, size=True):
         if self.metadata['names']:
             for attr_name, width in self.metadata['names'].items():
-                if self.metadata['request'] is None or self.instance.check_attr_access(attr_name, self.metadata['request'].user):
+                if self.metadata['request'] is None or self.instance.has_attr_permission(attr_name, self.metadata['request'].user):
                     attr, value = getattrr(self.instance, attr_name)
-                    path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
-                    if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):
+                    if isinstance(self.instance, QuerySet):
+                        path = '/{}/{}/{}/'.format(self.instance.model.metaclass().app_label, self.instance.model.metaclass().model_name, attr_name)
+                    else:
+                        path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
+                    if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         if not isinstance(value, QuerySet):
                             value = value.filter()
                         if valueset is not None:
@@ -175,18 +181,24 @@ class ValueSet(dict):
                 )
             else:
                 data.update(self)
-            icon = getattr(self.instance.metaclass().app_label, 'icon', None)
+            if isinstance(self.instance, QuerySet):
+                icon = getattr(self.instance.model.metaclass().app_label, 'icon', None)
+            else:
+                icon = getattr(self.instance.metaclass().app_label, 'icon', None)
             output = dict(
                 uuid=uuid1().hex, type='object', name=str(self.instance),
                 icon=icon, data=data, actions=[], attach=[], append={}
             )
             for form_name in self.metadata['actions']:
-                path = '/{}/{}/{}/'.format(
-                    self.instance.metaclass().app_label,
-                    self.instance.metaclass().model_name, self.instance.pk
-                )
-                action = self.instance.action_form_cls(form_name).get_metadata(path)
-                output['actions'].append(action)
+                form_cls = self.instance.action_form_cls(form_name)
+                if self.metadata['request'] is None or form_cls.check_fake_permission(
+                        request=self.metadata['request'], instance=self.instance, instantiator=self.instance,
+                ):
+                    path = '/{}/{}/{}/'.format(
+                        self.instance.metaclass().app_label,
+                        self.instance.metaclass().model_name, self.instance.pk
+                    )
+                    output['actions'].append(form_cls.get_metadata(path))
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 path = '/{}/{}/{}/{}/'.format(

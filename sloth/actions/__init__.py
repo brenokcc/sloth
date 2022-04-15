@@ -20,10 +20,11 @@ from ..utils import load_menu
 
 class PermissionChecker:
 
-    def __init__(self, request, instance=None, instantiator=None):
+    def __init__(self, request, instance=None, instantiator=None, metaclass=None):
         self.request = request
         self.instance = instance
         self.instantiator = instantiator
+        self.metaclass = metaclass
 
     def has_permission(self, user):
         pass
@@ -39,13 +40,16 @@ class ActionMetaclass(models.ModelFormMetaclass):
             if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
                 form_fields = []
                 fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
-                for tuples in fieldsets.values():
-                    for names in tuples:
-                        if isinstance(names, str):
-                            form_fields.append(names)
-                        else:
-                            form_fields.extend(names)
-                setattr(attrs['Meta'], 'fields', form_fields)
+                if fieldsets:
+                    for tuples in fieldsets.values():
+                        for names in tuples:
+                            if isinstance(names, str):
+                                form_fields.append(names)
+                            else:
+                                form_fields.extend(names)
+                    setattr(attrs['Meta'], 'fields', form_fields)
+                else:
+                    setattr(attrs['Meta'], 'exclude', ())
         elif name != 'Action':
             raise NotImplementedError('class {} must have a Meta class.'.format(name))
         return super().__new__(mcs, name, bases, attrs)
@@ -54,15 +58,19 @@ class ActionMetaclass(models.ModelFormMetaclass):
 class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
-        if ModelForm in self.__class__.__bases__:
-            self.instance = kwargs.get('instance', None)
-        else:
-            self.instance = kwargs.pop('instance', None)
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
-        if self.instances:
-            kwargs.update(instance=self.instances[0])
+
+        if ModelForm in self.__class__.__bases__:
+            self.instance = kwargs.get('instance', None)
+            if self.instances:
+                kwargs.update(instance=self.instances[0])
+        else:
+            self.instance = kwargs.pop('instance', None)
+            if self.instance is None and self.instances:
+                self.instance = self.instances[0]
+
         if 'data' not in kwargs:
             if self.base_fields:
                 data = self.request.POST or None
@@ -70,7 +78,6 @@ class Action(metaclass=ActionMetaclass):
                 data = self.request.POST
             kwargs['data'] = data
             kwargs['files'] = self.request.FILES or None
-
         super().__init__(*args, **kwargs)
         self.response = {}
         self.fieldsets = {}
@@ -78,38 +85,40 @@ class Action(metaclass=ActionMetaclass):
         self.one_to_many = {}
         self.metaclass = getattr(self, 'Meta')
 
-    # may be overridden by subclasses in case of dynamic forms
+    @lru_cache
+    def get_one_to_one_field_names(self):
+        return self.instance.get_one_to_one_field_names() if self.instance else ()
+
+    @lru_cache
+    def get_one_to_many_field_names(self):
+        return self.instance.get_one_to_many_field_names() if self.instance else ()
+
     def get_fieldsets(self):
-        return None
-
-    def load_fieldsets(self):
-        one_to_one_field_names = self.instance.get_one_to_one_field_names()
-        one_to_many_field_names = self.instance.get_one_to_many_field_names()
-        fieldsets = self.get_fieldsets()
-        # creates default fieldset if necessary
-        if fieldsets is None:
-            fieldsets = getattr(self.metaclass, 'fieldsets', None)
-
+        fieldsets = getattr(self.metaclass, 'fieldsets', None)
         if fieldsets is None:
             fieldsets = {}
             if self.fields:
                 field_names = [
                     name for name in self.fields.keys()
-                    if name not in one_to_one_field_names
-                    and name not in one_to_many_field_names
+                    if name not in self.get_one_to_one_field_names()
+                       and name not in self.get_one_to_many_field_names()
                 ]
                 if field_names:
                     fieldsets[None] = field_names
         else:
             fieldsets = dict(fieldsets)
+        return fieldsets
+
+    def load_fieldsets(self):
+        fieldsets = self.get_fieldsets()
 
         # extract one-to-one and one-to-many fields
         if self.instance:
             for name in list(self.fields):
-                if name in one_to_one_field_names:
+                if name in self.get_one_to_one_field_names():
                     # remove one-to-one fields from the form
                     self.one_to_one[name] = self.fields.pop(name)
-                if name in one_to_many_field_names:
+                if name in self.get_one_to_many_field_names():
                     # remove one-to-many fields from the form
                     self.one_to_many[name] = self.fields.pop(name)
 
@@ -340,12 +349,12 @@ class Action(metaclass=ActionMetaclass):
     def check_permission(self, user):
         has_permission = self.has_permission(user)
         if has_permission is None:
-            return user.is_superuser or user.roles.filter(name__in=getattr(self.metaclass, 'groups', ()))
+            return user.is_superuser or user.roles.contains(*getattr(self.metaclass, 'has_permission', ()))
         return has_permission
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        checker = PermissionChecker(request, instance=instance, instantiator=instantiator)
+        checker = PermissionChecker(request, instance=instance, instantiator=instantiator, metaclass=getattr(cls, 'Meta', None))
         has_permission = cls.has_permission(checker, request.user)
         if has_permission is None:
             return cls.check_permission(checker, request.user)
@@ -452,7 +461,6 @@ class Action(metaclass=ActionMetaclass):
             os.symlink(file_path_or_bytes, file_path)
             print(file_path_or_bytes, file_path)
         self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
-
 
     def submit(self):
         if self.instances:

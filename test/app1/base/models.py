@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.contrib.auth.models import User
 
 from sloth.db import models, verbose_name, role
 
@@ -39,6 +38,9 @@ class Estado(models.Model):
         verbose_name_plural = 'Estados'
         add_form = 'EstadoForm'
 
+    class Permission:
+        list = view = 'Chefe',
+
     def __str__(self):
         return self.sigla
 
@@ -50,9 +52,6 @@ class Estado(models.Model):
             'FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas'
         )
 
-    def _can_view_sigla(self, user):
-        return not user.is_superuser
-
     def get_cidades(self):
         return self.municipio_set.get_queryset().actions('Edit').global_actions(
             'AdicionarMunicipioEstado'
@@ -61,17 +60,20 @@ class Estado(models.Model):
 
 class MunicipioManager(models.Manager):
 
-    @verbose_name('Todos')
     def all(self):
-        return self.attach('potiguares', 'get_qtd_por_estado')
+        return self.attach('por_estados', 'get_qtd_por_estado')
 
-    @verbose_name('Potiguares')
     def potiguares(self):
         return self.filter(estado__sigla='RN')
 
-    @verbose_name('Quantidade por Estado')
+    def paraibanos(self):
+        return self.filter(estado__sigla='PB')
+
+    def por_estados(self):
+        return self.join('potiguares', 'paraibanos', 'get_qtd_por_estado')
+
     def get_qtd_por_estado(self):
-        return self.count('estado')
+        return self.count('estado').verbose_name('Quantidade por Estado')
 
 
 class Municipio(models.Model):
@@ -168,8 +170,8 @@ class UnidadeOrganizacional(models.Model):
         return '{}/{}'.format(self.sigla, self.instituto)
 
 
-@role('Chefe', 'chefe__user', setor='id')
-@role('Substituto Eventual', 'substitutos_eventuais__user', setor='id')
+@role('Chefe', 'chefe__matricula', setor='id')
+@role('Substituto Eventual', 'substitutos_eventuais__matricula', setor='id')
 class Setor(models.Model):
     uo = models.ForeignKey(UnidadeOrganizacional, verbose_name='Campus')
     sigla = models.CharField(verbose_name='Sigla')
@@ -190,7 +192,7 @@ class ServidorManager(models.Manager):
 
     def all(self):
         return self.display(
-            'foto', 'get_dados_gerais', 'ativo', 'naturalidade'
+            'foto', 'get_dados_gerais', 'ativo', 'naturalidade', 'setor'
         ).filters(
             'data_nascimento', 'ativo', 'naturalidade'
         ).search('nome').ordering(
@@ -198,7 +200,9 @@ class ServidorManager(models.Manager):
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
         ).actions(
-            'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
+            'CorrigirNomeServidor', 'FazerAlgumaCoisa'
+        ).batch_actions(
+            'DefinirSetor'
         ).global_actions(
             'FazerAlgumaCoisa'
         ).template('adm/queryset/cards')
@@ -216,7 +220,7 @@ class ServidorManager(models.Manager):
         return self.filter(ativo=False).actions('AtivarServidor')
 
 
-@role('Servidor', 'user', servidor='id', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
+@role('Servidor', 'matricula', servidor='id', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
 class Servidor(models.Model):
     foto = models.ImageField(verbose_name='Foto', null=True, blank=True, upload_to='fotos')
     matricula = models.CharField('Matrícula')
@@ -227,8 +231,6 @@ class Servidor(models.Model):
     ativo = models.BooleanField('Ativo', default=True)
     naturalidade = models.ForeignKey(Municipio, verbose_name='Naturalidade', null=True)
     setor = models.ForeignKey(Setor, verbose_name='Setor', null=True, blank=True)
-
-    user = models.ForeignKey(User, verbose_name='Usuário', null=True, blank=True)
 
     objects = ServidorManager()
 
@@ -285,12 +287,6 @@ class Servidor(models.Model):
 
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
-
-    def save(self, *args, **kwargs):
-        self.user = User.objects.get_or_create(
-            username=self.cpf, defaults={}
-        )[0]
-        super().save()
 
 
 class FeriasManager(models.Manager):

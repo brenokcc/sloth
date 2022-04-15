@@ -24,7 +24,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Mensagem Inicial',
                 'verbose_name_plural': 'Mensagens Iniciais',
                 'icon': 'chat-left-text',
-                'can_list': ('Administrador',),
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

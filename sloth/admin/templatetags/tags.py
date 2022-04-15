@@ -123,6 +123,6 @@ def add(value, n):
 
 
 @register.filter
-def can_view(obj, user):
-    return obj.can_view(user)
+def has_view_permission(obj, user):
+    return obj.has_view_permission(user)
 

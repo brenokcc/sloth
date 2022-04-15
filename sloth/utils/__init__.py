@@ -91,36 +91,18 @@ def pretty(name):
 def load_menu(user):
     from .. import PROXIED_MODELS
     items = []
-    for model in apps.get_models():
-        if model not in PROXIED_MODELS:
-            app_label = model.metaclass().app_label
-            model_name = model.metaclass().model_name
-            model_verbose_name = model.metaclass().verbose_name
-            model_verbose_name_plural = model.metaclass().verbose_name_plural
-            icon = getattr(model.metaclass(), 'icon', None)
-            url = '/adm/{}/{}/'.format(app_label, model_name)
-            item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
-            for name, attr in model.objects._queryset_class.__dict__.items():
-                if hasattr(attr, 'decorated'):
-                    roles = getattr(attr, 'roles')
-                    if user is None or user.is_superuser or user.roles.filter(name__in=roles).exists():
-                        attr_verbose_name = getattr(attr, 'verbose_name')
-                        attr_icon = getattr(attr, 'icon', None)
-                        attr_description = attr_verbose_name
-                        if name == 'all':
-                            attr_url = url
-                            attr_verbose_name = str(model_verbose_name_plural)
-                            item.update(label=str(model_verbose_name))
-                        else:
-                            attr_url = '{}{}/'.format(url, name)
-                        subitem = dict(label=pretty(attr_verbose_name), icon=attr_icon, description=attr_description, url=attr_url)
-                        item['subitems'].append(subitem)
-                    else:
-                        if name == 'all':
-                            item['url'] = '#'
-            attr = model.objects._queryset_class.all
-            if user is None or user.is_superuser or item['subitems'] or model.can_list(user):
-                items.append(item)
+    if user:
+        for model in apps.get_models():
+            if model not in PROXIED_MODELS:
+                print(model)
+                app_label = model.metaclass().app_label
+                model_name = model.metaclass().model_name
+                model_verbose_name_plural = model.metaclass().verbose_name_plural
+                icon = getattr(model.metaclass(), 'icon', None)
+                url = '/adm/{}/{}/'.format(app_label, model_name)
+                item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
+                if user.is_superuser or model().has_list_permission(user):
+                    items.append(item)
     return items
 
 

@@ -51,6 +51,10 @@ class QuerySet(models.QuerySet):
             return self.filter(reduce(operator.__and__, lookups))
         return self
 
+    def join(self, *names):
+        from sloth.core.values import ValueSet
+        return ValueSet(self, names)
+
     def _clone(self):
         clone = super()._clone()
         clone.metadata = dict(self.metadata)
@@ -126,25 +130,24 @@ class QuerySet(models.QuerySet):
         return filters
 
     def _get_attach(self, verbose=False):
-        attach = {}
+        attaches = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                if self.metadata['request']:
-                    obj = getattr(self._clone(), name)().apply_role_lookups(self.metadata['request'].user)
-                else:
-                    obj = getattr(self._clone(), name)()
-                verbose_name = obj.metadata['verbose_name'] or pretty(name)
-                if isinstance(obj, QuerySet):
+                attach = getattr(self._clone(), name)()
+                if self.metadata['request'] and hasattr(attach, 'apply_role_lookups'):
+                    attach = attach.apply_role_lookups(self.metadata['request'].user)
+                verbose_name = attach.metadata['verbose_name'] or pretty(name)
+                if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'
-                    attach[verbose_name if verbose else name] = dict(
-                        name=verbose_name, key=name, count=obj.count(), active=i == 0
+                    attaches[verbose_name if verbose else name] = dict(
+                        name=verbose_name, key=name, count=attach.count(), active=i == 0
                     )
                 else:
-                    attach[verbose_name if verbose else name] = dict(
+                    attaches[verbose_name if verbose else name] = dict(
                         name=verbose_name, key=name, active=i == 0
                     )
-        return attach
+        return attaches
 
     # choices function
 
@@ -174,8 +177,11 @@ class QuerySet(models.QuerySet):
     def to_list(self, wrap=False, verbose=False, formatted=False):
         data = []
         for obj in self:
+            actions = self.get_obj_actions(obj)
+            if self.metadata['request'] and obj.has_view_permission(self.metadata['request'].user):
+                actions.append('view')
             item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
-            data.append(dict(id=obj.id, description=str(obj), data=item, actions=self.get_obj_actions(obj) + ['view']) if wrap else item)
+            data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
     def export(self, limit=100):
@@ -424,6 +430,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def process_request(self, request):
+        from sloth.core.values import ValueSet
         page = 1
         attr_name = request.GET['subset']
         attach = self if attr_name == 'all' else getattr(self, attr_name)()
@@ -433,6 +440,8 @@ class QuerySet(models.QuerySet):
                 qs.metadata['ignore'] = self.metadata['ignore']
         elif isinstance(attach, QuerySetStatistics):
             qs = attach.qs
+        elif isinstance(attach, ValueSet):
+            qs = attach.instance
         else:
             raise Exception()
         qs.metadata.update(request=request)
@@ -457,6 +466,9 @@ class QuerySet(models.QuerySet):
             qs = qs.paginate(page)
             # qs.debug()
             return qs
+        if isinstance(attach, ValueSet):
+            attach.instance = qs
+            return attach
         else:
             attach.qs = qs
             return attach

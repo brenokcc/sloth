@@ -183,6 +183,8 @@
     </script>
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
+{% else %}
+        <h5>{{ data.name }}</h5>
 {% endif %}
 
 {% if data.metadata.pagination.total %}

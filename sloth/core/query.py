@@ -214,7 +214,7 @@ class QuerySet(models.QuerySet):
 
     def serialize(self, path=None, wrap=False, verbose=True, formatted=False, lazy=False):
         if wrap:
-            verbose_name = str(self.model.metaclass().verbose_name_plural)
+            verbose_name = pretty(self.model.metaclass().verbose_name_plural)
             icon = getattr(self.model.metaclass(), 'icon', None)
             search = self._get_search(verbose)
             display = self._get_display(verbose)

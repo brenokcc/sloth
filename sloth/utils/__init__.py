@@ -100,7 +100,7 @@ def load_menu(user):
                 icon = getattr(model.metaclass(), 'icon', None)
                 url = '/adm/{}/{}/'.format(app_label, model_name)
                 item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
-                if user.is_superuser or model().has_list_permission(user):
+                if model().has_list_permission(user):
                     items.append(item)
     return items
 

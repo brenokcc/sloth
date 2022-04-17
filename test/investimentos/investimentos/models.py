@@ -241,7 +241,7 @@ class LimiteDemanda(models.Model):
 class CicloManager(models.Manager):
     @verbose_name('Ciclos')
     def all(self):
-        return super().role_lookups('Gestor', instituicao='instituicoes')
+        return super().role_lookups('Gestor', instituicoes='instituicao')
 
     @verbose_name('Ciclos Abertos')
     def abertos(self):

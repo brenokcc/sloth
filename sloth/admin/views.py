@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 
 from .. import views
 from ..actions import Action, LoginForm, PasswordForm
+
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import gadgets

@@ -36,7 +36,12 @@ class ModelMixin(object):
         roles = []
         if hasattr(cls, 'Permission'):
             for name in names:
-                roles.extend(getattr(cls.Permission, name, ()))
+                value = getattr(cls.Permission, name, ())
+                if value and not isinstance(value, tuple):
+                    raise RuntimeError(
+                        'The value for "{}" in the Permission class for "{}" must be a tuple'.format(name, cls.__name__)
+                    )
+                roles.extend(value)
         return roles
 
     def has_view_permission(self, user):
@@ -310,43 +315,48 @@ class ModelMixin(object):
     def get_role_tuples(self):
         content_type = apps.get_model('contenttypes', 'ContentType')
         model = type(self)
-        lookups = list()
         tuples = set()
         for role in self.__roles__:
+            lookups = list()
             lookups.append(role['username'])
+            if model.__name__.lower() not in role['scopes']:
+                role['scopes'][model.__name__.lower()] = 'id'
             lookups.extend(role['scopes'].values())
-        values = model.objects.filter(pk=self.pk).values(*set(lookups)).first()
-        if values:
-            for role in self.__roles__:
-                username = values[role['username']]
-                tuples.add((username, role['name'], None, None, None))
-                for scope_key, lookup in role['scopes'].items():
-                    scope_type = content_type.objects.get_for_model(
-                        model if lookup == 'id' else model.get_field(lookup).related_model
-                    )
-                    scope_value = values[lookup]
-                    tuples.add((username, role['name'], scope_type.id, scope_key, scope_value))
+            values = model.objects.filter(pk=self.pk).values(*set(lookups))
+            for value in values:
+                if value[role['username']]:
+                    for scope_key, lookup in role['scopes'].items():
+                        scope_type = content_type.objects.get_for_model(
+                            model if lookup == 'id' else model.get_field(lookup).related_model
+                        )
+                        scope_value = value[lookup]
+                        tuples.add((value[role['username']], role['name'], scope_type.id, scope_key, scope_value))
         return tuples
 
     def sync_roles(self, role_tuples):
         from django.contrib.auth.models import User
-        user_id = None
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
+        # for x in role_tuples: print(x)
+        # print('\n')
+        # for x in role_tuples2: print(x)
+        # print('\n\n')
+        added_role_tuples = role_tuples2 - role_tuples
+        # print('ADDED: ', added_role_tuples)
         for username, name, scope_type, scope_key, scope_value in role_tuples2:
-            if username and scope_value:
+            if scope_value:
+                user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
                 if user_id is None:
-                    user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
-                    if user_id is None:
-                        user = User.objects.create(username=username)
-                        user.set_password('123')
-                        user.save()
-                        user_id = user.id
+                    user = User.objects.create(username=username)
+                    user.set_password('123')
+                    user.save()
+                    user_id = user.id
                 role.objects.get_or_create(
                     user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
                 )
         deleted_role_tuples = role_tuples - role_tuples2
-        for user_id, name, scope_type, scope_key, scope_value in deleted_role_tuples:
+        # print('DELETED: ', deleted_role_tuples)
+        for username, name, scope_type, scope_key, scope_value in deleted_role_tuples:
             role.objects.filter(
-                user_id=user_id, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+                user__username=username, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
             ).delete()

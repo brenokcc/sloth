@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import base64
-
+from django.conf import settings
 from django.apps import apps
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+from ..utils import load_menu
+
+
+def context_processor(request):
+    if request.user.is_authenticated and ('menu' not in request.session or settings.DEBUG):
+        request.session['menu'] = load_menu(request.user)
+        request.session.save()
+    return {}
 
 
 def is_authenticated(request):
@@ -206,4 +214,6 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        return model.objects.all().contextualize(request).default_actions().collapsed(False)
+        if model().has_list_permission(request.user):
+            return model.objects.all().contextualize(request).default_actions().collapsed(False)
+        raise PermissionDenied()

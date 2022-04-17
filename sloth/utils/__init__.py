@@ -74,7 +74,7 @@ def pretty(name):
         tokens = name.split(' ')  # splitting into a list
         ignore = [
             'de', 'di', 'do', 'da', 'dos', 'das', 'dello', 'della', 'dalla', 'dal',
-            'del', 'e', 'em', 'na', 'no', 'nas', 'nos', 'van', 'von', 'y', 'a'
+            'del', 'e', 'em', 'na', 'no', 'nas', 'nos', 'van', 'von', 'y', 'a', 'por', 'para'
         ]
         output = []
         for token in tokens:

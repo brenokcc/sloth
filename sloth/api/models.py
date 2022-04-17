@@ -9,7 +9,9 @@ from django.db import models
 
 class UserManager(models.Manager):
     def all(self):
-        return self.display('username', 'is_superuser', 'get_roles').verbose_name('Usuários')
+        return self.display(
+            'username', 'is_superuser', 'get_roles'
+        ).actions('LoginAsUser').verbose_name('Usuários')
 
 
 class User(DjangoUser):

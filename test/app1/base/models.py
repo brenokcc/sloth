@@ -3,6 +3,15 @@
 from sloth.db import models, verbose_name, role
 
 
+@role('Gerente', username='email')
+class Gerente(models.Model):
+    nome = models.CharField(verbose_name='None')
+    email = models.EmailField(verbose_name='Email')
+
+    def __str__(self):
+        return self.nome
+
+
 class Telefone(models.Model):
     ddd = models.PositiveIntegerField(verbose_name='DDD')
     numero = models.CharField(verbose_name='Número', mask='00000-0000')
@@ -170,7 +179,7 @@ class UnidadeOrganizacional(models.Model):
         return '{}/{}'.format(self.sigla, self.instituto)
 
 
-@role('Chefe', 'chefe__matricula', setor='id')
+@role('Chefe', 'chefe__matricula')
 @role('Substituto Eventual', 'substitutos_eventuais__matricula', setor='id')
 class Setor(models.Model):
     uo = models.ForeignKey(UnidadeOrganizacional, verbose_name='Campus')
@@ -186,6 +195,10 @@ class Setor(models.Model):
 
     def __str__(self):
         return '{}/{}'.format(self.sigla, self.uo)
+
+    def view(self):
+        return self.values(('uo', 'sigla'), 'chefe', 'substitutos_eventuais')
+
 
 
 class ServidorManager(models.Manager):

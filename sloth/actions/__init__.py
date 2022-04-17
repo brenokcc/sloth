@@ -16,7 +16,6 @@ from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
 from ..exceptions import JsonReadyResponseException
-from ..utils import load_menu
 
 
 class PermissionChecker:
@@ -505,8 +504,6 @@ class LoginForm(Action):
     def submit(self):
         if self.user:
             auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
-            self.request.session['menu'] = load_menu(self.user)
-            self.request.session.save()
 
 
 class PasswordForm(Action):

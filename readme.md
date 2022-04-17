@@ -1,19 +1,22 @@
 # Sloth
 
-![Kiku](draft.png)
+![Kiku](sloth/admin/static/images/sloth.png)
 
 
 ## Installation
 
-### Python
-
-#### Development
+### Development
 
 > pip install git+ssh://git@github.com:brenokcc/sloth.git
 
-#### Production
+### Production
 
-> pip install sloth
+> pip install django-sloth
+
+## Docker
+
+> docker run -it --rm --name app -p 8000:8000 -v $(pwd):/app -w /app sloth sh
+
 
 
 

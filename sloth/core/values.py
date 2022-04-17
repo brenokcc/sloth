@@ -81,15 +81,22 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
+    def is_lazy_iteraction(self, valueset, i):
+        return i > 1 and valueset.metadata['type'] == 'fieldsets' if valueset else False
+
     def load(self, wrap=False, verbose=False, formatted=False, valueset=None, size=True):
+        i = 0
         if self.metadata['names']:
             for attr_name, width in self.metadata['names'].items():
-                if self.metadata['request'] is None or self.instance.has_attr_permission(attr_name, self.metadata['request'].user):
+                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                    i += 1
                     attr, value = getattrr(self.instance, attr_name)
+
                     if isinstance(self.instance, QuerySet):
                         path = '/{}/{}/{}/'.format(self.instance.model.metaclass().app_label, self.instance.model.metaclass().model_name, attr_name)
                     else:
                         path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
+
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         if not isinstance(value, QuerySet):
                             value = value.filter()
@@ -98,7 +105,10 @@ class ValueSet(dict):
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
-                            value = value.serialize(path=path, wrap=wrap, verbose=verbose, formatted=formatted)
+                            value = value.serialize(
+                                path=path, wrap=wrap, verbose=verbose,
+                                formatted=formatted, lazy=self.is_lazy_iteraction(valueset, i)
+                            )
                             value['name'] = verbose_name if verbose else attr_name
                         else:
                             value = [str(o) for o in value]
@@ -107,7 +117,7 @@ class ValueSet(dict):
                             valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
-                        value = value.serialize(path=path, wrap=wrap, lazy=valueset is not None)
+                        value = value.serialize(path=path, wrap=wrap, lazy=self.is_lazy_iteraction(valueset, i))
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
                     elif isinstance(value, ValueSet):
@@ -119,7 +129,10 @@ class ValueSet(dict):
                         image_attr_name = getattr(value, 'metadata')['image']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
-                        value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
+                        if self.is_lazy_iteraction(valueset, i):
+                            value = {}
+                        else:
+                            value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
                         value = dict(uuid=uuid1().hex, type=self.metadata['type'], name=verbose_name if verbose else attr_name, key=key,
                                      actions=[], data=value, path=path) if wrap else value
                         if wrap:
@@ -144,6 +157,8 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
+                        if valueset:
+                            valueset.metadata['type'] = 'fieldset'
                         if formatted and getattr(attr, '__template__', None):
                             template = attr.__template__
                             template = template if template.endswith('.html') else '{}.html'.format(template)
@@ -156,7 +171,6 @@ class ValueSet(dict):
                             value = '-'
                         if size:
                             value = dict(value=value, width=width)
-
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_verbose_name(attr_name)[0])
 
@@ -181,6 +195,7 @@ class ValueSet(dict):
                 )
             else:
                 data.update(self)
+            # print(json.dumps(data, indent=4, ensure_ascii=False))
             if isinstance(self.instance, QuerySet):
                 icon = getattr(self.instance.model.metaclass().app_label, 'icon', None)
             else:
@@ -206,13 +221,15 @@ class ValueSet(dict):
                     self.instance.metaclass().model_name,
                     self.instance.pk, attr_name
                 )
-                output['attach'].append(dict(name=name, path=path))
+                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                    output['attach'].append(dict(name=name, path=path))
             for attr_name in self.metadata['append']:
-                output['append'].update(
-                    self.instance.values(attr_name).contextualize(self.metadata['request']).load(
-                        wrap=wrap, verbose=verbose, formatted=formatted
+                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                    output['append'].update(
+                        self.instance.values(attr_name).contextualize(self.metadata['request']).load(
+                            wrap=wrap, verbose=verbose, formatted=formatted
+                        )
                     )
-                )
             return output
         else:
             if len(self.metadata['names']) == 1:

@@ -216,24 +216,29 @@
     <nav aria-label="Page navigation example">
   <ul class="pagination">
     {% for page in data.metadata.pagination.pages %}
-      {% if forloop.last and page > 5 %}
+       {% if forloop.counter|add:3 == data.metadata.pagination.pages|length and not forloop.counter == 5 %}
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+        </li>
+       {% endif %}
+        <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
+            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
+                {% if forloop.first or forloop.last %}
+                    {% if forloop.first %}
+                        {% if request|mobile or compact %}{{ page }}{% else %}Primeira{% endif %}
+                    {% else %}
+                        {% if request|mobile or compact %}{{ page }}{% else %}Última{% endif %}
+                    {% endif %}
+                {% else %}
+                    {{ page }}
+                {% endif %}
+            </a>
+        </li>
+      {% if forloop.counter == 4 %}
         <li class="page-item disabled">
           <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
         </li>
       {% endif %}
-    <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
-        <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
-            {% if forloop.first or forloop.last %}
-                {% if forloop.first %}
-                    Primeira
-                {% else %}
-                    Última
-                {% endif %}
-            {% else %}
-                {{ page }}
-            {% endif %}
-        </a>
-    </li>
     {% endfor %}
   </ul>
 </nav>

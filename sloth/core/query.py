@@ -42,14 +42,12 @@ class QuerySet(models.QuerySet):
             return self
         lookups = []
         for name, scopes in self.metadata['lookups']:
-            for scope_key, scope_value_attr in scopes.items():
-                # self.metadata['ignore'].append(scope_key)
-                role = user.roles.filter(name=name, scope_key=scope_key).first()
-                if role:
-                    lookups.append(Q(**{scope_value_attr: role.scope_value}))
+            for scope_value_attr, scope_key in scopes.items():
+                for scope_value in user.roles.filter(name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                    lookups.append(Q(**{scope_value_attr: scope_value}))
         if lookups:
-            return self.filter(reduce(operator.__and__, lookups))
-        return self
+            return self.filter(reduce(operator.__or__, lookups))
+        return self.none()
 
     def join(self, *names):
         from sloth.core.values import ValueSet
@@ -215,8 +213,6 @@ class QuerySet(models.QuerySet):
         return actions
 
     def serialize(self, path=None, wrap=False, verbose=True, formatted=False, lazy=False):
-        if lazy:
-            return {}
         if wrap:
             verbose_name = str(self.model.metaclass().verbose_name_plural)
             icon = getattr(self.model.metaclass(), 'icon', None)
@@ -224,11 +220,11 @@ class QuerySet(models.QuerySet):
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
-            values = self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
+            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             pages = []
             n = self.count() // self._get_list_per_page() + 1
             for page in range(0, n):
-                if page == 0 or page == n - 1 or (self.metadata['page'] - 5 < page < self.metadata['page'] + 5):
+                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n - 5:
                     pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
@@ -238,10 +234,8 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=uuid1().hex, type='queryset',
-                name=verbose_name, icon=icon, count=self.count(),
-                actions=dict(model=[], instance=[], queryset=[]),
-                metadata=dict(search=search, display=display, filters=filters, pagination=pagination, collapsed=self.metadata['collapsed'], view=self.metadata['view']),
-                data=values
+                name=verbose_name, icon=icon, count=n,
+                actions={}, metadata={}, data=values
             )
             if attach:
                 data.update(attach=attach)
@@ -254,30 +248,36 @@ class QuerySet(models.QuerySet):
                         path = '{}{}/'.format(path, self.metadata['attr'])
             data.update(path=path)
 
-            data['actions']['instance'].append(
-                dict(
-                    type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                    method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path), modal=False
+            if not lazy:
+                data['metadata'].update(
+                    search=search, display=display, filters=filters, pagination=pagination,
+                    collapsed=self.metadata['collapsed'], view=self.metadata['view']
                 )
-            )
+                data['actions'].update(model=[], instance=[], queryset=[])
+                data['actions']['instance'].append(
+                    dict(
+                        type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
+                        method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path), modal=False
+                    )
+                )
 
-            for action_type in ('global_actions', 'actions', 'batch_actions'):
-                for form_name in self.metadata[action_type]:
-                    form_cls = self.model.action_form_cls(form_name)
-                    if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_fake_permission(
-                            request=self.metadata['request'], instance=self.model()
-                    ):
-                        action = form_cls.get_metadata(
-                            path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
-                        )
-                        data['actions'][action['target']].append(action)
+                for action_type in ('global_actions', 'actions', 'batch_actions'):
+                    for form_name in self.metadata[action_type]:
+                        form_cls = self.model.action_form_cls(form_name)
+                        if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_fake_permission(
+                                request=self.metadata['request'], instance=self.model()
+                        ):
+                            action = form_cls.get_metadata(
+                                path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
+                            )
+                            data['actions'][action['target']].append(action)
 
-            template = self.metadata['template']
-            if template is None:
-                template = getattr(self.model.metaclass(), 'list_template', None)
-            if template:
-                template = template if template.endswith('.html') else '{}.html'.format(template)
-                data.update(template=template)
+                template = self.metadata['template']
+                if template is None:
+                    template = getattr(self.model.metaclass(), 'list_template', None)
+                if template:
+                    template = template if template.endswith('.html') else '{}.html'.format(template)
+                    data.update(template=template)
             return data
         return self.to_list()
 

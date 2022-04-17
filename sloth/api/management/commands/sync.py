@@ -19,8 +19,7 @@ class Command(BaseCommand):
 
         app_labels = []
         for app_label in settings.INSTALLED_APPS:
-            if app_label not in settings.INSTALLED_APPS and '.' not in app_label:
-                app_labels.append(app_label)
+            app_labels.append(app_label.split('.')[-1])
 
         print_and_call('makemigrations', *app_labels)
         print_and_call('migrate')

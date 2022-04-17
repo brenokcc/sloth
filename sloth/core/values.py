@@ -13,7 +13,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type='fieldset', attr=None,
+            model=type(instance), names={}, metadata=[], actions=[], type='fieldset', attr=None, length=len(names),
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
@@ -124,6 +124,7 @@ class ValueSet(dict):
                         if valueset is not None:
                             valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
+                        length = value.metadata['length']
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']
@@ -133,8 +134,10 @@ class ValueSet(dict):
                             value = {}
                         else:
                             value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
-                        value = dict(uuid=uuid1().hex, type=self.metadata['type'], name=verbose_name if verbose else attr_name, key=key,
-                                     actions=[], data=value, path=path) if wrap else value
+                        value = dict(
+                            uuid=uuid1().hex, type=self.metadata['type'], length=length,
+                            name=verbose_name if verbose else attr_name, key=key, actions=[], data=value, path=path
+                        ) if wrap else value
                         if wrap:
                             for form_name in actions:
                                 form_cls = self.instance.action_form_cls(form_name)

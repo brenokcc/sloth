@@ -1,0 +1,9 @@
+<template name="class" value="class $NAME$Manager(models.Manager):&#10;    def all(self):&#10;        return self&#10;&#10; &#10;class $NAME$(models.Model):&#10;    &#10;    $FIELD$&#10;    &#10;    objects = $NAME$Manager()&#10;    &#10;    class Meta:&#10;        verbose_name = '$VERBOSE_NAME$'&#10;        verbose_name_plural = '$VERBOSE_NAME_PLURAL$'&#10;        &#10;    def __str__(self):&#10;        return '{}'.format(self.pk)&#10;" description="Creates model and its manager" toReformat="false" toShortenFQNames="true">
+  <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="VERBOSE_NAME" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="VERBOSE_NAME_PLURAL" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="FIELD" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python" value="true" />
+  </context>
+</template>

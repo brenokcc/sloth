@@ -9,7 +9,8 @@
 <ul class="nav nav-tabs fieldset-tabs" id="fieldset-tabs-{{ item.uuid }}">
   {% for name, fieldset in item.data.items %}
       <li class="nav-item">
-          <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page" href="javascript:" onclick="reloadTab{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">
+          <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page"
+             href="javascript:" onclick="reloadTab{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}{% if fieldset.length is None or fieldset.type == 'fieldsets' and fieldset.length == 1 %}?title_class=d-none{% endif %}')">
               <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
               </div>
@@ -36,18 +37,26 @@
     }
  </script>
 <div class="fieldset-tab" id="fieldset-tab">
-{% for fieldset in item.data.values %}
+{% for name, item in item.data.items %}
     {% if forloop.first %}
-        {% if fieldset.type == 'fieldsets' %}
-            {% for fieldsets in item.data.values %}
-                {% if forloop.first %}
-                    {% for fieldset in fieldsets.data.values %}
-                        {% include 'adm/fieldset.html' with fieldset=fieldset %}
-                    {% endfor %}
+        {% if item.type == 'fieldsets' %}
+            {% for name, fieldsets in item.data.items %}
+                {% if fieldsets.type == 'fieldsets' %}
+                    {% if forloop.first %}
+                        {% for fieldset in fieldsets.data.values %}
+                            {% if fieldsets.data|length == 1 %}
+                                {% include 'adm/fieldset.html' with fieldset=fieldset title_class="d-none" %}
+                            {% else %}
+                                {% include 'adm/fieldset.html' with fieldset=fieldset %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% else %}
+                    {% include 'adm/fieldset.html' with fieldset=fieldsets %}
                 {% endif %}
             {% endfor %}
         {% else %}
-            {% include 'adm/fieldset.html' with fieldset=fieldset title_class="d-none" %}
+            {% include 'adm/fieldset.html' with fieldset=item title_class="d-none" %}
         {% endif %}
     {% endif %}
 {% endfor %}

@@ -2,11 +2,11 @@
 {% if uuid is None %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.metadata.collapsed or compact %}
-        <div class="queryset-title" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
             <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
         </div>
     {% else %}
-        <div class="queryset-title">
+        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}">
             <h2>{% if data.icon %}<i class="bi bi-{{ data.icon }}"></i>{% endif %} {{ data.name }}</h2>
         </div>
     {% endif %}

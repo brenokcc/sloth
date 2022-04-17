@@ -296,10 +296,13 @@ class Servidor(models.Model):
         ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
 
     def get_dados_recursos_humanos(self):
-        return self.values('get_ferias', 'get_endereco', 'get_frequencias').actions('FazerAlgumaCoisa')
+        return self.values('get_dados_ferias', 'get_endereco', 'get_frequencias', 'get_total_ferias_por_ano').actions('FazerAlgumaCoisa')
 
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
+
+    def get_dados_ferias(self):
+        return self.values('get_ferias', 'get_total_ferias_por_ano')
 
 
 class FeriasManager(models.Manager):

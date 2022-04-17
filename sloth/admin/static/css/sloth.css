@@ -97,6 +97,15 @@
 .fieldet-tab{
     padding-top: 1rem;
 }
+@keyframes slideInFromLeft {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 .page-loading::before {
     content:" ";
     display:block;
@@ -107,7 +116,7 @@
     top:0;
     left:0;
     background-color:#0d6efd;
-    animation: page-load ease-out 3s;
+    animation: 3s ease-out 0s 1 slideInFromLeft;
 }
 .search-and-filters {
     background-color: #cfe2ff;

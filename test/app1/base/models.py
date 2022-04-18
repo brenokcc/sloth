@@ -281,7 +281,7 @@ class Servidor(models.Model):
 
     def view(self):
         return self.values(
-            'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_ferias'
+            'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_dados_ferias2'
         ).actions('InformarEndereco', 'CorrigirNomeServidor1', 'Edit').attach('get_ferias').append(
             'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
         )
@@ -296,12 +296,15 @@ class Servidor(models.Model):
         ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
 
     def get_dados_recursos_humanos(self):
-        return self.values('get_dados_ferias', 'get_endereco', 'get_frequencias', 'get_total_ferias_por_ano').actions('FazerAlgumaCoisa')
+        return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
 
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano')
 
     def get_dados_ferias(self):
+        return self.values('get_ferias', 'get_total_ferias_por_ano')
+
+    def get_dados_ferias2(self):
         return self.values('get_ferias', 'get_total_ferias_por_ano')
 
 

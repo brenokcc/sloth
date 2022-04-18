@@ -32,9 +32,19 @@
 
         {% for name, item in data.items %}
             <div class="fieldset">
-                {% if item.type == 'fieldsets' %}
-                    {% include 'adm/fieldsets.html' with item=item %}
-                {% else %}
+                {% if item.type == 'fieldset-group' %}
+                    {% include 'adm/fieldset-group.html' with item=item %}
+                {% endif %}
+                {% if item.type == 'fieldset-list' %}
+                    {% include 'adm/fieldset-list.html' with item=item %}
+                {% endif %}
+                {% if item.type == 'fieldset' %}
+                    {% include 'adm/fieldset.html' with fieldset=item %}
+                {% endif %}
+                {% if item.type == 'queryset' %}
+                    {% include 'adm/fieldset.html' with fieldset=item %}
+                {% endif %}
+                {% if item.type == 'statistics' %}
                     {% include 'adm/fieldset.html' with fieldset=item %}
                 {% endif %}
             </div>

@@ -9,11 +9,38 @@ from sloth.core.statistics import QuerySetStatistics
 from sloth.utils import getattrr, serialize, pretty
 
 
+def check_fieldsets_type(item):
+    for name, subitem in item.items():
+        if 'type' in subitem and subitem['type'] in ('fieldset', 'fieldset-list', 'fieldset-group'):
+            check_fieldsets_type(subitem['data'])
+            subitem['type'] = check_fieldset_type(subitem)
+
+def check_fieldset_type(item):
+    if is_fieldset_group(item['data']):
+        return 'fieldset-group'
+    elif is_fieldset_list(item['data']):
+        return 'fieldset-list'
+    else:
+        return 'fieldset'
+
+def is_fieldset_list(item):
+    for name, subitem in item.items():
+        if 'type' in subitem and subitem['type'] in ('fieldset', 'queryset', 'statistics'):
+            return True
+    return False
+
+def is_fieldset_group(item):
+    for name, subitem in item.items():
+        if 'type' in subitem and subitem['type'] == 'fieldset-list':
+            return True
+    return False
+
+
 class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type='fieldset', attr=None, length=len(names),
+            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None,
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
@@ -81,15 +108,10 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def is_lazy_iteraction(self, valueset, i):
-        return i > 1 and valueset.metadata['type'] == 'fieldsets' if valueset else False
-
-    def load(self, wrap=False, verbose=False, formatted=False, valueset=None, size=True):
-        i = 0
+    def load(self, wrap=False, verbose=False, formatted=False, size=True):
         if self.metadata['names']:
             for attr_name, width in self.metadata['names'].items():
                 if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
-                    i += 1
                     attr, value = getattrr(self.instance, attr_name)
 
                     if isinstance(self.instance, QuerySet):
@@ -100,42 +122,32 @@ class ValueSet(dict):
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         if not isinstance(value, QuerySet):
                             value = value.filter()
-                        if valueset is not None:
-                            valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
                             value = value.serialize(
                                 path=path, wrap=wrap, verbose=verbose,
-                                formatted=formatted, lazy=self.is_lazy_iteraction(valueset, i)
+                                formatted=formatted, lazy=False
                             )
                             value['name'] = verbose_name if verbose else attr_name
                         else:
                             value = [str(o) for o in value]
                     elif isinstance(value, QuerySetStatistics):
-                        if valueset is not None:
-                            valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
-                        value = value.serialize(path=path, wrap=wrap, lazy=self.is_lazy_iteraction(valueset, i))
+                        value = value.serialize(path=path, wrap=wrap, lazy=False)
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
                     elif isinstance(value, ValueSet):
-                        if valueset is not None:
-                            valueset.metadata['type'] = 'fieldsets'
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
-                        length = value.metadata['length']
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
-                        if self.is_lazy_iteraction(valueset, i):
-                            value = {}
-                        else:
-                            value.load(wrap=wrap, verbose=verbose, formatted=formatted, valueset=self, size=size)
+                        value.load(wrap=wrap, verbose=verbose, formatted=formatted, size=size)
                         value = dict(
-                            uuid=uuid1().hex, type=self.metadata['type'], length=length,
+                            uuid=uuid1().hex, type='fieldset',
                             name=verbose_name if verbose else attr_name, key=key, actions=[], data=value, path=path
                         ) if wrap else value
                         if wrap:
@@ -160,8 +172,6 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
-                        if valueset:
-                            valueset.metadata['type'] = 'fieldset'
                         if formatted and getattr(attr, '__template__', None):
                             template = attr.__template__
                             template = template if template.endswith('.html') else '{}.html'.format(template)
@@ -198,6 +208,7 @@ class ValueSet(dict):
                 )
             else:
                 data.update(self)
+            check_fieldsets_type(data)
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             if isinstance(self.instance, QuerySet):
                 icon = getattr(self.instance.model.metaclass().app_label, 'icon', None)

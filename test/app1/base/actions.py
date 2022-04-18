@@ -166,6 +166,5 @@ class ExcluirFerias(actions.Action):
         style = 'danger'
 
     def submit(self):
-        print(self.instance, 88888)
         self.instance.delete()
         self.redirect(message='Férias excluídas com sucesso')

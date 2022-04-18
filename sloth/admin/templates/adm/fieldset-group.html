@@ -1,0 +1,51 @@
+<div class="fieldset-title">
+    <h5>{{ item.name }}</h5>
+</div>
+<div class="fieldset-action-bar" style="margin-right:18px">
+      {% if item.actions %}
+          {% include "adm/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
+      {% endif %}
+</div>
+<ul class="nav nav-tabs fieldset-tabs" id="fieldset-group-{{ item.uuid }}">
+  {% for name, fieldset in item.data.items %}
+      <li class="nav-item">
+          <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page"
+             href="javascript:" onclick="reloadFieldsetGroup{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}{% if fieldset.type != 'fieldset-list' %}?title_class=d-none{% endif %}')">
+              <div class="spinner-border spinner-border-sm d-none" role="status">
+                  <span class="visually-hidden">Loading...</span>
+              </div>
+              {{ name }}
+          </a>
+      </li>
+  {% endfor %}
+</ul>
+<script>
+    function reloadFieldsetGroup{{ item.uuid }}(tab, path){
+        $(document.body).addClass('page-loading');
+        $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
+        $.ajax({
+            url:'/adm'+path,
+            data:{},
+            success:function( html ) {
+                $('#fieldset-group').html(html).initialize();
+                $('#fieldset-group-{{ item.uuid }}').find('.nav-link').removeClass('active');
+                $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
+                $(document.body).removeClass('page-loading');
+                $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').addClass('d-none');
+            }
+        });
+    }
+ </script>
+<div class="fieldset-tab" id="fieldset-group">
+{% for name, item in item.data.items %}
+    {% if forloop.first %}
+        {% if item.type == 'fieldset-list' %}
+            {% for name, fieldset in item.data.items %}
+                {% include 'adm/fieldset.html' with fieldset=fieldset %}
+            {% endfor %}
+        {% else %}
+            {% include 'adm/fieldset.html' with fieldset=item title_class="d-none" %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+</div>

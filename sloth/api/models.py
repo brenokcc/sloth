@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sloth.db import verbose_name
+from sloth.decorators import verbose_name
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.fields import GenericForeignKey

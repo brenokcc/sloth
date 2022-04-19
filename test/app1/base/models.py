@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from sloth.db import models, verbose_name, role
+from sloth.db import models
+from sloth.decorators import verbose_name, role, template
 
 
 @role('Gerente', username='email')
@@ -45,7 +46,6 @@ class Estado(models.Model):
     class Meta:
         verbose_name = 'Estado'
         verbose_name_plural = 'Estados'
-        add_form = 'EstadoForm'
 
     class Permission:
         list = view = 'Chefe',
@@ -98,7 +98,8 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @verbose_name('Progresso', template='adm/formatters/progress')
+    @template('adm/formatters/progress')
+    @verbose_name('Progresso')
     def get_progresso(self):
         return 27
 
@@ -213,7 +214,7 @@ class ServidorManager(models.Manager):
         ).attach(
             'com_endereco', 'sem_endereco', 'ativos', 'inativos'
         ).actions(
-            'CorrigirNomeServidor', 'FazerAlgumaCoisa'
+            'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
         ).batch_actions(
             'DefinirSetor'
         ).global_actions(
@@ -233,7 +234,7 @@ class ServidorManager(models.Manager):
         return self.filter(ativo=False).actions('AtivarServidor')
 
 
-@role('Servidor', 'matricula', servidor='id', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
+@role('Servidor', 'matricula', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
 class Servidor(models.Model):
     foto = models.ImageField(verbose_name='Foto', null=True, blank=True, upload_to='fotos')
     matricula = models.CharField('Matrícula')
@@ -251,7 +252,6 @@ class Servidor(models.Model):
         icon = 'file-earmark-person'
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
-        form = 'ServidorForm'
 
     def __str__(self):
         return self.nome
@@ -259,11 +259,12 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @verbose_name('Foto', template='adm/formatters/image')
+    @template('adm/formatters/image')
+    @verbose_name('Foto')
     def get_foto(self):
         return self.foto # or '/static/images/profile.png'
 
-    @verbose_name('Progresso', template='adm/formatters/progress')
+    @template('adm/formatters/progress')
     def get_progresso(self):
         return 27
 
@@ -282,9 +283,9 @@ class Servidor(models.Model):
     def view(self):
         return self.values(
             'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_dados_ferias2'
-        ).actions('InformarEndereco', 'CorrigirNomeServidor1', 'Edit').attach('get_ferias').append(
+        ).actions('InformarEndereco', 'CorrigirNomeServidor1', 'Edit').append(
             'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
-        )
+        ).attach('get_ferias', 'get_frequencias')
 
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
@@ -293,7 +294,11 @@ class Servidor(models.Model):
     def get_ferias(self):
         return self.ferias_set.display(
             'ano', 'inicio', 'fim'
-        ).actions('AlterarFerias', 'ExcluirFerias').global_actions('CadastrarFerias').template('adm/queryset/timeline')
+        ).actions(
+            'AlterarFerias', 'ExcluirFerias'
+        ).global_actions(
+            'CadastrarFerias'
+        ).template('adm/queryset/timeline').ignore('servidor')
 
     def get_dados_recursos_humanos(self):
         return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')

@@ -349,7 +349,7 @@ class ConcluirSolicitacao(actions.Action):
         self.redirect(message='Solicitação concluída com sucesso.')
 
 
-class DuvidaForm(actions.Action):
+class AddForm(actions.Action):
     class Meta:
         model = Duvida
         verbose_name = 'Tirar Dúvida'

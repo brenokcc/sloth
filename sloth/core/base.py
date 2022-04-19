@@ -90,42 +90,45 @@ class ModelMixin(object):
 
     @classmethod
     def add_form_cls(cls):
-        cls_name = getattr(cls.metaclass(), 'add_form', getattr(cls.metaclass(), 'form', None))
-        form_cls = cls.action_form_cls(cls_name) if cls_name else None
+        form_cls = cls.action_form_cls('Add{}'.format(cls.__name__))
+        if form_cls is None:
+            class Add(Action):
+                class Meta:
+                    model = cls
+                    verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
+                    icon = 'plus'
+                    style = 'success'
+                    submit_label = 'Cadastrar'
+                    if hasattr(cls.metaclass(), 'fieldsets'):
+                        fieldsets = cls.metaclass().fieldsets
 
-        class Add(Action):
-            class Meta:
-                model = cls
-                verbose_name = 'Cadastrar {}'.format(cls.metaclass().verbose_name)
-                icon = 'plus'
-                style = 'success'
-                submit_label = 'Cadastrar'
-                if hasattr(cls.metaclass(), 'fieldsets'):
-                    fieldsets = cls.metaclass().fieldsets
+                def has_permission(self, user):
+                    return self.instance.has_add_permission(user)
 
-            def has_permission(self, user):
-                return self.instance.has_add_permission(user)
-        return form_cls or Add
+            return Add
+        return form_cls
 
     @classmethod
     def edit_form_cls(cls):
-        cls_name = getattr(cls.metaclass(), 'edit_form', getattr(cls.metaclass(), 'form', None))
-        form_cls = cls.action_form_cls(cls_name) if cls_name else None
+        form_cls = cls.action_form_cls('Edit{}'.format(cls.__name__))
+        if form_cls is None:
+            form_cls = cls.action_form_cls('Add{}'.format(cls.__name__))
+            if form_cls is None:
+                class Edit(Action):
+                    class Meta:
+                        model = cls
+                        verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
+                        submit_label = 'Editar'
+                        icon = 'pencil'
+                        style = 'primary'
+                        if hasattr(cls.metaclass(), 'fieldsets'):
+                            fieldsets = cls.metaclass().fieldsets
 
-        class Edit(Action):
-            class Meta:
-                model = cls
-                verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
-                submit_label = 'Editar'
-                icon = 'pencil'
-                style = 'primary'
-                if hasattr(cls.metaclass(), 'fieldsets'):
-                    fieldsets = cls.metaclass().fieldsets
+                    def has_permission(self, user):
+                        return self.instance.has_edit_permission(user)
 
-            def has_permission(self, user):
-                return self.instance.has_edit_permission(user)
-
-        return form_cls or Edit
+                return Edit
+        return form_cls
 
     @classmethod
     def delete_form_cls(cls):

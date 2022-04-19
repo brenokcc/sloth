@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
-from datetime import timedelta
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
-from sloth.db import models, verbose_name, role
+from sloth.db import models
+from sloth.decorators import verbose_name, role, template
 
 
 @role('Administrador', username='cpf')
@@ -417,7 +417,8 @@ class Demanda(models.Model):
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @verbose_name('Respostas do Questionário', template='adm/formatters/progress')
+    @template('adm/formatters/progress')
+    @verbose_name('Respostas do Questionário')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()
         total_respostas = self.get_total_respostas()
@@ -425,7 +426,8 @@ class Demanda(models.Model):
             return int(total_respostas * 100 / total_perguntas)
         return 0
 
-    @verbose_name('Prioridade', template='prioridade')
+    @template('prioridade')
+    @verbose_name('Prioridade')
     def get_prioridade(self):
         return self.prioridade
 
@@ -605,7 +607,6 @@ class Duvida(models.Model):
         icon = 'question-square'
         verbose_name = 'Dúvida'
         verbose_name_plural = 'Dúvidas'
-        add_form = 'DuvidaForm'
 
     class Permission:
         list = 'Gestor', 'Administrador'

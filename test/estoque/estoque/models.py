@@ -1,4 +1,5 @@
-from sloth.db import models, role
+from sloth.db import models
+from sloth.decorators import role
 
 
 class PessoaManager(models.Manager):

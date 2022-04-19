@@ -252,6 +252,7 @@ class Servidor(models.Model):
         icon = 'file-earmark-person'
         verbose_name = 'Servidor'
         verbose_name_plural = 'Servidores'
+        select_fields = 'get_foto', 'nome', 'matricula', 'cpf'
 
     def __str__(self):
         return self.nome
@@ -262,7 +263,7 @@ class Servidor(models.Model):
     @template('adm/formatters/image')
     @verbose_name('Foto')
     def get_foto(self):
-        return self.foto # or '/static/images/profile.png'
+        return self.foto or '/static/images/profile.png'
 
     @template('adm/formatters/progress')
     def get_progresso(self):

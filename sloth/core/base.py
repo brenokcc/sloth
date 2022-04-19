@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
+from django.template.loader import render_to_string
 
 from sloth.actions import Action
 from sloth.core.values import ValueSet
@@ -84,6 +85,15 @@ class ModelMixin(object):
 
     def get_absolute_url(self, prefix=''):
         return '{}/{}/{}/{}/'.format(prefix, self.metaclass().app_label, self.metaclass().model_name, self.pk)
+
+    def get_select_display(self):
+        select_fields = getattr(type(self).metaclass(), 'select_fields', None)
+        if select_fields:
+            values = []
+            for attr_name in select_fields:
+                values.append(getattr(self, attr_name))
+            return render_to_string('adm/select.html', dict(obj=self, values=values))
+        return None
 
     def __str__(self):
         return '{} #{}'.format(self.metaclass().verbose_name, self.pk)

@@ -166,7 +166,8 @@ jQuery.fn.extend({
             }
             if(url==null) ajax = null;
             $(this).select2(
-                {width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax}
+                {width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax,
+                templateResult: function(item){return item.html ? $(item.html) : item.text}}
             ).on("select2:open", function (e) { });
         });
         $(this).find('.date-input').not('.hasDatepicker').datepicker();

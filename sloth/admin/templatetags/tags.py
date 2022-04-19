@@ -82,9 +82,14 @@ def image_src(path):
 @register.filter
 def image_key(dictionary):
     for k, v in dictionary.items():
-        if v and isinstance(v, str) and v.split('.')[-1].lower() in ('png', 'jpg', 'jpeg'):
+        if is_image(v):
             return k
     return None
+
+
+@register.filter
+def is_image(value):
+    return str(value).split('.')[-1].lower() in ('png', 'jpg', 'jpeg')
 
 
 @register.filter

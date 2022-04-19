@@ -50,7 +50,7 @@ models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
     'icon', 'list_display', 'search_fields', 'list_per_page', 'list_filter', 'fieldsets',
-    'list_template', 'view_template', 'select_template',
+    'list_template', 'view_template', 'select_template', 'select_fields'
 ))
 
 

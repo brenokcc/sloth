@@ -425,8 +425,7 @@ class Action(metaclass=ActionMetaclass):
         qs = field.queryset if attr is None else attr(field.queryset)
         total = qs.count()
         qs = qs.search(q=q) if q else qs
-        items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
-
+        items = [dict(id=value.id, text=str(value), html=value.get_select_display()) for value in qs[0:25]]
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items

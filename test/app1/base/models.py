@@ -305,7 +305,7 @@ class Servidor(models.Model):
         return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
 
     def get_total_ferias_por_ano(self):
-        return self.get_ferias().count('ano')
+        return self.get_ferias().count('ano').chart('column')
 
     def get_dados_ferias(self):
         return self.values('get_ferias', 'get_total_ferias_por_ano')

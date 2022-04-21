@@ -92,19 +92,18 @@
 }
 
 .column-chart-ticks .tick {
-    width: {{ data|column_chart_series_width }};
+    width: {{ data.normalized|column_chart_series_width }};
 }
 .column-chart tr, th{
-    width: {{ data|column_chart_serie_width }};
+    width: {{ data.normalized|column_chart_serie_width }};
 }
 </style>
-<h3>Column Chart</h3>
-<div style="padding-left:50px; width:{{ data|column_chart_width }}; margin:auto">
+<div style="padding-left:50px; width:{{ data.normalized|column_chart_width }}; margin:auto">
     <table class="column-chart">
         <tbody>
-            {% for key, series in data.items %}
+            {% for key, series in data.normalized.items %}
             <tr class="qtr" style="left:{{ series|length|multiply:100|multiply:forloop.counter0 }};{% if forloop.last %}border-right: none;{% endif %}">
-                <th scope="row">{{ key }}</th>
+                <th scope="row">{% if key != 'default' %}{{ key }}{% endif %}</th>
                 {% for serie in series %}
                 <td class="bar" style="left: {{ forloop.counter0 }}00px; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;">
                     <p>{{ serie.value }}</p>
@@ -122,7 +121,7 @@
         <div class="tick" style="height: 60px;"><p>20</p></div>
         <div class="tick" style="height: 60px; border-bottom:none"><p>0</p></div>
     </div>
-    {% for key, series in data.items %}
+    {% for key, series in data.normalized.items %}
     {% if forloop.first %}
     <ul class="column-chart-legend">
       {% for serie in series %}

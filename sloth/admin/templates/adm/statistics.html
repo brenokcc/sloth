@@ -1,5 +1,9 @@
 {% load tags %}
 
+{% if data.template %}
+    {% include data.template with data=data %}
+{% else %}
+
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>
@@ -41,3 +45,5 @@
         {% endif %}
     {% endif %}
 </table>
+
+{% endif %}

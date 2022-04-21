@@ -1,8 +1,9 @@
+{% for key, series in data.normalized.items %}
 <style>
     .pie-chart {
       background:
         conic-gradient(
-          {% for serie in data %}
+          {% for serie in series %}
             {% if forloop.first %}
               {{ serie.color }} {{ serie.percentage }}%,
             {% endif %}
@@ -54,12 +55,11 @@
     }
 </style>
 <div style="width:100%">
-    <h3>Pie Chart</h3>
     <div class="pie-center"></div>
     <div class="pie-chart"></div>
 
     <ul class="pie-legend">
-      {% for serie in data %}
+      {% for serie in series %}
       <li>
         <div class="percent" style="background-color: {{ serie.color }}">{{ serie.percentage }}%</div>
         <span class="choice">{{ serie.description }} ({{ serie.value }})</span>
@@ -68,3 +68,4 @@
     </ul>
 </div>
 <div class="clearfix"></div>
+{% endfor %}

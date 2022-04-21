@@ -153,30 +153,25 @@ class QuerySetStatistics(object):
             name=verbose_name,
             path=path,
             series=series,
-            template=self.metadata['template']
+            template=self.metadata['template'],
+            normalized=self.normalize(series)
         )
 
     def html(self, uuid=None, request=None):
-        if self.metadata['template']:
-            data = self.normalize()
-            return render_to_string(self.metadata['template'], dict(data=data))
-        else:
-            data = self.serialize(wrap=True, verbose=True)
-            return render_to_string('adm/statistics.html', dict(data=data))
+        data = self.serialize(wrap=True, verbose=True)
+        return render_to_string('adm/statistics.html', dict(data=data))
 
     def __str__(self):
         if self.metadata['request']:
             return self.html()
         return super().__str__()
 
-    def normalize(self):
-
-        series = self.serialize()['series']
+    def normalize(self, series):
         if 'default' in series:
-            data = []
+            data = {'default': []}
             total = sum([item[1] for item in series['default']])
             for item in series['default']:
-                data.append(dict(
+                data['default'].append(dict(
                     description=item[0], percentage=int(item[1] * 100 / total),
                     value=item[1], color=item[2]
                 ))

@@ -1,3 +1,4 @@
+{% for key, series in data.normalized.items %}
 <style>
 .bar-chart dl{
   display: flex;
@@ -46,7 +47,7 @@
 .bar-chart .percentage:focus {
        background-color: #aaa;
 }
-{% for serie in data %}
+{% for serie in series %}
     .bar-chart .percentage-{{ serie.percentage }}:after{
         width: {{ serie.percentage }}%;
         content:'{{ serie.value }}';
@@ -56,12 +57,12 @@
     }
 {% endfor %}
 </style>
-<h3>Bar Chart</h3>
 <div class="bar-chart">
     <dl class="barchart">
-    {% for serie in data %}
+    {% for serie in series %}
     <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
     {% endfor %}
 </dl>
 </div>
 <div class="clearfix"></div>
+{% endfor %}

@@ -26,7 +26,7 @@
             {% endif %}
             {% for name, metadata in data.metadata.filters.items %}
             <div class="filter">
-                <label>{{ name }}:</label>
+                <label>{{ name|truncatechars:25 }}</label>
                 {% if metadata.type == "choices" %}
                 <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
                     {% if metadata.choices %}
@@ -184,7 +184,7 @@
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 {% else %}
-        <h5>{{ data.name }}</h5>
+        <!--<h5>{{ data.name }}</h5>-->
 {% endif %}
 
 {% if data.metadata.pagination.total %}

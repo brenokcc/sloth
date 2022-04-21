@@ -1,0 +1,30 @@
+{% load tags %}
+<div style="clear:both">
+    {% if values.0|is_image %}
+        {% for value in values %}
+            {% if forloop.first %}
+            <div style="float:left; margin-right:10px">
+                <img width="50px" src="{{ value|image_src }}">
+            </div>
+            {% else %}
+            <div style="margin-left:60px">
+                {% if forloop.counter == 2 %}
+                    <div><strong>{{ value }}</strong></div>
+                {% else %}
+                    <div>{{ value|format }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for value in values %}
+        <div>
+            {% if forloop.first %}
+                <div><strong>{{ obj }}</strong></div>
+            {% else %}
+                <div>{{ value|format }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>

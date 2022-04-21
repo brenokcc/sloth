@@ -61,6 +61,7 @@ class Action(metaclass=ActionMetaclass):
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
+        self.metaclass = getattr(self, 'Meta')
 
         if ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
@@ -68,22 +69,35 @@ class Action(metaclass=ActionMetaclass):
                 kwargs.update(instance=self.instances[0])
         else:
             self.instance = kwargs.pop('instance', None)
-            if self.instance is None and self.instances:
-                self.instance = self.instances[0]
+            if self.instance is None:
+                if self.instances:
+                    self.instance = self.instances[0]
+            else:
+                if self.instances == ():
+                    self.instances = self.instance,
 
         if 'data' not in kwargs:
-            if self.base_fields:
+            if self.base_fields or self.requires_confirmation():
                 data = self.request.POST or None
             else:
                 data = self.request.POST
             kwargs['data'] = data
             kwargs['files'] = self.request.FILES or None
+
         super().__init__(*args, **kwargs)
+
         self.response = {}
         self.fieldsets = {}
         self.one_to_one = {}
         self.one_to_many = {}
-        self.metaclass = getattr(self, 'Meta')
+
+        if self.requires_confirmation():
+            self.fields['confirmation'] = BooleanField(
+                label='', initial='on', required=False, widget=TextInput(attrs={'style': 'display:none'})
+            )
+
+    def requires_confirmation(self):
+        return getattr(self.metaclass, 'confirmation', False)
 
     @lru_cache
     def get_one_to_one_field_names(self):

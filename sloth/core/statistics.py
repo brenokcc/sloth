@@ -2,7 +2,7 @@
 
 import json
 from decimal import Decimal
-
+from uuid import uuid1
 from django.db.models.aggregates import Count
 from django.template.loader import render_to_string
 
@@ -26,7 +26,7 @@ class QuerySetStatistics(object):
         self._ydict = {}
         self._values_dict = None
         self.cursor = 0
-        self.metadata = dict(request=None, attr=None, template='', verbose_name=None)
+        self.metadata = dict(request=None, attr=None, source=None, template='', verbose_name=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
@@ -70,6 +70,12 @@ class QuerySetStatistics(object):
 
     def attr(self, name):
         self.metadata['attr'] = name
+        if self.metadata['verbose_name'] is None:
+            self.metadata['verbose_name'] = pretty(name)
+        return self
+
+    def source(self, name):
+        self.metadata['source'] = name
         return self
 
     def calc(self):
@@ -157,9 +163,20 @@ class QuerySetStatistics(object):
             normalized=self.normalize(series)
         )
 
-    def html(self, uuid=None, request=None):
-        data = self.serialize(wrap=True, verbose=True)
-        return render_to_string('adm/statistics.html', dict(data=data))
+    def html(self, uuid=None):
+        serialized = self.serialize(wrap=True, verbose=True)
+        if self.metadata['source']:
+            if hasattr(self.metadata['source'], 'model'):
+                name = self.metadata['source'].model.metaclass().verbose_name_plural
+            else:
+                name = self.metadata['source']
+            data = dict(
+                type='object', name=str(name),
+                icon=None, data={'Dados Gerais': serialized}, actions=[], attach=[], append={}
+            )
+            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
+        else:
+            return render_to_string('adm/statistics.html', dict(data=serialized), request=self.metadata['request'])
 
     def __str__(self):
         if self.metadata['request']:
@@ -182,9 +199,10 @@ class QuerySetStatistics(object):
                 max_value = max(max([item[1] for item in series[key]]), max_value)
             for key in series:
                 data[key] = []
+                total = sum([item[1] for item in series[key]])
                 for item in series[key]:
                     data[key].append(dict(
-                        description=item[0], percentage=int(item[1] * 100 / max_value),
+                        description=item[0], percentage=int(item[1] * 100 / total if total else 0),
                         value=item[1], color=item[2]
                     ))
         return data
@@ -192,6 +210,15 @@ class QuerySetStatistics(object):
     def chart(self, name):
         self.metadata['template'] = 'adm/charts/{}.html'.format(name)
         return self
+
+    def pie_chart(self):
+        return self.chart('pie')
+
+    def bar_chart(self):
+        return self.chart('bar')
+
+    def column_chart(self):
+        return self.chart('column')
 
     def nex_color(self):
         color = COLORS[self.cursor]

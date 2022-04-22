@@ -26,7 +26,7 @@ class QuerySet(models.QuerySet):
         self.metadata = dict(
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[],
-            actions=[], attach=[], template=None, request=None, attr=None,
+            actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None
         )
 
@@ -214,7 +214,12 @@ class QuerySet(models.QuerySet):
 
     def serialize(self, path=None, wrap=False, verbose=True, formatted=False, lazy=False):
         if wrap:
-            verbose_name = pretty(self.model.metaclass().verbose_name_plural)
+            if self.metadata['verbose_name']:
+                verbose_name = self.metadata['verbose_name']
+            elif self.metadata['attr']:
+                verbose_name = pretty(self.metadata['attr'])
+            else:
+                verbose_name = pretty(self.model.metaclass().verbose_name_plural)
             icon = getattr(self.model.metaclass(), 'icon', None)
             search = self._get_search(verbose)
             display = self._get_display(verbose)
@@ -341,6 +346,12 @@ class QuerySet(models.QuerySet):
 
     def attr(self, name):
         self.metadata['attr'] = name
+        if self.metadata['verbose_name'] is None:
+            self.metadata['verbose_name'] = pretty(name)
+        return self
+
+    def source(self, name):
+        self.metadata['source'] = name
         return self
 
     # action functions
@@ -385,6 +396,16 @@ class QuerySet(models.QuerySet):
         data = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
             data['uuid'] = uuid
+        if self.metadata['source']:
+            if hasattr(self.metadata['source'], 'model'):
+                name = self.metadata['source'].model.metaclass().verbose_name_plural
+            else:
+                name = self.metadata['source']
+            data = dict(
+                type='object', name=str(name),
+                icon=None, data={'Dados Gerais': data}, actions=[], attach=[], append={}
+            )
+            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
         return render_to_string(
             'adm/queryset/queryset.html',
             dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
@@ -491,3 +512,7 @@ class QuerySet(models.QuerySet):
                 statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
             return statistcs.contextualize(self.metadata['request'])
         return self.aggregate(sum=Sum(z))['sum'] or 0
+
+    def has_attr_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        return attr is None or attr(user)

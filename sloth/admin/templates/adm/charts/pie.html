@@ -1,6 +1,6 @@
 {% for key, series in data.normalized.items %}
 <style>
-    .pie-chart {
+    #container-{{ forloop.counter }} .pie-chart {
       background:
         conic-gradient(
           {% for serie in series %}
@@ -21,7 +21,7 @@
       margin: auto;
       margin-top: -125px;
     }
-    .pie-center{
+    #container-{{ forloop.counter }} .pie-center{
       position: relative;
       top: 100px;
       width: 150px;
@@ -30,18 +30,18 @@
       border-radius: 50%;
       margin: auto;
     }
-    .pie-legend {
+    #container-{{ forloop.counter }} .pie-legend {
       list-style: none;
       display: table;
       border-collapse: separate;
       text-align: center;
       margin: auto;
     }
-    .pie-legend li{
+    #container-{{ forloop.counter }} .pie-legend li{
         display: inline-block;
         margin: 5px;
     }
-    .pie-legend .percent {
+    #container-{{ forloop.counter }} .pie-legend .percent {
       color: white;
       text-shadow: 0 0 1px black;
       text-align: center;
@@ -50,18 +50,21 @@
       float: left;
       border-radius: 10%;
     }
-    .pie-legend li span {
+    #container-{{ forloop.counter }} .pie-legend li span {
       padding-left: 10px;
     }
 </style>
-<div style="width:100%">
+<div style="width:100%" id="container-{{ forloop.counter }}">
+    {% if key != 'default' %}
+    <h5>{{ key }}</h5>
+    {% endif %}
     <div class="pie-center"></div>
     <div class="pie-chart"></div>
 
     <ul class="pie-legend">
       {% for serie in series %}
       <li>
-        <div class="percent" style="background-color: {{ serie.color }}">{{ serie.percentage }}%</div>
+        <div class="percent" style="white-space:nowrap;background-color: {{ serie.color }}">{{ serie.percentage }}%</div>
         <span class="choice">{{ serie.description }} ({{ serie.value }})</span>
       </li>
       {% endfor %}

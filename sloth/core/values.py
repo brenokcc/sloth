@@ -40,7 +40,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None,
+            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
@@ -77,6 +77,10 @@ class ValueSet(dict):
 
     def attr(self, name):
         self.metadata['attr'] = name
+        return self
+
+    def source(self, name):
+        self.metadata['source'] = name
         return self
 
     def contextualize(self, request):
@@ -176,7 +180,7 @@ class ValueSet(dict):
                             template = attr.__template__
                             template = template if template.endswith('.html') else '{}.html'.format(template)
                             value = render_to_string(
-                                template, dict(value=value, instance=self.instance)
+                                template, dict(value=value, instance=self.instance), request=self.metadata['request']
                             )
                         else:
                             value = serialize(value)
@@ -252,17 +256,30 @@ class ValueSet(dict):
 
     def html(self, uuid=None):
         serialized = self.serialize(wrap=True, verbose=True, formatted=True)
-        icon = serialized['icon']
-        name = serialized['name']
-        data = serialized['data']
-        actions = serialized['actions']
-        attach = serialized['attach']
-        append = serialized['append']
-        if uuid:
-            data['uuid'] = uuid
-            name = None
-        return render_to_string(
-            'adm/valueset.html',
-            dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append),
-            request=self.metadata['request']
-        )
+        if self.metadata['source']:
+            if uuid:
+                serialized['uuid'] = uuid
+            if hasattr(self.metadata['source'], 'model'):
+                name = self.metadata['source'].model.metaclass().verbose_name_plural
+            else:
+                name = self.metadata['source']
+            data = dict(
+                type='object', name=str(name),
+                icon=None, data=serialized['data'], actions=[], attach=[], append={}
+            )
+            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
+        else:
+            icon = serialized['icon']
+            name = serialized['name']
+            data = serialized['data']
+            actions = serialized['actions']
+            attach = serialized['attach']
+            append = serialized['append']
+            if uuid:
+                serialized['uuid'] = uuid
+                name = None
+            return render_to_string(
+                'adm/valueset.html',
+                dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append),
+                request=self.metadata['request']
+            )

@@ -49,6 +49,7 @@
 .fieldset-tab .card{
     border: 0;
 }
+
 .fieldset-title {
     display: inline-block;
     margin-top: 10px;
@@ -191,7 +192,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1;
+    z-index: 999;
     border-radius: 0;
 }
 main{
@@ -280,7 +281,6 @@ textarea{
         display: inline-block;
 }
 .valueset-action-bar{
-    margin-right: 18px;
     display: inline-block;
     float: right;
 }

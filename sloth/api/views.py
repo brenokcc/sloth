@@ -56,4 +56,6 @@ def index(request):
 @csrf_exempt
 @endpoint
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
+    if x == 'all':
+        return dispatcher(request, app_label, model_name)
     return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)

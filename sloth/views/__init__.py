@@ -3,9 +3,12 @@
 import base64
 from django.conf import settings
 from django.apps import apps
+from django.http.response import HttpResponseRedirect
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+
+from ..admin.templatetags.tags import is_ajax
 from ..utils import load_menu
 
 
@@ -42,7 +45,6 @@ def is_authenticated(request):
 
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
     model = apps.get_model(app_label, model_name)
-    # print(dict(x=x, y=y, z=z, w=w))
     if x:
         x = str(x)
         if x.isdigit():
@@ -143,10 +145,12 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 return form
                             raise PermissionDenied()
                         else:
-                            # object subset
+                            # object subset or attr
                             if obj.has_attr_permission(request.user, y):
                                 attr = getattr(obj, y)
                                 output = attr().attr(y).contextualize(request)
+                                if not is_ajax(request):
+                                    output = output.source(obj)
                                 return output
                         raise PermissionDenied()
             else:
@@ -194,7 +198,10 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             return form
                         raise PermissionDenied()
                 else:
-                    return attr().attr(x).contextualize(request)
+                    output = attr().attr(x).contextualize(request)
+                    if not is_ajax(request):
+                        output = output.source(model.objects)
+                    return output
             else:
                 if y:
                     form_cls = model.action_form_cls(y)
@@ -215,5 +222,6 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                     raise PermissionDenied()
     else:  # /base/estado/
         if model().has_list_permission(request.user):
-            return model.objects.all().contextualize(request).default_actions().collapsed(False)
+            qs = model.objects.all() if request.GET.get('subset', 'all') == 'all' else model.objects
+            return qs.contextualize(request).default_actions().collapsed(False)
         raise PermissionDenied()

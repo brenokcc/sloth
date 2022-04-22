@@ -212,7 +212,7 @@ class ServidorManager(models.Manager):
         ).search('nome').ordering(
             'nome', 'ativo', 'data_nascimento'
         ).attach(
-            'com_endereco', 'sem_endereco', 'ativos', 'inativos'
+            'com_endereco', 'sem_endereco', 'ativos', 'inativos', 'total_por_situacao', 'get_estatisticas'
         ).actions(
             'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
         ).batch_actions(
@@ -225,13 +225,22 @@ class ServidorManager(models.Manager):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     def sem_endereco(self):
-        return self.filter(endereco__isnull=True)
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).template('adm/queryset/cards')
 
     def ativos(self):
-        return self.filter(ativo=True).batch_actions('InativarServidores')
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').template('adm/queryset/rows')
 
     def inativos(self):
         return self.filter(ativo=False).actions('AtivarServidor')
+
+    def total_por_situacao(self):
+        return self.count('ativo').bar_chart()
+
+    def total_por_setor_e_ativo(self):
+        return self.count('setor', 'ativo').pie_chart()
+
+    def get_estatisticas(self):
+        return self.join('total_por_setor_e_ativo', 'total_por_situacao')
 
 
 @role('Servidor', 'matricula', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
@@ -284,9 +293,13 @@ class Servidor(models.Model):
     def view(self):
         return self.values(
             'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_dados_ferias2'
-        ).actions('InformarEndereco', 'CorrigirNomeServidor1', 'Edit').append(
-            'get_endereco', 'get_total_ferias_por_ano', 'get_frequencias'
-        ).attach('get_ferias', 'get_frequencias')
+        ).actions(
+            'InformarEndereco', 'CorrigirNomeServidor1', 'Edit'
+        ).append(
+            'get_endereco', 'get_total_ferias_por_ano2', 'get_frequencias'
+        ).attach(
+            'get_ferias', 'get_frequencias'
+        )
 
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
@@ -307,11 +320,14 @@ class Servidor(models.Model):
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano').chart('column')
 
+    def get_total_ferias_por_ano2(self):
+        return self.get_ferias().count('ano').chart('bar')
+
     def get_dados_ferias(self):
         return self.values('get_ferias', 'get_total_ferias_por_ano')
 
     def get_dados_ferias2(self):
-        return self.values('get_ferias', 'get_total_ferias_por_ano')
+        return self.get_dados_ferias()
 
 
 class FeriasManager(models.Manager):

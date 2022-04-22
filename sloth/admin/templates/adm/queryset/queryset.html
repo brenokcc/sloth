@@ -1,5 +1,7 @@
 {% load tags %}
-{% if uuid is None %}
+{% if uuid is None or request.GET.uuid is None %}
+<div class="card">
+        <div class="card-body">
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.metadata.collapsed or compact %}
         <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
@@ -246,9 +248,11 @@
   </ul>
 </nav>
 {% endif %}
-{% if uuid is None %}
+{% if uuid is None or request.GET.uuid is None %}
     </div>
     </div>
 </div>
+            </div>
+    </div>
 {% endif %}
 

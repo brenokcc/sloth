@@ -7,7 +7,7 @@
 
 ### Development
 
-> pip install git+ssh://git@github.com:brenokcc/sloth.git
+> pip install git+https://github.com/brenokcc/sloth.git#egg=sloth
 
 ### Production
 

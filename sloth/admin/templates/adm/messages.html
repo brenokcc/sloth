@@ -7,9 +7,11 @@
 {% endfor %}
 <script>
     function dismissMessage(){
-        $(".alert-dismissible").fadeTo(2000, 500).slideUp(500, function(){
-            $(".alert-dismissible").slideUp(500);
-        });
+        if($(".alert-dismissible").clss('display') != 'none'){
+            $(".alert-dismissible").fadeTo(2000, 500).slideUp(500, function(){
+                $(".alert-dismissible").slideUp(500);
+            });
+        }
     }
     setTimeout(dismissMessage, 3000);
 </script>

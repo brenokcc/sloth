@@ -40,10 +40,10 @@
 {% endif %}
 
 {% if fieldset.type == 'queryset' %}
-    {% include 'adm/queryset/queryset.html' with data=fieldset title_class=title_class uuid=request.GET.uuid %}
+    {% include 'adm/queryset/queryset.html' with data=fieldset title_class=title_class %}
 {% endif %}
 
 {% if fieldset.type == 'statistics' %}
-    {% include 'adm/statistics.html' with data=fieldset title_class=title_class uuid=request.GET.uuid %}
+    {% include 'adm/statistics.html' with data=fieldset title_class=title_class %}
 {% endif %}
 

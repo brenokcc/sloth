@@ -3,26 +3,26 @@
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
         <div>
         <div class="valueset-title">
-            {% if name %}
+            {% if data.name %}
                 <h2>
-                    {% if icon %}
-                        <i class="bi bi-{{ icon }}"></i>
+                    {% if data.icon %}
+                        <i class="bi bi-{{ data.icon }}"></i>
                     {% endif %}
-                    {{ name }}
+                    {{ data.name }}
                 </h2>
             {% endif %}
         </div>
         <div class="valueset-action-bar">
-              {% if actions %}
-                  {% include "adm/actions.html" with uuid=uuid target="model" actions=actions   %}
+              {% if data.actions %}
+                  {% include "adm/actions.html" with uuid=data.uuid target="model" actions=data.actions   %}
               {% endif %}
         </div>
         </div>
 
         <div style="clear:both">
-            {% if attach %}
+            {% if data.attach %}
             <ul class="nav justify-content-center">
-                {% for item in attach %}
+                {% for item in data.attach %}
                   <li class="nav-item">
                     <a class="nav-link" href="/adm{{ item.path }}">{{ item.name }}</a>
                   </li>
@@ -31,7 +31,7 @@
             {% endif %}
         </div>
 
-        {% for name, item in data.items %}
+        {% for name, item in data.data.items %}
             <div class="fieldset">
                 {% if item.type == 'fieldset-group' %}
                     {% include 'adm/fieldset-group.html' with item=item %}
@@ -51,9 +51,9 @@
             </div>
         {% endfor %}
     </div>
-    {% if append %}
+    {% if data.append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
-        {% for name, item in append.items %}
+        {% for name, item in data.append.items %}
             {% include 'adm/fieldset.html' with fieldset=item compact=True %}
         {% endfor %}
     </div>

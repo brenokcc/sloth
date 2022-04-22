@@ -267,19 +267,13 @@ class ValueSet(dict):
                 type='object', name=str(name),
                 icon=None, data=serialized['data'], actions=[], attach=[], append={}
             )
-            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
+            # print(json.dumps(data, indent=4, ensure_ascii=False))
+            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
-            icon = serialized['icon']
-            name = serialized['name']
-            data = serialized['data']
-            actions = serialized['actions']
-            attach = serialized['attach']
-            append = serialized['append']
+            # print(json.dumps(data, indent=4, ensure_ascii=False))
             if uuid:
                 serialized['uuid'] = uuid
-                name = None
+                serialized['name'] = None
             return render_to_string(
-                'adm/valueset.html',
-                dict(uuid=uuid, icon=icon, name=name, data=data, actions=actions, attach=attach, append=append),
-                request=self.metadata['request']
+                'adm/valueset.html', dict(data=serialized), request=self.metadata['request']
             )

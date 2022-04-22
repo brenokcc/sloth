@@ -261,7 +261,7 @@ class QuerySet(models.QuerySet):
                 data['actions'].update(model=[], instance=[], queryset=[])
                 data['actions']['instance'].append(
                     dict(
-                        type='form', key='view', name='Visualizar', submit='Visualizar', target='instance',
+                        type='view', key='view', name='Visualizar', submit='Visualizar', target='instance',
                         method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path), modal=False
                     )
                 )
@@ -393,9 +393,9 @@ class QuerySet(models.QuerySet):
     # rendering function
 
     def html(self, uuid=None):
-        data = self.serialize(wrap=True, verbose=True, formatted=True)
+        serialized = self.serialize(wrap=True, verbose=True, formatted=True)
         if uuid:
-            data['uuid'] = uuid
+            serialized['uuid'] = uuid
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
@@ -403,12 +403,13 @@ class QuerySet(models.QuerySet):
                 name = self.metadata['source']
             data = dict(
                 type='object', name=str(name),
-                icon=None, data={'Dados Gerais': data}, actions=[], attach=[], append={}
+                icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
-            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
+            # print(json.dumps(data, indent=4, ensure_ascii=False))
+            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         return render_to_string(
             'adm/queryset/queryset.html',
-            dict(data=data, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
+            dict(data=serialized, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
             request=self.metadata['request']
         )
 

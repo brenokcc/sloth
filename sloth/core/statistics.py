@@ -172,9 +172,10 @@ class QuerySetStatistics(object):
                 name = self.metadata['source']
             data = dict(
                 type='object', name=str(name),
-                icon=None, data={'Dados Gerais': serialized}, actions=[], attach=[], append={}
+                icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
-            return render_to_string('adm/valueset.html', data, request=self.metadata['request'])
+            # print(json.dumps(data, indent=4, ensure_ascii=False))
+            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
             return render_to_string('adm/statistics.html', dict(data=serialized), request=self.metadata['request'])
 

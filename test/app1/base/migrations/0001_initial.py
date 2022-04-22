@@ -39,7 +39,6 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Estado',
                 'verbose_name_plural': 'Estados',
-                'add_form': 'EstadoForm',
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),
@@ -86,7 +85,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Servidor',
                 'verbose_name_plural': 'Servidores',
                 'icon': 'file-earmark-person',
-                'form': 'ServidorForm',
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

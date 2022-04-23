@@ -29,7 +29,7 @@
 
     {% block extrahead %} {% endblock %}
   </head>
-  <body>
+  <body style="visibility:hidden">
 
     {% block nav %}
       {% include "adm/header.html" %}
@@ -44,6 +44,7 @@
 {% for url in settings.JS %}
       <script src="{{ url }}"></script>
 {% endfor %}
+      <script src="/static/js/tests.js"></script>
 {% if not request|is_ajax %}
     </main>
     {% include "adm/footer.html" %}

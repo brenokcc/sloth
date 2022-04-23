@@ -115,7 +115,7 @@ jQuery.fn.extend({
             } else {
                 $(this).addClass('n');
             }
-            $(this).css('visibility', 'visible');
+            //$(this).css('visibility', 'visible');
         });
         document.cookie = "width="+$(window).width()+";path=/";
         return this;
@@ -155,12 +155,21 @@ jQuery.fn.extend({
             $(widgets).prop('disabled', !this.checked);
         });
         $(this).find('select').not('.select2-hidden-accessible').each(function( index ) {
+            var element = $(this);
             var url = $(this).data('choices-url');
             var ajax = {
                 url: function(){ return url+'&'+$(this).closest('form').serialize(); },
                 dataType: 'json', delay: 250, minimumInputLength: 3,
                 data: function (params) {return { term: params.term };},
-                processResults: function (data) {return { results: data.items };},
+                processResults: function (data) {
+                    data.items.forEach(function(data){
+                        if(element.find("option[value='" + data.id + "']").length==0){
+                            var option = new Option(data.text, data.id, false, false);
+                            element.append(option);
+                        }
+                    });
+                    return { results: data.items };
+                },
                 templateResult: function (data) {return data.html || 'Buscando...';},
                 templateSelection: function (data) {return data.text;}
             }
@@ -181,7 +190,7 @@ jQuery.fn.extend({
 });
 $( document ).ready(function() {
     $(document).initialize();
-
+    $('body').css('visibility', 'visible');
 });
 $( window ).resize(function() {
     $(document).responsive();

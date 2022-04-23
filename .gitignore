@@ -6,4 +6,5 @@ media
 .DS_Store
 sloth.egg-info
 dist
+geckodriver.log
 

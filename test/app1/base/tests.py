@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from oauth2_provider.generators import generate_client_id
 
-from sloth.test import ServerTestCase
+from sloth.test import ServerTestCase, SeleniumTestCase
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
 from sloth import utils
 

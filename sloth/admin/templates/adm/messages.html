@@ -7,7 +7,7 @@
 {% endfor %}
 <script>
     function dismissMessage(){
-        if($(".alert-dismissible").clss('display') != 'none'){
+        if($(".alert-dismissible").css('display') != 'none'){
             $(".alert-dismissible").fadeTo(2000, 500).slideUp(500, function(){
                 $(".alert-dismissible").slideUp(500);
             });

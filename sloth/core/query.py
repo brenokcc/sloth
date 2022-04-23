@@ -25,7 +25,7 @@ class QuerySet(models.QuerySet):
         super().__init__(*args, **kwargs)
         self.metadata = dict(
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=None, interval='', total=0, ignore=[],
+            page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None
         )
@@ -256,7 +256,7 @@ class QuerySet(models.QuerySet):
             if not lazy:
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    collapsed=self.metadata['collapsed'], view=self.metadata['view']
+                    collapsed=self.metadata['collapsed'], view=self.metadata['view'], is_admin=self.metadata['is_admin']
                 )
                 data['actions'].update(model=[], instance=[], queryset=[])
                 data['actions']['instance'].append(
@@ -290,6 +290,10 @@ class QuerySet(models.QuerySet):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
     # metadata functions
+
+    def is_admin(self):
+        self.metadata['is_admin'] = True
+        return self
 
     def verbose_name(self, name):
         self.metadata['verbose_name'] = pretty(name)

@@ -6,6 +6,7 @@ import json
 import requests
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from .selenium import SeleniumTestCase
 
 
 class ServerTestCase(StaticLiveServerTestCase):

@@ -82,6 +82,7 @@ def image_src(path):
 @register.filter
 def image_key(dictionary):
     for k, v in dictionary.items():
+        print(k, v)
         if is_image(v):
             return k
     return None

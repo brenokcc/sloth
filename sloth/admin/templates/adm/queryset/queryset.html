@@ -1,7 +1,9 @@
 {% load tags %}
 {% if uuid is None or request.GET.uuid is None %}
+{% if not data.metadata.is_admin  %}
 <div class="card">
         <div class="card-body">
+{% endif %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.metadata.collapsed or compact %}
         <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
@@ -118,7 +120,7 @@
                 <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
-                {{ subset.name }}
+                <span class="nav-link-text">{{ subset.name }}</span>
                 <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %} total-{{ subset.key }}">{{ subset.count }}</span>
             </a>
           </li>
@@ -252,7 +254,9 @@
     </div>
     </div>
 </div>
+{% if not data.metadata.is_admin  %}
             </div>
     </div>
+{% endif %}
 {% endif %}
 

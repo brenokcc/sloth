@@ -40,7 +40,7 @@ class SeleniumTestCase(LiveServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.browser = Browser(cls.live_server_url)
-        cls.browser.slowly = True
+        cls.browser.slowly = False
         for app_label in settings.INSTALLED_APPS:
             app_module = __import__(app_label)
             app_dir = os.path.dirname(app_module.__file__)
@@ -76,6 +76,9 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def see(self, text, flag=True, count=2):
         self.browser.see(text, flag, count)
+
+    def see_message(self, text, count=2):
+        self.browser.see_message(text, count)
 
     def look_at_popup_window(self, count=2):
         self.browser.look_at_popup_window(count)

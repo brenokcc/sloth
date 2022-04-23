@@ -33,21 +33,28 @@ class QuerySet(models.QuerySet):
     def normalize_email(self, *args, **kwargs):
         pass
 
-    def role_lookups(self, name, **scopes):
-        self.metadata['lookups'].append((name, scopes))
+    def role_lookups(self, *names, **scopes):
+        for name in names:
+            self.metadata['lookups'].append((name, scopes))
         return self
 
     def apply_role_lookups(self, user):
         if user.is_superuser:
             return self
-        lookups = []
-        for name, scopes in self.metadata['lookups']:
-            for scope_value_attr, scope_key in scopes.items():
-                for scope_value in user.roles.filter(name=name, scope_key=scope_key).values_list('scope_value', flat=True):
-                    lookups.append(Q(**{scope_value_attr: scope_value}))
-        if lookups:
-            return self.filter(reduce(operator.__or__, lookups))
-        return self.none()
+        if self.metadata['lookups']:
+            lookups = []
+            for name, scopes in self.metadata['lookups']:
+                if scopes:
+                    for scope_value_attr, scope_key in scopes.items():
+                        for scope_value in user.roles.filter(name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                            lookups.append(Q(**{scope_value_attr: scope_value}))
+                else:
+                    if user.roles.contains(name):
+                        return self
+            if lookups:
+                return self.filter(reduce(operator.__or__, lookups))
+            return self.none()
+        return self
 
     def join(self, *names):
         from sloth.core.values import ValueSet
@@ -176,7 +183,7 @@ class QuerySet(models.QuerySet):
         data = []
         for obj in self:
             actions = self.get_obj_actions(obj)
-            if self.metadata['request'] and obj.has_view_permission(self.metadata['request'].user):
+            if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
                 actions.append('view')
             item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)

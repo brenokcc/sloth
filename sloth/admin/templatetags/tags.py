@@ -130,5 +130,5 @@ def add(value, n):
 
 @register.filter
 def has_view_permission(obj, user):
-    return obj.has_view_permission(user)
+    return obj.has_view_permission(user) or obj.has_permission(user)
 

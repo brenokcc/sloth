@@ -143,6 +143,19 @@ class Browser(webdriver.Firefox):
             self.print('Can\'t see "{}"'.format(text))
             assert text not in self.find_element_by_tag_name('body').text
 
+    def see_message(self, text, count=2):
+        self.print('See message {}'.format(text))
+        try:
+            self.execute_script("seeMessage('{}')".format(text))
+        except WebDriverException as e:
+            if count:
+                self.wait()
+                self.see_message(count - 1)
+            else:
+                self.watch(e)
+        if self.slowly:
+            self.wait(2)
+
     def look_at_popup_window(self, count=2):
         self.print('Looking at popup window')
         try:
@@ -195,9 +208,7 @@ class Browser(webdriver.Firefox):
 
     def click_menu(self, *texts):
         self.print('Clicking menu "{}"'.format('->'.join(texts)))
-        self.wait()
         for text in texts:
-            self.wait()
             try:
                 self.execute_script("clickMenu('{}')".format(text.strip()))
             except WebDriverException as e:

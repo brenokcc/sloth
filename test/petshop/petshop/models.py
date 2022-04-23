@@ -4,6 +4,20 @@ from sloth.db import models
 from sloth.decorators import role, verbose_name, template
 
 
+@role('Administrador', 'cpf')
+class Administrador(models.Model):
+
+    nome = models.CharField(verbose_name='None')
+    cpf = models.CharField(verbose_name='CPF')
+
+    class Meta:
+        verbose_name = 'Administrador'
+        verbose_name_plural = 'Administrador'
+
+    def __str__(self):
+        return self.nome
+
+
 class DoencaManager(models.Manager):
 
     def all(self):
@@ -29,6 +43,9 @@ class Doenca(models.Model):
     def __str__(self):
         return self.descricao
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
 
 class TipoProcedimento(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
@@ -41,6 +58,9 @@ class TipoProcedimento(models.Model):
     def __str__(self):
         return self.descricao
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
 
 class TipoAnimal(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
@@ -51,6 +71,9 @@ class TipoAnimal(models.Model):
 
     def __str__(self):
         return self.descricao
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
 
 
 @role('Funcionário', 'cpf')
@@ -66,6 +89,9 @@ class Funcionario(models.Model):
     def __str__(self):
         return self.nome
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
 
 @role('Cliente', 'cpf')
 class Cliente(models.Model):
@@ -77,17 +103,26 @@ class Cliente(models.Model):
         verbose_name = 'Cliente'
         verbose_name_plural = 'Clientes'
 
+    class Permission:
+        admin = 'Funcionário',
+
     def __str__(self):
         return self.nome
+
+    def has_permission(self, user):
+        return user.roles.contains('Funcionário')
 
 
 class AnimalManager(models.Manager):
 
     def all(self):
-        return self.template('adm/queryset/cards')
-
-    def meus_animais(self):
-        return self
+        return self.template(
+            'adm/queryset/cards'
+        ).role_lookups(
+            'Cliente', proprietario='cliente'
+        ).role_lookups(
+            'Funcionário'
+        )
 
     def get_qtd_por_tipo(self):
         return self.all().count('tipo')
@@ -131,6 +166,15 @@ class Animal(models.Model):
     def view(self):
         return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos')
 
+    def has_permission(self, user):
+        return user.roles.contains('Funcionário')
+
+    def has_view_permission(self, user):
+        return self.proprietario.cpf == user.username
+
+    def has_list_permission(self, user):
+        return user.roles.contains('Cliente')
+
 
 class TratamentoManager(models.Manager):
 
@@ -168,16 +212,11 @@ class Tratamento(models.Model):
     def view(self):
         return self.values('get_dados_gerais', 'get_procedimentos', 'get_eficacia')
 
-    def pode_ser_finalizado(self):
-        return not self.data_fim and self.procedimento_set.exists()
-
-    def finalizar(self, data_fim, eficaz):
-        self.data_fim = data_fim
-        self.eficaz = eficaz
-        self.save()
+    def has_view_permission(self, user):
+        return user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username
 
     def has_edit_permission(self, user):
-        return not self.procedimento_set.exists()
+        return user.roles.contains('Funcionário') and not self.procedimento_set.exists()
 
     def has_delete_permission(self, user):
         return self.has_edit_permission(user)
@@ -211,4 +250,4 @@ class Procedimento(models.Model):
         return 'Tratamento {}'.format(self.id)
 
     def has_edit_permission(self, user):
-        return self.tratamento and self.tratamento.eficaz is None
+        return user.roles.contains('Funcionário') and self.tratamento and self.tratamento.eficaz is None

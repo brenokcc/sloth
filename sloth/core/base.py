@@ -45,24 +45,27 @@ class ModelMixin(object):
                 roles.extend(value)
         return roles
 
+    def has_permission(self, user):
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('admin'))
+
     def has_view_permission(self, user):
-        return user.is_superuser or user.roles.contains(*self.get_permission_roles('view', 'admin'))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('view')) or self.has_permission(user)
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
     def has_add_permission(self, user):
-        return user.is_superuser or user.roles.contains(*self.get_permission_roles('add', 'admin'))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('add')) or self.has_permission(user)
 
     def has_edit_permission(self, user):
-        return user.is_superuser or user.roles.contains(*self.get_permission_roles('edit', 'admin'))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('edit')) or self.has_permission(user)
 
     def has_delete_permission(self, user):
-        return user.is_superuser or user.roles.contains(*self.get_permission_roles('delete', 'admin'))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('delete')) or self.has_permission(user)
 
     def has_list_permission(self, user):
-        return user.is_superuser or user.roles.contains(*self.get_permission_roles('list', 'admin'))
+        return user.is_superuser or user.roles.contains(*self.get_permission_roles('list')) or self.has_permission(user)
 
     def values(self, *names):
         return ValueSet(self, names)
@@ -113,7 +116,7 @@ class ModelMixin(object):
                         fieldsets = cls.metaclass().fieldsets
 
                 def has_permission(self, user):
-                    return self.instance.has_add_permission(user)
+                    return self.instance.has_add_permission(user) or self.instance.has_permission(user)
 
             return Add
         return form_cls
@@ -135,7 +138,7 @@ class ModelMixin(object):
                             fieldsets = cls.metaclass().fieldsets
 
                     def has_permission(self, user):
-                        return self.instance.has_edit_permission(user)
+                        return self.instance.has_edit_permission(user) or self.instance.has_permission(user)
 
                 return Edit
         return form_cls
@@ -156,7 +159,7 @@ class ModelMixin(object):
                 self.instance.delete()
 
             def has_permission(self, user):
-                return self.instance.has_delete_permission(user)
+                return self.instance.has_delete_permission(user) or self.instance.has_permission(user)
 
         return Delete
 

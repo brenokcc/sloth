@@ -250,6 +250,15 @@ function choose(name, value, headless){
     }
 }
 
+function seeMessage(text){
+    var message = $('.alert-success').first();
+    if(message.text().trim().indexOf(text)>0){
+        message.click();
+    } else {
+        throw Error('Message not found.')
+    }
+}
+
 function wait(ms){
     var start = new Date().getTime();
     var end = start;

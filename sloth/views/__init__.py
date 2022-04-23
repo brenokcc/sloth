@@ -86,7 +86,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         else:  # /base/estado/1/get_cidades/1/
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
-                            if instance.has_view_permission(request.user):
+                            if instance.has_view_permission(request.user) or instance.has_permission(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
@@ -101,7 +101,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         if w:  # /base/estado/1/get_cidades/sem_prefeito/1/
                             qs = getattr(attr(), z)()
                             instance = qs.contextualize(request).get(pk=w)
-                            if instance.has_view_permission(request.user):
+                            if instance.has_view_permission(request.user) or instance.has_permission(request.user):
                                 return instance.show(*qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
@@ -157,7 +157,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 return output
                         raise PermissionDenied()
             else:
-                if obj.has_view_permission(request.user):
+                if obj.has_view_permission(request.user) or obj.has_permission(request.user):
                     return obj.view().contextualize(request)
                 raise PermissionDenied()
         elif x.lower() == 'add':
@@ -171,9 +171,26 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
         else:
             attr = getattr(model.objects, x, None)
             if attr:
-                if y:
-                    if y.isdigit():  # view object in a subset
-                        if z:
+                if model.objects.has_attr_permission(request.user, x):
+                    if y:
+                        if y.isdigit():  # view object in a subset
+                            if z:
+                                form_cls = model.action_form_cls(z)
+                                instances = attr().filter(pk__in=y.split('-'))
+                                form = form_cls(request=request, instances=instances)
+                                if form.check_permission(request.user):
+                                    if form.is_valid():
+                                        result = form.submit()
+                                        if result is not None:
+                                            return result
+                                    return form
+                                raise PermissionDenied()
+                            else:
+                                obj = model.objects.get(pk=y)
+                                if obj.has_view_permission(request.user) or obj.has_permission(request.user):
+                                    return obj.view().contextualize(request)
+                                raise PermissionDenied()
+                        else:  # execute action in a subset
                             form_cls = model.action_form_cls(z)
                             instances = attr().filter(pk__in=y.split('-'))
                             form = form_cls(request=request, instances=instances)
@@ -184,27 +201,13 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                         return result
                                 return form
                             raise PermissionDenied()
-                        else:
-                            obj = model.objects.get(pk=y)
-                            if obj.has_view_permission(request.user):
-                                return obj.view().contextualize(request)
-                            raise PermissionDenied()
-                    else:  # execute action in a subset
-                        form_cls = model.action_form_cls(z)
-                        instances = attr().filter(pk__in=y.split('-'))
-                        form = form_cls(request=request, instances=instances)
-                        if form.check_permission(request.user):
-                            if form.is_valid():
-                                result = form.submit()
-                                if result is not None:
-                                    return result
-                            return form
-                        raise PermissionDenied()
+                    raise PermissionDenied()
                 else:
                     output = attr().attr(x).contextualize(request)
                     if not is_ajax(request):
                         output = output.source(model.objects)
                     return output
+                raise PermissionDenied()
             else:
                 if y:
                     form_cls = model.action_form_cls(y)
@@ -224,7 +227,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        if model().has_list_permission(request.user):
+        if model().has_list_permission(request.user) or model().has_permission(request.user):
             qs = model.objects.all() if request.GET.get('subset', 'all') == 'all' else model.objects
             return qs.contextualize(request).default_actions().collapsed(False).is_admin()
         raise PermissionDenied()

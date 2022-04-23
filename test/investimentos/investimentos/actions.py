@@ -14,7 +14,7 @@ class AdicionarGestor(actions.Action):
         model = Gestor
         fields = 'nome', 'email'
         verbose_name = 'Adicionar Gestor'
-        parent = 'instituicao'
+        related_field = 'instituicao'
         has_permission = 'Administrador',
 
 
@@ -22,7 +22,7 @@ class AdicionarPergunta(actions.Action):
     class Meta:
         model = Pergunta
         verbose_name = 'Adicionar Pergunta'
-        parent = 'categoria'
+        related_field = 'categoria'
         fieldsets = {
             'Dados Gerais': ('ordem', 'texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
@@ -35,7 +35,7 @@ class AdicionarCampus(actions.Action):
         model = Campus
         fields = 'nome',
         verbose_name = 'Adicionar Campus'
-        parent = 'instituicao'
+        related_field = 'instituicao'
         has_permission = 'Administrador',
 
 

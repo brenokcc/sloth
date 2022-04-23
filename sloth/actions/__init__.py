@@ -382,6 +382,9 @@ class Action(metaclass=ActionMetaclass):
             elif isinstance(field.widget, widgets.Input):
                 classes.append('form-control')
 
+            if isinstance(field, DateTimeField):
+                classes.append('date-time-input')
+
             if isinstance(field, DateField):
                 classes.append('date-input')
 

@@ -156,6 +156,18 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
+    def get_dados_gerais(self):
+        return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))
+
+    def get_procedimentos(self):
+        return self.procedimento_set.ignore('tratamento').global_actions('RegistrarProcedimento').actions('edit')
+
+    def get_eficacia(self):
+        return self.values('eficaz').actions('FinalizarTratamento')
+
+    def view(self):
+        return self.values('get_dados_gerais', 'get_procedimentos', 'get_eficacia')
+
     def pode_ser_finalizado(self):
         return not self.data_fim and self.procedimento_set.exists()
 
@@ -194,3 +206,9 @@ class Procedimento(models.Model):
             'Dados Gerais': ('tratamento', ('tipo', 'data_hora'),),
             'Outras Informações': ('observacao',),
         }
+
+    def __str__(self):
+        return 'Tratamento {}'.format(self.id)
+
+    def has_edit_permission(self, user):
+        return self.tratamento and self.tratamento.eficaz is None

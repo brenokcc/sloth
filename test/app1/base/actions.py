@@ -9,7 +9,7 @@ class AdicionarMunicipioEstado(actions.Action):
 
     class Meta:
         model = Municipio
-        parent = 'estado'
+        related_field = 'estado'
         verbose_name = 'Adicionar Município'
         has_permission = 'Chefe',
 
@@ -26,7 +26,7 @@ class RegistrarPonto(actions.Action):
     class Meta:
         model = Frequencia
         fields = 'horario', 'homologado',
-        parent = 'servidor'
+        related_field = 'servidor'
 
 
 class DefinirSetor(actions.Action):
@@ -150,7 +150,7 @@ class ExcluirEndereco(actions.Action):
 class CadastrarFerias(actions.Action):
     class Meta:
         verbose_name = 'Cadastrar'
-        parent = 'servidor'
+        related_field = 'servidor'
         model = Ferias
 
 

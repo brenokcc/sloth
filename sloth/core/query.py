@@ -270,7 +270,7 @@ class QuerySet(models.QuerySet):
                     for form_name in self.metadata[action_type]:
                         form_cls = self.model.action_form_cls(form_name)
                         if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_fake_permission(
-                                request=self.metadata['request'], instance=self.model()
+                                request=self.metadata['request'], instance=self.model(), instantiator=self._hints.get('instance')
                         ):
                             action = form_cls.get_metadata(
                                 path, inline=action_type == 'actions', batch=action_type == 'batch_actions'

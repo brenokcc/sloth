@@ -60,6 +60,9 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form_cls = model.edit_form_cls()
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
+                                    for ignore in qs.metadata['ignore']:
+                                        if ignore in form.fields:
+                                            del form.fields[ignore]
                                     if form.is_valid():
                                         form.submit()
                                     return form
@@ -108,11 +111,11 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                 form = form_cls(request=request, instantiator=obj)
                             else:  # it is a valueset
                                 form = form_cls(request=request, instance=obj, instantiator=obj)
-                            parent = getattr(form_cls.Meta, 'parent', None)
-                            if parent:
-                                setattr(form.instance, parent, obj)
-                                if parent in form.fields:
-                                    del form.fields[parent]
+                            related_field_name = getattr(form_cls.Meta, 'related_field', None)
+                            if related_field_name:
+                                setattr(form.instance, related_field_name, obj)
+                                if related_field_name in form.fields:
+                                    del form.fields[related_field_name]
                             if form.check_permission(request.user):
                                 if form.is_valid():
                                     form.submit()

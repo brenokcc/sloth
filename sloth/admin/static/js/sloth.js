@@ -180,6 +180,15 @@ jQuery.fn.extend({
             ).on("select2:open", function (e) { });
         });
         $(this).find('.date-input').not('.hasDatepicker').datepicker();
+        $(this).find('.date-time-input').not('.hasDatepicker').datetimepicker({
+            timeInput: true, timeFormat: "hh:mm", timeText: "Hora", currentText: "Agora", closeText: "Fechar"
+        });
+        $(this).find('.date-time-input').each(function() {
+            if(this.value){
+                var tokens = this.value.split(':');
+                this.value = tokens[0]+':'+tokens[1];
+            }
+        });
         $(this).find('.masked-input').each(function( index ) {
             $(this).mask($(this).data('mask'), {reverse: $(this).data('reverse')})
         });

@@ -6,5 +6,5 @@ class AdicionarLoja(actions.Action):
     class Meta:
         model = Loja
         verbose_name = 'Adicionar Loja'
-        parent = 'rede'
+        related_field = 'rede'
 

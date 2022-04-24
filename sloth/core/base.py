@@ -117,9 +117,14 @@ class ModelMixin(object):
 
                 def has_permission(self, user):
                     return self.instance.has_add_permission(user) or self.instance.has_permission(user)
-
             return Add
-        return form_cls
+
+        class Add(form_cls):
+            class Meta(form_cls.Meta):
+                verbose_name = getattr(
+                    form_cls.Meta, 'verbose_name', 'Cadastrar {}'.format(cls.metaclass().verbose_name)
+                )
+        return Add
 
     @classmethod
     def edit_form_cls(cls):
@@ -139,9 +144,14 @@ class ModelMixin(object):
 
                     def has_permission(self, user):
                         return self.instance.has_edit_permission(user) or self.instance.has_permission(user)
-
                 return Edit
-        return form_cls
+
+        class Edit(form_cls):
+            class Meta(form_cls.Meta):
+                verbose_name = getattr(
+                    form_cls.Meta, 'verbose_name', 'Editar {}'.format(cls.metaclass().verbose_name)
+                )
+        return Edit
 
     @classmethod
     def delete_form_cls(cls):
@@ -154,6 +164,7 @@ class ModelMixin(object):
                 icon = 'x'
                 style = 'danger'
                 submit_label = 'Excluir'
+                confirmation = True
 
             def save(self):
                 self.instance.delete()

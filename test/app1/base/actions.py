@@ -48,7 +48,6 @@ class AddForm(actions.Action):
 class AddServidor(actions.Action):
 
     class Meta:
-        verbose_name = 'Cadastrar Servidor'
         model = Servidor
         fieldsets = {
             'Dados Gerais': ('nome', 'foto', ('cpf', 'matricula', 'data_nascimento', 'naturalidade'), 'ativo'),
@@ -72,6 +71,7 @@ class FazerAlgumaCoisa(actions.Action):
     mensagem = actions.CharField(label='Mensagem', widget=actions.Textarea())
 
     class Meta:
+        icon = 'chat-dots'
         verbose_name = 'Fazer Alguma Coisa'
         style = 'warning'
 
@@ -85,7 +85,7 @@ class EditarSiglaEstado(actions.Action):
 
 class CorrigirNomeServidor1(actions.Action):
     class Meta:
-        verbose_name = 'Corrigir Nome'
+        verbose_name = 'Corrigir Nome 1'
         model = Servidor
         fields = 'nome',
 
@@ -95,6 +95,9 @@ class CorrigirNomeServidor(actions.Action):
         verbose_name = 'Corrigir Nome'
         model = Servidor
         fields = 'nome',
+
+    def has_permission(self, user):
+        return False
 
 
 class EditarFerias(actions.Action):

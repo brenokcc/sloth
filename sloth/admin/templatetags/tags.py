@@ -132,3 +132,14 @@ def add(value, n):
 def has_view_permission(obj, user):
     return obj.has_view_permission(user) or obj.has_permission(user)
 
+
+@register.filter
+def group_by_icon(actions):
+    groups = dict(with_icon=[], without_icon=[])
+    for action in actions:
+        if action['icon']:
+            groups['with_icon'].append(action)
+        else:
+            groups['without_icon'].append(action)
+    return groups
+

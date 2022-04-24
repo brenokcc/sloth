@@ -6,13 +6,16 @@
     white-space: nowrap;
 }
 .btn-circle {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     padding: 6px 0px;
-    border-radius: 15px;
+    border-radius: 25px;
     text-align: center;
-    font-size: 12px;
+    font-size: 25px;
     line-height: 1.42857;
+}
+.btn:hover i{
+    color: white !important;
 }
 .img-circle{
     border-radius: 50%;

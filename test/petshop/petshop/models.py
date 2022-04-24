@@ -122,7 +122,7 @@ class AnimalManager(models.Manager):
             'Cliente', proprietario='cliente'
         ).role_lookups(
             'Funcionário'
-        )
+        ).display('foto', 'nome', 'descricao', 'get_situacao')
 
     def get_qtd_por_tipo(self):
         return self.all().count('tipo')
@@ -154,17 +154,26 @@ class Animal(models.Model):
     def __str__(self):
         return self.nome
 
+    @template('utils/badge')
+    def get_situacao(self):
+        if self.get_tratamentos().filter(data_fim__isnull=True).exists():
+            return 'warning', 'Em Tratamento'
+        return 'success', 'Saudável'
+
     def get_dados_gerais(self):
-        return self.values(('nome', 'tipo'), 'descricao').image('foto')
+        return self.values(('nome', 'tipo'), 'descricao', 'get_situacao').image('foto')
 
     def get_proprietario(self):
         return self.proprietario.values(('nome', 'cpf'))
 
     def get_tratamentos(self):
-        return self.tratamento_set.ignore('animal').global_actions('IniciarTratamento')
+        return self.tratamento_set.ignore('animal').global_actions('IniciarTratamento').template('adm/queryset/accordion').actions('delete')
+
+    def get_procedimentos_por_tipo(self):
+        return self.tratamento_set.count('procedimento__tipo').pie_chart()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos')
+        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos', 'get_procedimentos_por_tipo',)
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')

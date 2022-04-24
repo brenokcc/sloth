@@ -203,6 +203,10 @@ main.small-margin{
     margin:10px;
 }
 
+main > .row > .col{
+    padding:0px;
+}
+
 .select2-container--default .select2-selection--single{
     height: 38px;
     padding-top: 3px;

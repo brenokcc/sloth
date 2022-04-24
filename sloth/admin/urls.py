@@ -19,6 +19,7 @@ urlpatterns = [
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/', views.dispatcher),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', views.dispatcher),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', views.dispatcher),
+    path('logo', views.logo),
     re_path(r'^apple-touch.*', views.logo),
 ] + static(
     settings.STATIC_URL, document_root=settings.STATIC_ROOT

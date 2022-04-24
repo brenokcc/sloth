@@ -1,7 +1,8 @@
 {
-  "name": "Teste",
-  "short_name": "Teste",
+  "name": "Petshop",
+  "short_name": "Petshop",
   "lang": "pt-BR",
   "start_url": "/",
-  "scope": "/"
+  "scope": "/",
+  "display": "standalone"
 }

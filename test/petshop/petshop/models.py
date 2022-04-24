@@ -167,13 +167,13 @@ class Animal(models.Model):
         return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos')
 
     def has_permission(self, user):
-        return user.roles.contains('Funcionário')
+        return user.is_superuser or user.roles.contains('Funcionário')
 
     def has_view_permission(self, user):
         return self.proprietario.cpf == user.username
 
     def has_list_permission(self, user):
-        return user.is_superuser or user.roles.contains('Cliente')
+        return user.roles.contains('Cliente')
 
 
 class TratamentoManager(models.Manager):

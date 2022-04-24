@@ -195,8 +195,12 @@
     z-index: 999;
     border-radius: 0;
 }
-main{
+main.margin{
     margin:20px;
+}
+
+main.small-margin{
+    margin:10px;
 }
 
 .select2-container--default .select2-selection--single{

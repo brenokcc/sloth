@@ -40,7 +40,7 @@
       {% include "adm/header.html" %}
     {% endblock %}
 
-    <main>
+    <main class="{% if request|mobile %}small-{% endif %}margin">
 {% endif %}
 
 {% block content %}

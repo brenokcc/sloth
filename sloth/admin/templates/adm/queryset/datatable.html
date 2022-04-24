@@ -1,6 +1,7 @@
 {% load tags %}
 {% if data.data %}
     {% if compact or request.GET.compact or request|mobile or request|tablet and data.metadata.display|length > 2 %}
+        <hr>
         {% for row in data.data %}
             <div class="float-end">
                 {% include "adm/queryset/checkbox.html" %}

@@ -211,11 +211,14 @@
         </div>
     </div>
 </div>
+        
 {% if data.metadata.total is not None %}
 <div class="float-end">
     <h3>Total: {{ data.metadata.total|format }}</h3>
 </div>
+<div class="clear-fix">&nbsp;</div>
 {% endif %}
+
 {% endif %}
 {% if data.template %}
     {% include data.template with data=data %}

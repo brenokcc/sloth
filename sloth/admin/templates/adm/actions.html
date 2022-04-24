@@ -3,8 +3,10 @@
 <div class="action-container" id="{{ target }}-{{ uuid }}-{{id}}">
     {% if request|mobile or request|tablet %}
     <div class="dropdown">
-        <a class="btn btn-outline-primary dropdown-toggle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
-           data-bs-toggle="dropdown" aria-expanded="false">Ações</a>
+        <a class="btn btn-circle {{ target }} {% if target == 'queryset' %}disabled{% endif %}" href="#" role="button" id="dropdownMenuLink"
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-three-dots text-primary" style="font-size:20"></i>
+        </a>
         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
             {% for action in actions %}
                 <li>

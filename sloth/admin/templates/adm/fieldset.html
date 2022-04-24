@@ -22,6 +22,9 @@
                     {% if fieldset.image %}
                       <td style="width:0px;padding-right:20px"><img class="img-circle" src="{{ fieldset.image }}"/></td>
                     {% endif %}
+                  {% if request|mobile or request|tablet %}
+                  </tr><tr>
+                  {% endif %}
                     <td>
                       <div class="responsive-container">
                           {% for k, item in fieldset.data.items %}

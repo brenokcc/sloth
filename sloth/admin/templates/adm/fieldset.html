@@ -20,9 +20,11 @@
               <table width="100%">
                   <tr>
                     {% if fieldset.image %}
-                      <td style="width:0px;padding-right:20px"><img class="img-circle" src="{{ fieldset.image }}"/></td>
+                      <td style="width:0px;{% if not request|mobile %}padding-right:20px{% endif %}">
+                          <img class="img-circle" src="{{ fieldset.image }}" style="max-width:100%"/>
+                      </td>
                     {% endif %}
-                  {% if request|mobile or request|tablet %}
+                  {% if request|mobile %}
                   </tr><tr>
                   {% endif %}
                     <td>

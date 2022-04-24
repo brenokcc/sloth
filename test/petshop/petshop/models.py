@@ -170,7 +170,7 @@ class Animal(models.Model):
         return self.tratamento_set.ignore('animal').global_actions('IniciarTratamento').template('adm/queryset/accordion').actions('delete')
 
     def get_procedimentos_por_tipo(self):
-        return self.tratamento_set.count('procedimento__tipo').pie_chart()
+        return self.tratamento_set.count('procedimento__tipo').bar_chart()
 
     def view(self):
         return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos', 'get_procedimentos_por_tipo',)

@@ -43,6 +43,10 @@ def icons(request):
     return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
 
+def logo(request):
+    return HttpResponseRedirect(settings.LOGO)
+
+
 def login(request):
     form = LoginForm(request=request)
     if form.is_valid():

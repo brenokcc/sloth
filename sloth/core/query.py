@@ -27,7 +27,8 @@ class QuerySet(models.QuerySet):
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
-            global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None
+            global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None,
+            totalizer=None
         )
 
     def normalize_email(self, *args, **kwargs):
@@ -265,6 +266,8 @@ class QuerySet(models.QuerySet):
                     search=search, display=display, filters=filters, pagination=pagination,
                     collapsed=self.metadata['collapsed'], view=self.metadata['view'], is_admin=self.metadata['is_admin']
                 )
+                if self.metadata['totalizer']:
+                    data['metadata'].update(total=self.sum(self.metadata['totalizer']))
                 data['actions'].update(model=[], instance=[], queryset=[])
                 data['actions']['instance'].append(
                     dict(
@@ -300,6 +303,10 @@ class QuerySet(models.QuerySet):
 
     def is_admin(self):
         self.metadata['is_admin'] = True
+        return self
+
+    def totalizer(self, name):
+        self.metadata['totalizer'] = name
         return self
 
     def verbose_name(self, name):

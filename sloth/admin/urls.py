@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.urls import path
+from django.urls import path, re_path
 from django.conf.urls import include
 from django.conf.urls.static import static
 from . import views
@@ -19,6 +19,7 @@ urlpatterns = [
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/', views.dispatcher),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', views.dispatcher),
     path('adm/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', views.dispatcher),
+    re_path(r'^apple-touch.*', views.logo),
 ] + static(
     settings.STATIC_URL, document_root=settings.STATIC_ROOT
 ) + static(

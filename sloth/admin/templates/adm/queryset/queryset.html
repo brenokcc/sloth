@@ -229,7 +229,7 @@
 {% if data.metadata.pagination.pages|length > 1 %}
 
     <nav aria-label="Page navigation example">
-  <ul class="pagination">
+  <ul class="pagination" style="overflow-x:hidden">
     {% for page in data.metadata.pagination.pages %}
        {% if forloop.counter|add:3 == data.metadata.pagination.pages|length and not forloop.counter == 5 %}
         <li class="page-item disabled">

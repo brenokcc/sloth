@@ -10,7 +10,7 @@
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                title="{{ action.submit }}"
-               class="action-button btn btn-circle btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal and not request|mobile and not request|tablet %}popup{% endif %}">
+               class="action-button btn btn-circle btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
             </a>
             {% endif %}
@@ -26,7 +26,7 @@
                     {% for action in grouped_actions.without_icon %}
                         {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}
                         <li>
-                            <a class="dropdown-item action-button {{ target }} {% if action.modal and not request|mobile and not request|tablet %}popup{% endif %}"
+                            <a class="dropdown-item action-button {{ target }} {% if action.modal %}popup{% endif %}"
                                href="/adm{{ action.path }}"
                                data-url="/adm{{ action.path }}"
                                data-id="{{ id }}"
@@ -49,7 +49,7 @@
                data-url="/adm{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
-               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal and not request|mobile and not request|tablet %}popup{% endif %}">
+               class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
                 {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
                 {{ action.submit }}
             </a>

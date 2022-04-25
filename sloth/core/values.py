@@ -199,6 +199,8 @@ class ValueSet(dict):
         return self
 
     def __str__(self):
+        if self.metadata['request']:
+            return self.html()
         return json.dumps(self, indent=4, ensure_ascii=False)
 
     def serialize(self, wrap=False, verbose=False, formatted=False):
@@ -254,11 +256,9 @@ class ValueSet(dict):
                 return self[list(self.metadata['names'].keys())[0]]
             return self
 
-    def html(self, uuid=None):
+    def html(self):
         serialized = self.serialize(wrap=True, verbose=True, formatted=True)
         if self.metadata['source']:
-            if uuid:
-                serialized['uuid'] = uuid
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
             else:
@@ -271,9 +271,6 @@ class ValueSet(dict):
             return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            if uuid:
-                serialized['uuid'] = uuid
-                serialized['name'] = None
             return render_to_string(
                 'adm/valueset.html', dict(data=serialized), request=self.metadata['request']
             )

@@ -163,7 +163,7 @@ class QuerySetStatistics(object):
             normalized=self.normalize(series)
         )
 
-    def html(self, uuid=None):
+    def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):

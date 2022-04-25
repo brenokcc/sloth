@@ -23,7 +23,7 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = dict(
+        self.metadata = dict(uuid=uuid1().hex,
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
@@ -246,7 +246,7 @@ class QuerySet(models.QuerySet):
                 pages=pages
             )
             data = dict(
-                uuid=uuid1().hex, type='queryset',
+                uuid=self.metadata['uuid'], type='queryset',
                 name=verbose_name, icon=icon, count=n,
                 actions={}, metadata={}, data=values
             )
@@ -410,10 +410,8 @@ class QuerySet(models.QuerySet):
 
     # rendering function
 
-    def html(self, uuid=None):
+    def html(self):
         serialized = self.serialize(wrap=True, verbose=True, formatted=True)
-        if uuid:
-            serialized['uuid'] = uuid
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
@@ -427,7 +425,7 @@ class QuerySet(models.QuerySet):
             return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         return render_to_string(
             'adm/queryset/queryset.html',
-            dict(data=serialized, uuid=uuid, messages=messages.get_messages(self.metadata['request'])),
+            dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.metadata['request'])),
             request=self.metadata['request']
         )
 
@@ -462,9 +460,7 @@ class QuerySet(models.QuerySet):
             if 'uuid' in request.GET:
                 component = self.process_request(request).apply_role_lookups(request.user)
                 raise HtmlJsonReadyResponseException(
-                    component.html(
-                        uuid=request.GET['uuid']
-                    )
+                    component.html()
                 )
             return self.apply_role_lookups(request.user)
         return self
@@ -473,6 +469,7 @@ class QuerySet(models.QuerySet):
         from sloth.core.values import ValueSet
         page = 1
         attr_name = request.GET['subset']
+        self.metadata['uuid'] = request.GET['uuid']
         attach = self if attr_name == 'all' else getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach

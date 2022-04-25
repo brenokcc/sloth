@@ -56,13 +56,20 @@
     {% include "adm/footer.html" %}
     {% include "adm/modal.html" %}
     {% if request|mobile %}
-      <a href="/adm/" class="action-button btn btn-circle btn-primary" style="position:fixed;bottom:30px;right:30px">
-       <i class="bi bi-house"></i>
-      </a>
       {% if request.META.HTTP_REFERER %}
-      <a href="javascript:history.back()" class="action-button btn btn-circle btn-primary" style="position:fixed;bottom:100px;right:30px">
+      <a href="javascript:history.back()" class="action-button btn btn-circle btn-primary" style="position:fixed;bottom:15px;right:27px">
        <i class="bi bi-arrow-90deg-left"></i>
       </a>
+      <style>
+        .modal-dialog{
+            margin: 0;
+            min-width:100%;
+        }
+        .modal-content {
+            border:0;
+            border-radius: 0;
+        }
+      </style>
       {% endif %}
     {% endif %}
   </body>

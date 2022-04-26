@@ -13,7 +13,7 @@ from ..utils import load_menu
 
 def context_processor(request):
     if request.user.is_authenticated and ('menu' not in request.session or settings.DEBUG):
-        if not is_ajax(request) and request.path.startswith('/adm/'):
+        if request.path.startswith('/adm/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []
             if request.path == '/adm/':
@@ -24,11 +24,11 @@ def context_processor(request):
                 request.session['stack'] = request.session['stack'][0:index+1]
             else:
                 request.session['stack'].append(request.path)
-        referrer =  request.session['stack'][-2] if len(request.session['stack']) > 1 else None
-        request.session['menu'] = load_menu(request.user)
-        request.session.save()
-
-    return dict(referrer=referrer)
+            referrer =  request.session['stack'][-2] if len(request.session['stack']) > 1 else None
+            request.session['menu'] = load_menu(request.user)
+            request.session.save()
+            return dict(referrer=referrer)
+    return {}
 
 
 def is_authenticated(request):

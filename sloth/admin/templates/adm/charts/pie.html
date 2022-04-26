@@ -5,10 +5,10 @@
         conic-gradient(
           {% for serie in series %}
             {% if forloop.first %}
-              {{ serie.color }} {{ serie.percentage }}%,
+              {{ serie.color }} {{ serie.end }}%,
             {% endif %}
             {% if not forloop.first and not forloop.last  %}
-              {{ serie.color }} 0 {{ serie.percentage }}%,
+              {{ serie.color }} {{ serie.start }}% {{ serie.end }}%,
             {% endif %}
             {% if forloop.last %}
               {{ serie.color }} 0
@@ -29,29 +29,7 @@
       background: #FFF;
       border-radius: 50%;
       margin: auto;
-    }
-    #container-{{ forloop.counter }} .pie-legend {
-      list-style: none;
-      display: table;
-      border-collapse: separate;
-      text-align: center;
-      margin: auto;
-    }
-    #container-{{ forloop.counter }} .pie-legend li{
-        display: inline-block;
-        margin: 5px;
-    }
-    #container-{{ forloop.counter }} .pie-legend .percent {
-      color: white;
-      text-shadow: 0 0 1px black;
-      text-align: center;
-      height: 25px;
-      width: 40px;
-      float: left;
-      border-radius: 10%;
-    }
-    #container-{{ forloop.counter }} .pie-legend li span {
-      padding-left: 10px;
+      {% if donut is None %}visibility: hidden;{% endif %}
     }
 </style>
 <div style="width:100%" id="container-{{ forloop.counter }}">
@@ -60,15 +38,7 @@
     {% endif %}
     <div class="pie-center"></div>
     <div class="pie-chart"></div>
-
-    <ul class="pie-legend">
-      {% for serie in series %}
-      <li>
-        <div class="percent" style="white-space:nowrap;background-color: {{ serie.color }}">{{ serie.percentage }}%</div>
-        <span class="choice">{{ serie.description }} ({{ serie.value }})</span>
-      </li>
-      {% endfor %}
-    </ul>
+    {% include "adm/charts/legend.html" %}
 </div>
 <div class="clearfix"></div>
 {% endfor %}

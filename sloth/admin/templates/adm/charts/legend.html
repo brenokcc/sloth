@@ -1,0 +1,8 @@
+<ul class="chart-legend">
+  {% for serie in series %}
+  <li>
+    <div class="percent" style="white-space:nowrap;background-color: {{ serie.color }}">{{ serie.value }}</div>
+    <span class="choice">{{ serie.description }} ({{ serie.percentage }}%)</span>
+  </li>
+  {% endfor %}
+</ul>

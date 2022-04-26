@@ -1,5 +1,10 @@
 {% load tags %}
 <style>
+.column-chart-container{
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 .column-chart {
   display: block; /* fixes layout wonkiness in FF1.5 */
   position: relative;
@@ -67,30 +72,6 @@
   left: -5em;
   top: -0.8em;
 }
-.column-chart-legend {
-  list-style: none;
-  display: table;
-  border-collapse: separate;
-  text-align: center;
-  margin: auto;
-  padding-inline-start: 0;
-}
-.column-chart-legend li{
-    display: inline-block;
-    margin: 5px;
-}
-.column-chart-legend .percent {
-  color: white;
-  text-shadow: 0 0 1px black;
-  text-align: center;
-  height: 25px;
-  width: 40px;
-  float: left;
-  border-radius: 10%;
-}
-.column-chart-legend li span {
-  padding-left: 10px;
-}
 
 .column-chart-ticks .tick {
     width: {{ data.normalized|column_chart_series_width }};
@@ -99,6 +80,7 @@
     width: {{ data.normalized|column_chart_serie_width }};
 }
 </style>
+<div class="column-chart-container">
 <div style="padding-left:50px; width:{{ data.normalized|column_chart_width }}; margin:auto">
     <table class="column-chart">
         <tbody>
@@ -124,15 +106,9 @@
     </div>
     {% for key, series in data.normalized.items %}
     {% if forloop.first %}
-    <ul class="column-chart-legend">
-      {% for serie in series %}
-      <li>
-        <div class="percent" style="background-color:{{ serie.color }}"></div>
-        <span class="choice">{{ serie.description }}</span>
-      </li>
-      {% endfor %}
-    </ul>
+        {% include "adm/charts/legend.html" %}
     {% endif %}
     {% endfor %}
+</div>
 </div>
 <div class="clearfix"></div>

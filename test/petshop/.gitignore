@@ -1,0 +1,10 @@
+.idea/
+*.pyc
+__pycache__
+db.sqlite3
+media
+.DS_Store
+sloth.egg-info
+dist
+geckodriver.log
+

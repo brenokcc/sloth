@@ -50,19 +50,20 @@
 {% for serie in series %}
     .bar-chart .percentage-{{ serie.percentage }}:after{
         width: {{ serie.percentage }}%;
-        content:'{{ serie.value }}';
-        padding:10px;
+        padding:1px;
         color: #FFF;
         background-color: {{ serie.color }};
     }
 {% endfor %}
+
 </style>
 <div class="bar-chart">
     <dl class="barchart">
-    {% for serie in series %}
-    <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
-    {% endfor %}
-</dl>
+        {% for serie in series %}
+        <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
+        {% endfor %}
+    </dl>
+    {% include "adm/charts/legend.html" %}
 </div>
 <div class="clearfix"></div>
 {% endfor %}

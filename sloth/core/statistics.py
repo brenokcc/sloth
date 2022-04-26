@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 
 from sloth.utils import pretty
 
-COLORS = '#DECF3F', '#5DA5DA', '#B276B2', '#F15854', '#4D4D4D', '#B276B2'
+COLORS = '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0', '#0d47a1', '#66bb6a', '#4caf50', '#43a047', '#388e3c', '#2e7d32', '#1b5e20'
 MONTHS = 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
 
 
@@ -189,11 +189,15 @@ class QuerySetStatistics(object):
         if 'default' in series:
             data = {'default': []}
             total = sum([item[1] for item in series['default']])
+            start = 0
             for item in series['default']:
+                percent = int(item[1] * 100 / total)
+                end = start + percent
                 data['default'].append(dict(
-                    description=item[0], percentage=int(item[1] * 100 / total),
-                    value=item[1], color=item[2]
+                    description=item[0], percentage=percent,
+                    value=item[1], color=item[2], start=start, end=end
                 ))
+                start = end
         else:
             data = {}
             max_value = 0
@@ -215,6 +219,9 @@ class QuerySetStatistics(object):
 
     def pie_chart(self):
         return self.chart('pie')
+
+    def donut_chart(self):
+        return self.chart('donut')
 
     def bar_chart(self):
         return self.chart('bar')

@@ -299,3 +299,27 @@ textarea{
     margin-left: 0px;
     margin-right: 0px;
 }
+
+.chart-legend {
+  list-style: none;
+  display: table;
+  border-collapse: separate;
+  text-align: center;
+  margin: auto;
+}
+.chart-legend li{
+    display: inline-block;
+    margin: 5px;
+}
+.chart-legend .percent {
+  color: white;
+  text-shadow: 0 0 1px black;
+  text-align: center;
+  height: 25px;
+  min-width: 40px;
+  float: left;
+  border-radius: 10%;
+}
+.chart-legend li span {
+  padding-left: 10px;
+}

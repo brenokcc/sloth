@@ -77,29 +77,21 @@ jQuery.fn.extend({
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');
-            document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {
-              if(window['refresh']) $(this).refresh(window['refresh']);
-              window['reloader'] = window['onreload'] = window['refresh'] = null;
-            });
+            document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });
     },
-    back: function(){
+    back: function(canceled){
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
-            if(window['reloader']){
-                window['reloader']();
-                if(window['onreload']) window['onreload']();
-            } else{
-                $(document).open(document.location.href);
+            if(canceled==null){
+                if(window['reloader']) window['reloader']();
+                if(window['reloader'] && window['onreload']) window['onreload']();
+                if(window['refresh']) $(this).refresh(window['refresh']);
+                window['reloader'] = window['onreload'] = window['refresh'] = null;
             }
         } else {
-            if(window['reloader']){
-                window['reloader']();
-                if(window['onreload']) window['onreload']();
-            } else{
-                $(document).open(document.referrer);
-                window.history.pushState("string", "Title", document.referrer);
-            }
+            $(document).open(document.referrer);
+            window.history.pushState("string", "Title", document.referrer);
         }
     },
     responsive: function(){

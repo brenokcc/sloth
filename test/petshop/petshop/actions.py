@@ -42,7 +42,7 @@ class FinalizarTratamento(actions.Action):
         fields = 'data_fim', 'eficaz',
         has_permission = 'Funcionário',
         style = 'success'
-        refresh = 'get_procedimentos',
+        refresh = 'get_procedimentos', 'get_eficacia'
 
     def has_permission(self, user):
         return self.instance.procedimento_set.exists() and self.instance.eficaz is None

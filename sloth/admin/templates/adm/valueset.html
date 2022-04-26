@@ -32,7 +32,7 @@
         </div>
 
         {% for name, item in data.data.items %}
-            <div class="fieldset">
+            <div class="fieldset" id="{{ item.key }}">
                 {% if item.type == 'fieldset-group' %}
                     {% include 'adm/fieldset-group.html' with item=item %}
                 {% endif %}

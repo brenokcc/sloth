@@ -55,22 +55,11 @@
     </main>
     {% include "adm/footer.html" %}
     {% include "adm/modal.html" %}
-    {% if request|mobile %}
-      {% if request.META.HTTP_REFERER %}
-      <a href="javascript:history.back()" class="action-button btn btn-circle btn-primary" style="position:fixed;bottom:15px;right:27px">
+
+    {% if referrer %}
+      <a href="{{ referrer }}" class="action-button btn btn-circle btn-primary" style="position:fixed;bottom:15px;right:27px">
        <i class="bi bi-arrow-90deg-left"></i>
       </a>
-      <style>
-        .modal-dialog{
-            margin: 0;
-            min-width:100%;
-        }
-        .modal-content {
-            border:0;
-            border-radius: 0;
-        }
-      </style>
-      {% endif %}
     {% endif %}
   </body>
 </html>

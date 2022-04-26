@@ -78,7 +78,8 @@ jQuery.fn.extend({
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');
             document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {
-              window['reloader'] = window['onreload'] = null;
+              if(window['refresh']) $(this).refresh(window['refresh']);
+              window['reloader'] = window['onreload'] = window['refresh'] = null;
             });
         });
     },
@@ -195,6 +196,23 @@ jQuery.fn.extend({
         $(this).responsive();
         $(this).find('[data-toggle="tooltip"]').tooltip();
         return this;
+    },
+    refresh: function(areas){
+        var areas = areas.split(',');
+        $.get({url:'?only='+areas.join(','), success:function(html){
+         areas.forEach(function(attrName){
+          var remote = $(html).find('#'+attrName);
+          var local = $('#'+attrName);
+          var arrow = local.find('fieldset-title').find('i');
+          if(arrow.hasClass('bi-chevron-down')){
+            arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
+          } else {
+            arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
+          }
+          remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
+          local.html(remote.html()).initialize();
+         });
+       }});
     }
 });
 $( document ).ready(function() {

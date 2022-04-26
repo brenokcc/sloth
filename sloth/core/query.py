@@ -247,7 +247,7 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset',
-                name=verbose_name, icon=icon, count=n,
+                name=verbose_name, key=None, icon=icon, count=n,
                 actions={}, metadata={}, data=values
             )
             if attach:

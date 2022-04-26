@@ -167,7 +167,7 @@ class Animal(models.Model):
         return self.proprietario.values(('nome', 'cpf'))
 
     def get_tratamentos(self):
-        return self.tratamento_set.ignore('animal').global_actions('IniciarTratamento').template('adm/queryset/accordion').actions('delete')
+        return self.tratamento_set.ignore('animal').global_actions('IniciarTratamento').template('adm/queryset/accordion').actions('ExcluirTratamento')
 
     def get_procedimentos_por_tipo(self):
         return self.tratamento_set.count('procedimento__tipo').bar_chart()

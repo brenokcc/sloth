@@ -113,8 +113,17 @@ class ValueSet(dict):
         return dict(type='object', properties=schema)
 
     def load(self, wrap=False, verbose=False, formatted=False, size=True):
+        only = []
+        if self.metadata['request'] and 'only' in self.metadata['request'].GET:
+            only.extend(self.metadata['request'].GET['only'].split(','))
+            self.metadata['request'].GET._mutable = True
+            self.metadata['request'].GET.pop('only')
+            self.metadata['request'].GET._mutable = False
+
         if self.metadata['names']:
             for attr_name, width in self.metadata['names'].items():
+                if only and attr_name not in only:
+                    continue
                 if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
                     attr, value = getattrr(self.instance, attr_name)
 
@@ -134,6 +143,7 @@ class ValueSet(dict):
                                 formatted=formatted, lazy=False
                             )
                             value['name'] = verbose_name if verbose else attr_name
+                            value['key'] = attr_name
                         else:
                             value = [str(o) for o in value]
                     elif isinstance(value, QuerySetStatistics):
@@ -142,6 +152,7 @@ class ValueSet(dict):
                         value = value.serialize(path=path, wrap=wrap, lazy=False)
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
+                            value['key'] = attr_name
                     elif isinstance(value, ValueSet):
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
@@ -270,7 +281,7 @@ class ValueSet(dict):
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
-            # print(json.dumps(data, indent=4, ensure_ascii=False))
+            # print(json.dumps(serialized, indent=4, ensure_ascii=False))
             return render_to_string(
                 'adm/valueset.html', dict(data=serialized), request=self.metadata['request']
             )

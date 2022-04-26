@@ -157,6 +157,7 @@ class QuerySetStatistics(object):
         return dict(
             type='statistics',
             name=verbose_name,
+            key=None,
             path=path,
             series=series,
             template=self.metadata['template'],

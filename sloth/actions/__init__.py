@@ -354,6 +354,9 @@ class Action(metaclass=ActionMetaclass):
     def get_method(self):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
+    def get_refresh(self):
+        return ','.join(getattr(self.metaclass, 'refresh', ()))
+
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
 

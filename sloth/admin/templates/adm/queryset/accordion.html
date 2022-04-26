@@ -5,11 +5,11 @@
       {% for row in data.data %}
       <div class="accordion-item">
         <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-          <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne{{ data.uuid }}{{ forloop.counter }}" aria-expanded="true" aria-controls="collapseOne{{ data.uuid }}{{ forloop.counter }}">
+          <button class="accordion-button {% if True or not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne{{ data.uuid }}{{ forloop.counter }}" aria-expanded="true" aria-controls="collapseOne{{ data.uuid }}{{ forloop.counter }}">
             {{ row.description }}
           </button>
         </h2>
-        <div id="collapseOne{{ data.uuid }}{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#accordion{{ data.uuid }}">
+        <div id="collapseOne{{ data.uuid }}{{ forloop.counter }}" class="accordion-collapse collapse {% if False and forloop.first %}_show{% endif %}" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#accordion{{ data.uuid }}">
           <div class="accordion-body">
             <div class="float-end">
                 {% include "adm/queryset/checkbox.html" %}

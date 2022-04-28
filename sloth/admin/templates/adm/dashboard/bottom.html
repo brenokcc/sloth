@@ -1,0 +1,62 @@
+<style>
+body{
+  padding-bottom: 100;
+}
+
+.bottom-navbar {
+  overflow: hidden;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #cfe2ff;
+}
+
+.bottom-navbar a {
+  float: left;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  width: 33%;
+  height: 100;
+  font-size: 12px;
+}
+
+.bottom-navbar a.active {
+  color: #333;
+}
+
+.bottom-navbar a:hover {
+  color: #0d6efd;
+}
+
+.bottom-navbar a i{
+  font-size: 2rem;
+}
+
+.bottom-navbar div{
+  padding: 10px;
+}
+
+</style>
+
+
+<div class="bottom-navbar">
+  <a href="/adm/" class="active">
+    <div>
+      <i class="bi bi-house"></i>
+      <p>Inicial</p>
+    </div>
+  </a>
+  <a href="/adm/petshop/animal/">
+    <div>
+      <i class="bi bi-github"></i>
+      <p>Animais</p>
+    </div>
+  </a>
+  <a href="/adm/petshop/cliente/">
+    <div>
+      <i class="bi bi-person"></i>
+      <p>Usuários</p>
+    </div>
+  </a>
+</div>

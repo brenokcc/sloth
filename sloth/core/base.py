@@ -279,11 +279,11 @@ class ModelMixin(object):
         url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
         info = dict()
-        # info[url] = [('get', 'List', 'List objects', {'type': 'string'}, None)]
+        info[url] = [('get', 'List', 'List objects', {'type': 'string'}, None)]
         info['{}{{id}}/'.format(url)] = [
             ('get', 'View', 'View object', instance.view().get_api_schema(), None),
-            # ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
-            # ('put', 'Edit', 'Edit object', {'type': 'string'}, None),
+            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
+            ('put', 'Edit', 'Edit object', {'type': 'string'}, None),
         ]
         for name, attr in cls.__dict__.items():
             if hasattr(attr, 'decorated'):

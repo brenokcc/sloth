@@ -3,12 +3,8 @@
         margin-left: 30px;
         text-align: left;
     }
-    .single_quick_activity .count_content a{
-        text-decoration: none;
-        color: #212529;
-    }
     .single_quick_activity {
-        background-color: #f8f9fa;
+        background-color: #0d6efd;
         border-radius: 10px;
         -webkit-transition: 0.5s;
         padding: 10px;
@@ -26,9 +22,9 @@
 </style>
 
 <div class="row">
-    {% for item in self.items %}
+    {% for item in data.cards %}
         <div class="col-sm-12 col-md-6 col-lg-4">
-            <a href="{{ item.url }}">
+            <a href="{{ item.url }}" style="text-decoration:none;color:white">
             <div class="single_quick_activity">
                 <div class="icon">
                     <i class="bi bi-{{ item.icon }}"></i>
@@ -37,7 +33,6 @@
 
                     <h3><span class="counter">{{ item.count }}</span> </h3>
                     <p>{{ item.label }}</p>
-
                 </div>
             </div>
             </a>

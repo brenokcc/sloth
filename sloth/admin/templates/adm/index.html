@@ -1,17 +1,7 @@
 {% extends super_template|default:"adm/base.html" %}
 
-
 {% block content %}
 
-<div class="row" id="gadgets">
-  {% for width, component in components %}
-      <div style="width:{{ width }}%">
-        {{ component }}
-      </div>
-  {% endfor %}
-</div>
-<script>
-    //$("#gadgets").masonry();
-</script>
+{{ dashboard }}
 
 {% endblock %}

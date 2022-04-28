@@ -11,7 +11,7 @@ from ..actions import Action, LoginForm, PasswordForm
 
 from ..utils.icons import bootstrap
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from . import gadgets
+from . import dashboard
 
 
 def view(func):
@@ -72,19 +72,12 @@ def logout(request):
 
 def index(request):
     if request.user.is_authenticated:
-        gadgets.initilize()
+        dashboard.initilize()
         request.COOKIES.get('width')
-        components = []
-        for cls in gadgets.GADGETS.values():
-            width = 100
-            if hasattr(cls, 'Meta'):
-                if hasattr(cls.Meta, 'has_permission'):
-                    if not request.user.roles.contains(*cls.Meta.has_permission):
-                        continue
-                if hasattr(cls.Meta, 'width'):
-                    width = cls.Meta.width
-            components.append((width, cls(request).render()))
-        return render(request, [getattr(settings, 'INDEX_TEMPLATE', 'adm/index.html')], dict(settings=settings, components=components))
+        return render(
+            request, [getattr(settings, 'INDEX_TEMPLATE', 'adm/index.html')],
+            dict(settings=settings, dashboard=dashboard.Dashboards(request))
+        )
     return HttpResponseRedirect('/adm/login/')
 
 

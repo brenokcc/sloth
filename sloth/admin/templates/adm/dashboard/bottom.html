@@ -1,6 +1,48 @@
+{% load tags %}
+
+<style>
+    .floating-btn{
+        position:fixed;
+        right:27px;
+    }
+    {% if request|mobile and dashboard.data.navigation|length > 1 %}
+        .floating-0{ bottom:115px; }
+        .floating-1{ bottom:165px; }
+        .floating-2{ bottom:215px; }
+        .floating-3{ bottom:265px; }
+        .floating-4{ bottom:315px; }
+        .floating-5{ bottom:365px; }
+    {% else %}
+        .floating-0{ bottom:15px; }
+        .floating-1{ bottom:65px; }
+        .floating-2{ bottom:115px; }
+        .floating-3{ bottom:165px; }
+        .floating-4{ bottom:215px; }
+        .floating-5{ bottom:365px; }
+    {% endif %}
+</style>
+
+{% for item in dashboard.data.floating %}
+    <a href="{{ item.url }}" class="action-button btn btn-circle btn-primary floating-btn floating-{{ forloop.counter0 }}">
+     <i class="bi bi-{{ item.icon }}"></i>
+    </a>
+{% endfor %}
+
+{% if referrer %}
+<a href="{{ referrer }}" class="action-button btn btn-circle btn-primary floating-btn floating-{{ dashboard.data.floating|length }}">
+ <i class="bi bi-arrow-90deg-left"></i>
+</a>
+{% endif %}
+
+{% if request|mobile and dashboard.data.navigation|length > 1 %}
 <style>
 body{
   padding-bottom: 100;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+body::-webkit-scrollbar {
+  display: none;
 }
 
 .bottom-navbar {
@@ -9,6 +51,7 @@ body{
   bottom: 0;
   width: 100%;
   background-color: #cfe2ff;
+  border-top: 1px solid #dee2e6;
   z-index: 101;
 }
 
@@ -17,7 +60,7 @@ body{
   display: block;
   text-align: center;
   text-decoration: none;
-  width: 33%;
+  width: {% widthratio 100 dashboard.data.navigation|length 1 %}%;
   height: 100;
   font-size: 12px;
 }
@@ -40,24 +83,15 @@ body{
 
 </style>
 
-
 <div class="bottom-navbar">
-  <a href="/adm/" class="active">
+  {% for item in dashboard.data.navigation %}
+  <a href="{{ item.url }}" class="active">
     <div>
-      <i class="bi bi-house"></i>
-      <p>Inicial</p>
+      <i class="bi bi-{{ item.icon }}"></i>
+      <p>{{ item.label }}</p>
     </div>
   </a>
-  <a href="/adm/petshop/animal/">
-    <div>
-      <i class="bi bi-github"></i>
-      <p>Animais</p>
-    </div>
-  </a>
-  <a href="/adm/petshop/cliente/">
-    <div>
-      <i class="bi bi-person"></i>
-      <p>Clientes</p>
-    </div>
-  </a>
+  {% endfor %}
 </div>
+
+{% endif %}

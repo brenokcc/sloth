@@ -1,6 +1,16 @@
-
-{% include "adm/dashboard/cards.html" %}
-
-{% for item in data.append %}
-    {{ item }}
-{% endfor %}
+<div class="row clearfix">
+    <div class="{% if data.right %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
+        {% include "adm/dashboard/shortcuts.html" %}
+        {% include "adm/dashboard/cards.html" %}
+        {% for item in data.center %}
+            {{ item }}
+        {% endfor %}
+    </div>
+    {% if data.right %}
+    <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
+        {% for item in data.right %}
+            {{ item }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

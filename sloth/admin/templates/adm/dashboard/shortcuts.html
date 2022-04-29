@@ -1,0 +1,33 @@
+<style>
+
+.shortcut-wrapper {
+    padding: 15px;
+    border-width: 1px 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: stretch;
+    align-items: center;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.shortcut-wrapper .shortcut-link {
+    flex-basis: 105px;
+    margin: 10px;
+    text-decoration: none;
+    display: inline-block;
+}
+</style>
+
+<div class="shortcut-wrapper">
+{% for item in data.shortcuts %}
+    <a href="{{ item.url }}" class="shortcut-link">
+        <div>
+          <i class="bi bi-{{ item.icon }}"></i>
+          <p>{{ item.label }}</p>
+        </div>
+    </a>
+{% endfor %}
+</div>
+<div class="clearfix"></div>

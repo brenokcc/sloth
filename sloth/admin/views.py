@@ -72,7 +72,6 @@ def logout(request):
 
 def index(request):
     if request.user.is_authenticated:
-        dashboard.initilize()
         request.COOKIES.get('width')
         return render(
             request, [getattr(settings, 'INDEX_TEMPLATE', 'adm/index.html')],
@@ -85,7 +84,7 @@ def index(request):
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
     if x == 'all':
         return dispatcher(request, app_label, model_name)
-    context = dict(settings=settings)
+    context = dict(settings=settings, dashboard=dashboard.Dashboards(request))
     data = views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
     if isinstance(data, Action):
         context.update(form=data)

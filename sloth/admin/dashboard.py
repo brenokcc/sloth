@@ -32,21 +32,68 @@ class Dashboard(metaclass=DashboardType):
 
     def __init__(self, request):
         self.request = request
-        self.data = dict(cards=[], append=[])
+        self.data = dict(
+            info=[], warning=[], menu=[], shortcuts=[], cards=[],
+            floating=[], navigation=[], settings=[], center=[], right=[]
+        )
         self.load(request)
 
-    def cards(self, *models):
+    def to_item(self, model, count=True):
+        return
+
+    def _load(self, key, models):
         for model in models:
             if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
-                self.data['cards'].append(dict(
-                    url=model.get_list_url('/adm'),
-                    label=model.metaclass().verbose_name_plural,
-                    count=model.objects.all().apply_role_lookups(self.request.user).count(),
-                    icon=getattr(model.metaclass(), 'icon', 'app')
-                ))
+                self.data[key].append(
+                    dict(
+                        url=model.get_list_url('/adm'),
+                        label=model.metaclass().verbose_name_plural,
+                        count=model.objects.all().apply_role_lookups(self.request.user).count(),
+                        icon=getattr(model.metaclass(), 'icon', 'app')
+                    )
+                )
 
-    def append(self, data):
-        self.data['append'].append(str(data.contextualize(self.request)))
+    def _item(self, key, url, label, icon, count=None):
+        self.data[key].append(
+            dict(url=url, label=label, count=count, icon=icon)
+        )
+
+    def info(self, *models):
+        self._load('info', models)
+
+    def warning(self, *models):
+        self._load('warning', models)
+
+    def menu(self, *models):
+        self._load('menu', models)
+
+    def shortcuts(self, *models):
+        self._load('shortcuts', models)
+
+    def add_shortcut(self, url, label, icon):
+        self._item(self, 'shortcut', url, label, icon)
+
+    def cards(self, *models):
+        self._load('cards', models)
+
+    def floating(self, *models):
+        self._load('floating', models)
+
+    def navigation(self, *models):
+        self._load('navigation', models)
+
+    def add_navigation(self, url, label, icon):
+        self._item('navigation', url, label, icon)
+
+    def settings(self, *models):
+        self._load('settings', models)
+
+    def append(self, data, aside=False):
+        self.data['right' if aside else 'center'].append(str(data.contextualize(self.request)))
+
+    def extend(self, data, template, aside=False):
+        html = mark_safe(render_to_string(template, data, request=self.request))
+        self.data['right' if aside else 'center'].append(html)
 
     def load(self, request):
         pass
@@ -56,13 +103,18 @@ class Dashboards:
 
     def __init__(self, request):
         self.request = request
-        self.data = dict(cards=[], append=[])
+        self.data = dict(
+            info=[], warning=[], menu=[], shortcuts=[], cards=[],
+            floating=[], navigation=[], settings=[], center=[], right=[]
+        )
+        self.data['navigation'].append(
+            dict(url='/adm/', label='Principal', icon='house')
+        )
         initilize()
         for cls in DASHBOARDS:
             dashboard = cls(request)
-            self.data['cards'].extend(dashboard.data['cards'])
-            self.data['append'].extend(dashboard.data['append'])
-
+            for key in dashboard.data:
+                self.data[key].extend(dashboard.data[key])
 
     def __str__(self):
         return mark_safe(render_to_string('adm/dashboard/dashboards.html', dict(data=self.data), request=self.request))

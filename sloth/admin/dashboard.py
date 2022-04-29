@@ -89,7 +89,10 @@ class Dashboard(metaclass=DashboardType):
         self._load('settings', models)
 
     def append(self, data, aside=False):
-        self.data['right' if aside else 'center'].append(str(data.contextualize(self.request)))
+        if self.request.path == '/adm/':
+            self.data['right' if aside else 'center'].append(
+                str(data.contextualize(self.request))
+            )
 
     def extend(self, data, template, aside=False):
         html = mark_safe(render_to_string(template, data, request=self.request))

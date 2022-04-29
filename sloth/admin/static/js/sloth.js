@@ -87,7 +87,6 @@ jQuery.fn.extend({
                 if(window['reloader']) window['reloader']();
                 if(window['reloader'] && window['onreload']) window['onreload']();
                 if(window['refresh']) $(this).refresh(window['refresh']);
-                window['reloader'] = window['onreload'] = window['refresh'] = null;
             }
         } else {
             $(document).open(document.referrer);
@@ -210,6 +209,7 @@ jQuery.fn.extend({
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');
+    window['reloader'] = window['onreload'] = window['refresh'] = null;
 });
 $( window ).resize(function() {
     $(document).responsive();

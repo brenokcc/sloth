@@ -10,7 +10,7 @@ from uuid import uuid1
 from django.contrib import messages
 from django.db import models
 from django.db.models import Q
-from django.db.models.aggregates import Sum
+from django.db.models.aggregates import Sum, Count
 from django.template.loader import render_to_string
 
 from sloth.utils.http import XlsResponse, CsvResponse
@@ -27,8 +27,8 @@ class QuerySet(models.QuerySet):
             display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
-            global_actions=[], batch_actions=[], lookups=[], collapsed=True, verbose_name=None,
-            totalizer=None
+            global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
+            totalizer=None, calendar=None
         )
 
     def normalize_email(self, *args, **kwargs):
@@ -121,9 +121,21 @@ class QuerySet(models.QuerySet):
                 qs = self.order_by(lookup).values_list(lookup).distinct()[1:2]
                 if not qs:
                     continue
-            filters[
-                pretty(str(field.verbose_name)) if verbose else lookup
-            ] = dict(key=lookup, name=pretty(str(field.verbose_name)), type=filter_type, choices=None)
+
+            key = pretty(str(field.verbose_name)) if verbose else lookup
+            name = pretty(str(field.verbose_name))
+            if filter_type in ('datetime', 'date'):
+                for sublookup, symbol in dict(gte='>', lte='<').items():
+                    k = '{} {}'.format(symbol, key) if verbose else '{}__{}'.format(key, sublookup)
+                    n = '{} {}'.format(symbol, name)
+                    hidden = lookup == self.metadata['calendar']
+                    filters[k] = dict(key='{}__{}'.format(
+                        lookup, sublookup), name=n, type=filter_type, choices=None, hidden=hidden
+                    )
+            else:
+                filters[key] = dict(
+                    key=lookup, name=name, type=filter_type, choices=None, hidden=False
+                )
 
         ordering = []
         for lookup in self._get_list_ordering():
@@ -176,6 +188,58 @@ class QuerySet(models.QuerySet):
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items
+        )
+
+    # calendar
+
+    def calendar(self, name):
+        self.metadata['calendar'] = name
+        return self
+
+    def to_calendar(self):
+        days = {}
+        attr_name = self.metadata['calendar']
+        start = self.order_by(attr_name).values_list(attr_name, flat=True).first() or datetime.date.today()
+        first_day_of_month = datetime.date(start.year, start.month, 1)
+        first_day_of_calendar = first_day_of_month - datetime.timedelta(days=first_day_of_month.weekday())
+        for i in range(0, (first_day_of_month - first_day_of_calendar).days):
+            days[first_day_of_calendar + datetime.timedelta(days=i)] = None
+        last_day_of_month = first_day_of_month + datetime.timedelta(days=0)
+        while first_day_of_month.month == last_day_of_month.month:
+            days[last_day_of_month] = 0
+            last_day_of_month += datetime.timedelta(days=1)
+        last_day_of_month += datetime.timedelta(days=-1)
+        last_day_of_calendar = last_day_of_month + datetime.timedelta(days=0)
+        while last_day_of_calendar.weekday() < 6:
+            last_day_of_calendar += datetime.timedelta(days=1)
+            days[last_day_of_calendar] = None
+        qs = self.filter(**{
+            '{}__gte'.format(attr_name): first_day_of_month,
+            '{}__lte'.format(attr_name): last_day_of_month
+        })
+        total = {x:y for x, y in qs.values_list(attr_name).annotate(Count('id'))}
+        for i, date in enumerate(days):
+            if date in total:
+                days[date] = total[date]
+        last_day_of_previous_month = first_day_of_month - datetime.timedelta(days=1)
+        first_day_of_previous_month = last_day_of_previous_month + datetime.timedelta(days=0)
+        while first_day_of_previous_month.day > 1:
+            first_day_of_previous_month = first_day_of_previous_month - datetime.timedelta(days=1)
+        first_day_of_next_month = last_day_of_month + datetime.timedelta(days=1)
+        last_day_of_next_month = first_day_of_next_month + datetime.timedelta(days=1)
+        while last_day_of_next_month.month == first_day_of_next_month.month:
+            last_day_of_next_month = last_day_of_next_month + datetime.timedelta(days=1)
+        last_day_of_next_month = last_day_of_next_month - datetime.timedelta(days=1)
+        selected_date = self.metadata['request'].GET.get('selected-date')
+        if  selected_date:
+            selected_date = datetime.datetime.strptime(
+                self.metadata['request'].GET['selected-date'], '%d/%m/%Y'
+            ).date()
+        return dict(
+            field=attr_name, days=days,
+            previous=dict(first_day=first_day_of_previous_month, last_day=last_day_of_previous_month),
+            next=dict(first_day=first_day_of_next_month, last_day=last_day_of_next_month),
+            selected_date=selected_date, today=datetime.date.today()
         )
 
     # serialization function
@@ -233,6 +297,7 @@ class QuerySet(models.QuerySet):
             display = self._get_display(verbose)
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
+            calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
             pages = []
             n = self.count() // self._get_list_per_page() + 1
@@ -264,8 +329,11 @@ class QuerySet(models.QuerySet):
             if not lazy:
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    collapsed=self.metadata['collapsed'], view=self.metadata['view'], is_admin=self.metadata['is_admin']
+                    collapsed=self.metadata['collapsed'], compact=self.metadata['compact'],
+                    view=self.metadata['view'], is_admin=self.metadata['is_admin']
                 )
+                if calendar:
+                    data['metadata']['calendar'] = calendar
                 if self.metadata['totalizer']:
                     data['metadata'].update(total=self.sum(self.metadata['totalizer']))
                 data['actions'].update(model=[], instance=[], queryset=[])
@@ -362,6 +430,10 @@ class QuerySet(models.QuerySet):
         self.metadata['collapsed'] = flag
         return self
 
+    def compact(self, flag=True):
+        self.metadata['compact'] = flag
+        return self
+
     def attr(self, name):
         self.metadata['attr'] = name
         if self.metadata['verbose_name'] is None:
@@ -400,13 +472,21 @@ class QuerySet(models.QuerySet):
             end = start + self._get_list_per_page()
             self.metadata['page'] = page
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            return self
+            qs = self
         else:
             self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
             start = (self.metadata['page'] - 1) * self._get_list_per_page()
             end = start + self._get_list_per_page()
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            return self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
+            qs = self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
+
+        if self.metadata['calendar'] and 'selected-date' in self.metadata['request'].GET:
+            selected_date = self.metadata['request'].GET['selected-date']
+            if selected_date:
+                lookups = {self.metadata['calendar']: datetime.datetime.strptime(selected_date, '%d/%m/%Y')}
+                qs = qs.filter(**lookups)
+
+        return qs
 
     # rendering function
 
@@ -500,7 +580,7 @@ class QuerySet(models.QuerySet):
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()
-            qs = qs.paginate(page)
+            ### qs = qs.paginate(page)
             # qs.debug()
             return qs
         if isinstance(attach, ValueSet):

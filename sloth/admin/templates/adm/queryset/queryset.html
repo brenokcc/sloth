@@ -22,6 +22,7 @@
             <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
             <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
             <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
+            <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
             {% if data.metadata.search %}
             <div class="filter">
                 <label>Busca:</label>
@@ -29,7 +30,7 @@
             </div>
             {% endif %}
             {% for name, metadata in data.metadata.filters.items %}
-            <div class="filter">
+            <div class="filter {% if metadata.hidden %}d-none{% endif %}">
                 <label>{{ name|truncatechars:25 }}</label>
                 {% if metadata.type == "choices" %}
                 <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
@@ -191,6 +192,10 @@
         <!--<h5>{{ data.name }}</h5>-->
 {% endif %}
 
+{% if data.metadata.calendar %}
+    {% include "adm/queryset/calendar.html" with data=data %}
+{% endif %}
+
 {% if data.metadata.pagination.total %}
 <div class="clearfix" id="pagination-info-{{ data.uuid }}">
     <div class="float-start">
@@ -220,6 +225,7 @@
 {% endif %}
 
 {% endif %}
+
 {% if data.template %}
     {% include data.template with data=data %}
 {% else %}

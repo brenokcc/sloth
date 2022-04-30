@@ -71,6 +71,10 @@ def logout(request):
 
 
 def index(request):
+    return HttpResponseRedirect('/adm/')
+
+
+def admin(request):
     if request.user.is_authenticated:
         request.COOKIES.get('width')
         return render(

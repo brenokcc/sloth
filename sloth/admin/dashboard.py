@@ -14,7 +14,7 @@ def initilize():
             module = '{}.{}'.format(app_label, 'dashboard')
             try:
                 __import__(module, fromlist=app_label.split('.'))
-                print('{} dashboard initilized!'.format(module))
+                # print('{} dashboard initilized!'.format(module))
             except ImportError:
                 # print(app_label, module, 'ERROR')
                 pass
@@ -89,14 +89,17 @@ class Dashboard(metaclass=DashboardType):
         self._load('settings', models)
 
     def append(self, data, aside=False):
+        if aside and hasattr(data, 'compact'):
+            data.compact()
         if self.request.path == '/adm/':
             self.data['right' if aside else 'center'].append(
                 str(data.contextualize(self.request))
             )
 
     def extend(self, data, template, aside=False):
-        html = mark_safe(render_to_string(template, data, request=self.request))
-        self.data['right' if aside else 'center'].append(html)
+        if self.request.path == '/adm/':
+            html = mark_safe(render_to_string(template, data, request=self.request))
+            self.data['right' if aside else 'center'].append(html)
 
     def load(self, request):
         pass

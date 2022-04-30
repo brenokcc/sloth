@@ -1,0 +1,134 @@
+<style>
+    .calendar .control-arrow{
+        font-size: 30px;
+        cursor: pointer;
+    }
+    .calendar table th{
+        font-weiht: bold;
+        text-align: center;
+    }
+    .calendar table td{
+        border: solid 1px #EEE;
+    }
+    .calendar .total{
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        padding-top: 5px;
+    }
+    .calendar .inactive-day{
+        color:#BBB;
+    }
+    .calendar .date-container{
+        width:100%;
+        text-align:right;
+        padding-right:5px;
+    }
+    .calendar .date-container.selected-date{
+        font-weight:bold;
+        text-decoration:underline;
+    }
+    .calendar .today{
+        background-color: #faf7f7;
+    }
+    .calendar .selected-date-badge{
+        text-align:center;
+        margin-top:10px;
+    }
+    .calendar .selected-date-badge i{
+        cursor: pointer;
+    }
+</style>
+<div class="calendar">
+{% with dates=data.metadata.calendar.days.keys %}
+    {% for date in dates %}
+        {% if forloop.counter < 10 and date.day == 1 %}
+        <div>
+            <h3 align="center">{{ date|date:"F" }}</h3>
+            <div class="float-start">
+                <i class="control-arrow bi bi-arrow-left-short" onclick="previousMonth{{ data.uuid }}()"></i>
+            </div>
+            <div class="float-end">
+                <i class="control-arrow bi bi-arrow-right-short" onclick="nextMonth{{ data.uuid }}()"></i>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endwith %}
+<table width="100%">
+    <thead>
+        <tr>
+            <th>Seg</th>
+            <th>Ter</th>
+            <th>Qua</th>
+            <th>Qui</th>
+            <th>Sex</th>
+            <th>Sab</th>
+            <th>Dom</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            {% with selected=data.metadata.calendar.selected_date today=data.metadata.calendar.today %}
+            {% for date, total in data.metadata.calendar.days.items %}
+                <td align="center" class="{% if today.day == date.day and today.month == date.month %}today{% endif %}">
+                    <div style="min-height:70px">
+                        <div class="date-container {% if selected.day == date.day and selected.month == date.month %}selected-date{% endif %}">
+                            {% if total is None %}
+                                <span class="inactive-day">
+                                    {{ date.day }}
+                                </span>
+                            {% else %}
+                                <span>{{ date.day }}</span>
+                            {% endif %}
+                        </div>
+                        {% if total %}
+                            <div data-date="{{ date|date:'d/m/Y' }}" class="total bg-primary" onclick="currentDate{{ data.uuid }}($(this).data('date'))">
+                                {{ total }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+                {% if forloop.counter > 1 and forloop.counter|divisibleby:7 %}
+                    <tr></tr>
+                {% endif %}
+            {% endfor %}
+            {% endwith %}
+        </tr>
+    </tbody>
+</table>
+
+{% if data.metadata.calendar.selected_date %}
+    <div class="selected-date-badge">
+        <i class="bi bi-x-lg" onclick="currentDate{{ data.uuid }}('')"></i>
+        {{ data.metadata.calendar.selected_date }}
+    </div>
+{% endif %}
+</div>
+
+<script>
+    function previousMonth{{ data.uuid }}(){
+        $("input[name={{ data.metadata.calendar.field }}__gte]").val(
+            '{{ data.metadata.calendar.previous.first_day|date:"d/m/Y" }}'
+        );
+        $("input[name={{ data.metadata.calendar.field }}__lte]").val(
+            '{{ data.metadata.calendar.previous.last_day|date:"d/m/Y" }}'
+        );
+        reload{{ data.uuid }}();
+    }
+    function nextMonth{{ data.uuid }}(){
+        $("input[name={{ data.metadata.calendar.field }}__gte]").val(
+            '{{ data.metadata.calendar.next.first_day|date:"d/m/Y" }}'
+        );
+        $("input[name={{ data.metadata.calendar.field }}__lte]").val(
+            '{{ data.metadata.calendar.next.last_day|date:"d/m/Y" }}'
+        );
+        reload{{ data.uuid }}();
+    }
+    function currentDate{{ data.uuid }}(date){
+        $('#selected-date-{{ data.uuid }}').val(date);
+        reload{{ data.uuid }}();
+    }
+</script>

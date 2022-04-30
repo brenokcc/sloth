@@ -3,7 +3,9 @@
         {% include "adm/dashboard/shortcuts.html" %}
         {% include "adm/dashboard/cards.html" %}
         {% for item in data.center %}
+            <div class="mb-3">
             {{ item }}
+            </div>
         {% endfor %}
     </div>
     {% if data.right %}

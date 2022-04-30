@@ -29,6 +29,9 @@ class DoencaManager(models.Manager):
     def nao_contagiosas(self):
         return self.filter(contagiosa=False)
 
+    def get_total_por_contagiosiade(self):
+        return self.count('contagiosa').verbose_name('Total de Doenças Contagiosas')
+
 
 class Doenca(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
@@ -198,6 +201,9 @@ class Animal(models.Model):
 
 class TratamentoManager(models.Manager):
 
+    def all(self):
+        return self.calendar('data_inicio')
+
     def em_tratamento(self):
         return self.filter(data_fim__isnull=True)
 
@@ -209,7 +215,10 @@ class Tratamento(models.Model):
     data_fim = models.DateField(verbose_name='Data de Término', null=True)
     eficaz = models.BooleanField(verbose_name='Eficaz', null=True)
 
+    objects = TratamentoManager()
+
     class Meta:
+        icon = 'journal-text'
         verbose_name = 'Tratamento'
         verbose_name_plural = 'Tratamentos'
         fieldsets = {
@@ -243,6 +252,9 @@ class Tratamento(models.Model):
 
     def has_delete_permission(self, user):
         return self.has_edit_permission(user)
+
+    def has_list_permission(self, user):
+        return user.roles.contains('Funcionário')
 
 
 class ProcedimentoManager(models.Manager):

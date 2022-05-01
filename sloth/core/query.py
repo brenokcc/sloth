@@ -199,7 +199,11 @@ class QuerySet(models.QuerySet):
     def to_calendar(self):
         days = {}
         attr_name = self.metadata['calendar']
-        start = self.order_by(attr_name).values_list(attr_name, flat=True).first() or datetime.date.today()
+        start = self.metadata['request'].GET.get('{}__gte'.format(attr_name))
+        if start:
+            start = datetime.datetime.strptime(start, '%d/%m/%Y').date()
+        else:
+            start = self.order_by(attr_name).values_list(attr_name, flat=True).first() or datetime.date.today()
         first_day_of_month = datetime.date(start.year, start.month, 1)
         first_day_of_calendar = first_day_of_month - datetime.timedelta(days=first_day_of_month.weekday())
         for i in range(0, (first_day_of_month - first_day_of_calendar).days):
@@ -232,9 +236,10 @@ class QuerySet(models.QuerySet):
         last_day_of_next_month = last_day_of_next_month - datetime.timedelta(days=1)
         selected_date = self.metadata['request'].GET.get('selected-date')
         if  selected_date:
-            selected_date = datetime.datetime.strptime(
-                self.metadata['request'].GET['selected-date'], '%d/%m/%Y'
-            ).date()
+            selected_date = datetime.datetime.strptime(selected_date, '%d/%m/%Y').date()
+        # print(first_day_of_month, last_day_of_month)
+        # print(first_day_of_previous_month, last_day_of_previous_month)
+        # print(first_day_of_next_month, last_day_of_next_month)
         return dict(
             field=attr_name, days=days,
             previous=dict(first_day=first_day_of_previous_month, last_day=last_day_of_previous_month),

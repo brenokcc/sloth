@@ -617,3 +617,25 @@ class QuerySet(models.QuerySet):
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
+
+    # rendering template functions
+
+    def cards(self):
+        self.metadata['template'] = 'adm/queryset/cards.html'
+        return self
+
+    def accordion(self):
+        self.metadata['template'] = 'adm/queryset/accordion.html'
+        return self
+
+    def datatable(self):
+        self.metadata['template'] = 'adm/queryset/datatable.html'
+        return self
+
+    def rows(self):
+        self.metadata['template'] = 'adm/queryset/rows.html'
+        return self
+
+    def timeline(self):
+        self.metadata['template'] = 'adm/queryset/timeline.html'
+        return self

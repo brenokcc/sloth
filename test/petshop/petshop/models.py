@@ -121,13 +121,11 @@ class Cliente(models.Model):
 class AnimalManager(models.Manager):
 
     def all(self):
-        return self.template(
-            'adm/queryset/cards'
-        ).role_lookups(
+        return self.role_lookups(
             'Cliente', proprietario='cliente'
         ).role_lookups(
             'Funcionário'
-        ).display('foto', 'nome', 'descricao', 'get_situacao')
+        ).display('foto', 'nome', 'descricao', 'get_situacao').cards()
 
     def get_qtd_por_tipo(self):
         return self.all().count('tipo')
@@ -177,11 +175,9 @@ class Animal(models.Model):
             'animal'
         ).global_actions(
             'IniciarTratamento'
-        ).template(
-            'adm/queryset/accordion'
         ).actions(
             'ExcluirTratamento'
-        )
+        ).accordion()
 
     def get_tratamentos_por_doenca(self):
         return self.tratamento_set.count('doenca').donut_chart()
@@ -233,7 +229,7 @@ class Tratamento(models.Model):
         return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))
 
     def get_procedimentos(self):
-        return self.procedimento_set.ignore('tratamento').global_actions('RegistrarProcedimento').actions('edit').totalizer('tipo__valor').template('adm/queryset/timeline')
+        return self.procedimento_set.ignore('tratamento').global_actions('RegistrarProcedimento').actions('edit').totalizer('tipo__valor').timeline()
 
     def get_procedimentos_por_tipo(self):
         return self.procedimento_set.count('tipo').bar_chart()

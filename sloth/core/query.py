@@ -297,6 +297,12 @@ class QuerySet(models.QuerySet):
                 verbose_name = pretty(self.metadata['attr'])
             else:
                 verbose_name = pretty(self.model.metaclass().verbose_name_plural)
+
+            for lookup in self.metadata['dfilters']:
+                qs = self.order_by(lookup).values_list(lookup).distinct()[1:2]
+                if not qs and lookup not in self.metadata['ignore']:
+                    self.metadata['ignore'].append(lookup)
+
             icon = getattr(self.model.metaclass(), 'icon', None)
             search = self._get_search(verbose)
             display = self._get_display(verbose)

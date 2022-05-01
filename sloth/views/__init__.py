@@ -8,7 +8,6 @@ from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 from ..admin.templatetags.tags import is_ajax
-from ..utils import load_menu
 
 
 def context_processor(request):
@@ -25,8 +24,6 @@ def context_processor(request):
             else:
                 request.session['stack'].append(request.path)
             referrer =  request.session['stack'][-2] if len(request.session['stack']) > 1 else None
-            request.session['menu'] = load_menu(request.user)
-            request.session.save()
             return dict(referrer=referrer)
     return {}
 
@@ -161,7 +158,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             raise PermissionDenied()
                         else:
                             # object subset or attr
-                            if obj.has_attr_permission(request.user, y):
+                            if obj.has_fieldset_permission(request.user, y):
                                 attr = getattr(obj, y)
                                 output = attr().attr(y).contextualize(request)
                                 if not is_ajax(request):

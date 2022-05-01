@@ -9,8 +9,8 @@
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">
-          <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not request.session.menu  %}visibility:hidden{% endif %}">
-          {% include "adm/menu.html" %}
+          <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not dashboard.data.menu  %}visibility:hidden{% endif %}">
+          {% include "adm/dashboard/menu.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
               <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap">
@@ -26,6 +26,7 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 {% endif %}
+                {% if dashboard.data.settings %}
                 {% for item in dashboard.data.settings %}
                     <li>
                       <a class="dropdown-item" href="{{ item.url }}">
@@ -35,6 +36,7 @@
                     </li>
                 {% endfor %}
                 <li><hr class="dropdown-divider"></li>
+                {% endif %}
                 <li>
                   <a class="dropdown-item" href="/adm/password/">
                     <i class="bi bi-input-cursor"></i>

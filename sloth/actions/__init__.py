@@ -86,6 +86,14 @@ class Action(metaclass=ActionMetaclass):
 
         super().__init__(*args, **kwargs)
 
+        for field_name in self.fields:
+            field = self.fields[field_name]
+            if hasattr(field, 'queryset') and field.queryset.metadata['lookups']:
+                field.queryset = field.queryset.apply_role_lookups(self.request.user)
+                if field.queryset.count() == 1:
+                    field.initial = field.queryset.first().id
+                    field.widget = widgets.HiddenInput()
+
         self.response = {}
         self.fieldsets = {}
         self.one_to_one = {}

@@ -3,7 +3,6 @@
 import datetime
 import re
 from decimal import Decimal
-from django.apps import apps
 from django.db.models.fields.files import FieldFile
 
 
@@ -87,22 +86,6 @@ def pretty(name):
         name = ' '.join(output)
     return name
 
-
-def load_menu(user):
-    from .. import PROXIED_MODELS
-    items = []
-    if user:
-        for model in apps.get_models():
-            if model not in PROXIED_MODELS:
-                app_label = model.metaclass().app_label
-                model_name = model.metaclass().model_name
-                model_verbose_name_plural = model.metaclass().verbose_name_plural
-                icon = getattr(model.metaclass(), 'icon', None)
-                url = '/adm/{}/{}/'.format(app_label, model_name)
-                item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
-                if model().has_list_permission(user) or model().has_permission(user):
-                    items.append(item)
-    return items
 
 
 

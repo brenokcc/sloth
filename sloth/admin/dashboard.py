@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from functools import lru_cache
+from sloth.utils import pretty
 
 INITIALIZE = True
 DASHBOARDS = []
@@ -116,11 +118,29 @@ class Dashboards:
         self.data['navigation'].append(
             dict(url='/adm/', label='Principal', icon='house')
         )
+        if self.request.user.is_superuser:
+            self.data['menu'].extend(self.superuser_menu())
         initilize()
         for cls in DASHBOARDS:
             dashboard = cls(request)
             for key in dashboard.data:
                 self.data[key].extend(dashboard.data[key])
+
+    @lru_cache
+    def superuser_menu(self):
+        from django.apps import apps
+        from .. import PROXIED_MODELS
+        items = []
+        for model in apps.get_models():
+            if model not in PROXIED_MODELS:
+                app_label = model.metaclass().app_label
+                model_name = model.metaclass().model_name
+                model_verbose_name_plural = model.metaclass().verbose_name_plural
+                icon = getattr(model.metaclass(), 'icon', None)
+                url = '/adm/{}/{}/'.format(app_label, model_name)
+                item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[])
+                items.append(item)
+        return items
 
     def __str__(self):
         return mark_safe(render_to_string('adm/dashboard/dashboards.html', dict(data=self.data), request=self.request))

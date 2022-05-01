@@ -9,6 +9,13 @@ urlpatterns = [
 ]
 '''
 
+MODELS_FILE_CONTENT = '''from sloth.db import models
+from sloth.decorators import role
+'''
+
+ACTIONS_FILE_CONTENT = '''from sloth import actions
+'''
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == 'configure':
@@ -39,6 +46,14 @@ if __name__ == "__main__":
             urls_path = os.path.join(project_dir_name, 'urls.py')
             with open(urls_path, 'w') as file:
                 file.write(URLS_FILE_CONTENT)
+
+            models_path = os.path.join(project_dir_name, 'models.py')
+            with open(models_path, 'w') as file:
+                file.write(MODELS_FILE_CONTENT)
+
+            actions_path = os.path.join(project_dir_name, 'actions.py')
+            with open(actions_path, 'w') as file:
+                file.write(ACTIONS_FILE_CONTENT)
 
     else:
         print('Usage: python -m <action>')

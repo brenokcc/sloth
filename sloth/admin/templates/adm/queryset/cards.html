@@ -14,7 +14,7 @@
                     {% endfor %}
                 {% endif %}
                 <div class="card-body">
-                    <h5 class="card-title">{{ row.description }}</h5>
+                    <h5 class="card-title text-{{ align|default:'center'}}">{{ row.description }}</h5>
                     <div class="float-end">
                         {% include "adm/queryset/checkbox.html" %}
                     </div>
@@ -22,7 +22,7 @@
                         {% for k, v in row.data.items %}
                             {% if k != image_key %}
                                 <dt>{{ k }}</dt>
-                                <dd>{{ v|format }}</dd>
+                                <dd>{{ v|format|linebreaks }}</dd>
                             {% endif %}
                         {% endfor %}
                     </dl>

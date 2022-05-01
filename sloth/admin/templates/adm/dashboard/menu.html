@@ -1,6 +1,6 @@
 <div class="search-results d-none" onmouseleave="$(this).addClass('d-none')">
 <ul class="list-group search-menu">
-  {% for item in request.session.menu %}
+  {% for item in dashboard.data.menu %}
   <li class="list-group-item d-flex justify-content-between align-items-start">
     <div class="ms-2 me-auto">
       <div class="fw-bold">

@@ -55,6 +55,28 @@ class ModelMixin(object):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
+    def has_fieldset_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        if attr:
+            return attr(user)
+        return self.is_view_fieldset(name) and (self.has_permission(user) or self.has_view_permission(user))
+
+    def is_view_fieldset(self, name):
+        if not hasattr(self.__class__, '__view__'):
+            attr_names = []
+            def append_attr_names(valueset):
+                names = list(valueset.metadata['names'].keys())
+                # if all names starts with "get_" it is certainly a fieldset list or fieldset group
+                if all([attr_name.startswith('get_') for attr_name in names]):
+                    for attr_name in names:
+                        attr_names.append(attr_name)
+                        attr = getattr(self, attr_name)()
+                        if isinstance(attr, ValueSet):
+                            append_attr_names(attr)
+            append_attr_names(self.view())
+            setattr(self.__class__, '__view__', attr_names)
+        return name in getattr(self.__class__, '__view__')
+
     def has_add_permission(self, user):
         return user.is_superuser or user.roles.contains(*self.get_permission_roles('add')) or self.has_permission(user)
 

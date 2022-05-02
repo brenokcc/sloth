@@ -9,8 +9,8 @@ with open(os.path.join(root_dir, 'requirements.txt')) as file:
 os.chdir(root_dir)
 
 setup(
-    name='sloth',
-    version='0.0.7',
+    name='django-sloth',
+    version='0.0.3',
     packages=find_packages(),
     install_requires=requirements,
     extras_require={

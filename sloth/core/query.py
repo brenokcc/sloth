@@ -455,6 +455,10 @@ class QuerySet(models.QuerySet):
         self.metadata['source'] = name
         return self
 
+    def page(self, n):
+        self.metadata['page'] = n
+        return self
+
     # action functions
 
     def actions(self, *names):
@@ -477,13 +481,12 @@ class QuerySet(models.QuerySet):
 
     # search and pagination functions
 
-    def paginate(self, page=None):
-        if page:
-            start = (page - 1) * self._get_list_per_page()
+    def paginate(self):
+        if self.metadata['page'] != 1:
+            start = (self.metadata['page'] - 1) * self._get_list_per_page()
             end = start + self._get_list_per_page()
-            self.metadata['page'] = page
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            qs = self
+            qs = self[start:end]
         else:
             self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
             start = (self.metadata['page'] - 1) * self._get_list_per_page()
@@ -591,7 +594,7 @@ class QuerySet(models.QuerySet):
         if isinstance(attach, QuerySet):
             if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()
-            ### qs = qs.paginate(page)
+            qs = qs.page(page)
             # qs.debug()
             return qs
         if isinstance(attach, ValueSet):

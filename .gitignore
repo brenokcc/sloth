@@ -7,4 +7,5 @@ media
 sloth.egg-info
 dist
 geckodriver.log
+django_sloth.egg-info
 

@@ -12,6 +12,9 @@ OAUTH2_PROVIDER = {
 }
 
 SLOTH = {
+	'NAME': 'Sloth',
+	'ICON': '/static/images/sloth/sloth.png',
+	'FAVICON': None,
 	'VERSION': 1.0,
 	'LOGIN': {
 		'LOGO': '/static/images/sloth/sloth.png',
@@ -20,7 +23,7 @@ SLOTH = {
 		'IMAGE': None,
 	},
 	'HEADER': {
-		'LOGO': '/static/images/sloth/logo.png',
+		'LOGO': '/static/images/sloth/sloth.png',
 		'TITLE': 'Sloth',
 		'TEXT': None,
 	},

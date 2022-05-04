@@ -198,6 +198,9 @@
     z-index: 999;
     border-radius: 0;
 }
+main{
+    min-height: 60vh;
+}
 main.margin{
     margin:20px;
 }

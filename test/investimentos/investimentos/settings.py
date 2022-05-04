@@ -108,13 +108,33 @@ BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 MEDIA_URL = '/media/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-LOGO = '/static/images/coleta-setec.png'
-NAME = 'COLETA SETEC'
-LOGIN_BACKGROUND = '/static/images/public.png'
-DESCRIPTION = 'Sistema de Coleta de Demandas da Rede Federal de Educação Profissional, Científica e Tecnológica'
-CSS = ['/static/css/investimentos.css']
-JS = ['/static/js/investimentos.js']
-LOGIN_IMAGE = None
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+
+SLOTH = {
+    'NAME': 'COLETA SETEC',
+    'ICON': None,
+    'FAVICON': '/static/images/govbr-16x16.png',
+    'VERSION': 1.0,
+	'LOGIN': {
+		'LOGO': None,
+		'TITLE': 'COLETA SETEC',
+		'TEXT': 'Sistema de Coleta de Demandas da Rede Federal de Educação Profissional, Científica e Tecnológica',
+		'IMAGE': '/static/images/public.png',
+	},
+	'HEADER': {
+		'LOGO': None,
+		'TITLE': 'COLETA SETEC',
+		'TEXT': None,
+	},
+	'FOOTER': {
+		'TITLE': '© 2022 Ministério da Educação',
+		'TEXT': 'Todos os direitos reservados',
+		'LINKS': [],
+	},
+	'INCLUDE': {
+		'CSS': ['/static/css/investimentos.css'],
+		'JS': ['/static/js/investimentos.js'],
+	}
+}
 

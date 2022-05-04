@@ -405,6 +405,9 @@ class Action(metaclass=ActionMetaclass):
                 field.widget.input_type = 'text'
                 field.widget.rmask = '#.##0,00'
 
+            if isinstance(field, ImageField):
+                classes.append('image-input')
+
             if isinstance(field, ModelChoiceField):
                 initial = self.initial.get(name)
                 pks = []

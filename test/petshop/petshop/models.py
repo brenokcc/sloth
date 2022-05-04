@@ -117,18 +117,6 @@ class Cliente(models.Model):
     def has_permission(self, user):
         return user.roles.contains('Funcionário')
 
-    def get_dados_gerais(self):
-        return self.values('nome')
-
-    def has_get_dados_privados_permission(self, user):
-        return False
-
-    def get_dados_privados(self):
-        return self.values('cpf')
-
-    def view(self):
-        return self.values('get_dados_gerais')
-
 
 class AnimalManager(models.Manager):
 

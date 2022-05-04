@@ -142,11 +142,30 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
-LOGO = '/static/images/logo.jpeg'
-INDEX_TEMPLATE = 'adm/index.html'
-LOGIN_IMAGE = '/static/images/logo.jpeg'
-LOGIN_BACKGROUND = None
-NAME = 'PetShop'
-DESCRIPTION = None
-CSS = []
-JS = []
+
+SLOTH = {
+    'NAME': 'PetShop',
+    'ICON': '/static/images/logo.jpeg',
+    'FAVICON': None,
+    'VERSION': 1.0,
+	'LOGIN': {
+		'LOGO': '/static/images/logo.jpeg',
+		'TITLE': None,
+		'TEXT': None,
+		'IMAGE': None,
+	},
+	'HEADER': {
+		'LOGO': None,
+		'TITLE': 'PetShop',
+		'TEXT': None,
+	},
+	'FOOTER': {
+		'TITLE': '© 2022 Petshop',
+		'TEXT': 'Todos os direitos reservados',
+		'LINKS': [],
+	},
+	'INCLUDE': {
+		'CSS': [],
+		'JS': [],
+	}
+}

@@ -1,11 +1,13 @@
+{% load tags %}
 {% if request.user.is_authenticated and not request.GET.modal %}
     <nav class="navbar navbar-expand" style="box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);">
       <div class="container-fluid">
         <a class="navbar-brand" href="/adm/">
-          {% if settings.LOGO %}
-          <img height="30" src="{{ settings.LOGO }}">
-          {% else %}
-            {{ settings.NAME }}
+          {% if settings.SLOTH.HEADER.LOGO %}
+            <img height="30" src="{{ settings.SLOTH.HEADER.LOGO }}">
+          {% endif %}
+          {% if settings.SLOTH.HEADER.TITLE %}
+            <span>{{ settings.SLOTH.HEADER.TITLE }}</span>
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">
@@ -14,7 +16,11 @@
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
               <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap">
-                {{ request.user }}
+                {% if request|mobile %}
+                  <span><i class="bi bi-three-dots-vertical"></i></span>
+                {% else %}
+                  <span>{{ request.user }} <i class="bi bi-chevron-down"></i></span>
+                {% endif %}
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 {% if request.user.is_superuser %}

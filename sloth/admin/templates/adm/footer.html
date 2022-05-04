@@ -1,0 +1,27 @@
+<style>
+    footer{
+        text-align:center;
+        padding-top: 20px;
+    }
+    footer .footer-title{
+        font-size: 90%;
+    }
+    footer .footer-text{
+        font-size: 75%;
+    }
+</style>
+{% if settings.SLOTH.FOOTER.TITLE %}
+    <footer>
+        <div class="footer-title">
+            {{ settings.SLOTH.FOOTER.TITLE }}
+        </div>
+        {% if settings.SLOTH.FOOTER.TEXT %}
+            <div class="footer-text">
+                <div>{{ settings.SLOTH.FOOTER.TEXT }}</div>
+                {% if settings.SLOTH.VERSION %}
+                    <div>Versão {{ settings.SLOTH.VERSION|stringformat:'s' }}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </footer>
+{% endif %}

@@ -10,11 +10,27 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
-LOGO = '/static/images/sloth.png'
-INDEX_TEMPLATE = 'adm/index.html'
-LOGIN_IMAGE = '/static/images/sloth.png'
-LOGIN_BACKGROUND = None
-NAME = 'Admin'
-DESCRIPTION = None
-CSS = []
-JS = []
+
+SLOTH = {
+	'VERSION': 1.0,
+	'LOGIN': {
+		'LOGO': '/static/images/sloth/sloth.png',
+		'TITLE': 'Sloth',
+		'TEXT': 'Take your time!',
+		'IMAGE': None,
+	},
+	'HEADER': {
+		'LOGO': '/static/images/sloth/logo.png',
+		'TITLE': 'Sloth',
+		'TEXT': None,
+	},
+	'FOOTER': {
+		'TITLE': None,
+		'TEXT': None,
+		'LINKS': [],
+	},
+	'INCLUDE': {
+		'CSS': [],
+		'JS': [],
+	}
+}

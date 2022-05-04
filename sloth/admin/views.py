@@ -39,6 +39,24 @@ def view(func):
     return decorate
 
 
+def manifest(request):
+    return JsonResponse(
+        {
+            "name": settings.SLOTH['NAME'],
+            "short_name": settings.SLOTH['NAME'],
+            "lang": settings.LANGUAGE_CODE,
+            "start_url": "/",
+            "scope": "/",
+            "display": "standalone",
+            "icons": [{
+                "src": settings.SLOTH['ICON'],
+                "sizes": "192x192",
+                "type": "image/png"
+            }]
+        }
+    )
+
+
 def icons(request):
     return render(request, ['adm/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
@@ -48,6 +66,8 @@ def logo(request):
 
 
 def login(request):
+    if request.user.is_authenticated:
+        return HttpResponseRedirect('/adm/')
     form = LoginForm(request=request)
     if form.is_valid():
         form.submit()

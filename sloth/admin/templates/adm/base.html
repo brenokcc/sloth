@@ -7,17 +7,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>{{ settings.NAME }}</title>
-    <link rel="manifest" href="/static/manifest.json?v=0.0.2">
-    <link rel="icon" sizes="192x192" href="{{ settings.LOGO }}">
-    <link rel="apple-touch-icon" sizes="128x128" href="{{ settings.LOGO }}">
+    <title>{{ settings.SLOTH.NAME }}</title>
+    <link rel="manifest" href="/adm/manifest/?v={{ settings.SLOTH.VERSION|stringformat:'s' }}">
+    {% if settings.SLOTH.ICON %}
+      <link rel="apple-touch-icon" sizes="128x128" href="{{ settings.SLOTH.ICON }}">
+    {% endif %}
+    {% if settings.SLOTH.FAVICON %}
+      <link rel="icon" sizes="192x192" href="{{ settings.SLOTH.FAVICON }}">
+    {% endif %}
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
     <link href="/static/css/select2.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/css/jquery-ui.css">
     <link href="/static/css/all.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/css/sloth.css?v=0.0.2" />
-    {% for url in settings.CSS %}
+    {% for url in settings.SLOTH.INCLUDE.CSS %}
       <link rel="stylesheet" href="{{ url }}?v=0.0.2" />
     {% endfor %}
 
@@ -47,13 +51,15 @@
 {% block content %}
 {% endblock %}
 {% include "adm/messages.html" %}
-{% for url in settings.JS %}
+{% for url in settings.SLOTH.INCLUDE.JS %}
       <script src="{{ url }}"></script>
 {% endfor %}
       <script src="/static/js/tests.js"></script>
 {% if not request|is_ajax %}
     </main>
+    {% block footer %}
     {% include "adm/footer.html" %}
+    {% endblock %}
     {% include "adm/modal.html" %}
     {% include "adm/dashboard/bottom.html" %}
   </body>

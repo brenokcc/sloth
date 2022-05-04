@@ -10,6 +10,7 @@ from . import views
 urlpatterns = [
     path('', views.index),
     path('adm/', views.admin),
+    path('adm/manifest/', views.manifest),
     path('adm/icons/', views.icons),
     path('adm/login/', views.login),
     path('adm/logout/', views.logout),

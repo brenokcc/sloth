@@ -127,8 +127,16 @@ jQuery.fn.extend({
             var form = this;
             var method = form.method.toUpperCase();
             $(form).find('.btn-submit').addClass('disabled').find('.spinner-border').removeClass('d-none');
-            if(method=='GET') var data = $(form).serialize();
-            else var data = new FormData(form);
+            if(method=='GET'){
+                var data = $(form).serialize();
+            } else {
+                var data = new FormData(form);
+                $(form).find('.image-input').each(function( index ) {
+                    var blob = $(this).data('blob');
+                    data.delete(this.name);
+                    data.append(this.name, blob, new Date().getTime()+'.'+blob.type.split('/')[1]);
+                });
+            }
             $(document).request(form.action, method, data, function(html){
                 if($('#modal').is(':visible')){
                     $('#modal').find('.modal-body').html(html).initialize();
@@ -186,6 +194,37 @@ jQuery.fn.extend({
         });
         $(this).responsive();
         $(this).find('[data-toggle="tooltip"]').tooltip();
+        $(this).find('.image-input').each(function( index ) {
+            var input = this;
+            input.addEventListener('change', function (e) {
+                if (e.target.files) {
+                    let imageFile = e.target.files[0];
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        var img = document.createElement("img");
+                        img.onload = function (event) {
+                            const ratio = img.width*100/800;
+                            var canvas = document.createElement("canvas");
+                            const ctx = canvas.getContext("2d");
+                            canvas.height = canvas.width * (img.height / img.width);
+                            const oc = document.createElement('canvas');
+                            const octx = oc.getContext('2d');
+                            oc.width = img.width * ratio;
+                            oc.height = img.height * ratio;
+                            octx.drawImage(img, 0, 0, oc.width, oc.height);
+                            ctx.drawImage(oc, 0, 0, oc.width * ratio, oc.height * ratio, 0, 0, canvas.width, canvas.height);
+                            //document.getElementById("preview").src = dataurl;
+                            oc.toBlob(function(blob){
+                                $(input).addClass('resized-image');
+                                $(input).data('blob', blob);
+                            });
+                        }
+                        img.src = e.target.result;
+                    }
+                    reader.readAsDataURL(imageFile);
+                }
+            });
+        });
         return this;
     },
     refresh: function(areas){

@@ -24,7 +24,6 @@
 	}
 	.step .cicle.active{
 		border-color: blue;
-		background-color: blue;
 		color: white;
 	}
 	.step .text{
@@ -64,7 +63,7 @@
 <div class="steps-vertical">
     {% for step, date in value %}
         <div class="step">
-            <div class="cicle {% if date %}active{% endif %}">{{ forloop.counter }}</div>
+            <div class="cicle {% if date %}active bg-primary border border-primary{% endif %}">{{ forloop.counter }}</div>
             <div class="text">{{ step }} {% if date %}<div class="text-date">{{ date }}</div>{% endif %}</div>
         </div>
         {% if not forloop.last %}
@@ -77,7 +76,7 @@
     <div class="divider"></div>
     {% for step, date in value %}
         <div class="step">
-            <div class="cicle {% if date %}active{% endif %}">{{ forloop.counter }}</div>
+            <div class="cicle {% if date %}active bg-primary border border-primary{% endif %}">{{ forloop.counter }}</div>
             <div class="text">{{ step }} {% if date %}<div class="text-date">{{ date }}</div>{% endif %}</div>
         </div>
     {% endfor %}

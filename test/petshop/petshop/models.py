@@ -225,8 +225,20 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
+    @template('utils/steps')
+    def get_etapas(self):
+        etapas = []
+        etapas.append(('Início', self.data_inicio))
+        for procedimento in self.procedimento_set.all():
+            etapas.append((procedimento.tipo, procedimento.data_hora))
+        etapas.append(('Fim', self.data_fim))
+        return etapas
+
     def get_dados_gerais(self):
         return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))
+
+    def get_dados_etapas(self):
+        return self.values('get_etapas')
 
     def get_procedimentos(self):
         return self.procedimento_set.ignore('tratamento').global_actions('RegistrarProcedimento').actions('edit').totalizer('tipo__valor').timeline()
@@ -238,7 +250,7 @@ class Tratamento(models.Model):
         return self.values('eficaz').actions('FinalizarTratamento')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_procedimentos_por_tipo', 'get_procedimentos', 'get_eficacia')
+        return self.values('get_dados_gerais', 'get_dados_etapas', 'get_procedimentos_por_tipo', 'get_procedimentos', 'get_eficacia')
 
     def has_view_permission(self, user):
         return user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username

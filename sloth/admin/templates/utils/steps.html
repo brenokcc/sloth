@@ -1,0 +1,85 @@
+{% load tags %}
+<style>
+    .steps-horizontal{
+        overflow-x: hidden;
+        min-width: {{ value|length|add:2 }}00;
+    }
+	.steps-horizontal .step{
+		vertical-align: top;
+		display: inline-block;
+		text-align: center;
+		width: 100;
+	}
+	.step .cicle{
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		text-align: center;
+		border: solid 1px #BBB;
+		background-color: white;
+		margin: auto;
+		font-size: 200%;
+		color: #BBB;
+		position: relative;
+	}
+	.step .cicle.active{
+		border-color: blue;
+		background-color: blue;
+		color: white;
+	}
+	.step .text{
+		width: 100;
+		margin-top: 10;
+		font-size: 80%;
+	}
+	.step .text-date{
+	    font-weight: bold;
+	}
+	.steps-horizontal .divider{
+		border-top: solid 1px;
+		width: {{ value|length|add:-1 }}00;
+		position: relative;
+		top: 25;
+		border-color: #BBB;
+
+	}
+	.steps-vertical{
+		width: 100;
+		margin-left: calc(50% - 100px);
+	}
+	.steps-vertical .step{
+		display: inline-flex;
+		width: 200;
+	}
+	.steps-vertical .divider{
+		height: 20;
+		border-left: solid 1px;
+		border-color: #BBB;
+		width: 1;
+		margin: auto;
+	}
+</style>
+
+{% if request|mobile or compact %}
+<div class="steps-vertical">
+    {% for step, date in value %}
+        <div class="step">
+            <div class="cicle {% if date %}active{% endif %}">{{ forloop.counter }}</div>
+            <div class="text">{{ step }} {% if date %}<div class="text-date">{{ date }}</div>{% endif %}</div>
+        </div>
+        {% if not forloop.last %}
+            <div class="divider"></div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="steps-horizontal" align="center">
+    <div class="divider"></div>
+    {% for step, date in value %}
+        <div class="step">
+            <div class="cicle {% if date %}active{% endif %}">{{ forloop.counter }}</div>
+            <div class="text">{{ step }} {% if date %}<div class="text-date">{{ date }}</div>{% endif %}</div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}

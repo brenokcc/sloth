@@ -201,9 +201,10 @@ jQuery.fn.extend({
                     let imageFile = e.target.files[0];
                     var reader = new FileReader();
                     reader.onload = function (e) {
+                        const MAX_WIDTH = 800;
                         var img = document.createElement("img");
                         img.onload = function (event) {
-                            const ratio = img.width*100/800;
+                            const ratio = MAX_WIDTH/img.width;
                             var canvas = document.createElement("canvas");
                             const ctx = canvas.getContext("2d");
                             canvas.height = canvas.width * (img.height / img.width);

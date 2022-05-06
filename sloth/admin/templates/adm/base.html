@@ -20,9 +20,9 @@
     <link href="/static/css/select2.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/css/jquery-ui.css">
     <link href="/static/css/all.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="/static/css/sloth.css?v=0.0.2" />
+    <link rel="stylesheet" href="/static/css/sloth.css?v={{ settings.SLOTH.VERSION }}" />
     {% for url in settings.SLOTH.INCLUDE.CSS %}
-      <link rel="stylesheet" href="{{ url }}?v=0.0.2" />
+      <link rel="stylesheet" href="{{ url }}?v={{ settings.SLOTH.VERSION }}" />
     {% endfor %}
 
     <script src="/static/js/jquery-3.6.0.min.js"></script>
@@ -52,7 +52,7 @@
 {% endblock %}
 {% include "adm/messages.html" %}
 {% for url in settings.SLOTH.INCLUDE.JS %}
-      <script src="{{ url }}"></script>
+      <script src="{{ url }}?v={{ settings.SLOTH.VERSION }}"></script>
 {% endfor %}
       <script src="/static/js/tests.js"></script>
 {% if not request|is_ajax %}

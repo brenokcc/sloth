@@ -106,10 +106,8 @@ def admin(request):
 
 @view
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
-    if x == 'all':
-        return dispatcher(request, app_label, model_name)
     context = dict(settings=settings, dashboard=dashboard.Dashboards(request))
-    data = views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w)
     if isinstance(data, Action):
         context.update(form=data)
         if data.response:

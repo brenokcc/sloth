@@ -70,8 +70,8 @@ class Browser(webdriver.Firefox):
     def back(self, seconds=None):
         if seconds:
             self.wait(seconds)
-        if not self.current_url or not self.current_url.endswith('/admin/'):
-            self.open('/admin/')
+        if not self.current_url or not self.current_url.endswith('/adm/'):
+            self.open('/adm/')
 
     def enter(self, name, value, submit=False, count=2):
 

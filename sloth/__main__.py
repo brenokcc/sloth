@@ -38,7 +38,7 @@ if __name__ == "__main__":
             )
             settings = settings.replace(
                 "processors.messages',",
-                "processors.messages',\n                'sloth.views.context_processor'"
+                "processors.messages',\n                'sloth.core.views.context_processor'"
             )
             settings = settings.replace("\n    'django.contrib.admin',", "")
             with open(settings_path, 'w') as file:

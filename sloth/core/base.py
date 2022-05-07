@@ -3,8 +3,8 @@ from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
 
 from sloth.actions import Action
-from sloth.core.values import ValueSet
-from sloth.core.query import QuerySet
+from sloth.core.valueset import ValueSet
+from sloth.core.queryset import QuerySet
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
 SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'

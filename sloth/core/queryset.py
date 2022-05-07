@@ -58,7 +58,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def join(self, *names):
-        from sloth.core.values import ValueSet
+        from sloth.core.valueset import ValueSet
         return ValueSet(self, names)
 
     def _clone(self):
@@ -566,7 +566,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def process_request(self, request):
-        from sloth.core.values import ValueSet
+        from sloth.core.valueset import ValueSet
         page = 1
         attr_name = request.GET['subset']
         self.metadata['uuid'] = request.GET['uuid']

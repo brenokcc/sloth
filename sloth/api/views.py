@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
-from .. import views
+from ..core import views
 from ..api import OpenApi
 
 

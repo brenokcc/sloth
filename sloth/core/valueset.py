@@ -4,7 +4,7 @@ from uuid import uuid1
 
 from django.template.loader import render_to_string
 
-from sloth.core.query import QuerySet
+from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
 from sloth.utils import getattrr, serialize, pretty
 

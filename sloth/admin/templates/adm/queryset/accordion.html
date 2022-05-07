@@ -17,7 +17,15 @@
             <dl>
             {% for k, v in row.data.items %}
                 <dt>{{ k }}</dt>
-                <dd>{{ v|format }}</dd>
+                <dd>
+                    {% with display=data.metadata.display|get_item:k %}
+                        {% if display.template %}
+                            {% include display.template with value=v %}
+                        {% else %}
+                            {{ v|format|linebreaks }}
+                        {% endif %}
+                    {% endwith %}
+                </dd>
             {% endfor %}
             </dl>
             <div class="float-end">

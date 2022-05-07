@@ -92,15 +92,17 @@ class QuerySet(models.QuerySet):
     def _get_search(self, verbose=False):
         display = {}
         for lookup in self._get_list_search() or self.model.default_search_fields():
-            verbose_name, _ = self.model.get_attr_verbose_name(lookup)
+            verbose_name, _, _ = self.model.get_attr_metadata(lookup)
             display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
         return display
 
     def _get_display(self, verbose=False):
         display = {}
         for lookup in self._get_list_display():
-            verbose_name, sort = self.model.get_attr_verbose_name(lookup)
-            display[verbose_name if verbose else lookup] = dict(key=lookup, name=pretty(verbose_name), sort=sort)
+            verbose_name, sort, template = self.model.get_attr_metadata(lookup)
+            display[pretty(verbose_name) if verbose else lookup] = dict(
+                key=lookup, name=pretty(verbose_name), sort=sort, template=template
+            )
         return display
 
     def _get_filters(self, verbose=False):

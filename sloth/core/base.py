@@ -268,12 +268,15 @@ class ModelMixin(object):
         return search
 
     @classmethod
-    def get_attr_verbose_name(cls, lookup):
+    def get_attr_metadata(cls, lookup):
         field = cls.get_field(lookup)
         if field:
-            return str(getattr(field, 'verbose_name', lookup)), True
+            return str(getattr(field, 'verbose_name', lookup)), True, None
         attr = getattr(cls, lookup)
-        return getattr(attr, '__verbose_name__', lookup), False
+        template = getattr(attr, '__template__', None)
+        if template and not template.endswith('.html'):
+            template = '{}.html'.format(template)
+        return getattr(attr, '__verbose_name__', lookup), False, template
 
     @classmethod
     def get_attr_api_type(cls, lookup):

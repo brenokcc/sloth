@@ -250,7 +250,7 @@ class Tratamento(models.Model):
         return self.values('eficaz').actions('FinalizarTratamento')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_dados_etapas', 'get_procedimentos_por_tipo', 'get_procedimentos', 'get_eficacia')
+        return self.values('get_dados_gerais', 'get_procedimentos_por_tipo', 'get_procedimentos', 'get_eficacia').append('get_dados_etapas')
 
     def has_view_permission(self, user):
         return user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username

@@ -22,7 +22,15 @@
                         {% for k, v in row.data.items %}
                             {% if k != image_key %}
                                 <dt>{{ k }}</dt>
-                                <dd>{{ v|format|linebreaks }}</dd>
+                                <dd>
+                                    {% with display=data.metadata.display|get_item:k %}
+                                        {% if display.template %}
+                                            {% include display.template with value=v %}
+                                        {% else %}
+                                            {{ v|format|linebreaks }}
+                                        {% endif %}
+                                    {% endwith %}
+                                </dd>
                             {% endif %}
                         {% endfor %}
                     </dl>

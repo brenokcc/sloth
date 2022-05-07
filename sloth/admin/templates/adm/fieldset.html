@@ -31,7 +31,12 @@
                       <div class="responsive-container">
                           {% for k, item in fieldset.data.items %}
                             <div class="fieldset-field width-{{ item.width }}">
-                                <b>{{ k }}:</b><br>{{ item.value|format }}
+                                <b>{{ k }}:</b><br>
+                                {% if item.template %}
+                                    {% include item.template with value=item.value %}
+                                {% else %}
+                                    {{ item.value|format }}
+                                {% endif %}
                             </div>
                           {% endfor %}
                       </div>

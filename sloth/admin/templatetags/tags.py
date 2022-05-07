@@ -142,3 +142,8 @@ def group_by_icon(actions):
             groups['without_icon'].append(action)
     return groups
 
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+

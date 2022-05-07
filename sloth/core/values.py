@@ -112,7 +112,7 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=False, verbose=False, formatted=False, size=True):
+    def load(self, wrap=True, verbose=False, formatted=False, size=True):
         only = []
         if self.metadata['request'] and 'only' in self.metadata['request'].GET:
             only.extend(self.metadata['request'].GET['only'].split(','))
@@ -187,20 +187,20 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
-                        if formatted and getattr(attr, '__template__', None):
-                            template = attr.__template__
-                            template = template if template.endswith('.html') else '{}.html'.format(template)
-                            value = render_to_string(
-                                template, dict(value=value, instance=self.instance), request=self.metadata['request']
-                            )
+
+                        if formatted:
+                            if value in (None, ''):
+                                value = '-'
                         else:
                             value = serialize(value)
-                        if formatted and value in (None, ''):
-                            value = '-'
+
                         if size:
-                            value = dict(value=value, width=width)
+                            template = getattr(attr, '__template__', None)
+                            if template and not template.endswith('.html'):
+                                template = '{}.html'.format(template)
+                            value = dict(value=value, width=width, template=template)
                     if verbose:
-                        attr_name = verbose_name or pretty(self.metadata['model'].get_attr_verbose_name(attr_name)[0])
+                        attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
 
                     self[attr_name] = value
         else:

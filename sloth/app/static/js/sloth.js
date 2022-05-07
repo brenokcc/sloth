@@ -133,8 +133,10 @@ jQuery.fn.extend({
                 var data = new FormData(form);
                 $(form).find('.image-input').each(function( index ) {
                     var blob = $(this).data('blob');
-                    data.delete(this.name);
-                    data.append(this.name, blob, new Date().getTime()+'.'+blob.type.split('/')[1]);
+                    if(blob){
+                        data.delete(this.name);
+                        data.append(this.name, blob, new Date().getTime()+'.'+blob.type.split('/')[1]);
+                    }
                 });
             }
             $(document).request(form.action, method, data, function(html){

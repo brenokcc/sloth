@@ -254,13 +254,14 @@ class QuerySet(models.QuerySet):
 
     # serialization function
 
-    def to_list(self, wrap=False, verbose=False, formatted=False):
+    def to_list(self, wrap=False, verbose=False):
         data = []
         for obj in self:
+            add_id = not wrap and not verbose
             actions = self.get_obj_actions(obj)
             if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
                 actions.append('view')
-            item = obj.values(*self._get_list_display(add_id=True)).load(verbose=verbose, formatted=formatted, size=False)
+            item = obj.values(*self._get_list_display(add_id=add_id)).load(verbose=verbose, size=False)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -294,7 +295,7 @@ class QuerySet(models.QuerySet):
                 actions.append(form_cls.__name__)
         return actions
 
-    def serialize(self, path=None, wrap=False, verbose=True, formatted=False, lazy=False):
+    def serialize(self, path=None, wrap=False, verbose=True, lazy=False):
         if wrap:
             if self.metadata['verbose_name']:
                 verbose_name = self.metadata['verbose_name']
@@ -314,7 +315,7 @@ class QuerySet(models.QuerySet):
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
-            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, formatted=formatted)
+            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose)
             pages = []
             n = self.count() // self._get_list_per_page() + 1
             for page in range(0, n):
@@ -510,7 +511,7 @@ class QuerySet(models.QuerySet):
     # rendering function
 
     def html(self):
-        serialized = self.serialize(wrap=True, verbose=True, formatted=True)
+        serialized = self.serialize(wrap=True, verbose=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural

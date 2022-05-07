@@ -112,7 +112,7 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=True, verbose=False, formatted=False, size=False):
+    def load(self, wrap=True, verbose=False, size=False):
         only = []
         if self.metadata['request'] and 'only' in self.metadata['request'].GET:
             only.extend(self.metadata['request'].GET['only'].split(','))
@@ -139,8 +139,7 @@ class ValueSet(dict):
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
                             value = value.serialize(
-                                path=path, wrap=wrap, verbose=verbose,
-                                formatted=formatted, lazy=False
+                                path=path, wrap=wrap, verbose=verbose, lazy=False
                             )
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
@@ -160,7 +159,7 @@ class ValueSet(dict):
                         image_attr_name = getattr(value, 'metadata')['image']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
-                        value.load(wrap=wrap, verbose=verbose, formatted=formatted, size=size)
+                        value.load(wrap=wrap, verbose=verbose, size=wrap and verbose or size)
                         value = dict(
                             uuid=uuid1().hex, type='fieldset',
                             name=verbose_name if verbose else attr_name, key=key, actions=[], data=value, path=path
@@ -187,18 +186,14 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
+                        value = serialize(value)
 
-                        if formatted:
-                            if value in (None, ''):
-                                value = '-'
-                        else:
-                            value = serialize(value)
-
-                        if size:
+                        if size and wrap and verbose:
                             template = getattr(attr, '__template__', None)
                             if template and not template.endswith('.html'):
                                 template = '{}.html'.format(template)
                             value = dict(value=value, width=width, template=template)
+
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
 
@@ -214,8 +209,8 @@ class ValueSet(dict):
             return self.html()
         return json.dumps(self, indent=4, ensure_ascii=False)
 
-    def serialize(self, wrap=False, verbose=False, formatted=False):
-        self.load(wrap=wrap, verbose=verbose, formatted=formatted, size=wrap and verbose)
+    def serialize(self, wrap=False, verbose=False):
+        self.load(wrap=wrap, verbose=verbose, size=wrap and verbose)
         if wrap:
             data = {}
             if self.metadata['primitive']:
@@ -257,9 +252,9 @@ class ValueSet(dict):
             for attr_name in self.metadata['append']:
                 if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
                     output['append'].update(
-                        self.instance.values(attr_name).contextualize(self.metadata['request']).load(
-                            wrap=wrap, verbose=verbose, formatted=formatted
-                        )
+                        self.instance.values(attr_name).contextualize(
+                            self.metadata['request']
+                        ).load(wrap=wrap, verbose=verbose)
                     )
             return output
         else:
@@ -268,7 +263,7 @@ class ValueSet(dict):
             return self
 
     def html(self):
-        serialized = self.serialize(wrap=True, verbose=True, formatted=True)
+        serialized = self.serialize(wrap=True, verbose=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural

@@ -52,7 +52,9 @@ def serialize(obj):
         elif isinstance(obj, bool):
             return obj
         elif isinstance(obj, list):
-            return [str(o) for o in obj]
+            return [serialize(o) for o in obj]
+        elif isinstance(obj, tuple):
+            return [serialize(o) for o in obj]
         elif hasattr(obj, 'all'):
             return [str(o) for o in obj.filter()]
         elif isinstance(obj, FieldFile):

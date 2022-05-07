@@ -23,7 +23,9 @@ def endpoint(func):
         try:
             if views.is_authenticated(request):
                 data = func(request, *args, **kwargs)
-                return ApiResponse(data.serialize(wrap=False, verbose=False), safe=False)
+                wrap = request.path.startswith('/meta')
+                verbose = request.path.startswith('/meta')
+                return ApiResponse(data.serialize(wrap=wrap, verbose=verbose), safe=False)
             else:
                 return ApiResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403

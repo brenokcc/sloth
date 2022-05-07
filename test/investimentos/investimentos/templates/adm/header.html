@@ -9,7 +9,7 @@
           {% endif %}
         </a>
         <div class="collapse navbar-collapse">
-          <a href="/adm/" style="margin-right:10px">
+          <a href="/app/" style="margin-right:10px">
             <i class="bi bi-house"></i>
           </a>
           <a href="/media/tutorial/tutorial.pdf" target="_blank" style="margin-right:10px" data-toggle="tooltip" data-placement="bottom" title="Tutorial PDF">
@@ -19,7 +19,7 @@
             <i class="bi bi-person-video3"></i>
           </a>
           <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not request.session.menu or not request.user.is_superuser  %}visibility:hidden{% endif %}">
-          {% include "adm/menu.html" %}
+          {% include "app/menu.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
               <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap">
@@ -27,11 +27,11 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 {% if request.user.is_superuser %}
-                <li><a class="dropdown-item" href="/adm/icons/">Icones</a></li>
+                <li><a class="dropdown-item" href="/app/icons/">Icones</a></li>
                 <li><hr class="dropdown-divider"></li>
                 {% endif %}
-                <li><a class="dropdown-item" href="/adm/password/">Alterar Senha</a></li>
-                <li><a class="dropdown-item" href="/adm/logout/">Sair</a></li>
+                <li><a class="dropdown-item" href="/app/password/">Alterar Senha</a></li>
+                <li><a class="dropdown-item" href="/app/logout/">Sair</a></li>
               </ul>
             </li>
           </ul>

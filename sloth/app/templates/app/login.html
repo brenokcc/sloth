@@ -1,0 +1,80 @@
+{% extends super_template|default:"app/base.html" %}
+
+{% block extrahead %}
+<style>
+  main{
+    margin: 0px !important;
+  }
+  form{
+    min-width: 250;
+  }
+
+  {% if settings.SLOTH.LOGIN.IMAGE %}
+    .image-section{
+      width:50%;
+      background-image:url({{ settings.SLOTH.LOGIN.IMAGE }});
+      background-size:cover;
+      background-repeat:no-repeat;
+      float:left;
+    }
+    .image-section div{
+      font-size: 30;
+      color: #FFF;
+      font-family:Helvetica Neue,Helvetica,Arial,sans-serif;
+      margin-top:40%;
+      text-align:center;
+    }
+    .form-section{
+      width:50%;
+      float:left;
+    }
+  {% endif %}
+
+  .form-section img{
+    max-height:200px;
+  }
+
+  @media only screen and (max-width: 800px) {
+    .image-section{
+      display: none !important;
+    }
+    .form-section{
+      width: 100% !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if settings.SLOTH.LOGIN.IMAGE %}
+  <section class="vh-100 image-section">
+    {% if settings.SLOTH.LOGIN.TEXT  %}
+      <div>{{ settings.SLOTH.LOGIN.TEXT }}</div>
+    {% endif %}
+  </section>
+{% endif %}
+
+<section class="vh-100 form-section">
+  <div class="container py-5 h-100">
+    <div class="row d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+      <div align="center">
+        {% if settings.SLOTH.LOGIN.LOGO %}
+          <img src="{{ settings.SLOTH.LOGIN.LOGO }}" class="img-fluid" alt="{{ settings.SLOTH.LOGIN.TITLE }}">
+        {% endif %}
+        {% if settings.SLOTH.LOGIN.TITLE %}
+          <h1>{{ settings.SLOTH.LOGIN.TITLE }}</h1>
+        {% endif %}
+      </div>
+      <div class="col-lg-4 col-md-6 col-sm-8">
+        {{ form }}
+      </div>
+    </div>
+    {% include "app/footer.html" %}
+  </div>
+</section>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
+

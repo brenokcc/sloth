@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'simulado',
     'oauth2_provider',
     'sloth.api',
-    'sloth.admin',
+    'sloth.app',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -143,7 +143,7 @@ OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
 LOGO = '/static/images/logo.png'
-INDEX_TEMPLATE = 'adm/index.html'
+INDEX_TEMPLATE = 'app/index.html'
 LOGIN_IMAGE = '/static/images/simulado.jpeg'
 LOGIN_BACKGROUND = None
 NAME = 'Simul@ado'

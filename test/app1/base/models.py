@@ -98,7 +98,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @template('adm/formatters/progress')
+    @template('app/formatters/progress')
     @verbose_name('Progresso')
     def get_progresso(self):
         return 27
@@ -161,7 +161,7 @@ class Instituto(models.Model):
     class Meta:
         verbose_name = 'Instituto'
         verbose_name_plural = 'Instituto'
-        list_template = 'adm/queryset/cards'
+        list_template = 'app/queryset/cards'
 
     def __str__(self):
         return self.sigla
@@ -219,16 +219,16 @@ class ServidorManager(models.Manager):
             'DefinirSetor'
         ).global_actions(
             'FazerAlgumaCoisa'
-        ).template('adm/queryset/cards')
+        ).template('app/queryset/cards')
 
     def com_endereco(self):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     def sem_endereco(self):
-        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).template('adm/queryset/cards')
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).template('app/queryset/cards')
 
     def ativos(self):
-        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').template('adm/queryset/rows')
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').template('app/queryset/rows')
 
     def inativos(self):
         return self.filter(ativo=False).actions('AtivarServidor')
@@ -269,12 +269,12 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @template('adm/formatters/image')
+    @template('app/formatters/image')
     @verbose_name('Foto')
     def get_foto(self):
         return self.foto or '/static/images/profile.png'
 
-    @template('adm/formatters/progress')
+    @template('app/formatters/progress')
     def get_progresso(self):
         return 27
 
@@ -303,7 +303,7 @@ class Servidor(models.Model):
 
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
-            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('adm/queryset/accordion')
+            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('app/queryset/accordion')
 
     def get_ferias(self):
         return self.ferias_set.display(
@@ -312,7 +312,7 @@ class Servidor(models.Model):
             'AlterarFerias', 'ExcluirFerias'
         ).global_actions(
             'CadastrarFerias'
-        ).template('adm/queryset/timeline').ignore('servidor')
+        ).template('app/queryset/timeline').ignore('servidor')
 
     def get_dados_recursos_humanos(self):
         return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
@@ -375,7 +375,7 @@ class Frequencia(models.Model):
     class Meta:
         verbose_name = 'Frequência'
         verbose_name_plural = 'Frequências'
-        list_template = 'adm/queryset/timeline'
+        list_template = 'app/queryset/timeline'
 
     def __str__(self):
         return 'Resistro {}'.format(self.id)

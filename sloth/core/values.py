@@ -112,7 +112,7 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=True, verbose=False, formatted=False, size=True):
+    def load(self, wrap=True, verbose=False, formatted=False, size=False):
         only = []
         if self.metadata['request'] and 'only' in self.metadata['request'].GET:
             only.extend(self.metadata['request'].GET['only'].split(','))
@@ -145,7 +145,7 @@ class ValueSet(dict):
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                         else:
-                            value = [str(o) for o in value]
+                            value = value.to_list()
                     elif isinstance(value, QuerySetStatistics):
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
@@ -215,7 +215,7 @@ class ValueSet(dict):
         return json.dumps(self, indent=4, ensure_ascii=False)
 
     def serialize(self, wrap=False, verbose=False, formatted=False):
-        self.load(wrap=wrap, verbose=verbose, formatted=formatted)
+        self.load(wrap=wrap, verbose=verbose, formatted=formatted, size=wrap and verbose)
         if wrap:
             data = {}
             if self.metadata['primitive']:
@@ -279,9 +279,9 @@ class ValueSet(dict):
                 icon=None, data=serialized['data'], actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
             # print(json.dumps(serialized, indent=4, ensure_ascii=False))
             return render_to_string(
-                'adm/valueset.html', dict(data=serialized), request=self.metadata['request']
+                'app/valueset.html', dict(data=serialized), request=self.metadata['request']
             )

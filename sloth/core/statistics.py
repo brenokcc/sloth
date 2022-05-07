@@ -154,15 +154,18 @@ class QuerySetStatistics(object):
             if data:
                 series['default'] = data
 
-        return dict(
-            type='statistics',
-            name=verbose_name,
-            key=None,
-            path=path,
-            series=series,
-            template=self.metadata['template'],
-            normalized=self.normalize(series)
-        )
+        if wrap:
+            return dict(
+                type='statistics',
+                name=verbose_name,
+                key=None,
+                path=path,
+                series=series,
+                template=self.metadata['template'],
+                normalized=self.normalize(series)
+            )
+        else:
+            return series['default'] if 'default' in series else series
 
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
@@ -176,9 +179,9 @@ class QuerySetStatistics(object):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
-            return render_to_string('adm/statistics.html', dict(data=serialized), request=self.metadata['request'])
+            return render_to_string('app/statistics.html', dict(data=serialized), request=self.metadata['request'])
 
     def __str__(self):
         if self.metadata['request']:
@@ -214,7 +217,7 @@ class QuerySetStatistics(object):
         return data
 
     def chart(self, name):
-        self.metadata['template'] = 'adm/charts/{}.html'.format(name)
+        self.metadata['template'] = 'app/charts/{}.html'.format(name)
         return self
 
     def pie_chart(self):

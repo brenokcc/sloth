@@ -1,0 +1,18 @@
+<div class="row clearfix">
+    <div class="{% if data.right %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
+        {% include "app/dashboard/shortcuts.html" %}
+        {% include "app/dashboard/cards.html" %}
+        {% for item in data.center %}
+            <div class="mb-3">
+            {{ item }}
+            </div>
+        {% endfor %}
+    </div>
+    {% if data.right %}
+    <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
+        {% for item in data.right %}
+            {{ item }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

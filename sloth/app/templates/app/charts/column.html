@@ -1,0 +1,114 @@
+{% load tags %}
+<style>
+.column-chart-container{
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.column-chart {
+  display: block; /* fixes layout wonkiness in FF1.5 */
+  position: relative;
+  height: 300px;
+  margin: 1.1em 0 0;
+  padding: 0;
+  background: transparent;
+  font-size: 11px;
+}
+.column-chart tr, .column-chart th, .column-chart td {
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+.column-chart td {
+  transition: all .3s ease;
+}
+.column-chart td:hover {
+    background-color: desaturate(#85144b, 100);
+    opacity: .7;
+    color: white;
+}
+.column-chart tbody tr {
+  height: 296px;
+  padding-top: 2px;
+  border-right: 1px dotted #C4C4C4;
+  color: #AAA;
+}
+.column-chart tbody th {
+    bottom: -30px;
+    font-weight: normal; color: #333;
+    text-align: center;
+}
+.column-chart .bar {
+  width: 70px;
+  border: 1px solid;
+  border-bottom: none;
+  color: #000;
+  margin-left: 10px;
+  border-color: transparent;
+}
+.column-chart .bar p {
+  padding: 5px;
+  color: #FFF;
+}
+.column-chart-ticks {
+  position: relative;
+  top: -300px;
+  left: 2px;
+  height: 300px;
+  z-index: 1;
+  margin-bottom: -270px;
+  font-size: 10px;
+}
+.column-chart-ticks .tick {
+  position: relative;
+  border-bottom: 1px dotted #C4C4C4;
+  visibility: hidden;
+}
+.column-chart-ticks .tick p {
+  position: absolute;
+  left: -5em;
+  top: -0.8em;
+}
+
+.column-chart-ticks .tick {
+    width: {{ data.normalized|column_chart_series_width }};
+}
+.column-chart tr, th{
+    width: {{ data.normalized|column_chart_serie_width }};
+}
+</style>
+<div class="column-chart-container">
+<div style="padding-left:50px; width:{{ data.normalized|column_chart_width }}; margin:auto">
+    <table class="column-chart">
+        <tbody>
+            {% for key, series in data.normalized.items %}
+            <tr class="qtr" style="left:{{ series|length|multiply:100|multiply:forloop.counter0 }};{% if forloop.last %}border-right: none;{% endif %}">
+                <th scope="row">{% if key != 'default' %}{{ key }}{% endif %}</th>
+                {% for serie in series %}
+                <td class="bar" style="left: {{ forloop.counter0 }}00px; background-color: {{ serie.color }};height: {{ serie.percentage|column_chart_height }}px;">
+                    <p>{{ serie.value }}</p>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="column-chart-ticks">
+        <div class="tick" style="height: 60px;"><p>100</p></div>
+        <div class="tick" style="height: 60px;"><p>80</p></div>
+        <div class="tick" style="height: 60px;"><p>60</p></div>
+        <div class="tick" style="height: 60px;"><p>40</p></div>
+        <div class="tick" style="height: 60px;"><p>20</p></div>
+        <div class="tick" style="height: 60px; border-bottom:none"><p>0</p></div>
+    </div>
+    {% for key, series in data.normalized.items %}
+    {% if forloop.first %}
+        {% include "app/charts/legend.html" %}
+    {% endif %}
+    {% endfor %}
+</div>
+</div>
+<div class="clearfix"></div>

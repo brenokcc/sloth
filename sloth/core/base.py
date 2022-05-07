@@ -117,7 +117,7 @@ class ModelMixin(object):
             values = []
             for attr_name in select_fields:
                 values.append(getattr(self, attr_name))
-            return render_to_string('adm/select.html', dict(obj=self, values=values))
+            return render_to_string('app/select.html', dict(obj=self, values=values))
         return None
 
     def __str__(self):

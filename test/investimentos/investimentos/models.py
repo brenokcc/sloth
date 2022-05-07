@@ -417,7 +417,7 @@ class Demanda(models.Model):
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @template('adm/formatters/progress')
+    @template('app/formatters/progress')
     @verbose_name('Respostas do Questionário')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()

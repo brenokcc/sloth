@@ -5,7 +5,7 @@ URLS_FILE_CONTENT = '''from django.urls import path, include
 
 urlpatterns = [
     path('', include('sloth.api.urls')),
-    path('', include('sloth.admin.urls')),
+    path('', include('sloth.app.urls')),
 ]
 '''
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
                 settings = '{}\n{}'.format(file.read(), settings)
                 settings = "import os\n{}".format(settings)
             settings = settings.replace(
-                'APPS = [', "APPS = [\n    '{}',\n    'oauth2_provider',\n    'sloth.api',\n    'sloth.admin',".format(
+                'APPS = [', "APPS = [\n    '{}',\n    'oauth2_provider',\n    'sloth.api',\n    'sloth.app',".format(
                     project_dir_name
                 )
             )

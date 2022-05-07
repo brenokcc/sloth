@@ -7,15 +7,15 @@ from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
-from ..admin.templatetags.tags import is_ajax
+from ..app.templatetags.tags import is_ajax
 
 
 def context_processor(request):
     if request.user.is_authenticated and ('menu' not in request.session or settings.DEBUG):
-        if request.path.startswith('/adm/') and not is_ajax(request):
+        if request.path.startswith('/app/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []
-            if request.path == '/adm/':
+            if request.path == '/app/':
                 request.session['stack'].clear()
                 request.session['stack'].append(request.path)
             elif request.path in request.session['stack']:

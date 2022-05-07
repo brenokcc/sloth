@@ -106,7 +106,7 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def login(self, username, password):
         self.current_username = username
-        self.open('/adm/login/')
+        self.open('/app/login/')
         self.enter('Login', username)
         self.enter('Senha', password)
         self.click_button('Acessar')

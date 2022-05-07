@@ -34,7 +34,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'oauth2_provider',
     'sloth.api',
-    'sloth.admin',
+    'sloth.app',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

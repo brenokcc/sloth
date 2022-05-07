@@ -69,12 +69,15 @@ class QuerySet(models.QuerySet):
     def _get_list_search(self):
         return self.metadata['search']
 
-    def _get_list_display(self):
+    def _get_list_display(self, add_id=False):
         if self.metadata['display']:
             list_display = self.metadata['display']
         else:
             list_display = self.model.default_list_fields()
-        return [name for name in list_display if name not in self.metadata['ignore']]
+        display = [name for name in list_display if name not in self.metadata['ignore']]
+        if add_id:
+            display.insert(0, 'id')
+        return display
 
     def _get_list_filter(self):
         if self.metadata['filters']:
@@ -257,7 +260,7 @@ class QuerySet(models.QuerySet):
             actions = self.get_obj_actions(obj)
             if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
                 actions.append('view')
-            item = obj.values(*self._get_list_display()).load(verbose=verbose, formatted=formatted, size=False)
+            item = obj.values(*self._get_list_display(add_id=True)).load(verbose=verbose, formatted=formatted, size=False)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -518,9 +521,9 @@ class QuerySet(models.QuerySet):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('adm/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
         return render_to_string(
-            'adm/queryset/queryset.html',
+            'app/queryset/queryset.html',
             dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.metadata['request'])),
             request=self.metadata['request']
         )
@@ -632,21 +635,21 @@ class QuerySet(models.QuerySet):
     # rendering template functions
 
     def cards(self):
-        self.metadata['template'] = 'adm/queryset/cards.html'
+        self.metadata['template'] = 'app/queryset/cards.html'
         return self
 
     def accordion(self):
-        self.metadata['template'] = 'adm/queryset/accordion.html'
+        self.metadata['template'] = 'app/queryset/accordion.html'
         return self
 
     def datatable(self):
-        self.metadata['template'] = 'adm/queryset/datatable.html'
+        self.metadata['template'] = 'app/queryset/datatable.html'
         return self
 
     def rows(self):
-        self.metadata['template'] = 'adm/queryset/rows.html'
+        self.metadata['template'] = 'app/queryset/rows.html'
         return self
 
     def timeline(self):
-        self.metadata['template'] = 'adm/queryset/timeline.html'
+        self.metadata['template'] = 'app/queryset/timeline.html'
         return self

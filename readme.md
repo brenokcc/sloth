@@ -1,6 +1,6 @@
 # Sloth
 
-![Kiku](sloth/admin/static/images/sloth.png)
+![Kiku](sloth/app/static/images/sloth.png)
 
 
 ## Installation

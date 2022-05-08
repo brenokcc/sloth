@@ -1,0 +1,278 @@
+{% load tags %}
+{% if uuid is None or request.GET.uuid is None %}
+{% if not data.metadata.is_admin  %}
+<div class="card">
+        <div class="card-body">
+{% endif %}
+<div class="queryset" id="queryset-{{ data.uuid }}">
+    {% if data.metadata.collapsed or compact %}
+        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+            <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
+        </div>
+    {% else %}
+        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}">
+            <h2>{% if data.icon %}<i class="bi bi-{{ data.icon }}"></i>{% endif %} {{ data.name }}</h2>
+        </div>
+    {% endif %}
+    <div class="queryset-container" id="queryset-container{{ data.uuid }}">
+    {% include "app/queryset/actions/global.html" %}
+    <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}" style="{% if data.metadata.collapsed or compact or request|mobile %}display:none{% endif %}">
+        <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
+            <input type="hidden" name="uuid" value="{{ data.uuid }}">
+            <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
+            <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
+            <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
+            <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
+            {% if data.metadata.search %}
+            <div class="filter">
+                <label>Busca:</label>
+                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}">
+            </div>
+            {% endif %}
+            {% for name, metadata in data.metadata.filters.items %}
+            <div class="filter {% if metadata.hidden %}d-none{% endif %}">
+                <label>{{ name|truncatechars:25 }}</label>
+                {% if metadata.type == "choices" %}
+                <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
+                    {% if metadata.choices %}
+                        <option value=""></option>
+                        {% for choice in metadata.choices %}
+                            <option value="{{ choice.id|stringformat:'s' }}">{{ choice.text }}</option>
+                        {% endfor %}
+                    {% else %}
+                        {% if metadata.value %}
+                            <option selected value="{{ value }}">{{ metadata.value }}</option>
+                        {% endif %}
+                    {% endif %}
+                </select>
+                <script>
+                   $('.{{ metadata.key }}-{{ data.uuid }}').select2({
+                    width: 'resolve',
+                      language: 'pt-BR',
+                      allowClear: true,
+                      placeholder: 'Selecione uma opção',
+                      {% if metadata.choices is None %}
+                      ajax: {
+                        url: "/app{{ data.path }}?choices={{ metadata.key }}",
+                        dataType: 'json',
+                        delay: 250,
+                        minimumInputLength: 3,
+                        data: function (params) {
+                          return { term: params.term };
+                        },
+                        processResults: function (data) {
+                          return { results: data.items };
+                        },
+                        templateResult: function (data) {
+                            return data.html || 'Buscando...';
+                        },
+                        templateSelection: function (data) {
+                            return data.text;
+                        }
+                      }
+                      {% endif %}
+                   });
+                </script>
+                {% endif %}
+                {% if metadata.type == "boolean" %}
+                <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
+                    <option></option>
+                    <option {% if metadata.value == True %}selected{% endif %} value="1">Sim</option>
+                    <option {% if metadata.value == False %}selected{% endif %} value="0">Não</option>
+                </select>
+                <script>
+                       $('.{{ metadata.key }}-{{ data.uuid }}').select2({
+                        language: 'pt-BR',
+                        allowClear: true,
+                        placeholder: 'Selecione uma opção',
+                       });
+                </script>
+                {% endif %}
+                {% if metadata.type == "date" or metadata.type == "datetime" %}
+                <input type="text" name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}"
+                       placeholder="Informe um data" style="padding-left:10px">
+                <script>
+                        $(function() {
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker($.datepicker.regional['pt-BR']);
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "dateFormat", 'dd/mm/yy');
+                            $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "width", '');
+                        });
+                </script>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="submit-panel">
+                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
+                    <div class="spinner-border spinner-border-sm d-none" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+    {% if data.attach %}
+    <div class="clearfix"></div>
+    <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
+        <ul class="nav nav-pills nav-fill">
+            {% for subset in data.attach.values %}
+          <li class="nav-item">
+            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
+                <div class="spinner-border spinner-border-sm d-none" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="nav-link-text">{{ subset.name }}</span>
+                <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %} total-{{ subset.key }}">{{ subset.count }}</span>
+            </a>
+          </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <script>
+        function reload{{ data.uuid }}(subset){
+            $(document.body).addClass('page-loading');
+            if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
+            else $('#subset-{{ data.uuid }}').val(subset);
+            $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').removeClass('d-none');
+            $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
+            $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).addClass('active').find('.badge').removeClass('text-white').removeClass('bg-primary').addClass('bg-white').addClass('text-primary');
+            var data = $('#form-{{ data.uuid }}').serialize();
+            $.ajax({
+                url:'/app{{ data.path }}',
+                data:data,
+                success:function( html ) {
+                    $('#queryset-data-{{ data.uuid }}').html(html).initialize();
+                    $(document.body).removeClass('page-loading');
+                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('.spinner-border').addClass('d-none');
+                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('i').removeClass('d-none');
+                    $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').addClass('d-none');
+                }
+            });
+        }
+        {% if data.attach %}
+        function onreload{{ data.uuid }}(){
+            $.ajax({
+                dataType: 'json',
+                url: '/app{{ data.path }}?attaches=',
+                success:function( totals ) {
+                    for (const [key, value] of Object.entries(totals)) {
+                        if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
+                    }
+                }
+            });
+        }
+        {% endif %}
+        function toggleActions{{ data.uuid }}(input){
+            if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
+            if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance, .dropdown-toggle.model').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.queryset').removeClass('disabled');
+            } else {
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').addClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model, .dropdown-toggle.instance').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').removeClass('disabled');
+                $('#queryset-{{ data.uuid }}').find('.btn.queryset').addClass('disabled');
+            }
+        }
+        function slideSearchAndFilters{{ data.uuid }}(){
+            if($('#search-and-filters-{{ data.uuid }}').css('display') == 'none'){
+                $('#search-and-filters-{{ data.uuid }}').slideDown();
+            } else {
+                $('#search-and-filters-{{ data.uuid }}').slideUp();
+            }
+        }
+    </script>
+
+    <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
+{% else %}
+        <!--<h5>{{ data.name }}</h5>-->
+{% endif %}
+
+{% if data.metadata.calendar %}
+    {% include "app/queryset/calendar.html" with data=data %}
+{% endif %}
+
+{% if data.metadata.pagination.total %}
+<div class="clearfix" id="pagination-info-{{ data.uuid }}">
+    <div class="float-start">
+        <div class="mt-3 mb-3">
+            {% if data.metadata.pagination.pages|length > 1 %}
+            Exibindo {{ data.metadata.pagination.interval }} de
+            <strong>
+                {{ data.metadata.pagination.total }} registro{% if data.metadata.pagination.total > 1 %}s{% endif %}
+            </strong>
+            {% endif %}
+        </div>
+    </div>
+    <div class="float-end">
+        <div class="mt-3 mb-3">
+            <a href="javascript:"><i class="bi bi-funnel" onclick="slideSearchAndFilters{{ data.uuid }}()"></i></a>
+            <!--<a href="/app{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
+            <!--<a href="/app{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
+            <!--<a href="/app{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
+            <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}();"></i></a>
+        </div>
+    </div>
+</div>
+
+{% if data.metadata.total is not None %}
+<div class="float-end">
+    <h3>Total: {{ data.metadata.total|format }}</h3>
+</div>
+<div class="clear-fix">&nbsp;</div>
+{% endif %}
+
+{% endif %}
+
+{% if data.template %}
+    {% include data.template with data=data %}
+{% else %}
+    {% include "app/queryset/datatable.html" with data=data %}
+{% endif %}
+{% include "app/queryset/actions/batch.html" %}
+{% if data.metadata.pagination.pages|length > 1 %}
+
+    <nav aria-label="Page navigation example">
+  <ul class="pagination" style="overflow-x:hidden">
+    {% for page in data.metadata.pagination.pages %}
+       {% if forloop.counter|add:3 == data.metadata.pagination.pages|length and not forloop.counter == 5 %}
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+        </li>
+       {% endif %}
+        <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
+            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
+                {% if forloop.first or forloop.last %}
+                    {% if forloop.first %}
+                        {% if request|mobile or compact %}{{ page }}{% else %}Primeira{% endif %}
+                    {% else %}
+                        {% if request|mobile or compact %}{{ page }}{% else %}Última{% endif %}
+                    {% endif %}
+                {% else %}
+                    {{ page }}
+                {% endif %}
+            </a>
+        </li>
+      {% if forloop.counter == 4 %}
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
+{% if uuid is None or request.GET.uuid is None %}
+    </div>
+    </div>
+</div>
+{% if not data.metadata.is_admin  %}
+            </div>
+    </div>
+{% endif %}
+{% endif %}
+

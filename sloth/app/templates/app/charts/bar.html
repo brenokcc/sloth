@@ -1,0 +1,69 @@
+{% for key, series in data.normalized.items %}
+<style>
+.bar-chart dl{
+  display: flex;
+  background-color: white;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+  padding: 20px;
+  overflow-x: hidden;
+}
+.bar-chart dd{
+    margin-bottom: 0px;
+}
+.bar-chart .text {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  width: 130px;
+  background-color: white;
+  position: absolute;
+  left: 0;
+  justify-content: flex-start;
+}
+.bar-chart .percentage {
+  line-height: 1;
+  width: 100%;
+  height: 40px;
+  margin-left: 130px;
+  background: repeating-linear-gradient(
+    to right, #ddd, #ddd 1px, #fff 1px, #fff 5%
+  );
+}
+.bar-chart .percentage:after {
+    content: "";
+    display: block;
+    width: 50px;
+    margin-bottom: 10px;
+    height: 90%;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background-color .3s ease;
+}
+.bar-chart .percentage:hover,
+.bar-chart .percentage:focus {
+       background-color: #aaa;
+}
+{% for serie in series %}
+    .bar-chart .percentage-{{ serie.percentage }}:after{
+        width: {{ serie.percentage }}%;
+        padding:1px;
+        color: #FFF;
+        background-color: {{ serie.color }};
+    }
+{% endfor %}
+
+</style>
+<div class="bar-chart">
+    <dl class="barchart">
+        {% for serie in series %}
+        <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
+        {% endfor %}
+    </dl>
+    {% include "app/charts/legend.html" %}
+</div>
+<div class="clearfix"></div>
+{% endfor %}

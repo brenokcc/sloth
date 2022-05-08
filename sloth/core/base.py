@@ -4,8 +4,8 @@ from django.template.loader import render_to_string
 from sloth.utils import pretty
 
 from sloth.actions import Action
-from sloth.core.values import ValueSet
-from sloth.core.query import QuerySet
+from sloth.core.valueset import ValueSet
+from sloth.core.queryset import QuerySet
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
 SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
@@ -118,7 +118,7 @@ class ModelMixin(object):
             values = []
             for attr_name in select_fields:
                 values.append(getattr(self, attr_name))
-            return render_to_string('adm/select.html', dict(obj=self, values=values))
+            return render_to_string('app/select.html', dict(obj=self, values=values))
         return None
 
     def __str__(self):
@@ -269,12 +269,15 @@ class ModelMixin(object):
         return search
 
     @classmethod
-    def get_attr_verbose_name(cls, lookup):
+    def get_attr_metadata(cls, lookup):
         field = cls.get_field(lookup)
         if field:
-            return str(getattr(field, 'verbose_name', lookup)), True
+            return str(getattr(field, 'verbose_name', lookup)), True, None
         attr = getattr(cls, lookup)
-        return getattr(attr, '__verbose_name__', lookup), False
+        template = getattr(attr, '__template__', None)
+        if template and not template.endswith('.html'):
+            template = '{}.html'.format(template)
+        return getattr(attr, '__verbose_name__', lookup), False, template
 
     @classmethod
     def get_attr_api_type(cls, lookup):

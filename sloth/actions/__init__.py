@@ -434,7 +434,7 @@ class Action(metaclass=ActionMetaclass):
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(
-                ['adm/form.html'], dict(
+                ['app/form.html'], dict(
                     self=self, fieldsets=self.fieldsets
                 ),
                 request=self.request

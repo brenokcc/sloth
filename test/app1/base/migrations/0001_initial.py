@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Instituto',
                 'verbose_name_plural': 'Instituto',
-                'list_template': 'adm/queryset/cards',
+                'list_template': 'app/queryset/cards',
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),
@@ -156,7 +156,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Frequência',
                 'verbose_name_plural': 'Frequências',
-                'list_template': 'adm/queryset/timeline',
+                'list_template': 'app/queryset/timeline',
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

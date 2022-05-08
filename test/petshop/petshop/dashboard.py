@@ -1,4 +1,4 @@
-from sloth.admin.dashboard import Dashboard
+from sloth.app.dashboard import Dashboard
 from .models import Animal, Cliente, Doenca, Tratamento
 
 class PetshopDashboard(Dashboard):

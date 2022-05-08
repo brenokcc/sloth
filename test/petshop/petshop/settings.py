@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'petshop',
     'oauth2_provider',
     'sloth.api',
-    'sloth.admin',
+    'sloth.app',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -66,7 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'sloth.views.context_processor'
+                'sloth.core.views.context_processor'
             ],
         },
     },

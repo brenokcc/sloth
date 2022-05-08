@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
-from .. import views
+from ..core import views
 from ..api import OpenApi
 
 
@@ -23,7 +23,9 @@ def endpoint(func):
         try:
             if views.is_authenticated(request):
                 data = func(request, *args, **kwargs)
-                return ApiResponse(data.serialize(wrap=False, verbose=False), safe=False)
+                wrap = request.path.startswith('/meta')
+                verbose = request.path.startswith('/meta')
+                return ApiResponse(data.serialize(wrap=wrap, verbose=verbose), safe=False)
             else:
                 return ApiResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403
@@ -56,6 +58,4 @@ def index(request):
 @csrf_exempt
 @endpoint
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
-    if x == 'all':
-        return dispatcher(request, app_label, model_name)
-    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    return views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w)

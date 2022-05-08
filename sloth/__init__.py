@@ -4,7 +4,7 @@ from django.db.models import manager
 from django.db.models.base import ModelBase
 
 from sloth.core.base import ModelMixin
-from sloth.core.query import QuerySet
+from sloth.core.queryset import QuerySet
 
 
 PROXIED_MODELS = []

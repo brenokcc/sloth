@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.shortcuts import render
 from .models import Ciclo, Mensagem, Gestor, Notificacao
-from sloth.admin.gadgets import Cards, Gadget
+from sloth.app.gadgets import Cards, Gadget
 
 
 class Instrucoes(Gadget):

@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'simulado',
     'oauth2_provider',
     'sloth.api',
-    'sloth.admin',
+    'sloth.app',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -66,7 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'sloth.views.context_processor'
+                'sloth.core.views.context_processor'
             ],
         },
     },
@@ -143,7 +143,7 @@ OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
 LOGO = '/static/images/logo.png'
-INDEX_TEMPLATE = 'adm/index.html'
+INDEX_TEMPLATE = 'app/index.html'
 LOGIN_IMAGE = '/static/images/simulado.jpeg'
 LOGIN_BACKGROUND = None
 NAME = 'Simul@ado'

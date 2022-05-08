@@ -210,12 +210,11 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                         return result
                                 return form
                             raise PermissionDenied()
-                    raise PermissionDenied()
-                else:
-                    output = attr().attr(x).contextualize(request)
-                    if not is_ajax(request):
-                        output = output.source(model.objects)
-                    return output
+                    else:
+                        output = attr().attr(x).contextualize(request)
+                        if not is_ajax(request):
+                            output = output.source(model.objects)
+                        return output
                 raise PermissionDenied()
             else:
                 if y:

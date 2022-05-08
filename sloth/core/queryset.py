@@ -254,14 +254,14 @@ class QuerySet(models.QuerySet):
 
     # serialization function
 
-    def to_list(self, wrap=False, verbose=False):
+    def to_list(self, wrap=False, verbose=False, detail=True):
         data = []
         for obj in self:
             add_id = not wrap and not verbose
             actions = self.get_obj_actions(obj)
             if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
                 actions.append('view')
-            item = obj.values(*self._get_list_display(add_id=add_id)).load(verbose=verbose, size=False)
+            item = obj.values(*self._get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -275,7 +275,7 @@ class QuerySet(models.QuerySet):
                     header.append(getattr(attr, 'verbose_name', attr_name))
                 data.append(header)
             row = []
-            values = obj.values(*self._get_list_display()).load(verbose=False, size=False).values()
+            values = obj.values(*self._get_list_display()).load(wrap=False, verbose=False, detail=False).values()
             for value in values:
                 if value is None:
                     value = ''
@@ -315,7 +315,7 @@ class QuerySet(models.QuerySet):
             filters = self._get_filters(verbose)
             attach = self._get_attach(verbose)
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
-            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose)
+            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
             n = self.count() // self._get_list_per_page() + 1
             for page in range(0, n):
@@ -379,7 +379,7 @@ class QuerySet(models.QuerySet):
                     template = template if template.endswith('.html') else '{}.html'.format(template)
                     data.update(template=template)
             return data
-        return self.to_list()
+        return self.to_list(detail=False)
 
     def debug(self):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
@@ -631,7 +631,7 @@ class QuerySet(models.QuerySet):
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return attr is None or attr(user)
+        return attr is None or user.is_superuser or attr(user)
 
     # rendering template functions
 

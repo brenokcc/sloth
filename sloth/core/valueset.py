@@ -112,7 +112,7 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=True, verbose=False, size=False):
+    def load(self, wrap=True, verbose=False, detail=False):
         only = []
         if self.metadata['request'] and 'only' in self.metadata['request'].GET:
             only.extend(self.metadata['request'].GET['only'].split(','))
@@ -144,7 +144,7 @@ class ValueSet(dict):
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                         else:
-                            value = value.to_list()
+                            value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])
@@ -159,7 +159,7 @@ class ValueSet(dict):
                         image_attr_name = getattr(value, 'metadata')['image']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
-                        value.load(wrap=wrap, verbose=verbose, size=wrap and verbose or size)
+                        value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail)
                         value = dict(
                             uuid=uuid1().hex, type='fieldset',
                             name=verbose_name if verbose else attr_name, key=key, actions=[], data=value, path=path
@@ -188,7 +188,7 @@ class ValueSet(dict):
                         self.metadata['primitive'] = True
                         value = serialize(value)
 
-                        if size and wrap and verbose:
+                        if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)
                             if template and not template.endswith('.html'):
                                 template = '{}.html'.format(template)
@@ -210,7 +210,7 @@ class ValueSet(dict):
         return json.dumps(self, indent=4, ensure_ascii=False)
 
     def serialize(self, wrap=False, verbose=False):
-        self.load(wrap=wrap, verbose=verbose, size=wrap and verbose)
+        self.load(wrap=wrap, verbose=verbose, detail=wrap and verbose)
         if wrap:
             data = {}
             if self.metadata['primitive']:

@@ -9,7 +9,7 @@
                 {% if image_key %}
                     {% for k, v in row.data.items %}
                         {% if k == image_key %}
-                            <img class="card-img-top" src="{{ v|image_src }}">
+                            <img class="card-img-top" src="{{ v.value|image_src }}">
                         {% endif %}
                     {% endfor %}
                 {% endif %}
@@ -22,15 +22,7 @@
                         {% for k, v in row.data.items %}
                             {% if k != image_key %}
                                 <dt>{{ k }}</dt>
-                                <dd>
-                                    {% with display=data.metadata.display|get_item:k %}
-                                        {% if display.template %}
-                                            {% include display.template with value=v %}
-                                        {% else %}
-                                            {{ v|format|linebreaks }}
-                                        {% endif %}
-                                    {% endwith %}
-                                </dd>
+                                <dd>{% include "app/value.html" %}</dd>
                             {% endif %}
                         {% endfor %}
                     </dl>

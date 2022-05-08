@@ -53,7 +53,7 @@ class ModelMixin(object):
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return attr is None or attr(user)
+        return  attr is None or user.is_superuser or attr(user)
 
     def has_fieldset_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)

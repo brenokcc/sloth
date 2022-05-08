@@ -1,0 +1,22 @@
+{% load tags %}
+
+{% if v|is_valueset %}
+    <dl>
+    {% for k2, v2 in v.items %}
+        <dt>{{ k2 }}</dt>
+        <dd>
+            {% if v2.template %}
+                {% include v2.template with value=v2.value %}
+            {% else %}
+                {{ v2.value|format|linebreaks }}
+            {% endif %}
+        </dd>
+    {% endfor %}
+    </dl>
+{% else %}
+    {% if v.template %}
+        {% include v.template with value=v.value %}
+    {% else %}
+        {{ v.value|format|linebreaks }}
+    {% endif %}
+{% endif %}

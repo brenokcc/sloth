@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
 from pathlib import Path
-from sloth.conf.settings import *
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -114,7 +113,44 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-MEDIA_URL = '/media/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_URL = '/media/'
+LANGUAGE_CODE = 'pt-br'
+TIME_ZONE = 'America/Recife'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = False
+DECIMAL_SEPARATOR = ','
+USE_THOUSAND_SEPARATOR = True
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
+OAUTH2_PROVIDER = {
+    'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
+}
+
+SLOTH = {
+	'NAME': 'Sloth',
+	'ICON': '/static/images/sloth.png',
+	'FAVICON': None,
+	'VERSION': 1.0,
+	'LOGIN': {
+		'LOGO': '/static/images/sloth.png',
+		'TITLE': None,
+		'TEXT': None,
+		'IMAGE': None,
+	},
+	'HEADER': {
+		'LOGO': '/static/images/sloth.png',
+		'TITLE': None,
+		'TEXT': None,
+	},
+	'FOOTER': {
+		'TITLE': None,
+		'TEXT': None,
+		'LINKS': [],
+	},
+	'INCLUDE': {
+		'CSS': [],
+		'JS': [],
+	}
+}

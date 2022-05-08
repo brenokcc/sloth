@@ -8,7 +8,7 @@ class IniciarTratamento(actions.Action):
         fields = 'doenca', 'data_inicio'
         related_field = 'animal'
         has_permission = 'Funcionário',
-        refresh = 'get_dados_gerais',
+        refresh = 'get_dados_gerais', 'get_tratamentos_por_doenca'
 
 class ExcluirTratamento(actions.Action):
 
@@ -29,7 +29,7 @@ class RegistrarProcedimento(actions.Action):
         model = Procedimento
         related_field = 'tratamento'
         has_permission = 'Funcionário',
-        refresh = 'get_eficacia',
+        refresh = 'get_eficacia', 'get_procedimentos_por_tipo'
 
     def has_permission(self, user):
         return self.instantiator.eficaz is None

@@ -219,7 +219,7 @@ class ServidorManager(models.Manager):
             'DefinirSetor'
         ).global_actions(
             'FazerAlgumaCoisa'
-        ).template('app/queryset/cards')
+        ).cards()
 
     def com_endereco(self):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')

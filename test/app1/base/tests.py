@@ -113,18 +113,11 @@ class ApiTestCase(ServerTestCase):
 
         self.get('/api/base/servidor/1/')
         self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/', dict(nome='Emanoel'))
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor1/', dict(nome='Emanoel'))
         self.get('/api/base/servidor/1/get_dados_gerais/')
         self.get('/api/base/servidor/1/get_ferias/')
         self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
         self.get('/api/base/servidor/1/get_ferias/')
-
-
-class MenuTestCase(TestCase):
-
-    def test(self):
-        items = utils.load_menu(None)
-        log(items)
 
 
 class Oauth2TestCase(ServerTestCase):
@@ -149,9 +142,9 @@ class Oauth2TestCase(ServerTestCase):
         self.logout()
 
         data = dict(
-            client_id=app['access_data']['client_id']['value'],
-            client_secret=app['access_data']['client_secret']['value'],
-            grant_type=app['access_data']['authorization_grant_type']['value'],
+            client_id=app['access_data']['client_id'],
+            client_secret=app['access_data']['client_secret'],
+            grant_type=app['access_data']['authorization_grant_type'],
             username=admin.username,
             password='123',
             scope='public'

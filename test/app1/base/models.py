@@ -225,10 +225,10 @@ class ServidorManager(models.Manager):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     def sem_endereco(self):
-        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).template('app/queryset/cards')
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).cards()
 
     def ativos(self):
-        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').template('app/queryset/rows')
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').rows()
 
     def inativos(self):
         return self.filter(ativo=False).actions('AtivarServidor')
@@ -303,7 +303,7 @@ class Servidor(models.Model):
 
     def get_frequencias(self):
         return self.frequencia_set.limit_per_page(3).global_actions('RegistrarPonto').actions(
-            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').template('app/queryset/accordion')
+            'HomologarFrequencia').batch_actions('FazerAlgumaCoisa').ignore('servidor').accordion()
 
     def get_ferias(self):
         return self.ferias_set.display(
@@ -312,7 +312,7 @@ class Servidor(models.Model):
             'AlterarFerias', 'ExcluirFerias'
         ).global_actions(
             'CadastrarFerias'
-        ).template('app/queryset/timeline').ignore('servidor')
+        ).timeline().ignore('servidor')
 
     def get_dados_recursos_humanos(self):
         return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')

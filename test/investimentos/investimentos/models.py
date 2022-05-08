@@ -72,7 +72,7 @@ class Categoria(models.Model):
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
-        ).order_by('ordem').actions('edit', 'delete').template('adm/queryset/accordion')
+        ).order_by('ordem').actions('edit', 'delete').accordion()
 
     @verbose_name('Quantidade de Perguntas')
     def get_quantidade_perguntas(self):

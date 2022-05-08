@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
+from sloth.utils import pretty
 
 from sloth.actions import Action
 from sloth.core.values import ValueSet
@@ -301,20 +302,23 @@ class ModelMixin(object):
         url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
         info = dict()
-        info[url] = [('get', 'List', 'List objects', {'type': 'string'}, None)]
+        info[url] = [
+            ('get', 'List', 'List objects', {'type': 'string'}, None),
+            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
+            ('put', 'Edit', 'Edit object', {'type': 'string'}, cls.edit_form_cls()),
+        ]
         info['{}{{id}}/'.format(url)] = [
             ('get', 'View', 'View object', instance.view().get_api_schema(), None),
-            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
-            ('put', 'Edit', 'Edit object', {'type': 'string'}, None),
         ]
         for name, attr in cls.__dict__.items():
-            if hasattr(attr, 'decorated'):
+            if name.startswith('get_') and not hasattr(attr, 'decorated'):
                 try:
                     v = getattr(instance, name)()
                 except BaseException as e:
                     continue
+                verbose_name = pretty(name)
                 info['{}{{id}}/{}/'.format(url, name)] = [
-                    ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}, None),
+                    ('get', verbose_name, 'View {}'.format(verbose_name), {'type': 'string'}, None),
                 ]
                 if isinstance(v, ValueSet):
                     for action in v.metadata['actions']:
@@ -327,7 +331,6 @@ class ModelMixin(object):
                         info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
                             ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
                         ]
-
         paths = {}
         for url, data in info.items():
             paths[url] = {}

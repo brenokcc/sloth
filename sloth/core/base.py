@@ -304,37 +304,45 @@ class ModelMixin(object):
         url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
 
         info = dict()
-        info[url] = [('get', 'List', 'List objects', {'type': 'string'}, None)]
+        info[url] = [
+            ('get', 'List', 'List objects', {'type': 'string'}, None),
+            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls())
+        ]
         info['{}{{id}}/'.format(url)] = [
             ('get', 'View', 'View object', instance.view().get_api_schema(), None),
-            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls()),
-            ('put', 'Edit', 'Edit object', {'type': 'string'}, None),
+            ('put', 'Edit', 'Edit object', {'type': 'string'}, cls.edit_form_cls()),
+            ('delete', 'Delete', 'Delete object', {'type': 'string'}, None),
         ]
-        for name, attr in cls.__dict__.items():
-            if hasattr(attr, 'decorated'):
-                try:
-                    v = getattr(instance, name)()
-                except BaseException as e:
-                    continue
-                info['{}{{id}}/{}/'.format(url, name)] = [
-                    ('get', attr.verbose_name, 'View {}'.format(attr.verbose_name), {'type': 'string'}, None),
-                ]
-                if isinstance(v, ValueSet):
-                    for action in v.metadata['actions']:
-                        info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
-                            ('post', action, 'Execute {}'.format(action), v.get_api_schema(), None),
-                        ]
-                elif isinstance(v, QuerySet):
-                    for action in v.metadata['actions']:
-                        forms_cls = cls.action_form_cls(action)
-                        info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
-                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                        ]
+        for name in cls().view().metadata['names']:
+            try:
+                v = getattr(instance, name)()
+            except BaseException as e:
+                continue
+            info['{}{{id}}/{}/'.format(url, name)] = [
+                ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
+            ]
+            if isinstance(v, ValueSet):
+                for action in v.metadata['actions']:
+                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                        ('post', action, 'Execute {}'.format(action), v.get_api_schema(), None),
+                    ]
+            elif isinstance(v, QuerySet):
+                for action in v.metadata['global_actions']:
+                    forms_cls = cls.action_form_cls(action)
+                    info['{}{{id}}/{}/{}/'.format(url, name, action)] = [
+                        ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                    ]
+                for action in v.metadata['actions']:
+                    forms_cls = cls.action_form_cls(action)
+                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                        ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                    ]
 
         paths = {}
         for url, data in info.items():
             paths[url] = {}
             for method, summary, description, schema, form_cls in data:
+                body = []
                 params = []
                 if '{id}' in url:
                     params.append(
@@ -347,11 +355,25 @@ class ModelMixin(object):
                 if form_cls:
                     form = form_cls(request=request)
                     form.load_fieldsets()
-                    params.extend(form.get_api_params())
+                    body = form.get_api_params()
                 paths[url][method] = {
                     'summary': summary,
                     'description': description,
                     'parameters': params,
+                    'requestBody': {
+                        'content': {
+                            'application/x-www-form-urlencoded': {
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {param['name']: {
+                                        'description': param['description'],
+                                        'type': param['schema']['type']
+                                    } for param in body},
+                                    'required': [param['name'] for param in body if param['required']]
+                                }
+                            }
+                        }
+                    } if body else None,
                     'responses': {
                         '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
                     },

@@ -462,7 +462,7 @@ class Action(metaclass=ActionMetaclass):
             q=q, items=items
         )
 
-    def redirect(self, url=None, message=None, style='sucess'):
+    def redirect(self, url=None, message=None, style='success'):
         if url is None:
             url = '..' if self.fields or self.is_modal() else '.'
         self.response.update(type='redirect', url=url)

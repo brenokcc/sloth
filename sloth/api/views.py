@@ -2,6 +2,7 @@
 
 import traceback
 from django.shortcuts import render
+from django.http import QueryDict
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -58,4 +59,14 @@ def index(request):
 @csrf_exempt
 @endpoint
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
-    return views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w)
+    if request.method == 'GET' and x == 'all':
+        x = None
+    if request.method == 'POST' and x is None and y is None:
+        x = 'add'
+    if request.method == 'PUT' and x is not None and y is None:
+        request.POST = QueryDict(request.body)
+        y = 'edit'
+    if request.method == 'DELETE' and x is not None and y is None:
+        request.POST = QueryDict('confirmation=1')
+        y = 'delete'
+    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)

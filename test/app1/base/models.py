@@ -225,7 +225,7 @@ class ServidorManager(models.Manager):
         return self.display('get_foto', 'get_dados_gerais').filter(endereco__isnull=False).actions('CorrigirNomeServidor')
 
     def sem_endereco(self):
-        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).cards()
+        return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(endereco__isnull=True).cards()#.view('get_total_ferias_por_ano')
 
     def ativos(self):
         return self.display('get_dados_gerais', 'ativo', 'naturalidade', 'setor').filter(ativo=True).batch_actions('InativarServidores').rows()

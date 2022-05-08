@@ -354,10 +354,12 @@ class QuerySet(models.QuerySet):
                 if self.metadata['totalizer']:
                     data['metadata'].update(total=self.sum(self.metadata['totalizer']))
                 data['actions'].update(model=[], instance=[], queryset=[])
+                view = '{}/'.format(self.metadata['view']) if self.metadata['view'] != 'self' else ''
                 data['actions']['instance'].append(
                     dict(
                         type='view', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                        method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/'.format(path), modal=False
+                        method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/{}'.format(path, view),
+                        modal=False
                     )
                 )
 
@@ -398,8 +400,8 @@ class QuerySet(models.QuerySet):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def view(self, *names):
-        self.metadata['view'] = list(names)
+    def view(self, name):
+        self.metadata['view'] = name
         return self
 
     def display(self, *names):

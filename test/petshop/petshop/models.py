@@ -117,6 +117,18 @@ class Cliente(models.Model):
     def has_permission(self, user):
         return user.roles.contains('Funcionário')
 
+    def get_dados_gerais(self):
+        return self.values(('nome', 'cpf'))
+
+    def get_animais(self):
+        return self.animal_set.all()
+
+    def get_total_gasto_por_tipo_procedimento(self):
+        return Procedimento.objects.filter(tratamento__animal__proprietario=self).sum('tipo__valor', 'tipo')
+
+    def view(self):
+        return self.values('get_dados_gerais', 'get_animais', 'get_total_gasto_por_tipo_procedimento')
+
 
 class AnimalManager(models.Manager):
 

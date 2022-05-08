@@ -24,7 +24,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(uuid=uuid1().hex,
-            display=[], view=['self'], filters={}, dfilters={}, search=[], ordering=[],
+            display=[], view=True, filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
@@ -335,7 +335,7 @@ class QuerySet(models.QuerySet):
             if attach:
                 data.update(attach=attach)
             if path is None:
-                if self.metadata['request'] and self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest':
+                if 0 and self.metadata['request'] and self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest':
                     path = self.metadata['request'].path[4:]
                 else:
                     path = '/{}/{}/'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
@@ -354,14 +354,15 @@ class QuerySet(models.QuerySet):
                 if self.metadata['totalizer']:
                     data['metadata'].update(total=self.sum(self.metadata['totalizer']))
                 data['actions'].update(model=[], instance=[], queryset=[])
-                view = '{}/'.format(self.metadata['view']) if self.metadata['view'] != 'self' else ''
-                data['actions']['instance'].append(
-                    dict(
-                        type='view', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                        method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/{}'.format(path, view),
-                        modal=False
+                if self.metadata['view']:
+                    view = '{}/'.format(self.metadata['view']) if isinstance(self.metadata['view'], str) else ''
+                    data['actions']['instance'].append(
+                        dict(
+                            type='view', key='view', name='Visualizar', submit='Visualizar', target='instance',
+                            method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/{}'.format(path, view),
+                            modal=False
+                        )
                     )
-                )
 
                 for action_type in ('global_actions', 'actions', 'batch_actions'):
                     for form_name in self.metadata[action_type]:

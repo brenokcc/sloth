@@ -96,10 +96,10 @@ class ModelMixin(object):
         names = [field.name for field in self.metaclass().fields]
         return self.values(*names)
 
-    def show(self, *names):
-        if 'self' in names:
-            return self.view()
-        return self.values(*names)
+    def show(self, name):
+        if isinstance(name, str):
+            return self.values(name)
+        return self.view()
 
     def serialize(self, wrap=True, verbose=True):
         return self.view().serialize(wrap=wrap, verbose=verbose)

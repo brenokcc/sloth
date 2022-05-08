@@ -96,7 +96,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
                             if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                return instance.show(*qs.metadata['view']).contextualize(request)
+                                return instance.show(qs.metadata['view']).contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
                             # instances = attr().filter(pk__in=z.split('-'))

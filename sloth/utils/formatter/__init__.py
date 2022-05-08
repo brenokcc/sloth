@@ -8,7 +8,7 @@ from django.db.models.fields.files import FieldFile
 
 
 def format_value(obj):
-    if obj is not None:
+    if obj not in (None, ''):
         if isinstance(obj, str):
             return obj
         elif isinstance(obj, bool):

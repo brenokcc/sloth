@@ -95,6 +95,7 @@ def index(request):
     return HttpResponseRedirect('/app/')
 
 
+@view
 def app(request):
     if request.user.is_authenticated:
         request.COOKIES.get('width')

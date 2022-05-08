@@ -28,8 +28,8 @@ SLOTH = {
 		'TEXT': None,
 	},
 	'FOOTER': {
-		'TITLE': None,
-		'TEXT': None,
+		'TITLE': '© 2022 Slogth',
+		'TEXT': 'Todos os direitos reservados',
 		'LINKS': [],
 	},
 	'INCLUDE': {

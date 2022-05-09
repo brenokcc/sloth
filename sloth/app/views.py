@@ -23,7 +23,7 @@ def view(func):
                 response["X-Frame-Options"] = "SAMEORIGIN"
                 return response
             else:
-                return HttpResponseForbidden()
+                return HttpResponseRedirect('/app/login/')
         except ReadyResponseException as e:
             return e.response
         except JsonReadyResponseException as e:
@@ -97,13 +97,11 @@ def index(request):
 
 @view
 def app(request):
-    if request.user.is_authenticated:
-        request.COOKIES.get('width')
-        return render(
-            request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-            dict(settings=settings, dashboard=dashboard.Dashboards(request))
-        )
-    return HttpResponseRedirect('/app/login/')
+    request.COOKIES.get('width')
+    return render(
+        request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
+        dict(settings=settings, dashboard=dashboard.Dashboards(request))
+    )
 
 
 @view

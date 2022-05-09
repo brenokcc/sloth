@@ -1,10 +1,80 @@
 # -*- coding: utf-8 -*-
 
+from decimal import Decimal
+from django.apps import apps
 from django.db import models
 from django.db.models import *
 from django.db.models import base
+from django.db.models.query_utils import DeferredAttribute
 from sloth.core.queryset import QuerySet
 from sloth.core.base import ModelMixin
+
+
+class GenericModelWrapper(object):
+    def __init__(self, obj):
+        self._wrapped_obj = obj
+
+    def __getattr__(self, attr):
+        if attr == 'prepare_database_save':
+            raise AttributeError()
+        return getattr(self._wrapped_obj, attr)
+
+    def __str__(self):
+        return self._wrapped_obj.__str__()
+
+    def __repr__(self):
+        return self._wrapped_obj.__repr__()
+
+
+class GenericValue(object):
+    def __init__(self, value):
+        if isinstance(value, str) and '::' in value:
+            value_type, value = value.split('::')
+            if '.' in value_type:
+                value = apps.get_model(value_type).objects.get(pk=value)
+            elif value_type == 'str':
+                value = value
+            elif value_type == 'int':
+                value = int(value)
+            elif value_type == 'Decimal':
+                value = Decimal(value)
+            elif value_type == 'float':
+                value = float(value)
+        self.value = value
+
+    def dumps(self):
+        if self.value is not None:
+            if isinstance(self.value, GenericModelWrapper):
+                return '{}.{}::{}'.format(
+                    self.value.metaclass().app_label, self.value.metaclass().model_name, self.value.pk
+                )
+            return '{}::{}'.format(type(self.value).__name__, self.value)
+        return None
+
+class GenericFieldDescriptor(DeferredAttribute):
+    def __get__(self, instance, cls=None):
+        obj = super().__get__(instance, cls=cls)
+        if isinstance(obj.value, Model):
+            return GenericModelWrapper(obj.value)
+        return obj.value
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.field.attname] = GenericValue(value)
+
+
+class GenericField(CharField):
+    descriptor_class = GenericFieldDescriptor
+
+    def __init__(self, *args, max_length=255, null=True, **kwargs):
+        super().__init__(*args, max_length=max_length, null=null, **kwargs)
+
+    def get_prep_value(self, value):
+        if value is not None:
+            if isinstance(value, GenericValue):
+                value = value.dumps()
+            else:
+                value = GenericValue(value).dumps()
+        return value
 
 
 class CharField(CharField):

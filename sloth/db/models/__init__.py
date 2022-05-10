@@ -19,6 +19,12 @@ class GenericModelWrapper(object):
             raise AttributeError()
         return getattr(self._wrapped_obj, attr)
 
+    def __setattr__(self, attr, value):
+        if attr == '_wrapped_obj':
+            super().__setattr__(attr, value)
+        elif self._wrapped_obj is not None:
+            self._wrapped_obj.__setattr__(attr, value._wrapped_obj)
+
     def __str__(self):
         return self._wrapped_obj.__str__()
 
@@ -28,19 +34,22 @@ class GenericModelWrapper(object):
 
 class GenericValue(object):
     def __init__(self, value):
-        if isinstance(value, str) and '::' in value:
-            value_type, value = value.split('::')
-            if '.' in value_type:
-                value = apps.get_model(value_type).objects.get(pk=value)
-            elif value_type == 'str':
-                value = value
-            elif value_type == 'int':
-                value = int(value)
-            elif value_type == 'Decimal':
-                value = Decimal(value)
-            elif value_type == 'float':
-                value = float(value)
         self.value = value
+
+    def get_value(self):
+        if isinstance(self.value, str) and '::' in self.value:
+            value_type, value = self.value.split('::')
+            if '.' in value_type:
+                self.value = apps.get_model(value_type).objects.get(pk=value)
+            elif value_type == 'str':
+                self.value = value
+            elif value_type == 'int':
+                self.value = int(value)
+            elif value_type == 'Decimal':
+                self.value = Decimal(value)
+            elif value_type == 'float':
+                self.value = float(value)
+        return self.value
 
     def dumps(self):
         if self.value is not None:
@@ -51,12 +60,13 @@ class GenericValue(object):
             return '{}::{}'.format(type(self.value).__name__, self.value)
         return None
 
+
 class GenericFieldDescriptor(DeferredAttribute):
     def __get__(self, instance, cls=None):
         obj = super().__get__(instance, cls=cls)
         if isinstance(obj.value, Model):
             return GenericModelWrapper(obj.value)
-        return obj.value
+        return obj.get_value()
 
     def __set__(self, instance, value):
         instance.__dict__[self.field.attname] = GenericValue(value)

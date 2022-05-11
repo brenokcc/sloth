@@ -289,6 +289,8 @@ class QuerySet(models.QuerySet):
         actions = []
         for form_name in self.metadata['actions']:
             form_cls = self.model.action_form_cls(form_name)
+            if form_cls is None:
+                raise BaseException('Action does not exist: {}'.format(form_name))
             if self.metadata['request'] is None or form_cls.check_fake_permission(
                     request=self.metadata['request'], instance=obj
             ):

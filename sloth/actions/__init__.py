@@ -472,6 +472,10 @@ class Action(metaclass=ActionMetaclass):
             messages.add_message(self.request, messages.INFO, message)
             self.response.update(message=message, style=style)
 
+    def run(self, task, message=None):
+        task.start(self.request)
+        self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
+
     def display(self, data=None, **kwargs):
         self.response.update(
             html=render_to_string(['{}.html'.format(self.__class__.__name__)], data or kwargs, request=self.request)

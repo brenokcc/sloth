@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sloth.decorators import verbose_name
+from sloth.decorators import verbose_name, template
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -124,3 +124,49 @@ class Application(AbstractApplication):
 
     def view(self):
         return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')
+
+
+class TaskManager(models.Manager):
+    def all(self):
+        return self
+
+
+class Task(models.Model):
+    STOPPED_TASKS = []
+
+    user = models.ForeignKey(User, verbose_name='Usuário', on_delete=models.CASCADE)
+
+    name = models.CharField(verbose_name='Nome', max_length=255)
+    start = models.DateTimeField(verbose_name='Início', auto_now=True)
+    end = models.DateTimeField(verbose_name='Fim', null=True)
+
+    progress = models.IntegerField(verbose_name='Progresso', default=0)
+    message = models.CharField(verbose_name='Mensagem', null=True, max_length=255)
+    stopped = models.BooleanField(verbose_name='Interrompida', default=False)
+    error = models.TextField(verbose_name='Erro', null=True)
+
+    objects = TaskManager()
+
+    class Meta:
+        verbose_name = 'Tarefa'
+        verbose_name_plural = 'Tarefas'
+
+    def __str__(self):
+        return 'Tarefa {}'.format(self.pk)
+
+    def stop(self):
+        self.stopped = True
+        self.save()
+
+    @template('app/formatters/progress')
+    @verbose_name('Progresso')
+    def get_progress(self):
+        return self.progress
+
+    def get_info(self):
+        return self.values(
+            ('name', 'user'), ('start', 'end'), 'get_progress', 'message'
+        ).refresh(2).actions('StopTask')
+
+    def view(self):
+        return self.values('get_info')

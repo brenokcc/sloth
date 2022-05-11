@@ -39,6 +39,7 @@ jQuery.fn.extend({
                             $(document).back();
                         }  else if(reader.result.startsWith('/')){
                             //$(document).open(reader.result);
+                            $('#modal').modal('hide');
                             document.location.href = reader.result;
                         } else {
                             callback(reader.result);

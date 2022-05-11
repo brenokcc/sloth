@@ -40,7 +40,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
+            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh=0,
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
@@ -81,6 +81,10 @@ class ValueSet(dict):
 
     def source(self, name):
         self.metadata['source'] = name
+        return self
+
+    def refresh(self, seconds):
+        self.metadata['refresh'] = seconds
         return self
 
     def contextualize(self, request):
@@ -157,12 +161,13 @@ class ValueSet(dict):
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']
+                        refresh = getattr(value, 'metadata')['refresh']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
                         value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail)
                         value = dict(
                             uuid=uuid1().hex, type='fieldset',
-                            name=verbose_name if verbose else attr_name, key=key, actions=[], data=value, path=path
+                            name=verbose_name if verbose else attr_name, key=key, refresh=refresh, actions=[], data=value, path=path
                         ) if wrap else value
                         if wrap:
                             for form_name in actions:

@@ -1,32 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import base64
-from django.conf import settings
 from django.apps import apps
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 from ..app.templatetags.tags import is_ajax
-
-
-def context_processor(request):
-    if request.user.is_authenticated and ('menu' not in request.session or settings.DEBUG):
-        if request.path.startswith('/app/') and not is_ajax(request):
-            if 'stack' not in request.session:
-                request.session['stack'] = []
-            if request.path == '/app/':
-                request.session['stack'].clear()
-                request.session['stack'].append(request.path)
-                request.session.save()
-            elif request.path in request.session['stack']:
-                index = request.session['stack'].index(request.path)
-                request.session['stack'] = request.session['stack'][0:index+1]
-            else:
-                request.session['stack'].append(request.path)
-            referrer =  request.session['stack'][-2] if len(request.session['stack']) > 1 else None
-            return dict(referrer=referrer)
-    return {}
 
 
 def is_authenticated(request):

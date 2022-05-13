@@ -35,9 +35,6 @@ if __name__ == "__main__":
             settings_content = open(settings_path).read().replace(
                 "'django.contrib.admin'",
                 "'{}', 'oauth2_provider', 'sloth.api', 'sloth.app'".format(name)
-            ).replace(
-                "'django.template.context_processors.debug'",
-                "'django.template.context_processors.debug', 'sloth.core.views.context_processor'"
             )
             settings_append = open(settings.__file__).read().replace('# ', '')
             with open(settings_path, 'w') as file:

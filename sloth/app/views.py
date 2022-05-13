@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpR
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
+from .templatetags.tags import is_ajax
 from ..core import views
 from ..actions import Action, LoginForm, PasswordForm
 
@@ -18,12 +19,9 @@ def view(func):
     def decorate(request, *args, **kwargs):
         try:
             # import time; time.sleep(0.5)
-            if views.is_authenticated(request):
-                response = func(request, *args, **kwargs)
-                response["X-Frame-Options"] = "SAMEORIGIN"
-                return response
-            else:
-                return HttpResponseRedirect('/app/login/')
+            response = func(request, *args, **kwargs)
+            response["X-Frame-Options"] = "SAMEORIGIN"
+            return response
         except ReadyResponseException as e:
             return e.response
         except JsonReadyResponseException as e:
@@ -37,6 +35,26 @@ def view(func):
             raise e
 
     return decorate
+
+
+def context(request, **kwargs):
+    kwargs.update(settings=settings)
+    if request.user.is_authenticated:
+        if request.path.startswith('/app/') and not is_ajax(request):
+            if 'stack' not in request.session:
+                request.session['stack'] = []
+            if request.path == '/app/':
+                request.session['stack'].clear()
+                request.session['stack'].append(request.path)
+                request.session.save()
+            elif request.path in request.session['stack']:
+                index = request.session['stack'].index(request.path)
+                request.session['stack'] = request.session['stack'][0:index + 1]
+            else:
+                request.session['stack'].append(request.path)
+            referrer = request.session['stack'][-2] if len(request.session['stack']) > 1 else None
+            return dict(referrer=referrer, **kwargs)
+    return kwargs
 
 
 def manifest(request):
@@ -80,7 +98,7 @@ def login(request):
             else:
                 request.user.roles.update(active=False)
                 return HttpResponseRedirect('/app/roles/')
-    return render(request, ['app/login.html'], dict(form=form, settings=settings))
+    return render(request, ['app/login.html'], context(request, form=form))
 
 
 def password(request):
@@ -88,7 +106,7 @@ def password(request):
     if form.is_valid():
         form.submit()
         return HttpResponseRedirect('..')
-    return render(request, ['app/default.html'], dict(form=form, settings=settings))
+    return render(request, ['app/default.html'], context(request, form=form))
 
 
 def logout(request):
@@ -108,7 +126,7 @@ def app(request):
     if request.user.is_authenticated:
         return render(
             request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-            dict(settings=settings, dashboard=dashboard.Dashboards(request))
+            context(request, dashboard=dashboard.Dashboards(request))
         )
     return HttpResponseRedirect('/app/login/')
 
@@ -124,20 +142,20 @@ def roles(request, activate=None):
             message = 'Perfis "{}" ativos com sucesso'.format(', '.join([role.name for role in roles]))
         messages.success(request, message)
         return HttpResponseRedirect('/app/')
-    return render(request, ['app/roles.html'], dict(settings=settings))
+    return render(request, ['app/roles.html'], context(request))
 
 
 @view
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
-    context = dict(settings=settings, dashboard=dashboard.Dashboards(request))
+    ctx = context(request, dashboard=dashboard.Dashboards(request))
     data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w)
     if isinstance(data, Action):
-        context.update(form=data)
+        ctx.update(form=data)
         if data.response:
             html = data.response.get('html')
             if html:
                 return HttpResponse(data.response['html'])
             return HttpResponse(data.response['url'])
     else:
-        context.update(data=data)
-    return render(request, ['app/default.html'], context)
+        ctx.update(data=data)
+    return render(request, ['app/default.html'], ctx)

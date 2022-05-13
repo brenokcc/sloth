@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
+from django.apps import apps
+
 from sloth.decorators import verbose_name, template
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from sloth.db import models
 
 
 class UserManager(models.Manager):
     def all(self):
         return self.display(
-            'username', 'is_superuser', 'get_roles'
+            'username', 'is_superuser', 'get_roles_names'
         ).actions('LoginAsUser').verbose_name('Usuários')
 
 
@@ -39,7 +39,11 @@ class User(DjangoUser):
 
     @verbose_name('Papéis')
     def get_roles(self):
-        return self.roles.ignore('user').actions('DeleteUserRole')
+        return self.roles.all().ignore('user')
+
+    @verbose_name('Papéis')
+    def get_roles_names(self):
+        return list(self.roles.values_list('name', flat=True))
 
     def has_role(self, name):
         return self.user.roles.filter(name=name).exists()
@@ -50,8 +54,15 @@ class User(DjangoUser):
 
 class RoleManager(models.Manager):
 
+    def all(self):
+        return self.display(
+            'user', 'name', 'active', 'scope_key', 'get_scope_value'
+        ).actions(
+            'ActivateUserRole', 'DeactivateUserRole', 'Delete'
+        )
+
     def contains(self, *names):
-        return self.filter(name__in=names).exists()
+        return self.filter(active=True, name__in=names).exists()
 
 
 class Role(models.Model):
@@ -64,18 +75,16 @@ class Role(models.Model):
         verbose_name='Usuário'
     )
     name = models.CharField(max_length=50, verbose_name='Nome')
-    scope = GenericForeignKey('scope_type', 'scope_value')
     scope_key = models.CharField(max_length=50, verbose_name='Escopo', null=True)
-    scope_type = models.ForeignKey(ContentType, verbose_name='Tipo do Escopo', null=True, on_delete=models.CASCADE)
-    scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True)
+    scope_type = models.CharField(max_length=50, verbose_name='Tipo do Escopo', null=True, db_index=True)
+    scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True, db_index=True)
+    active = models.BooleanField(verbose_name='Ativo', default=True)
 
     objects = RoleManager()
 
     class Meta:
         verbose_name = 'Papel'
         verbose_name_plural = 'Papéis'
-        list_display = 'user', 'name', 'scope_key', 'get_scope'
-        list_filter = 'user',
         list_per_page = 20
 
     def __str__(self):
@@ -86,8 +95,10 @@ class Role(models.Model):
         else:
             return '{}'.format(self.name)
 
-    def get_scope(self):
-        return self.values('scope').verbose_name('Referência')
+    @verbose_name('Referência')
+    def get_scope_value(self):
+        if self.scope_type:
+            return apps.get_model(self.scope_type).objects.get(pk=self.scope_value)
 
 
 class Scope(models.Model):

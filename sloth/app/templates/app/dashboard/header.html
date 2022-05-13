@@ -49,6 +49,25 @@
                     Alterar Senha
                   </a>
                 </li>
+                {% with roles=request.user.roles.all %}
+                  {% if roles %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="text-center fw-bold">Perfis</li>
+                    {% for role in roles %}
+                      <li class="text-center" style="{% if not role.active %}color:#CCC;{% endif %}padding:5px">
+                        {{ role.name }}
+                      </li>
+                    {% endfor %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <a class="dropdown-item popup" href="/app/roles/">
+                        <i class="bi bi-person-check"></i>
+                        Gerenciar Perfis
+                      </a>
+                    </li>
+                  {% endif %}
+                  <li><hr class="dropdown-divider"></li>
+                {% endwith %}
                 <li>
                   <a class="dropdown-item" href="/app/logout/">
                     <i class="bi bi-box-arrow-right"></i>

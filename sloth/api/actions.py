@@ -11,6 +11,46 @@ class DeleteUserRole(actions.Action):
         self.instance.delete()
         self.redirect()
 
+
+class InactivateUserRole(actions.Action):
+    class Meta:
+        verbose_name = 'Excluir'
+        style = 'danger'
+
+    def submit(self):
+        self.instance.active = False
+        self.instance.save()
+        self.redirect()
+
+
+class ActivateUserRole(actions.Action):
+    class Meta:
+        verbose_name = 'Ativar'
+        style = 'success'
+
+    def submit(self):
+        self.instance.active = True
+        self.instance.save()
+        self.redirect('.')
+
+    def has_permission(self, user):
+        return user.is_superuser and not self.instance.active
+
+
+class DeactivateUserRole(actions.Action):
+    class Meta:
+        verbose_name = 'Desativar'
+        style = 'warning'
+
+    def submit(self):
+        self.instance.active = False
+        self.instance.save()
+        self.redirect()
+
+    def has_permission(self, user):
+        return user.is_superuser and self.instance.active
+
+
 class LoginAsUser(actions.Action):
     class Meta:
         verbose_name = 'Acessa como Usuário'

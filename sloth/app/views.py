@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -72,7 +72,14 @@ def login(request):
     form = LoginForm(request=request)
     if form.is_valid():
         form.submit()
-        return HttpResponseRedirect('/app/')
+        if request.user.is_superuser or settings.SLOTH['ROLES']['ALLOW_MULTIPLE']:
+            return HttpResponseRedirect('/app/')
+        else:
+            if request.user.roles.filter(active=True).count() == 1:
+                return HttpResponseRedirect('/app/')
+            else:
+                request.user.roles.update(active=False)
+                return HttpResponseRedirect('/app/roles/')
     return render(request, ['app/login.html'], dict(form=form, settings=settings))
 
 
@@ -98,10 +105,26 @@ def index(request):
 @view
 def app(request):
     request.COOKIES.get('width')
-    return render(
-        request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-        dict(settings=settings, dashboard=dashboard.Dashboards(request))
-    )
+    if request.user.is_authenticated:
+        return render(
+            request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
+            dict(settings=settings, dashboard=dashboard.Dashboards(request))
+        )
+    return HttpResponseRedirect('/app/login/')
+
+@view
+def roles(request, activate=None):
+    if activate:
+        request.user.roles.update(active=False)
+        roles = request.user.roles.filter(pk__in=activate.split('-'))
+        updated = roles.update(active=True)
+        if updated == 1:
+            message = 'Perfil "{}" ativado com sucesso.'.format(roles.first().name)
+        else:
+            message = 'Perfis "{}" ativos com sucesso'.format(', '.join([role.name for role in roles]))
+        messages.success(request, message)
+        return HttpResponseRedirect('/app/')
+    return render(request, ['app/roles.html'], dict(settings=settings))
 
 
 @view

@@ -1,0 +1,65 @@
+{% extends super_template|default:"app/base.html" %}
+
+{% block content %}
+
+<style>
+    .single-role-selector{
+        width: 100%;
+        text-align:center;
+    }
+    .single-role-selector li{
+        list-style-type: none;
+    }
+    .single-role-selector li a{
+        max-width: 90%;
+        min-width: 700px;
+    }
+</style>
+{% if settings.SLOTH.ROLES.ALLOW_MULTIPLE %}
+    <h2 align="center">
+        <i class="bi bi-person-check"></i>
+        Perfis de Acesso
+    </h2>
+    <ul class="single-role-selector">
+        {% for role in request.user.roles.all %}
+            <li>
+                <input type="checkbox" value="{{ role.pk }}" name="role" {% if role.active %}checked{% endif %} onchange="checkRoles()">
+                <label>{{ role.name }} - {{ role.get_scope_value }}</label>
+            </li>
+        {% endfor %}
+    </ul>
+    <div align="center">
+        <a class="btn btn-outline-primary role-selector" href="javascript:" onclick="selectRoles()">
+            Ativar perfis selecionados
+        </a>
+    </div>
+{% else %}
+    <h2 align="center">
+        <i class="bi bi-person-check"></i>
+        Perfil de Acesso
+    </h2>
+    <ul class="single-role-selector">
+        {% for role in request.user.roles.all %}
+            <li>
+                <a class="btn {% if role.active %}btn-primary{% else %}btn-outline-primary{% endif %}" href="/app/roles/{{ role.pk }}/">
+                    {{ role.name }} - {{ role.get_scope_value }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<script>
+    function checkRoles(){
+        if(getRoles().length==0) $('.role-selector').addClass('disabled');
+        else $('.role-selector').removeClass('disabled');
+    }
+    function getRoles(){
+        return $('input[name=role]:checked').map(function() { return $(this).val(); } ).get().join('-');
+    }
+    function selectRoles(){
+        var url = '/app/roles/'+getRoles()+'/';
+        document.location.href = url;
+    }
+</script>
+{% endblock %}

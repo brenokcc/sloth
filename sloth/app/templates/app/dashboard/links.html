@@ -1,0 +1,17 @@
+<style>
+    .links-wrapper{
+        text-align: center;
+    }
+    .links-wrapper a{
+        margin: 5px;
+        text-decoration: none;
+    }
+</style>
+<div class="links-wrapper">
+{% for item in data.links %}
+    <a href="{{ item.url }}" class="shortcut-link">
+        {{ item.label }}
+    </a>
+{% endfor %}
+</div>
+<div class="clearfix"></div>

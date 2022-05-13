@@ -35,7 +35,7 @@ class Dashboard(metaclass=DashboardType):
     def __init__(self, request):
         self.request = request
         self.data = dict(
-            info=[], warning=[], menu=[], shortcuts=[], cards=[],
+            info=[], warning=[], menu=[], links=[], shortcuts=[], cards=[],
             floating=[], navigation=[], settings=[], center=[], right=[]
         )
         self.load(request)
@@ -51,7 +51,7 @@ class Dashboard(metaclass=DashboardType):
                         url=model.get_list_url('/app'),
                         label=model.metaclass().verbose_name_plural,
                         count=model.objects.all().apply_role_lookups(self.request.user).count(),
-                        icon=getattr(model.metaclass(), 'icon', 'app')
+                        icon=getattr(model.metaclass(), 'icon', None)
                     )
                 )
 
@@ -68,6 +68,12 @@ class Dashboard(metaclass=DashboardType):
 
     def menu(self, *models):
         self._load('menu', models)
+
+    def links(self, *models):
+        self._load('links', models)
+
+    def add_link(self, url, label):
+        self._item(self, 'links', url, label)
 
     def shortcuts(self, *models):
         self._load('shortcuts', models)
@@ -112,7 +118,7 @@ class Dashboards:
     def __init__(self, request):
         self.request = request
         self.data = dict(
-            info=[], warning=[], menu=[], shortcuts=[], cards=[],
+            info=[], warning=[], menu=[], links=[], shortcuts=[], cards=[],
             floating=[], navigation=[], settings=[], center=[], right=[]
         )
         self.data['navigation'].append(

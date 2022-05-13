@@ -12,6 +12,8 @@ urlpatterns = [
     path('app/manifest/', views.manifest),
     path('app/icons/', views.icons),
     path('app/login/', views.login),
+    path('app/roles/', views.roles),
+    path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),
     path('app/password/', views.password),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),

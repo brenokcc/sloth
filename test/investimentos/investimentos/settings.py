@@ -135,6 +135,9 @@ SLOTH = {
 	'INCLUDE': {
 		'CSS': ['/static/css/investimentos.css'],
 		'JS': ['/static/js/investimentos.js'],
+	},
+	'ROLES':{
+		'ALLOW_MULTIPLE': True
 	}
 }
 

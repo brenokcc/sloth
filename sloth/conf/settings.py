@@ -35,5 +35,8 @@ SLOTH = {
 	'INCLUDE': {
 		'CSS': [],
 		'JS': [],
+	},
+	'ROLES':{
+		'ALLOW_MULTIPLE': True
 	}
 }

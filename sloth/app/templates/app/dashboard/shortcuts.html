@@ -24,7 +24,9 @@
 {% for item in data.shortcuts %}
     <a href="{{ item.url }}" class="shortcut-link">
         <div>
-          <i class="bi bi-{{ item.icon }}"></i>
+          {% if item.icon %}
+            <i class="bi bi-{{ item.icon }}"></i>
+          {% endif %}
           <p>{{ item.label }}</p>
         </div>
     </a>

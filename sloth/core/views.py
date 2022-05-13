@@ -18,6 +18,7 @@ def context_processor(request):
             if request.path == '/app/':
                 request.session['stack'].clear()
                 request.session['stack'].append(request.path)
+                request.session.save()
             elif request.path in request.session['stack']:
                 index = request.session['stack'].index(request.path)
                 request.session['stack'] = request.session['stack'][0:index+1]

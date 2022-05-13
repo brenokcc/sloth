@@ -400,11 +400,9 @@ class ModelMixin(object):
             for value in values:
                 if value[role['username']]:
                     for scope_key, lookup in role['scopes'].items():
-                        scope_type = content_type.objects.get_for_model(
-                            model if lookup == 'id' else model.get_field(lookup).related_model
-                        )
+                        scope_type = model if lookup == 'id' else model.get_field(lookup).related_model
                         scope_value = value[lookup]
-                        tuples.add((value[role['username']], role['name'], scope_type.id, scope_key, scope_value))
+                        tuples.add((value[role['username']], role['name'], scope_type, scope_key, scope_value))
         return tuples
 
     def sync_roles(self, role_tuples):
@@ -426,7 +424,9 @@ class ModelMixin(object):
                     user.save()
                     user_id = user.id
                 role.objects.get_or_create(
-                    user_id=user_id, name=name, scope_type_id=scope_type, scope_key=scope_key, scope_value=scope_value
+                    user_id=user_id, name=name,
+                    scope_type='{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name),
+                    scope_key=scope_key, scope_value=scope_value
                 )
         deleted_role_tuples = role_tuples - role_tuples2
         # print('DELETED: ', deleted_role_tuples)

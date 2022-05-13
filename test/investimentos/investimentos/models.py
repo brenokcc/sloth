@@ -45,15 +45,21 @@ class Prioridade(models.Model):
         return '{}'.format(self.numero)
 
 
+class CategoriaManager(models.Manager):
+    def all(self):
+        return self.display('nome', 'get_quantidade_perguntas')
+
+
 class Categoria(models.Model):
     nome = models.CharField(verbose_name='Nome')
     contabilizar = models.BooleanField('Contatilizar', default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.')
+
+    objects = CategoriaManager()
 
     class Meta:
         icon = 'folder'
         verbose_name = 'Categoria de Investimento'
         verbose_name_plural = 'Categorias de Investimento'
-        list_display = 'nome', 'get_quantidade_perguntas'
 
     class Permission:
         admin = 'Administrador',
@@ -94,6 +100,11 @@ class OpcaoResposta(models.Model):
         return self.nome
 
 
+class PerguntaManager(models.Manager):
+    def all(self):
+        return self.display('categoria', 'texto', 'obrigatoria', 'get_tipo_resposta')
+
+
 class Pergunta(models.Model):
     TEXTO_CURTO = 1
     TEXTO_LONGO = 2
@@ -124,7 +135,6 @@ class Pergunta(models.Model):
     class Meta:
         verbose_name = 'Pergunta'
         verbose_name_plural = 'Perguntas'
-        list_display = 'categoria', 'texto', 'obrigatoria', 'get_tipo_resposta'
 
     class Permission:
         delete = 'Administrador',
@@ -463,7 +473,13 @@ class Questionario(models.Model):
 class RespostaQuestionarioManager(models.Manager):
     @verbose_name('Respostas')
     def all(self):
-        return super().all().attach('aguardando_submissao', 'submetidas')
+        return self.display(
+            'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
+        ).filter(
+            'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
+        ).attach(
+            'aguardando_submissao', 'submetidas'
+        )
 
     @verbose_name('Aguardando Submissão')
     def aguardando_submissao(self):
@@ -485,8 +501,6 @@ class RespostaQuestionario(models.Model):
         icon = 'pencil-square'
         verbose_name = 'Resposta de Questionário'
         verbose_name_plural = 'Respostas dos Questionários'
-        list_display = 'get_ciclo', 'get_instituicao', 'get_categoria_demanda', 'get_prioridade_demanda', 'get_demanda', 'pergunta', 'resposta'
-        list_filter = 'questionario__demanda__instituicao', 'questionario__demanda__ciclo'
 
     class Permission:
         view = 'Administrador', 'Gestor'

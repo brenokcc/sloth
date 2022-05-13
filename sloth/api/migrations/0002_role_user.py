@@ -22,7 +22,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Usuário',
                 'verbose_name_plural': 'Usuários',
                 'proxy': True,
-                'list_display': ('username',),
                 'fieldsets': {'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'), 'Dados de Acesso': 'is_superuser'},
                 'indexes': [],
                 'constraints': [],
@@ -42,9 +41,6 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Papel',
                 'verbose_name_plural': 'Papéis',
-                'list_display': ('user', 'name', 'scope_key', 'get_scope'),
-                'list_per_page': 20,
-                'list_filter': ('user',),
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

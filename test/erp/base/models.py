@@ -154,14 +154,20 @@ class Endereco(models.Model):
         return '{}, {}, {}'.format(self.logradouro, self.numero, self.municipio)
 
 
+class InstitutoManager(models.Manager):
+    def all(self):
+        return self.cards()
+
+
 class Instituto(models.Model):
     sigla = models.CharField(verbose_name='Sigla')
     reitor = models.ForeignKey('base.Servidor', verbose_name='Reitor', null=True, blank=True)
 
+    objects = InstitutoManager()
+
     class Meta:
         verbose_name = 'Instituto'
         verbose_name_plural = 'Instituto'
-        list_template = 'app/queryset/cards'
 
     def __str__(self):
         return self.sigla
@@ -367,15 +373,21 @@ class Ferias(models.Model):
         return 'Férias do ano {}'.format(self.ano)
 
 
+class FrequenciaManager(models.Manager):
+    def all(self):
+        return self.timeline()
+
+
 class Frequencia(models.Model):
     servidor = models.ForeignKey(Servidor, verbose_name='Servidor')
     horario = models.DateTimeField('Horário')
     homologado = models.BooleanField('Homologado', default=False)
 
+    objects = FrequenciaManager()
+
     class Meta:
         verbose_name = 'Frequência'
         verbose_name_plural = 'Frequências'
-        list_template = 'app/queryset/timeline'
 
     def __str__(self):
         return 'Resistro {}'.format(self.id)

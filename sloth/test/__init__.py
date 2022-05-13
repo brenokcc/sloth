@@ -28,9 +28,10 @@ class ServerTestCase(StaticLiveServerTestCase):
                 if data:
                     print('Input:\n{}'.format(json.dumps(data, indent=4, ensure_ascii=False)))
                 print('Output:\n{}'.format(json.dumps(response.json(), indent=4, ensure_ascii=False)))
-            except:
+            except Exception:
+                import traceback
+                print(traceback.format_exc())
                 print(data)
-                import pdb; pdb.set_trace()
             print('\n')
 
     def url(self, path):

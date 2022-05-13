@@ -24,7 +24,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Notificação',
                 'verbose_name_plural': 'Notificações',
                 'icon': 'exclamation-square',
-                'add_form': 'DuvidaForm',
             },
             bases=(models.Model, sloth.core.base.ModelMixin),
         ),

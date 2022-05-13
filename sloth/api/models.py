@@ -22,7 +22,6 @@ class User(DjangoUser):
         proxy = True
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
-        list_display = 'username',
         fieldsets = {
             'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'),
             'Dados de Acesso': ('is_superuser',)
@@ -43,7 +42,7 @@ class User(DjangoUser):
 
     @verbose_name('Papéis')
     def get_roles_names(self):
-        return list(self.roles.values_list('name', flat=True))
+        return list(self.roles.values_list('name', flat=True).distinct())
 
     def has_role(self, name):
         return self.user.roles.filter(name=name).exists()
@@ -59,7 +58,7 @@ class RoleManager(models.Manager):
             'user', 'name', 'active', 'scope_key', 'get_scope_value'
         ).actions(
             'ActivateUserRole', 'DeactivateUserRole', 'Delete'
-        )
+        ).limit_per_page(20)
 
     def contains(self, *names):
         return self.filter(active=True, name__in=names).exists()
@@ -85,7 +84,6 @@ class Role(models.Model):
     class Meta:
         verbose_name = 'Papel'
         verbose_name_plural = 'Papéis'
-        list_per_page = 20
 
     def __str__(self):
         if self.scope_key and self.scope_value:

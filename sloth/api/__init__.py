@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from django.apps import apps
 
 
@@ -35,11 +37,17 @@ class OpenApi(dict):
         })
         self.load()
 
+    def ordered_app_config_items(self):
+        configs = dict(api=None)
+        for app_label, app_config in apps.app_configs.items():
+            configs[app_label] = app_config
+        return configs.items()
+
     def load(self):
         selected_app_label = self.request.GET.get('app')
         selected_model_name = self.request.GET.get('model')
-        for app_label, app_config in apps.app_configs.items():
-            if app_label in ('contenttypes', 'sessions', 'messages', 'staticfiles', 'oauth2_provider'):
+        for app_label, app_config in self.ordered_app_config_items():
+            if app_label in ('contenttypes', 'sessions', 'messages', 'staticfiles', 'oauth2_provider', 'auth'):
                 continue
             if selected_app_label and selected_app_label != app_label:
                 continue

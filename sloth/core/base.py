@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
@@ -5,6 +7,7 @@ from django.template.loader import render_to_string
 from sloth.actions import Action
 from sloth.core.valueset import ValueSet
 from sloth.core.queryset import QuerySet
+from sloth.utils import to_snake_case, to_camel_case
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
 SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
@@ -197,6 +200,7 @@ class ModelMixin(object):
         return Delete
 
     @classmethod
+    @lru_cache
     def action_form_cls(cls, action):
         if action.lower() == 'add':
             return cls.add_form_cls()
@@ -212,7 +216,7 @@ class ModelMixin(object):
                     fromlist=config.module.__package__.split()
                 )
                 for name in dir(forms):
-                    if name.lower() == action.lower():
+                    if name.lower() == to_camel_case(action).lower():
                         return getattr(forms, name)
             except ModuleNotFoundError:
                 pass
@@ -301,7 +305,11 @@ class ModelMixin(object):
         instance = cls()
         instance.id = -1
         instance.init_one_to_one_fields()
-        url = '/api/{}/{}/'.format(cls.metaclass().app_label, cls.metaclass().model_name)
+        app_label = cls.metaclass().app_label
+        if app_label == 'api':
+            url = '/api/{}/'.format(cls.metaclass().model_name)
+        else:
+            url = '/api/{}/{}/'.format(app_label, cls.metaclass().model_name)
 
         info = dict()
         info[url] = [
@@ -323,18 +331,18 @@ class ModelMixin(object):
             ]
             if isinstance(v, ValueSet):
                 for action in v.metadata['actions']:
-                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
                         ('post', action, 'Execute {}'.format(action), v.get_api_schema(), None),
                     ]
             elif isinstance(v, QuerySet):
                 for action in v.metadata['global_actions']:
                     forms_cls = cls.action_form_cls(action)
-                    info['{}{{id}}/{}/{}/'.format(url, name, action)] = [
+                    info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
                         ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
                     ]
                 for action in v.metadata['actions']:
                     forms_cls = cls.action_form_cls(action)
-                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, action)] = [
+                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
                         ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
                     ]
 
@@ -377,7 +385,7 @@ class ModelMixin(object):
                     'responses': {
                         '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
                     },
-                    'tags': [cls.metaclass().app_label],
+                    'tags': [app_label],
                     'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
                 }
         return paths

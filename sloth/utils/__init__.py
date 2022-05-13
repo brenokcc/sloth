@@ -6,6 +6,14 @@ from decimal import Decimal
 from django.db.models.fields.files import FieldFile
 
 
+def to_snake_case(name):
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+
+def to_camel_case(name):
+    return  ''.join(word.title() for word in name.split('_'))
+
+
 def getattrr(obj, args):
     if args == '__str__':
         attrs = [args]

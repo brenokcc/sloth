@@ -17,6 +17,16 @@ from sloth.decorators import role
 ACTIONS_FILE_CONTENT = '''from sloth import actions
 '''
 
+DASHBOARD_FILE_CONTENT = '''from sloth.app.dashboard import Dashboard
+from .models import *
+
+class AppDashboard(Dashboard):
+    
+    def load(self, request):
+        pass
+
+'''
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == 'configure':
@@ -41,5 +51,8 @@ if __name__ == "__main__":
             actions_path = os.path.join(name, 'actions.py')
             with open(actions_path, 'w') as file:
                 file.write(ACTIONS_FILE_CONTENT)
+            dashboard_path = os.path.join(name, 'dashboard.py')
+            with open(dashboard_path, 'w') as file:
+                file.write(DASHBOARD_FILE_CONTENT)
     else:
         print('Usage: python -m <action>')

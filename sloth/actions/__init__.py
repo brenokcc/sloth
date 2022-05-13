@@ -194,7 +194,7 @@ class Action(metaclass=ActionMetaclass):
             pks = []
             if self.instance.pk:
                 pks.extend(getattr(self.instance, one_to_many_field_name).values_list('pk', flat=True))
-            pks.extend(['' for _ in range(len(pks)+1, one_to_many_field.max+1)])
+            pks.extend(['' for _ in range(len(pks) + 1, one_to_many_field.max + 1)])
             for i, pk in enumerate(pks):
                 initial = one_to_many_field.queryset.model.objects.filter(
                     pk=pk
@@ -204,7 +204,7 @@ class Action(metaclass=ActionMetaclass):
                 key = '{}--{}'.format(one_to_many_field_name.upper(), i)
                 required = i < one_to_many_field.min
                 self.fields[key] = fields.CharField(
-                    label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i+1),
+                    label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i + 1),
                     required=required, initial=(pk or 'on') if required else pk, widget=fields.CheckboxInput()
                 )
                 self.fields[key].widget.attrs['class'] = 'field-controller'
@@ -235,7 +235,7 @@ class Action(metaclass=ActionMetaclass):
                     for _name in name:
                         if _name in self.fields:
                             if not isinstance(self.fields[_name].widget, widgets.HiddenInput):
-                                field_list.append(dict(name=_name, width=100//len(name)))
+                                field_list.append(dict(name=_name, width=100 // len(name)))
                 else:
                     if name in self.fields:
                         if not isinstance(self.fields[name].widget, widgets.HiddenInput):
@@ -264,6 +264,12 @@ class Action(metaclass=ActionMetaclass):
         return params
 
     def save(self, *args, **kwargs):
+
+        # TODO: Remove later (user's email has not been saved)
+        if type(self.instance).__name__ == 'User':
+            if 'email' in self.cleaned_data and self.instance.email is None:
+                self.instance.email = self.cleaned_data['email']
+
         if hasattr(self.instance, 'pre_save'):
             self.instance.pre_save()
 
@@ -379,7 +385,8 @@ class Action(metaclass=ActionMetaclass):
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        checker = PermissionChecker(request, instance=instance, instantiator=instantiator, metaclass=getattr(cls, 'Meta', None))
+        checker = PermissionChecker(request, instance=instance, instantiator=instantiator,
+                                    metaclass=getattr(cls, 'Meta', None))
         has_permission = cls.has_permission(checker, request.user)
         if has_permission is None:
             return cls.check_permission(checker, request.user)

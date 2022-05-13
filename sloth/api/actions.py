@@ -1,6 +1,8 @@
 from sloth import actions
 from django.contrib import auth
 
+from sloth.api.models import User
+
 
 class DeleteUserRole(actions.Action):
     class Meta:

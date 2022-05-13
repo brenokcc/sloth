@@ -46,14 +46,15 @@ class Dashboard(metaclass=DashboardType):
     def _load(self, key, models):
         for model in models:
             if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
-                self.data[key].append(
-                    dict(
-                        url=model.get_list_url('/app'),
-                        label=model.metaclass().verbose_name_plural,
-                        count=model.objects.all().apply_role_lookups(self.request.user).count(),
-                        icon=getattr(model.metaclass(), 'icon', None)
+                if key in ('floating', 'navigation', 'settings') or self.request.path == '/app/':
+                    self.data[key].append(
+                        dict(
+                            url=model.get_list_url('/app'),
+                            label=model.metaclass().verbose_name_plural,
+                            count=model.objects.all().apply_role_lookups(self.request.user).count(),
+                            icon=getattr(model.metaclass(), 'icon', None)
+                        )
                     )
-                )
 
     def _item(self, key, url, label, icon, count=None):
         self.data[key].append(

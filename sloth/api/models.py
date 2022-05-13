@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
-
 from sloth.decorators import verbose_name, template
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
@@ -55,6 +54,13 @@ class RoleManager(models.Manager):
         ).limit_per_page(20)
 
     def contains(self, *names):
+        if 'instance' in self._hints:
+            if not hasattr(self._hints['instance'], '_cached_role_names'):
+                self._hints['instance']._cached_role_names = self.filter(active=True).values_list('name', flat=True)
+            for name in names:
+                if name in self._hints['instance']._cached_role_names:
+                    return True
+            return False
         return self.filter(active=True, name__in=names).exists()
 
 

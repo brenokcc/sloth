@@ -170,7 +170,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                 if obj.has_view_permission(request.user) or obj.has_permission(request.user):
                     return obj.view().contextualize(request)
                 raise PermissionDenied()
-        elif x.lower() == 'add':
+        elif x.lower() == 'add':  # /base/estado/add/
             form_cls = model.add_form_cls()
             form = form_cls(request=request)
             if form.check_permission(request.user):

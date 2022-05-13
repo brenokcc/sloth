@@ -1,4 +1,9 @@
 
+# ALLOWED_HOSTS.append('*')
+# MEDIA_ROOT = '{}/{}'.format(BASE_DIR, 'media')
+# STATIC_ROOT = '{}/{}'.format(BASE_DIR, 'static')
+# MEDIA_URL = '/media/'
+
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Recife'
 USE_I18N = True

@@ -44,12 +44,6 @@ class User(DjangoUser):
     def get_roles_names(self):
         return list(self.roles.values_list('name', flat=True).distinct())
 
-    def has_role(self, name):
-        return self.user.roles.filter(name=name).exists()
-
-    def has_roles(self, name):
-        return self.user.roles.filter(name__in=name).exists()
-
 
 class RoleManager(models.Manager):
 

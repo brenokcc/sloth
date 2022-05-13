@@ -47,7 +47,7 @@ class QuerySet(models.QuerySet):
             for name, scopes in self.metadata['lookups']:
                 if scopes:
                     for scope_value_attr, scope_key in scopes.items():
-                        for scope_value in user.roles.filter(name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                        for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
                             lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):

@@ -137,7 +137,7 @@ class Application(AbstractApplication):
 
 class TaskManager(models.Manager):
     def all(self):
-        return self
+        return self.display('user', 'name', 'start', 'end', 'get_progress')
 
 
 class Task(models.Model):
@@ -175,7 +175,10 @@ class Task(models.Model):
     def get_info(self):
         return self.values(
             ('name', 'user'), ('start', 'end'), 'get_progress', 'message'
-        ).refresh(2).actions('StopTask')
+        ).refresh(seconds=2, condition='in_progress', retry=10).actions('StopTask')
+
+    def in_progress(self):
+        return self.progress < 100 and not self.stopped
 
     def view(self):
         return self.values('get_info')

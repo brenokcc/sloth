@@ -79,4 +79,4 @@ class StopTask(actions.Action):
         self.redirect(message='Ação realizada com sucesso')
 
     def has_permission(self, user):
-        return self.instance.end is None and self.instance.user == user
+        return self.instance.in_progress() and (user.is_superuser or self.instance.user == user)

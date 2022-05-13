@@ -40,7 +40,7 @@ class ValueSet(dict):
     def __init__(self, instance, names, image=None):
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh=0,
+            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh={},
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
         )
         for attr_name in names:
@@ -83,8 +83,8 @@ class ValueSet(dict):
         self.metadata['source'] = name
         return self
 
-    def refresh(self, seconds):
-        self.metadata['refresh'] = seconds
+    def refresh(self, seconds=5, condition=None, retry=12):
+        self.metadata['refresh'] = dict(seconds=seconds, condition=condition, retry=retry)
         return self
 
     def contextualize(self, request):
@@ -165,9 +165,25 @@ class ValueSet(dict):
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
                         value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail)
+
+                        if refresh:
+                            if refresh['condition']:
+                                deny = 'not ' in refresh['condition']
+                                satisfied = getattr(value.instance, refresh['condition'].replace('not ', ''))
+                                if callable(satisfied):
+                                    satisfied = satisfied()
+                                if deny and not satisfied or satisfied:
+                                    refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
+                                else:
+                                    refresh_data = {}
+                            else:
+                                refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
+                        else:
+                            refresh_data = {}
+
                         value = dict(
                             uuid=uuid1().hex, type='fieldset',
-                            name=verbose_name if verbose else attr_name, key=key, refresh=refresh, actions=[], data=value, path=path
+                            name=verbose_name if verbose else attr_name, key=key, refresh=refresh_data, actions=[], data=value, path=path
                         ) if wrap else value
                         if wrap:
                             for form_name in actions:

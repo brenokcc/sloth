@@ -16,7 +16,7 @@ from django.template.loader import render_to_string
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
 from sloth.exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
-from sloth.utils import getattrr, serialize, pretty
+from sloth.utils import getattrr, serialize, pretty, to_api_params
 
 
 class QuerySet(models.QuerySet):
@@ -108,19 +108,23 @@ class QuerySet(models.QuerySet):
             )
         return display
 
-    def _get_filters(self, verbose=False):
+    def filter_form_cls(self):
+        return self._get_filters(verbose=False, as_form=True)
+
+    def _get_filters(self, verbose=False, as_form=False):
+        from sloth import actions
         filters = {}
         list_filter = self._get_list_filter()
         list_filter.extend(self.metadata['dfilters'])
         for lookup in list_filter:
             field = self.model.get_field(lookup)
-            field_type_name = type(field).__name__
+            formfield = field.formfield()
             filter_type = 'choices'
-            if 'Boolean' in field_type_name:
+            if isinstance(formfield, actions.BooleanField):
                 filter_type = 'boolean'
-            elif 'DateTime' in field_type_name:
+            elif isinstance(formfield, actions.DateTimeField):
                 filter_type = 'datetime'
-            elif 'Date' in field_type_name:
+            elif isinstance(formfield, actions.DateField):
                 filter_type = 'date'
             if lookup in self.metadata['dfilters']:
                 qs = self.order_by(lookup).values_list(lookup).distinct()[1:2]
@@ -134,22 +138,45 @@ class QuerySet(models.QuerySet):
                     k = '{} {}'.format(symbol, key) if verbose else '{}__{}'.format(key, sublookup)
                     n = '{} {}'.format(symbol, name)
                     hidden = lookup == self.metadata['calendar']
+                    formfield = field.formfield(label=n, required=False)
                     filters[k] = dict(key='{}__{}'.format(
                         lookup, sublookup), name=n, type=filter_type, choices=None, hidden=hidden
                     )
+                    if as_form:
+                        filters[k].update(formfield=formfield)
             else:
                 filters[key] = dict(
                     key=lookup, name=name, type=filter_type, choices=None, hidden=False
                 )
+                if as_form:
+                    filters[key].update(formfield=formfield)
 
         ordering = []
         for lookup in self._get_list_ordering():
             field = self.model.get_field(lookup)
             ordering.append(dict(id=lookup, text=field.verbose_name))
         if ordering:
-            filters['Ordernação'] = dict(
+            key = 'ordenacao'
+            filters[key] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
+            if as_form:
+                choices = [(o['id'], [o['text']]) for o in ordering]
+                filters[key].update(formfield=actions.ChoiceField(label='Ordenação', choices=choices, required=False))
+
+        if as_form:
+            class FilterForm(actions.Action):
+
+                class Meta:
+                    pass
+
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    for key in filters:
+                        self.fields[key] = filters[key]['formfield']
+
+            return FilterForm
+
         return filters
 
     def _get_attach(self, verbose=False):
@@ -562,19 +589,20 @@ class QuerySet(models.QuerySet):
                     )
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self._get_attach())
-            if 'uuid' in request.GET:
+            if request.GET  and ('uuid' in request.GET or request.path.startswith('/api/')):
                 component = self.process_request(request).apply_role_lookups(request.user)
-                raise HtmlJsonReadyResponseException(
-                    component.html()
-                )
+                if 'uuid' in request.GET:
+                    raise HtmlJsonReadyResponseException(component.html())
+                else:
+                    raise JsonReadyResponseException(component.serialize(verbose=False))
             return self.apply_role_lookups(request.user)
         return self
 
     def process_request(self, request):
         from sloth.core.valueset import ValueSet
         page = 1
-        attr_name = request.GET['subset']
-        self.metadata['uuid'] = request.GET['uuid']
+        attr_name = request.GET.get('subset', 'all')
+        self.metadata['uuid'] = request.GET.get('uuid')
         attach = self if attr_name == 'all' else getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach
@@ -596,7 +624,7 @@ class QuerySet(models.QuerySet):
                     if item['type'] == 'date':
                         value = datetime.datetime.strptime(value, '%d/%m/%Y')
                     if item['type'] == 'boolean':
-                        value = bool(int(value))
+                        value = bool(int(value)) if value.isdigit() else value == 'true'
                     qs = qs.filter(**{item['key']: value})
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])

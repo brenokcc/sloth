@@ -1,1 +1,51 @@
-{% include "app/queryset/cards.html" with compact=True align="left" %}
+{% load tags %}
+{% if compact or data.metadata.compact or request.GET.compact or request|mobile %}
+    {% include "app/queryset/cards.html" with compact=True %}
+{% else %}
+{% if data.data %}
+<div class="row" id="row-{{ data.uuid }}">
+    {% with image_key=data.data.0.data|image_key %}
+        {% for row in data.data %}
+        <div class="col-sm-12">
+            <div class="card" style="margin-bottom: 10px">
+                <div class="card-body">
+                    <div class="card-body-container">
+                        <div style="float:left">
+                            {% if image_key %}
+                                {% for k, v in row.data.items %}
+                                    {% if k == image_key %}
+                                        <img style="width:200px;" src="{{ v.value|image_src }}">
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div style="{% if image_key %}margin-left:220px;{% endif %}">
+                            <h5 class="card-title text-left">{{ row.description }}</h5>
+                            <div class="float-end">
+                                {% include "app/queryset/checkbox.html" %}
+                            </div>
+                            <dl>
+                                {% for k, v in row.data.items %}
+                                    {% if k != image_key %}
+                                        <dt>{{ k }}</dt>
+                                        <dd>{% include "app/value.html" %}</dd>
+                                    {% endif %}
+                                {% endfor %}
+                            </dl>
+                            <div class="float-end">
+                                {% include "app/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id|stringformat:'s' enabled=row.actions %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endwith %}
+</div>
+{% else %}
+<div class="alert alert-primary" role="alert" style="margin-top:30px;">
+    Nehum registro encontrado.
+</div>
+{% endif %}
+{% endif %}

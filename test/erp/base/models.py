@@ -9,6 +9,10 @@ class Gerente(models.Model):
     nome = models.CharField(verbose_name='None')
     email = models.EmailField(verbose_name='Email')
 
+    class Meta:
+        verbose_name = 'Gerente'
+        verbose_name_plural = 'Gerentes'
+
     def __str__(self):
         return self.nome
 

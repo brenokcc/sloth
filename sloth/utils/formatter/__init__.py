@@ -10,6 +10,9 @@ from django.db.models.fields.files import FieldFile
 def format_value(obj):
     if obj not in (None, ''):
         if isinstance(obj, str):
+            if obj[0] == '#' and len(obj) == 7:
+                style = 'float:left;width:20px;height: 20px; margin-right:5px;border-radius:5px'
+                return mark_safe('<div style="background-color:{};{}"></div>'.format(obj, style))
             return obj
         elif isinstance(obj, bool):
             return 'Sim' if obj else 'Não'

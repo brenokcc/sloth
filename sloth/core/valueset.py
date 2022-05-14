@@ -97,6 +97,15 @@ class ValueSet(dict):
     def apply_role_lookups(self, user):
         return self
 
+    def has_children(self):
+        if type(self.instance):
+            field_names = [field.name for field in self.instance.metaclass().fields]
+            for name in self.metadata['names']:
+                if name in field_names:
+                    return False
+            return True
+        return False
+
     def get_api_schema(self, recursive=False):
         schema = dict()
         for attr_name, width in self.metadata['names'].items():

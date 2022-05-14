@@ -40,25 +40,27 @@ class OpenApi(dict):
     def ordered_app_config_items(self):
         configs = dict(api=None)
         for app_label, app_config in apps.app_configs.items():
-            configs[app_label] = app_config
+            if app_label not in ('contenttypes', 'sessions', 'messages', 'staticfiles', 'oauth2_provider', 'auth'):
+                configs[app_label] = app_config
         return configs.items()
 
     def load(self):
-        selected_app_label = self.request.GET.get('app')
-        selected_model_name = self.request.GET.get('model')
-        for app_label, app_config in self.ordered_app_config_items():
-            if app_label in ('contenttypes', 'sessions', 'messages', 'staticfiles', 'oauth2_provider', 'auth'):
-                continue
-            if selected_app_label and selected_app_label != app_label:
-                continue
+        ordered_app_config_items = self.ordered_app_config_items()
+        for app_label, app_config in ordered_app_config_items:
             api_models = []
             for model in app_config.get_models():
                 model_name = model.metaclass().model_name
                 verbose_name = model.metaclass().verbose_name
-                if selected_model_name and selected_model_name != model_name:
-                    continue
                 api_models.append((model_name, verbose_name))
-                self['paths'].update(model.get_api_paths(self.request))
             if api_models:
-                self['tags'].append(dict(name=app_label))
                 self.apps[app_label] = api_models
+
+        selected_app_label = self.request.GET.get('app', 'api')
+        selected_model_name = self.request.GET.get('model', self.apps[selected_app_label][0][0])
+        for app_label, app_config in ordered_app_config_items:
+            if selected_app_label == app_label:
+                for model in app_config.get_models():
+                    model_name = model.metaclass().model_name
+                    if selected_model_name == model_name:
+                        self['paths'].update(model.get_api_paths(self.request))
+                self['tags'].append(dict(name=app_label))

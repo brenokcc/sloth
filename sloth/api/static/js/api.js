@@ -24,15 +24,15 @@ function init(url, app, model, scope){
 }
 
 window.onload = function() {
-    init("/api/docs/");
+    init("/api/docs/", 'api', 'user');
 }
 
 function updateApi(clearModel){
     var app = document.getElementById('app').options[document.getElementById('app').selectedIndex].value;
-    if(clearModel) document.getElementById('model').selectedIndex = 0;
     var model = document.getElementById('model').options[document.getElementById('model').selectedIndex].value;
     var scope = document.getElementById('scope').options[document.getElementById('scope').selectedIndex].value;
-    var url = '/api/docs/?app='+app+'&model='+model+'&scope='+scope;
+    if(clearModel) var url = '/api/docs/?app='+app;
+    else var url = '/api/docs/?app='+app+'&model='+model+'&scope='+scope;
     init(url, app, model, scope);
 }
 
@@ -47,8 +47,8 @@ function loadSelects(selectedApp, selectedModel, selectedScope){
                 var data = JSON.parse(request.responseText);
                 var apps = Object.keys(data['apps']);
                 var scopes = Object.keys(data['scopes']);
-                var appsOptions = '<option></option>';
-                var modelsOptions = '<option></option>';
+                var appsOptions = '';
+                var modelsOptions = '';
                 var scopesOptions = '<option></option>';
                 for(var i=0; i<apps.length; i++){
                     var selected = selectedApp == apps[i] ? 'selected' : '';

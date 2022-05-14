@@ -2,7 +2,9 @@
 
 from django.apps import apps
 from django.urls import path
+from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls.static import static
 from . import views
 
 
@@ -40,3 +42,6 @@ urlpatterns.extend([
     path('meta/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', views.dispatcher),
     path('meta/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', views.dispatcher),
 ])
+
+urlpatterns.extend(static(settings.STATIC_URL, document_root=settings.STATIC_ROOT))
+urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))

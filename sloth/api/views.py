@@ -9,6 +9,7 @@ from django.http import JsonResponse
 
 from ..core import views
 from ..api import OpenApi
+from ..exceptions import JsonReadyResponseException
 
 
 class ApiResponse(JsonResponse):
@@ -31,6 +32,8 @@ def endpoint(func):
                 return ApiResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403
                 )
+        except JsonReadyResponseException as e:
+            return ApiResponse(e.data, safe=False)
         except PermissionDenied:
             return ApiResponse(
                 dict(type='message', text='Usuário não autorizado', style='warning'), status=401

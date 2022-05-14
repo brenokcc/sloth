@@ -87,6 +87,17 @@ class GenericField(CharField):
         return value
 
 
+class ColorField(CharField):
+    def __init__(self, *args, max_length=7, **kwargs):
+        super().__init__(*args, max_length=max_length, **kwargs)
+
+    def formfield(self, **kwargs):
+        from sloth.actions.inputs import ColorInput
+        field = super().formfield(**kwargs)
+        field.widget = ColorInput()
+        return field
+
+
 class CharField(CharField):
     def __init__(self, *args, max_length=255, **kwargs):
         self.mask = kwargs.pop('mask', None)

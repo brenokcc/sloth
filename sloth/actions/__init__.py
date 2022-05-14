@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
 from ..exceptions import JsonReadyResponseException
+from ..utils import to_api_params
 
 
 class PermissionChecker:
@@ -244,24 +245,7 @@ class Action(metaclass=ActionMetaclass):
                 self.fieldsets[title] = field_list
 
     def get_api_params(self):
-        params = []
-        for name, field in self.fields.items():
-            param_type = 'string'
-            param_format = None
-            if isinstance(field, BooleanField) or name.isupper():  # controller field
-                param_type = 'boolean'
-            elif isinstance(field, DateTimeField):
-                param_format = 'date-time'
-            elif isinstance(field, DateField):
-                param_format = 'date'
-            elif isinstance(field, IntegerField) or isinstance(field, ModelChoiceField):
-                param_type = 'integer'
-                param_format = 'int32'
-            params.append(
-                {'description': field.label, 'name': name, 'in': 'query', 'required': False,
-                 'schema': dict(type=param_type, format=param_format)}
-            )
-        return params
+        return to_api_params(self.fields.items())
 
     def save(self, *args, **kwargs):
 

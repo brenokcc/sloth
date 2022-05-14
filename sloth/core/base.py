@@ -1,5 +1,5 @@
 from functools import lru_cache
-
+import types
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
@@ -310,10 +310,9 @@ class ModelMixin(object):
             url = '/api/{}/'.format(cls.metaclass().model_name)
         else:
             url = '/api/{}/{}/'.format(app_label, cls.metaclass().model_name)
-
         info = dict()
         info[url] = [
-            ('get', 'List', 'List objects', {'type': 'string'}, None),
+            ('get', 'List', 'List objects', {'type': 'string'}, cls.objects.all().filter_form_cls()),
             ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls())
         ]
         info['{}{{id}}/'.format(url)] = [
@@ -321,30 +320,44 @@ class ModelMixin(object):
             ('put', 'Edit', 'Edit object', {'type': 'string'}, cls.edit_form_cls()),
             ('delete', 'Delete', 'Delete object', {'type': 'string'}, None),
         ]
-        for name in cls().view().metadata['names']:
-            try:
-                v = getattr(instance, name)()
-            except BaseException as e:
-                continue
-            info['{}{{id}}/{}/'.format(url, name)] = [
-                ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
-            ]
-            if isinstance(v, ValueSet):
-                for action in v.metadata['actions']:
-                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                        ('post', action, 'Execute {}'.format(action), v.get_api_schema(), None),
+
+        def find_endpoints(valueset):
+            for name in valueset.metadata['names']:
+                try:
+                    attr = getattr(instance, name)
+                except BaseException:
+                    continue
+                if isinstance(attr, types.MethodType):
+                    v = attr()
+                    info['{}{{id}}/{}/'.format(url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
                     ]
-            elif isinstance(v, QuerySet):
-                for action in v.metadata['global_actions']:
-                    forms_cls = cls.action_form_cls(action)
-                    info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
-                        ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                    ]
-                for action in v.metadata['actions']:
-                    forms_cls = cls.action_form_cls(action)
-                    info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                        ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                    ]
+                    if isinstance(v, ValueSet):
+                        for action in v.metadata['actions']:
+                            forms_cls = cls.action_form_cls(action)
+                            info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
+                                ('post', action, 'Execute {}'.format(action), v.get_api_schema(), forms_cls),
+                            ]
+                        if v.has_children():
+                            find_endpoints(v)
+                    elif isinstance(v, QuerySet):
+                        for action in v.metadata['global_actions']:
+                            forms_cls = cls.action_form_cls(action)
+                            info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
+                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                            ]
+                        for action in v.metadata['actions']:
+                            forms_cls = cls.action_form_cls(action)
+                            info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
+                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                            ]
+                        for action in v.metadata['batch_actions']:
+                            forms_cls = cls.action_form_cls(action)
+                            info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
+                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                            ]
+
+        find_endpoints(cls().view())
 
         paths = {}
         for url, data in info.items():
@@ -363,7 +376,10 @@ class ModelMixin(object):
                 if form_cls:
                     form = form_cls(request=request)
                     form.load_fieldsets()
-                    body = form.get_api_params()
+                    if form_cls.__name__ == 'FilterForm':
+                        params.extend(form.get_api_params())
+                    else:
+                        body = form.get_api_params()
                 paths[url][method] = {
                     'summary': summary,
                     'description': description,

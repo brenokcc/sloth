@@ -53,6 +53,7 @@ class Doenca(models.Model):
 
 class TipoProcedimento(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
+    cor = models.ColorField(verbose_name='Cor', default='#FFFFFF')
     valor = models.DecimalField(verbose_name='Valor')
 
     class Meta:
@@ -137,7 +138,7 @@ class AnimalManager(models.Manager):
             'Cliente', proprietario='cliente'
         ).role_lookups(
             'Funcionário'
-        ).display('foto', 'nome', 'descricao', 'get_situacao').cards()
+        ).display('foto', 'nome', 'descricao', 'get_situacao').rows()
 
     def get_qtd_por_tipo(self):
         return self.all().count('tipo')
@@ -195,7 +196,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos', 'get_tratamentos_por_doenca',)
+        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos').append('get_tratamentos_por_doenca')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')

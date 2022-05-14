@@ -97,6 +97,26 @@ def pretty(name):
     return name
 
 
+def to_api_params(form_field_tuples):
+    from django import forms
+    params = []
+    for name, field in form_field_tuples:
+        param_type = 'string'
+        param_format = None
+        if isinstance(field, forms.BooleanField) or name.isupper():  # controller field
+            param_type = 'boolean'
+        elif isinstance(field, forms.DateTimeField):
+            param_format = 'date-time'
+        elif isinstance(field, forms.DateField):
+            param_format = 'date'
+        elif isinstance(field, forms.IntegerField) or isinstance(field, forms.ModelChoiceField):
+            param_type = 'integer'
+            param_format = 'int32'
+        params.append(
+            {'description': field.label, 'name': name, 'in': 'query', 'required': False,
+             'schema': dict(type=param_type, format=param_format)}
+        )
+    return params
 
 
 

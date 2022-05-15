@@ -157,7 +157,10 @@ class ValueSet(dict):
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                         else:
-                            value = value.to_list(detail=False)
+                            if self.metadata['primitive']:  # one-to-many or many-to-many
+                                value = dict(value=serialize(value), width=width, template=None)
+                            else:
+                                value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value.contextualize(self.metadata['request'])

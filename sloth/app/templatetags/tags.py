@@ -82,7 +82,7 @@ def image_src(path):
 @register.filter
 def image_key(dictionary):
     for k, v in dictionary.items():
-        if not is_valueset(v):
+        if isinstance(v, dict) and not is_valueset(v):
             if is_image(v['value']):
                 return k
     return None

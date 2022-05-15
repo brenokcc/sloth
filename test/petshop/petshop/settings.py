@@ -164,7 +164,9 @@ SLOTH = {
 		'LINKS': [],
 	},
 	'INCLUDE': {
-		'CSS': [],
+		'CSS': [
+            # '/static/themes/endless.css'
+        ],
 		'JS': [],
 	},
 	'ROLES':{

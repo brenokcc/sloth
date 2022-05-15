@@ -2,6 +2,7 @@
 
 import datetime
 import re
+from django.conf import settings
 from decimal import Decimal
 from django.db.models.fields.files import FieldFile
 
@@ -119,4 +120,11 @@ def to_api_params(form_field_tuples):
     return params
 
 
-
+def colors():
+    return getattr(
+        settings, 'COLORS', [
+            '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0',
+            '#0d47a1', '#66bb6a', '#4caf50', '#43a047', '#388e3c',
+            '#2e7d32', '#1b5e20'
+        ]
+    )

@@ -2,13 +2,12 @@
 
 import json
 from decimal import Decimal
-from uuid import uuid1
 from django.db.models.aggregates import Count
 from django.template.loader import render_to_string
 
-from sloth.utils import pretty
+from sloth.utils import pretty, colors
 
-COLORS = '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0', '#0d47a1', '#66bb6a', '#4caf50', '#43a047', '#388e3c', '#2e7d32', '#1b5e20'
+
 MONTHS = 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
 
 
@@ -233,8 +232,8 @@ class QuerySetStatistics(object):
         return self.chart('column')
 
     def nex_color(self):
-        color = COLORS[self.cursor]
+        color = colors()[self.cursor]
         self.cursor += 1
-        if self.cursor == len(COLORS):
+        if self.cursor == len(colors()):
             self.cursor = 0
         return color

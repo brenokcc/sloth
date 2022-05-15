@@ -1,5 +1,6 @@
 from django.forms import widgets
 from django.utils.safestring import mark_safe
+from sloth.utils import colors
 
 
 class ColorInput(widgets.TextInput):
@@ -17,10 +18,11 @@ class ColorInput(widgets.TextInput):
                 'onColorSelected': function() {{
                      $("#id_{}").val(this.color);
                     this.element.css({{'backgroundColor': this.color, 'color': this.color}});
-                }}
+                }},
+                'palette': {}
             }});
             }});
             </script>
             <style>#colorPick{{z-index:99999;}}</style>
-        '''.format(cpid, cpid, value or '#27ae60', name)
+        '''.format(cpid, cpid, value or '#FFFFFF', name, colors())
         return mark_safe('{}\n{}'.format(html, extra))

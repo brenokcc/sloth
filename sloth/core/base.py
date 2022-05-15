@@ -69,6 +69,8 @@ class ModelMixin(object):
             attr_names = []
             def append_attr_names(valueset):
                 names = list(valueset.metadata['names'].keys())
+                names.extend(valueset.metadata['append'])
+                names.extend(valueset.metadata['attach'])
                 # if all names starts with "get_" it is certainly a fieldset list or fieldset group
                 if all([attr_name.startswith('get_') for attr_name in names]):
                     for attr_name in names:
@@ -411,7 +413,6 @@ class ModelMixin(object):
         return getattr(cls, '_meta')
 
     def get_role_tuples(self):
-        content_type = apps.get_model('contenttypes', 'ContentType')
         model = type(self)
         tuples = set()
         for role in self.__roles__:
@@ -424,7 +425,7 @@ class ModelMixin(object):
             for value in values:
                 if value[role['username']]:
                     for scope_key, lookup in role['scopes'].items():
-                        scope_type = model if lookup == 'id' else model.get_field(lookup).related_model
+                        scope_type = model if lookup in ('id', 'pk') else model.get_field(lookup).related_model
                         scope_value = value[lookup]
                         tuples.add((value[role['username']], role['name'], scope_type, scope_key, scope_value))
         return tuples

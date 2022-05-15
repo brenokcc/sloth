@@ -1,8 +1,6 @@
 from sloth import actions
 from django.contrib import auth
 
-from sloth.api.models import User
-
 
 class DeleteUserRole(actions.Action):
     class Meta:
@@ -55,7 +53,8 @@ class DeactivateUserRole(actions.Action):
 
 class LoginAsUser(actions.Action):
     class Meta:
-        verbose_name = 'Acessa como Usuário'
+        icon = 'unlock'
+        verbose_name = 'Acessar'
         style = 'warning'
 
     def submit(self):

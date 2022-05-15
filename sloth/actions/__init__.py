@@ -78,7 +78,8 @@ class Action(metaclass=ActionMetaclass):
                     self.instances = self.instance,
 
         if 'data' not in kwargs:
-            if self.base_fields or self.requires_confirmation():
+            # if self.base_fields or self.requires_confirmation():
+            if self.request.method == 'GET' or self.requires_confirmation():
                 data = self.request.POST or None
             else:
                 data = self.request.POST

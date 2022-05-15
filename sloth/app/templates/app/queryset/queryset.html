@@ -246,15 +246,7 @@
        {% endif %}
         <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
             <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
-                {% if forloop.first or forloop.last %}
-                    {% if forloop.first %}
-                        {% if request|mobile or compact %}{{ page }}{% else %}Primeira{% endif %}
-                    {% else %}
-                        {% if request|mobile or compact %}{{ page }}{% else %}Última{% endif %}
-                    {% endif %}
-                {% else %}
-                    {{ page }}
-                {% endif %}
+                {{ page }}
             </a>
         </li>
       {% if forloop.counter == 4 %}

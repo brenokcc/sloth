@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
-from sloth.decorators import verbose_name, template
+from sloth.decorators import verbose_name, renderer
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
 from sloth.db import models
@@ -167,7 +167,7 @@ class Task(models.Model):
         self.stopped = True
         self.save()
 
-    @template('app/formatters/progress')
+    @renderer('app/formatters/progress')
     @verbose_name('Progresso')
     def get_progress(self):
         return self.progress

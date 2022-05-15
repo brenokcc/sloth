@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from sloth.db import models
-from sloth.decorators import verbose_name, role, template
+from sloth.decorators import verbose_name, role, renderer
 
 
 @role('Gerente', username='email')
@@ -102,7 +102,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @template('app/formatters/progress')
+    @renderer('app/formatters/progress')
     @verbose_name('Progresso')
     def get_progresso(self):
         return 27
@@ -279,12 +279,12 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @template('app/formatters/image')
+    @renderer('app/formatters/image')
     @verbose_name('Foto')
     def get_foto(self):
         return self.foto or '/static/images/profile.png'
 
-    @template('app/formatters/progress')
+    @renderer('app/formatters/progress')
     def get_progresso(self):
         return 27
 

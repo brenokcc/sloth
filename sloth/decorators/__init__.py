@@ -8,7 +8,7 @@ def verbose_name(name):
     return decorate
 
 
-def template(name):
+def renderer(name):
     def decorate(func):
         setattr(func, '__template__', name)
         return func

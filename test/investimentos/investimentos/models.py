@@ -3,7 +3,7 @@ import datetime
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from sloth.db import models
-from sloth.decorators import verbose_name, role, template
+from sloth.decorators import verbose_name, role, renderer
 
 
 @role('Administrador', username='cpf')
@@ -427,7 +427,7 @@ class Demanda(models.Model):
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @template('app/formatters/progress')
+    @renderer('app/formatters/progress')
     @verbose_name('Respostas do Questionário')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()
@@ -436,7 +436,7 @@ class Demanda(models.Model):
             return int(total_respostas * 100 / total_perguntas)
         return 0
 
-    @template('prioridade')
+    @renderer('prioridade')
     @verbose_name('Prioridade')
     def get_prioridade(self):
         return self.prioridade

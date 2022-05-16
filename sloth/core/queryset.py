@@ -23,7 +23,7 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = dict(uuid=uuid1().hex,
+        self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(),
             display=[], view=True, filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
@@ -363,13 +363,10 @@ class QuerySet(models.QuerySet):
             )
             if attach:
                 data.update(attach=attach)
-            if path is None:
-                if 0 and self.metadata['request'] and self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest':
-                    path = self.metadata['request'].path[4:]
-                else:
-                    path = '/{}/{}/'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
-                    if self.metadata['attr']:
-                        path = '{}{}/'.format(path, self.metadata['attr'])
+
+            if path is None and self.metadata['request']:
+                prefix = self.metadata['request'].path.split('/')[1]
+                path = self.metadata['request'].path.replace('/{}'.format(prefix), '')
             data.update(path=path)
 
             if not lazy:
@@ -485,6 +482,7 @@ class QuerySet(models.QuerySet):
 
     def attr(self, name):
         self.metadata['attr'] = name
+        self.metadata['uuid'] = name
         if self.metadata['verbose_name'] is None:
             self.metadata['verbose_name'] = pretty(name)
         return self
@@ -589,7 +587,7 @@ class QuerySet(models.QuerySet):
                     )
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self._get_attach())
-            if request.GET  and ('uuid' in request.GET or request.path.startswith('/api/')):
+            if self.metadata['uuid'] == request.GET.get('uuid'):
                 component = self.process_request(request).apply_role_lookups(request.user)
                 if 'uuid' in request.GET:
                     raise HtmlJsonReadyResponseException(component.html())

@@ -146,8 +146,9 @@ class ValueSet(dict):
                         path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
 
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
-                        if not isinstance(value, QuerySet):
+                        if not isinstance(value, QuerySet):  # ManyRelatedManager
                             value = value.filter()
+                        value.metadata['uuid'] = attr_name
                         verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
                         value = value.contextualize(self.metadata['request'])
                         if wrap:

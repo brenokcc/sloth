@@ -432,6 +432,7 @@ class ModelMixin(object):
 
     def sync_roles(self, role_tuples):
         from django.contrib.auth.models import User
+        user_id = None
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
         # for x in role_tuples: print(x)
@@ -443,6 +444,7 @@ class ModelMixin(object):
         for username, name, scope_type, scope_key, scope_value in role_tuples2:
             if scope_value:
                 user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
+                scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
                 if user_id is None:
                     user = User.objects.create(username=username)
                     user.set_password('123')
@@ -450,12 +452,15 @@ class ModelMixin(object):
                     user_id = user.id
                 role.objects.get_or_create(
                     user_id=user_id, name=name,
-                    scope_type='{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name),
+                    scope_type=scope_type,
                     scope_key=scope_key, scope_value=scope_value
                 )
         deleted_role_tuples = role_tuples - role_tuples2
         # print('DELETED: ', deleted_role_tuples)
         for username, name, scope_type, scope_key, scope_value in deleted_role_tuples:
+            if user_id is None:
+                user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
+            scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
             role.objects.filter(
-                user__username=username, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+                user_id=user_id, name=name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
             ).delete()

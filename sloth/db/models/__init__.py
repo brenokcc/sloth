@@ -176,6 +176,8 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
 
     def delete(self, *args, **kwargs):
         if hasattr(self, '__roles__'):
-            print(self.__roles__)
+            setattr(self, '_role_tuples', self.get_role_tuples())
         super().delete(*args, **kwargs)
+        if hasattr(self, '__roles__'):
+            self.sync_roles(getattr(self, '_role_tuples'))
 

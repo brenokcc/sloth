@@ -96,7 +96,7 @@ class Role(models.Model):
     @verbose_name('Referência')
     def get_scope_value(self):
         if self.scope_type:
-            return apps.get_model(self.scope_type).objects.get(pk=self.scope_value)
+            return apps.get_model(self.scope_type).objects.filter(pk=self.scope_value).first()
 
 
 class Scope(models.Model):

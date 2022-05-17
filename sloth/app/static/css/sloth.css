@@ -294,6 +294,7 @@ textarea{
 
 .valueset-title{
         display: inline-block;
+        width: 100%;
 }
 .valueset-action-bar{
     display: inline-block;

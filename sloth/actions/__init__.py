@@ -250,11 +250,6 @@ class Action(metaclass=ActionMetaclass):
 
     def save(self, *args, **kwargs):
 
-        # TODO: Remove later (user's email has not been saved)
-        if type(self.instance).__name__ == 'User':
-            if 'email' in self.cleaned_data and self.instance.email is None:
-                self.instance.email = self.cleaned_data['email']
-
         if hasattr(self.instance, 'pre_save'):
             self.instance.pre_save()
 
@@ -423,6 +418,9 @@ class Action(metaclass=ActionMetaclass):
                 classes.append('masked-input')
                 field.widget.attrs['data-reverse'] = 'true'
                 field.widget.attrs['data-mask'] = getattr(field.widget, 'rmask')
+            if getattr(field.widget, 'formatted', False):
+                classes.append('html-input')
+
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(

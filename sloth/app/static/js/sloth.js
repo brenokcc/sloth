@@ -157,6 +157,10 @@ jQuery.fn.extend({
             });
             $(widgets).prop('disabled', !this.checked);
         });
+        $(this).find('textarea.html-input').each(function( index ) {
+            console.log(this);
+            $(this).trumbowyg({lang: 'pt_br'});
+        });
         $(this).find('select').not('.select2-hidden-accessible').each(function( index ) {
             var element = $(this);
             var url = $(this).data('choices-url');

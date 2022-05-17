@@ -77,7 +77,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
                             if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                return instance.show(qs.metadata['view']).contextualize(request)
+                                return instance.display(qs.metadata['view']['name']).contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
                             # instances = attr().filter(pk__in=z.split('-'))
@@ -92,7 +92,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             qs = getattr(attr(), z)()
                             instance = qs.contextualize(request).get(pk=w)
                             if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                return instance.show(*qs.metadata['view']).contextualize(request)
+                                return instance.display(qs.metadata['view']['name']).contextualize(request)
                             raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
                             relation = attr()
@@ -139,7 +139,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             raise PermissionDenied()
                         else:
                             # object subset or attr
-                            if obj.has_fieldset_permission(request.user, y):
+                            if obj.has_view_attr_permission(request.user, y):
                                 attr = getattr(obj, y)
                                 output = attr().attr(y).contextualize(request)
                                 if not is_ajax(request):

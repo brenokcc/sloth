@@ -39,9 +39,6 @@ class Rede(models.Model):
         verbose_name = 'Rede'
         verbose_name_plural = 'Redes'
 
-    class Permission:
-        list = 'Gerente de Rede',
-
     def __str__(self):
         return self.nome
 
@@ -65,6 +62,9 @@ class Rede(models.Model):
 
     def view(self):
         return self.values('get_dados_gerais', 'get_lojas', 'get_detalhamento')
+
+    def has_list_permission(self, user):
+        return user.roles.contains('Gerente de Rede')
 
 
 class LojaManager(models.Manager):

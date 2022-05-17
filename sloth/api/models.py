@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
-from sloth.decorators import verbose_name, renderer
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser
-from sloth.db import models
+from sloth.db import models, meta
 
 
 class UserManager(models.Manager):
     def all(self):
         return self.display(
             'username', 'is_superuser', 'get_roles_names'
-        ).actions('LoginAsUser').verbose_name('Usuários')
+        ).actions('LoginAsUser').verbose('Usuários')
 
 
 class User(DjangoUser):
@@ -30,16 +29,16 @@ class User(DjangoUser):
         return self.values('get_general_info', 'get_access_info', 'get_roles')
 
     def get_general_info(self):
-        return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
+        return self.values(('first_name', 'last_name'), 'username', 'email').verbose('Dados Gerais')
 
     def get_access_info(self):
-        return self.values('is_superuser',).verbose_name('Dados de Acesso')
+        return self.values('is_superuser',).verbose('Dados de Acesso')
 
-    @verbose_name('Papéis')
+    @meta('Papéis')
     def get_roles(self):
         return self.roles.all().ignore('user')
 
-    @verbose_name('Papéis')
+    @meta('Papéis')
     def get_roles_names(self):
         return list(self.roles.values_list('name', flat=True).distinct())
 
@@ -93,7 +92,7 @@ class Role(models.Model):
         else:
             return '{}'.format(self.name)
 
-    @verbose_name('Referência')
+    @meta('Referência')
     def get_scope_value(self):
         if self.scope_type:
             return apps.get_model(self.scope_type).objects.filter(pk=self.scope_value).first()
@@ -123,13 +122,13 @@ class Application(AbstractApplication):
         return self.name
 
     def get_access_tokens(self):
-        return self.accesstoken_set.all().verbose_name('Tokens de Acesso')
+        return self.accesstoken_set.all().verbose('Tokens de Acesso')
 
     def general_data(self):
-        return self.values('id', 'name').verbose_name('Dados Gerais')
+        return self.values('id', 'name').verbose('Dados Gerais')
 
     def access_data(self):
-        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
+        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose('Dados de Acesso')
 
     def view(self):
         return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')
@@ -167,8 +166,7 @@ class Task(models.Model):
         self.stopped = True
         self.save()
 
-    @renderer('app/formatters/progress')
-    @verbose_name('Progresso')
+    @meta('Progresso', 'app/formatters/progress')
     def get_progress(self):
         return self.progress
 

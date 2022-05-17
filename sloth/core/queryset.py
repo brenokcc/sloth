@@ -24,15 +24,17 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(),
-            display=[], view=True, filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=None, interval='', total=0, ignore=[], is_admin=False,
+            display=[], view=dict(name='self', modal=False), filters={}, dfilters={}, search=[], ordering=[],
+            page=1, limit=20, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
             totalizer=None, calendar=None
         )
 
-    def normalize_email(self, *args, **kwargs):
-        pass
+    def _clone(self):
+        clone = super()._clone()
+        clone.metadata = dict(self.metadata)
+        return clone
 
     def role_lookups(self, *names, **scopes):
         for name in names:
@@ -57,19 +59,11 @@ class QuerySet(models.QuerySet):
             return self.none()
         return self
 
-    def join(self, *names):
+    def valueset(self, *names):
         from sloth.core.valueset import ValueSet
         return ValueSet(self, names)
 
-    def _clone(self):
-        clone = super()._clone()
-        clone.metadata = dict(self.metadata)
-        return clone
-
-    def _get_list_search(self):
-        return self.metadata['search']
-
-    def _get_list_display(self, add_id=False):
+    def get_list_display(self, add_id=False):
         if self.metadata['display']:
             list_display = self.metadata['display']
         else:
@@ -79,29 +73,23 @@ class QuerySet(models.QuerySet):
             display.insert(0, 'id')
         return display
 
-    def _get_list_filter(self):
+    def get_list_filters(self):
         if self.metadata['filters']:
             list_filter = self.metadata['filters']
         else:
             list_filter = self.model.default_filter_fields()
         return [name for name in list_filter if name not in self.metadata['ignore']]
 
-    def _get_list_ordering(self):
-        return self.metadata['ordering']
-
-    def _get_list_per_page(self):
-        return self.metadata['limit'] or self.model.default_list_per_page()
-
-    def _get_search(self, verbose=False):
-        display = {}
-        for lookup in self._get_list_search() or self.model.default_search_fields():
+    def get_search(self, verbose=False):
+        search = {}
+        for lookup in self.metadata['search'] or self.model.default_search_fields():
             verbose_name, _, _ = self.model.get_attr_metadata(lookup)
-            display[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
-        return display
+            search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
+        return search
 
-    def _get_display(self, verbose=False):
+    def get_display(self, verbose=False):
         display = {}
-        for lookup in self._get_list_display():
+        for lookup in self.get_list_display():
             verbose_name, sort, template = self.model.get_attr_metadata(lookup)
             display[pretty(verbose_name) if verbose else lookup] = dict(
                 key=lookup, name=pretty(verbose_name), sort=sort, template=template
@@ -109,12 +97,12 @@ class QuerySet(models.QuerySet):
         return display
 
     def filter_form_cls(self):
-        return self._get_filters(verbose=False, as_form=True)
+        return self.get_filters(verbose=False, as_form=True)
 
-    def _get_filters(self, verbose=False, as_form=False):
+    def get_filters(self, verbose=False, as_form=False):
         from sloth import actions
         filters = {}
-        list_filter = self._get_list_filter()
+        list_filter = self.get_list_filters()
         list_filter.extend(self.metadata['dfilters'])
         for lookup in list_filter:
             field = self.model.get_field(lookup)
@@ -152,7 +140,7 @@ class QuerySet(models.QuerySet):
                     filters[key].update(formfield=formfield)
 
         ordering = []
-        for lookup in self._get_list_ordering():
+        for lookup in self.metadata['ordering']:
             field = self.model.get_field(lookup)
             ordering.append(dict(id=lookup, text=field.verbose_name))
         if ordering:
@@ -179,7 +167,7 @@ class QuerySet(models.QuerySet):
 
         return filters
 
-    def _get_attach(self, verbose=False):
+    def get_attach(self, verbose=False):
         attaches = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
@@ -288,7 +276,7 @@ class QuerySet(models.QuerySet):
             actions = self.get_obj_actions(obj)
             if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
                 actions.append('view')
-            item = obj.values(*self._get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
+            item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -297,12 +285,12 @@ class QuerySet(models.QuerySet):
         header = []
         for i, obj in enumerate(self[0:limit]):
             if i == 0:
-                for attr_name in self._get_list_display():
+                for attr_name in self.get_list_display():
                     attr, value = getattrr(obj, attr_name)
                     header.append(getattr(attr, 'verbose_name', attr_name))
                 data.append(header)
             row = []
-            values = obj.values(*self._get_list_display()).load(wrap=False, verbose=False, detail=False).values()
+            values = obj.values(*self.get_list_display()).load(wrap=False, verbose=False, detail=False).values()
             for value in values:
                 if value is None:
                     value = ''
@@ -339,14 +327,14 @@ class QuerySet(models.QuerySet):
                     self.metadata['ignore'].append(lookup)
 
             icon = getattr(self.model.metaclass(), 'icon', None)
-            search = self._get_search(verbose)
-            display = self._get_display(verbose)
-            filters = self._get_filters(verbose)
-            attach = self._get_attach(verbose)
+            search = self.get_search(verbose)
+            display = self.get_display(verbose)
+            filters = self.get_filters(verbose)
+            attach = self.get_attach(verbose)
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
-            n = self.count() // self._get_list_per_page() + 1
+            n = self.count() // self.metadata['limit'] + 1
             for page in range(0, n):
                 if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n - 5:
                     pages.append(page + 1)
@@ -364,32 +352,45 @@ class QuerySet(models.QuerySet):
             if attach:
                 data.update(attach=attach)
 
-            if path is None and self.metadata['request']:
-                prefix = self.metadata['request'].path.split('/')[1]
-                path = self.metadata['request'].path.replace('/{}'.format(prefix), '')
-            data.update(path=path)
+            # path where queryset is instantiated
+            if path is None:
+                if self.metadata['request']:
+                    prefix = self.metadata['request'].path.split('/')[1]
+                    data.update(path=self.metadata['request'].path.replace('/{}'.format(prefix), ''))
+            else:
+                data.update(path=path)
 
             if not lazy:
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
                     collapsed=self.metadata['collapsed'], compact=self.metadata['compact'],
-                    view=self.metadata['view'], is_admin=self.metadata['is_admin']
+                    view=self.metadata['view']['name'], is_admin=self.metadata['is_admin']
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
                 if self.metadata['totalizer']:
                     data['metadata'].update(total=self.sum(self.metadata['totalizer']))
+
+                # path where actions will be executed
+                if path is None:
+                    path = '/{}/{}/'.format(
+                        self.model.metaclass().app_label, self.model.metaclass().model_name
+                    )
                 data['actions'].update(model=[], instance=[], queryset=[])
-                if self.metadata['view']:
-                    view = '{}/'.format(self.metadata['view']) if isinstance(self.metadata['view'], str) else ''
+                if self.metadata['view']['name']:
+                    if self.metadata['view']['name'] == 'self':
+                        view_suffix = ''
+                        view_name = 'Visualizar'
+                    else:
+                        view_suffix = '{}/'.format(self.metadata['view']['name'])
+                        view_name = pretty(self.model.get_attr_metadata(self.metadata['view']['name'])[0])
                     data['actions']['instance'].append(
                         dict(
-                            type='view', key='view', name='Visualizar', submit='Visualizar', target='instance',
-                            method='get', icon='search', style='primary', ajax=False, path='{}{{id}}/{}'.format(path, view),
-                            modal=False
+                            type='view', key='view', name=view_name, submit=view_name, target='instance',
+                            method='get', icon='search', style='primary', ajax=False,
+                            modal=self.metadata['view']['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
                         )
                     )
-
                 for action_type in ('global_actions', 'actions', 'batch_actions'):
                     for form_name in self.metadata[action_type]:
                         form_cls = self.model.action_form_cls(form_name)
@@ -423,12 +424,12 @@ class QuerySet(models.QuerySet):
         self.metadata['totalizer'] = name
         return self
 
-    def verbose_name(self, name):
+    def verbose(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def view(self, name):
-        self.metadata['view'] = name
+    def view(self, name, modal=False):
+        self.metadata['view'] = dict(name=name, modal=modal)
         return self
 
     def display(self, *names):
@@ -439,7 +440,7 @@ class QuerySet(models.QuerySet):
         self.metadata['search'] = list(names)
         if q:
             lookups = []
-            for search_field in self._get_list_search() or self.model.default_search_fields():
+            for search_field in self.metadata['search'] or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
         return self
@@ -460,7 +461,7 @@ class QuerySet(models.QuerySet):
         self.metadata['limit'] = size
         return self
 
-    def template(self, name):
+    def renderer(self, name):
         self.metadata['template'] = name
         return self
 
@@ -519,14 +520,14 @@ class QuerySet(models.QuerySet):
 
     def paginate(self):
         if self.metadata['page'] != 1:
-            start = (self.metadata['page'] - 1) * self._get_list_per_page()
-            end = start + self._get_list_per_page()
+            start = (self.metadata['page'] - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
             qs = self[start:end]
         else:
-            self.metadata['interval'] = '{} - {}'.format(0 + 1, self._get_list_per_page())
-            start = (self.metadata['page'] - 1) * self._get_list_per_page()
-            end = start + self._get_list_per_page()
+            self.metadata['interval'] = '{} - {}'.format(0 + 1, self.metadata['limit'])
+            start = (self.metadata['page'] - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
             qs = self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
 
@@ -586,7 +587,7 @@ class QuerySet(models.QuerySet):
                         CsvResponse(self.export())
                     )
             if 'attaches' in request.GET:
-                raise JsonReadyResponseException(self._get_attach())
+                raise JsonReadyResponseException(self.get_attach())
             if self.metadata['uuid'] == request.GET.get('uuid'):
                 component = self.process_request(request).apply_role_lookups(request.user)
                 if 'uuid' in request.GET:
@@ -613,7 +614,7 @@ class QuerySet(models.QuerySet):
         else:
             raise Exception()
         qs.metadata.update(request=request)
-        for item in self._get_filters().values():
+        for item in self.get_filters().values():
             value = request.GET.get(item['key'])
             if value:
                 if item['key'] == 'ordering':
@@ -685,3 +686,6 @@ class QuerySet(models.QuerySet):
     def timeline(self):
         self.metadata['template'] = 'app/queryset/timeline.html'
         return self
+
+    def normalize_email(self, email):
+        return email

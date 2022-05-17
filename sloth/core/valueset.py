@@ -67,11 +67,11 @@ class ValueSet(dict):
         self.metadata['image'] = image
         return self
 
-    def template(self, name):
+    def renderer(self, name):
         self.metadata['template'] = name
         return self
 
-    def verbose_name(self, name):
+    def verbose(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
 

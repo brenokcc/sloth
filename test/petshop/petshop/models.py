@@ -30,7 +30,7 @@ class DoencaManager(models.Manager):
         return self.filter(contagiosa=False)
 
     def get_total_por_contagiosiade(self):
-        return self.count('contagiosa').verbose_name('Total de Doenças Contagiosas')
+        return self.count('contagiosa').verbose('Total de Doenças Contagiosas')
 
 
 class Doenca(models.Model):

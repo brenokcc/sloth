@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from sloth.db import models
-from sloth.decorators import verbose_name, role, renderer
+from sloth.db import models, role, meta
 
 
 @role('Gerente', username='email')
@@ -44,6 +43,7 @@ class Estado(models.Model):
     cidades_metropolitanas = models.ManyToManyField('base.Municipio', verbose_name='Cidades Metropolitanas', blank=True, related_name='s1')
     endereco = models.OneToOneField('base.Endereco', verbose_name='Endereço', null=True, blank=False)
     telefones = models.OneToManyField(Telefone, verbose_name='Telefones', min=2, max=2)
+    historia = models.TextField(verbose_name='História', formatted=True)
 
     objects = EstadoManager()
 
@@ -51,14 +51,15 @@ class Estado(models.Model):
         verbose_name = 'Estado'
         verbose_name_plural = 'Estados'
 
-    class Permission:
-        list = view = 'Chefe',
-
     def __str__(self):
         return self.sigla
 
+    @meta('História', 'utils/formatted')
+    def get_historia(self):
+        return self.historia
+
     def get_dados_gerais(self):
-        return self.values('id', ('sigla', 'endereco'))
+        return self.values('id', ('sigla', 'endereco'), 'get_historia')
 
     def view(self):
         return self.values('get_dados_gerais', 'get_cidades').actions(
@@ -70,11 +71,14 @@ class Estado(models.Model):
             'AdicionarMunicipioEstado'
         )
 
+    def has_list_permission(self, user):
+        return user.roles.contains('Chefe')
+
 
 class MunicipioManager(models.Manager):
 
     def all(self):
-        return self.attach('por_estados', 'get_qtd_por_estado')
+        return self.attach('agrupados', 'get_qtd_por_estado')
 
     def potiguares(self):
         return self.filter(estado__sigla='RN')
@@ -82,11 +86,11 @@ class MunicipioManager(models.Manager):
     def paraibanos(self):
         return self.filter(estado__sigla='PB')
 
-    def por_estados(self):
-        return self.join('potiguares', 'paraibanos', 'get_qtd_por_estado')
+    def agrupados(self):
+        return self.valueset('potiguares', 'paraibanos', 'get_qtd_por_estado')
 
     def get_qtd_por_estado(self):
-        return self.count('estado').verbose_name('Quantidade por Estado')
+        return self.count('estado').verbose('Quantidade por Estado')
 
 
 class Municipio(models.Model):
@@ -102,8 +106,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @renderer('app/formatters/progress')
-    @verbose_name('Progresso')
+    @meta('Progresso', 'app/formatters/progress')
     def get_progresso(self):
         return 27
 
@@ -125,19 +128,19 @@ class Municipio(models.Model):
     def has_edit_permission(self, user):
         return self.pk % 2 == 0
 
-    @verbose_name('Nome')
+    @meta('Nome')
     def get_a(self):
         return 'Carlos Breno Pereira Silva'
 
-    @verbose_name('Data de Nascimento')
+    @meta('Data de Nascimento')
     def get_b(self):
         return '27/08/1984'
 
-    @verbose_name('CPF')
+    @meta('CPF')
     def get_c(self):
         return '047.704.024-14'
 
-    @verbose_name('R$')
+    @meta('R$')
     def get_d(self):
         return 'R$ 23.00,99'
 
@@ -250,7 +253,7 @@ class ServidorManager(models.Manager):
         return self.count('setor', 'ativo').pie_chart()
 
     def get_estatisticas(self):
-        return self.join('total_por_setor_e_ativo', 'total_por_situacao')
+        return self.valueset('total_por_setor_e_ativo', 'total_por_situacao')
 
 
 @role('Servidor', 'matricula', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')
@@ -279,19 +282,18 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @renderer('app/formatters/image')
-    @verbose_name('Foto')
+    @meta('Foto', 'app/formatters/image')
     def get_foto(self):
         return self.foto or '/static/images/profile.png'
 
-    @renderer('app/formatters/progress')
+    @meta('Progresso', 'app/formatters/progress')
     def get_progresso(self):
         return 27
 
     def get_dados_gerais(self):
         return self.values(
             'nome', ('cpf', 'data_nascimento'), 'get_progresso'
-        ).actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')  # .template('dados_gerais')
+        ).actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')
 
     def get_endereco(self):
         return self.endereco.values(

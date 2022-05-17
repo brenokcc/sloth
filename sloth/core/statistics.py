@@ -32,7 +32,7 @@ class QuerySetStatistics(object):
         if y and '__month' in y:
             self._ydict = {i + 1: month for i, month in enumerate(MONTHS)}
 
-    def verbose_name(self, name):
+    def verbose(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
 

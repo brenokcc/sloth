@@ -455,6 +455,8 @@ class Action(metaclass=ActionMetaclass):
     def redirect(self, url=None, message=None, style='success'):
         if url is None:
             url = '..' if self.fields or self.is_modal() else '.'
+            # if url == '..' and not self.get_refresh():
+            #     url = '.'
         self.response.update(type='redirect', url=url)
         if message is None:
             message = getattr(self.metaclass, 'message', None)

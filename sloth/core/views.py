@@ -65,6 +65,11 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                         form.submit()
                                     return form
                                 raise PermissionDenied()
+                            elif hasattr(obj, w):  # /base/estado/1/get_cidades/1/get_dados_gerais/
+                                instance = qs.contextualize(request).first()
+                                if instance.has_view_attr_permission(request.user, w) or instance.has_permission(request.user):
+                                    return instance.display(w).contextualize(request)
+                                raise PermissionDenied()
                             else:  # /base/estado/1/get_cidades/1/alterar_nome/
                                 form_cls = model.action_form_cls(w)
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
@@ -77,7 +82,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
                             if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                return instance.display(qs.metadata['view']['name']).contextualize(request)
+                                return instance.view().contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
                             # instances = attr().filter(pk__in=z.split('-'))
@@ -164,17 +169,23 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                 if model.objects.has_attr_permission(request.user, x):
                     if y:
                         if y.isdigit():  # view object in a subset
-                            if z:
-                                form_cls = model.action_form_cls(z)
-                                instances = attr().filter(pk__in=y.split('-'))
-                                form = form_cls(request=request, instances=instances)
-                                if form.check_permission(request.user):
-                                    if form.is_valid():
-                                        result = form.submit()
-                                        if result is not None:
-                                            return result
-                                    return form
-                                raise PermissionDenied()
+                            if z:  # /base/cidade/potiguares/1/get_dados_gerais/
+                                obj = attr().contextualize(request).get(pk=y)
+                                if hasattr(obj, z):
+                                    if obj.has_view_attr_permission(request.user, z) or obj.has_permission(request.user):
+                                        return obj.display(z).contextualize(request)
+                                    raise PermissionDenied()
+                                else:
+                                    form_cls = model.action_form_cls(z)
+                                    instances = attr().filter(pk__in=y.split('-'))
+                                    form = form_cls(request=request, instances=instances)
+                                    if form.check_permission(request.user):
+                                        if form.is_valid():
+                                            result = form.submit()
+                                            if result is not None:
+                                                return result
+                                        return form
+                                    raise PermissionDenied()
                             else:
                                 obj = model.objects.get(pk=y)
                                 if obj.has_view_permission(request.user) or obj.has_permission(request.user):

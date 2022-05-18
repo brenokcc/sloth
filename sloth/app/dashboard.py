@@ -133,7 +133,6 @@ class Dashboards:
             for key in dashboard.data:
                 self.data[key].extend(dashboard.data[key])
 
-    @lru_cache
     def superuser_menu(self):
         from django.apps import apps
         from .. import PROXIED_MODELS

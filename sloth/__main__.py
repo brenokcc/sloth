@@ -10,8 +10,7 @@ urlpatterns = [
 ]
 '''
 
-MODELS_FILE_CONTENT = '''from sloth.db import models
-from sloth.decorators import role, verbose_name, renderer
+MODELS_FILE_CONTENT = '''from sloth.db import models, role, meta
 '''
 
 ACTIONS_FILE_CONTENT = '''from sloth import actions

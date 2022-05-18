@@ -15,6 +15,7 @@ urlpatterns = [
     path('app/password/', views.password),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/', views.dispatcher),
+    path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/<str:k>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', views.dispatcher),

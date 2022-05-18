@@ -23,8 +23,8 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(),
-            display=[], view=dict(name='self', modal=False), filters={}, dfilters={}, search=[], ordering=[],
+        self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
+            display=[], view=dict(name='self', modal=False, icon='search'), filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=20, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
@@ -376,6 +376,8 @@ class QuerySet(models.QuerySet):
                     path = '/{}/{}/'.format(
                         self.model.metaclass().app_label, self.model.metaclass().model_name
                     )
+                if self.metadata['subset']:
+                    path = '{}{}/'.format(path, self.metadata['subset'])
                 data['actions'].update(model=[], instance=[], queryset=[])
                 if self.metadata['view']['name']:
                     if self.metadata['view']['name'] == 'self':
@@ -387,7 +389,7 @@ class QuerySet(models.QuerySet):
                     data['actions']['instance'].append(
                         dict(
                             type='view', key='view', name=view_name, submit=view_name, target='instance',
-                            method='get', icon='search', style='primary', ajax=False,
+                            method='get', icon=self.metadata['view']['icon'], style='primary', ajax=False,
                             modal=self.metadata['view']['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
                         )
                     )
@@ -428,8 +430,8 @@ class QuerySet(models.QuerySet):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def view(self, name, modal=False):
-        self.metadata['view'] = dict(name=name, modal=modal)
+    def view(self, name, modal=False, icon='search'):
+        self.metadata['view'] = dict(name=name, modal=modal, icon=icon)
         return self
 
     def display(self, *names):
@@ -602,7 +604,11 @@ class QuerySet(models.QuerySet):
         page = 1
         attr_name = request.GET.get('subset', 'all')
         self.metadata['uuid'] = request.GET.get('uuid')
-        attach = self if attr_name == 'all' else getattr(self, attr_name)()
+        if attr_name == 'all':
+            attach = self
+        else:
+            self.metadata['subset'] = attr_name
+            attach = getattr(self, attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach
             if self.metadata['ignore']:

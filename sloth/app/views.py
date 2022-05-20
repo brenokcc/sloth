@@ -155,7 +155,18 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
             html = data.response.get('html')
             if html:
                 return HttpResponse(data.response['html'])
-            return HttpResponse(data.response['url'])
+            else:
+                js = '<script>{}</script>'
+                if data.response['url'] == '.':
+                    js = js.format('$(document).reload();')
+                elif data.response['url'] == '..':
+                    js = js.format('$(document).back();')
+                elif data.response['url'].startswith('/media/download/'):
+                    js = js.format('$(document).download("{}");'.format(data.response['url']))
+                else:
+                    js = js.format('$(document).redirect("{}");'.format(data.response['url']))
+                messages = render_to_string('app/messages.html', request=request)
+                return HttpResponse('<!---->{}{}<!---->'.format(js, messages))
     else:
         ctx.update(data=data)
     return render(request, ['app/default.html'], ctx)

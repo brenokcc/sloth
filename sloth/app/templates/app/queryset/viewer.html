@@ -1,5 +1,0 @@
-{% if data.metadata.view  %}
-<a type="button" class="btn btn-outline-primary btn-circle" href="/app{{ data.path }}{% if request.GET.subset and request.GET.subset != 'all' %}{{ request.GET.subset }}/{% endif %}{{ row.id|stringformat:'s' }}/">
-    <i class="bi bi-search"></i>
-</a>
-{% endif %}

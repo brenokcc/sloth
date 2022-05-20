@@ -77,14 +77,21 @@ class Action(metaclass=ActionMetaclass):
                 if self.instances == ():
                     self.instances = self.instance,
 
+        form_name = type(self).__name__
         if 'data' not in kwargs:
-            # if self.base_fields or self.requires_confirmation():
-            if self.request.method == 'GET' or self.requires_confirmation():
-                data = self.request.POST or None
+            if form_name in self.request.GET or form_name in self.request.POST:
+                # if self.base_fields or self.requires_confirmation():
+                if self.request.method == 'GET' or self.requires_confirmation():
+                    if self.get_method() == 'get':
+                        data = self.request.GET or None
+                    else:
+                        data = self.request.POST or None
+                else:
+                    data = self.request.POST
+                kwargs['data'] = data
+                kwargs['files'] = self.request.FILES or None
             else:
-                data = self.request.POST
-            kwargs['data'] = data
-            kwargs['files'] = self.request.FILES or None
+                kwargs['data'] = None
 
         super().__init__(*args, **kwargs)
 
@@ -349,7 +356,8 @@ class Action(metaclass=ActionMetaclass):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
     def get_refresh(self):
-        return ','.join(getattr(self.metaclass, 'refresh', ()))
+        refresh = getattr(self.metaclass, 'reload', ())
+        return ','.join(refresh) if isinstance(refresh, tuple) else 'self'
 
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
@@ -468,12 +476,16 @@ class Action(metaclass=ActionMetaclass):
         task.start(self.request)
         self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
 
-    def display(self, data=None, **kwargs):
+    def display(self, data, template='app/default.html'):
+        if isinstance(data, dict):
+            ctx = data
+        else:
+            ctx = dict(form=self, data=data.contextualize(self.request).html())
         self.response.update(
-            html=render_to_string(['{}.html'.format(self.__class__.__name__)], data or kwargs, request=self.request)
+            html=render_to_string([template], ctx, request=self.request)
         )
 
-    def download(self, file_path_or_bytes, file_name=None):
+    def download(self, file_path_or_bytes, file_name=None, message=None):
         download_dir_path = os.path.join(settings.MEDIA_ROOT, 'download')
         os.makedirs(download_dir_path, exist_ok=True)
         if type(file_path_or_bytes) == bytes:
@@ -484,9 +496,12 @@ class Action(metaclass=ActionMetaclass):
             if file_name is None:
                 file_name = file_path_or_bytes.split('/')[-1]
             file_path = os.path.join(download_dir_path, file_name)
+            if os.path.exists(file_path):
+                os.unlink(file_path)
             os.symlink(file_path_or_bytes, file_path)
-            print(file_path_or_bytes, file_path)
         self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
+        if message is not None:
+            messages.add_message(self.request, messages.INFO, message)
 
     def submit(self):
         if self.instances:

@@ -6,6 +6,7 @@
 </h2>
 {% endif %}
 <form id="{{ self.get_metadata.key|slugify }}" action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
+    <input type="hidden" name="{{ self.get_metadata.key }}">
     {% csrf_token %}
 
     {% if self.non_field_errors %}

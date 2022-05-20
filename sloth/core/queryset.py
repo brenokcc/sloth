@@ -24,7 +24,7 @@ class QuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
-            display=[], view=dict(name='self', modal=False, icon='search'), filters={}, dfilters={}, search=[], ordering=[],
+            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
             page=1, limit=20, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
@@ -274,8 +274,10 @@ class QuerySet(models.QuerySet):
         for obj in self:
             add_id = not wrap and not verbose
             actions = self.get_obj_actions(obj)
-            if self.metadata['request'] and (obj.has_view_permission(self.metadata['request'].user) or obj.has_permission(self.metadata['request'].user)):
-                actions.append('view')
+            if self.metadata['request']:
+                for view in self.metadata['view']:
+                    if obj.has_view_attr_permission(self.metadata['request'].user, view['name']) or obj.has_permission(self.metadata['request'].user):
+                        actions.append(view['name'])
             item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
@@ -356,7 +358,7 @@ class QuerySet(models.QuerySet):
             if path is None:
                 if self.metadata['request']:
                     prefix = self.metadata['request'].path.split('/')[1]
-                    data.update(path=self.metadata['request'].path.replace('/{}'.format(prefix), ''))
+                    data.update(path=self.metadata['request'].get_full_path().replace('/{}'.format(prefix), ''))
             else:
                 data.update(path=path)
 
@@ -364,7 +366,7 @@ class QuerySet(models.QuerySet):
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
                     collapsed=self.metadata['collapsed'], compact=self.metadata['compact'],
-                    view=self.metadata['view']['name'], is_admin=self.metadata['is_admin']
+                    is_admin=self.metadata['is_admin']
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
@@ -379,18 +381,19 @@ class QuerySet(models.QuerySet):
                 if self.metadata['subset']:
                     path = '{}{}/'.format(path, self.metadata['subset'])
                 data['actions'].update(model=[], instance=[], queryset=[])
-                if self.metadata['view']['name']:
-                    if self.metadata['view']['name'] == 'self':
+
+                for view in self.metadata['view']:
+                    if view['name'] == 'self':
                         view_suffix = ''
                         view_name = 'Visualizar'
                     else:
-                        view_suffix = '{}/'.format(self.metadata['view']['name'])
-                        view_name = pretty(self.model.get_attr_metadata(self.metadata['view']['name'])[0])
+                        view_suffix = '{}/'.format(view['name'])
+                        view_name = pretty(self.model.get_attr_metadata(view['name'])[0])
                     data['actions']['instance'].append(
                         dict(
-                            type='view', key='view', name=view_name, submit=view_name, target='instance',
-                            method='get', icon=self.metadata['view']['icon'], style='primary', ajax=False,
-                            modal=self.metadata['view']['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
+                            type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
+                            method='get', icon=view['icon'], style='primary', ajax=False,
+                            modal=view['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
                         )
                     )
                 for action_type in ('global_actions', 'actions', 'batch_actions'):
@@ -430,8 +433,12 @@ class QuerySet(models.QuerySet):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def view(self, name, modal=False, icon='search'):
-        self.metadata['view'] = dict(name=name, modal=modal, icon=icon)
+    def view(self, *names, modal=False, icon=None):
+        for name in names:
+            if name:
+                self.metadata['view'].append(dict(name=name, modal=modal, icon=icon))
+            else:
+                self.metadata['view'].clear()
         return self
 
     def display(self, *names):
@@ -543,8 +550,8 @@ class QuerySet(models.QuerySet):
 
     # rendering function
 
-    def html(self):
-        serialized = self.serialize(wrap=True, verbose=True)
+    def html(self, path=None):
+        serialized = self.serialize(path=path, wrap=True, verbose=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural

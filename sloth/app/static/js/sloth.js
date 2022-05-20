@@ -27,20 +27,8 @@ jQuery.fn.extend({
                 if(contentType.indexOf('text')>=0){
                     var reader = new FileReader();
                     reader.onload = function (event) {
-                        if(reader.result == '.'){
-                            document.location.reload();
-                        } else if(reader.result == '..'){
-                            $(document).back();
-                        } else if(reader.result.startsWith('/media/download/')){
-                            var a = document.createElement("a");
-                            a.href = reader.result;
-                            document.body.appendChild(a);
-                            a.click();
-                            $(document).back();
-                        }  else if(reader.result.startsWith('/')){
-                            //$(document).open(reader.result);
-                            $('#modal').modal('hide');
-                            document.location.href = reader.result;
+                        if(reader.result.startsWith('<!---->') && reader.result.endsWith('<!---->')){
+                            $(document.body).append(reader.result);
                         } else {
                             callback(reader.result);
                         }
@@ -80,6 +68,21 @@ jQuery.fn.extend({
             $('#modal').modal('show');
             document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });
+    },
+    reload: function(){
+        document.location.reload();
+    },
+    redirect: function(url){
+        $('#modal').modal('hide');
+        document.location.href = url;
+    },
+    download: function(url){
+        alert(url);
+        var a = document.createElement("a");
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        $(document).back();
     },
     back: function(canceled){
         if($('#modal').is(':visible')){
@@ -236,23 +239,28 @@ jQuery.fn.extend({
         return this;
     },
     refresh: function(areas){
-        var areas = areas.split(',');
-        $.get({url:'?only='+areas.join(','), success:function(html){
-         areas.forEach(function(attrName){
-          var remote = $(html).find('#'+attrName);
-          var local = $('#'+attrName);
-          var arrow = local.find('fieldset-title').find('i');
-          if(arrow.hasClass('bi-chevron-down')){
-            arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
-          } else {
-            arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
-          }
-          remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
-          local.html(remote.html()).initialize();
-         });
-       }});
+        if(areas=='self'){
+            $(document).open(document.location.pathname);
+        } else {
+            var areas = areas.split(',');
+            var url = '?only='+areas.join(',')
+            $.get({url:url, success:function(html){
+             areas.forEach(function(attrName){
+              var remote = $(html).find('#'+attrName);
+              var local = $('#'+attrName);
+              var arrow = local.find('fieldset-title').find('i');
+              if(arrow.hasClass('bi-chevron-down')){
+                arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
+              } else {
+                arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
+              }
+              remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
+              local.html(remote.html()).initialize();
+             });
+           }});
+        }
     }
-});
+    });
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');

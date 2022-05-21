@@ -49,7 +49,7 @@ jQuery.fn.extend({
                 }
             },
             async: true,
-            cache: false,
+            cache: true,
             contentType: false,
             processData: false,
             responseType:'arraybuffer'

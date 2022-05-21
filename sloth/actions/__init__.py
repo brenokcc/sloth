@@ -79,7 +79,7 @@ class Action(metaclass=ActionMetaclass):
 
         form_name = type(self).__name__
         if 'data' not in kwargs:
-            if form_name in self.request.GET or form_name in self.request.POST:
+            if form_name in self.request.GET or form_name in self.request.POST or self.request.path.startswith('/api/'):
                 # if self.base_fields or self.requires_confirmation():
                 if self.request.method == 'GET' or self.requires_confirmation():
                     if self.get_method() == 'get':

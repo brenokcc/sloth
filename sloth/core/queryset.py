@@ -355,13 +355,14 @@ class QuerySet(models.QuerySet):
                 data.update(attach=attach)
 
             # path where queryset is instantiated
-            prefix = self.metadata['request'].path.split('/')[1]
-            if self.metadata['attr']:
-                # if it is a relationship of an object. Ex: /base/servidor/3/get_ferias/
-                path = self.metadata['request'].path.replace('/{}'.format(prefix), '')
-            if path is None:
-                if self.metadata['request']:
-                    data.update(path=self.metadata['request'].get_full_path().replace('/{}'.format(prefix), ''))
+            if self.metadata['request']:
+                prefix = self.metadata['request'].path.split('/')[1]
+                if self.metadata['attr']:
+                    # if it is a relationship of an object. Ex: /base/servidor/3/get_ferias/
+                    path = self.metadata['request'].path.replace('/{}'.format(prefix), '')
+                if path is None:
+                    if self.metadata['request']:
+                        data.update(path=self.metadata['request'].get_full_path().replace('/{}'.format(prefix), ''))
             else:
                 data.update(path=path)
 

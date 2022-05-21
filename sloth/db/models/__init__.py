@@ -184,13 +184,13 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         super().save(*args, **kwargs)
 
     def post_save(self, *args, **kwargs):
-        if hasattr(self, '__roles__'):
+        if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 
     def delete(self, *args, **kwargs):
         if hasattr(self, '__roles__'):
             setattr(self, '_role_tuples', self.get_role_tuples())
         super().delete(*args, **kwargs)
-        if hasattr(self, '__roles__'):
+        if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 

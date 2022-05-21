@@ -381,6 +381,25 @@ class Action(metaclass=ActionMetaclass):
         return has_permission
 
     def __str__(self):
+        return self.html()
+
+    def html(self):
+        if self.response:
+            if 'html' in self.response:
+                return self.response['html']
+            else:
+                js = '<script>{}</script>'
+                if self.response['url'] == '.':
+                    js = js.format('$(document).reload();')
+                elif self.response['url'] == '..':
+                    js = js.format('$(document).back();')
+                elif self.response['url'].startswith('/media/download/'):
+                    js = js.format('$(document).download("{}");'.format(self.response['url']))
+                else:
+                    js = js.format('$(document).redirect("{}");'.format(self.response['url']))
+                messages = render_to_string('app/messages.html', request=self.request)
+                return '<!---->{}{}<!---->'.format(js, messages)
+
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
             if isinstance(field.widget, widgets.CheckboxInput):
@@ -512,7 +531,6 @@ class Action(metaclass=ActionMetaclass):
         else:
             self.save()
         self.redirect(message='Ação realizada com sucesso.')
-
 
 class LoginForm(Action):
     username = CharField(label='Login')

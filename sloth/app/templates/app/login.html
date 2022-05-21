@@ -70,6 +70,17 @@
         {{ form }}
       </div>
     </div>
+    <div class="row d-flex align-items-center justify-content-center" style="margin-top:10px">
+      {% for provider_name, provider_data in settings.SLOTH.OAUTH_LOGIN.items %}
+        {% if provider_data.CLIENTE_ID %}
+        <div class="col-lg-4 col-md-6 col-sm-8">
+          <a class="btn btn-primary" style="width:100%" href="/app/login/{{ provider_name|lower }}/">
+            {{ provider_data.TEXT }}
+          </a>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
     {% include "app/footer.html" %}
   </div>
 </section>

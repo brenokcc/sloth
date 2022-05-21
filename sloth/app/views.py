@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import json
+import requests
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib import auth, messages
 from django.core.exceptions import PermissionDenied
@@ -99,6 +102,39 @@ def login(request):
                 request.user.roles.update(active=False)
                 return HttpResponseRedirect('/app/roles/')
     return render(request, ['app/login.html'], context(request, form=form))
+
+
+def oauth_login(request, provider_name):
+    provider = settings.SLOTH['OAUTH_LOGIN'][provider_name.upper()]
+    authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
+        provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI']
+    )
+    if 'code' in request.GET:
+        access_token_request_data = dict(
+            grant_type='authorization_code', code=request.GET.get('code'), redirect_uri=provider['REDIRECT_URI'],
+            client_id=provider['CLIENTE_ID'], client_secret=provider['CLIENT_SECRET']
+        )
+        data = json.loads(
+            requests.post(provider['ACCESS_TOKEN_URL'], data=access_token_request_data, verify=False).text
+        )
+        headers = {
+            'Authorization': 'Bearer {}'.format(data.get('access_token')), 'x-api-key': provider['CLIENT_SECRET']
+        }
+        data = json.loads(
+            requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers).text
+        )
+        user = User.objects.filter(username=data[provider['USER_DATA']['USERNAME']]).first()
+        if user is None:
+            user = User.objects.create(
+                username=data[provider['USER_DATA']['USERNAME']],
+                email=data[provider['USER_DATA']['EMAIL']] if provider['USER_DATA']['EMAIL'] else '',
+                first_name=data[provider['USER_DATA']['FIRST_NAME']] if provider['USER_DATA']['FIRST_NAME'] else '',
+                last_name=data[provider['USER_DATA']['LAST_NAME']] if provider['USER_DATA']['LAST_NAME'] else ''
+            )
+        auth.login(request, user)
+        return HttpResponseRedirect('/app/')
+    else:
+        return HttpResponse('<html><script>document.location.href="{}";</script></html>'.format(authorize_url))
 
 
 def password(request):

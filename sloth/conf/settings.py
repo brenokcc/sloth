@@ -43,7 +43,19 @@ SLOTH = {
 	},
 	'ROLES':{
 		'ALLOW_MULTIPLE': True
-	}
+	},
+    'OAUTH_LOGIN': {
+        'APP': {
+            'TEXT': 'Acessar com APP',
+            'LOGO': None,
+            'REDIRECT_URI': 'http://localhost:8000/app/login/APP/',
+            'CLIENTE_ID': None,
+            'CLIENT_SECRET': None,
+            'AUTHORIZE_URL': None,
+            'ACCESS_TOKEN_URL': None,
+            'USER_DATA_URL': None
+        }
+    }
 }
 
 # #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

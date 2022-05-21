@@ -142,8 +142,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                                     form.submit()
                                 return form
                             raise PermissionDenied()
-                        else:
-                            # object subset or attr
+                        else:  # /base/servidor/3/get_ferias/
                             if obj.has_view_attr_permission(request.user, y):
                                 attr = getattr(obj, y)
                                 output = attr().attr(y).contextualize(request)

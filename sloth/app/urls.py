@@ -9,6 +9,7 @@ urlpatterns = [
     path('app/manifest/', views.manifest),
     path('app/icons/', views.icons),
     path('app/login/', views.login),
+    path('app/login/<str:provider_name>/', views.oauth_login),
     path('app/roles/', views.roles),
     path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),

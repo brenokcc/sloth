@@ -47,20 +47,22 @@
         </div>
       </div>
       {% if fieldset.refresh %}
-      <script>
-      {% if not request|is_ajax %}
-            var retry_{{ fieldset.key }} = {{ fieldset.refresh.retry }};
-            const interval_{{ fieldset.key }} = setInterval(
-                function(){$(document).refresh('{{ fieldset.key }}')},
-                {{ fieldset.refresh.seconds }}000
-            );
-      {% else %}
-            var retry_{{ fieldset.key }} = retry_{{ fieldset.key }} - 1;
-            if(retry_{{ fieldset.key }}==0){
-                clearInterval(interval_{{ fieldset.key }});
-            }
-      {% endif %}
-      </script>
+          <script>
+          {% if not request|is_ajax %}
+                var retry_{{ fieldset.key }} = {{ fieldset.refresh.retry }};
+                const interval_{{ fieldset.key }} = setInterval(
+                    function(){$(document).refresh('{{ fieldset.key }}')},
+                    {{ fieldset.refresh.seconds }}000
+                );
+          {% else %}
+                {% if fieldset.refresh.retry %}
+                    var retry_{{ fieldset.key }} = retry_{{ fieldset.key }} - 1;
+                {% else %}
+                    var retry_{{ fieldset.key }}=0;
+                {% endif %}
+                if(retry_{{ fieldset.key }}==0) clearInterval(interval_{{ fieldset.key }});
+          {% endif %}
+          </script>
       {% endif %}
     {% endif %}
 {% endif %}

@@ -276,7 +276,11 @@ class QuerySet(models.QuerySet):
             actions = self.get_obj_actions(obj)
             if self.metadata['request']:
                 for view in self.metadata['view']:
-                    if obj.has_view_attr_permission(self.metadata['request'].user, view['name']) or obj.has_permission(self.metadata['request'].user):
+                    if view['name'] == 'self':
+                        has_view_permission = obj.has_view_permission(self.metadata['request'].user)
+                    else:
+                        has_view_permission = obj.has_view_attr_permission(self.metadata['request'].user, view['name'])
+                    if has_view_permission or obj.has_permission(self.metadata['request'].user):
                         actions.append(view['name'])
             item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
@@ -363,8 +367,8 @@ class QuerySet(models.QuerySet):
                 if path is None:
                     if self.metadata['request']:
                         data.update(path=self.metadata['request'].get_full_path().replace('/{}'.format(prefix), ''))
-            else:
-                data.update(path=path)
+                else:
+                    data.update(path=path)
 
             if not lazy:
                 data['metadata'].update(

@@ -61,7 +61,7 @@ def index(request):
 
 @csrf_exempt
 @endpoint
-def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
     if request.method == 'GET' and x == 'all':
         x = None
     if request.method == 'POST' and x is None and y is None:
@@ -72,11 +72,11 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
     if request.method == 'DELETE' and x is not None and y is None:
         request.POST = QueryDict('confirmation=1')
         y = 'delete'
-    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w, k=k)
 
 
 @csrf_exempt
-def api_model_dispatcher(request, x=None, y=None, z=None, w=None):
+def api_model_dispatcher(request, x=None, y=None, z=None, w=None, k=None):
     app_label = 'api'
     model_name = request.path.split('/')[2]
-    return dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w)
+    return dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w, k=k)

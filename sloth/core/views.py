@@ -33,7 +33,7 @@ def is_authenticated(request):
     return True
 
 
-def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
     model = apps.get_model(app_label, model_name)
     if x:
         x = str(x)
@@ -96,9 +96,18 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
                         if w:  # /base/estado/1/get_cidades/sem_prefeito/1/
                             qs = getattr(attr(), z)()
                             instance = qs.contextualize(request).get(pk=w)
-                            if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                return instance.display(qs.metadata['view']['name']).contextualize(request)
-                            raise PermissionDenied()
+                            if k:  # /base/estado/1/get_cidades/sem_prefeito/1/DefinirPrefeito/
+                                form_cls = model.action_form_cls(k)
+                                form = form_cls(request=request, instances=qs, instantiator=obj)
+                                if form.check_permission(request.user):
+                                    if form.is_valid():
+                                        form.submit()
+                                    return form
+                                raise PermissionDenied()
+                            else:
+                                if instance.has_view_permission(request.user) or instance.has_permission(request.user):
+                                    return instance.display(qs.metadata['view']['name']).contextualize(request)
+                                raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
                             relation = attr()
                             form_cls = model.action_form_cls(z)

@@ -166,17 +166,31 @@ class Task(models.Model):
         self.stopped = True
         self.save()
 
+    @meta('Mensagem', 'app/messages/message')
+    def get_message(self):
+        if self.error:
+            return 'danger', self.error
+        elif self.stopped:
+            return 'warning', 'Interrompida pelo usuário'
+        elif self.progress < 100:
+            return 'primary', 'Em execução'
+        else:
+            return 'success', self.message or 'Concluída'
+
     @meta('Progresso', 'app/formatters/progress')
     def get_progress(self):
         return self.progress
 
     def get_info(self):
         return self.values(
-            ('name', 'user'), ('start', 'end'), 'get_progress', 'message'
-        ).refresh(seconds=2, condition='in_progress', retry=10).actions('StopTask')
+            ('name', 'user'), ('start', 'end'), 'get_progress', 'get_message'
+        ).refresh(seconds=3, condition='in_progress', retry=10).actions('StopTask')
 
     def in_progress(self):
         return self.progress < 100 and not self.stopped
 
     def view(self):
         return self.values('get_info')
+
+    def has_view_permission(self, user):
+        return user.is_superuser or self.user == user

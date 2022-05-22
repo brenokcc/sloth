@@ -397,7 +397,7 @@ class Action(metaclass=ActionMetaclass):
                     js = js.format('$(document).download("{}");'.format(self.response['url']))
                 else:
                     js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-                messages = render_to_string('app/messages.html', request=self.request)
+                messages = render_to_string('app/messages/messages.html', request=self.request)
                 return '<!---->{}{}<!---->'.format(js, messages)
 
         for name, field in self.fields.items():

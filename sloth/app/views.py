@@ -30,7 +30,7 @@ def view(func):
         except JsonReadyResponseException as e:
             return JsonResponse(e.data)
         except HtmlJsonReadyResponseException as e:
-            messages = render_to_string('app/messages.html', request=request)
+            messages = render_to_string('app/messages/messages.html', request=request)
             return HttpResponse(messages + e.html)
         except PermissionDenied:
             return HttpResponseForbidden()
@@ -182,9 +182,9 @@ def roles(request, activate=None):
 
 
 @view
-def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None):
+def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
     ctx = context(request, dashboard=dashboard.Dashboards(request))
-    data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w)
+    data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w, k=k)
     if isinstance(data, Action):
         ctx.update(form=data)
         if data.response:

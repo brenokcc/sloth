@@ -54,7 +54,7 @@
 
 {% block content %}
 {% endblock %}
-{% include "app/messages.html" %}
+{% include "app/messages/messages.html" %}
 {% for url in settings.SLOTH.INCLUDE.JS %}
       <script src="{{ url }}?v={{ settings.SLOTH.VERSION }}"></script>
 {% endfor %}

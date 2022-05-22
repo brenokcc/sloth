@@ -18,12 +18,14 @@ for model_name in apps.get_app_config('api').models.keys():
     urlpatterns.extend([
         path('api/{}/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/'.format(model_name), views.api_model_dispatcher),
+        path('api/{}/<str:x>/<str:y>/<str:z>/<str:w>/<str:k>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/<str:z>/<str:w>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/<str:z>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/'.format(model_name), views.api_model_dispatcher),
 
         path('api/{}/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/'.format(model_name), views.api_model_dispatcher),
+        path('api/{}/<str:x>/<str:y>/<str:z>/<str:w>/<str:k>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/<str:z>/<str:w>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/<str:z>/'.format(model_name), views.api_model_dispatcher),
         path('api/{}/<str:x>/<str:y>/'.format(model_name), views.api_model_dispatcher),

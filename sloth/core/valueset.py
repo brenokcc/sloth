@@ -185,10 +185,10 @@ class ValueSet(dict):
                                 satisfied = getattr(value.instance, refresh['condition'].replace('not ', ''))
                                 if callable(satisfied):
                                     satisfied = satisfied()
-                                if deny and not satisfied or satisfied:
+                                if deny and not satisfied or satisfied:  # condition was satisfied
                                     refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
                                 else:
-                                    refresh_data = {}
+                                    refresh_data = dict(seconds=refresh['seconds'], retry=0)
                             else:
                                 refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
                         else:

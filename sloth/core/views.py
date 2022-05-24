@@ -106,7 +106,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 raise PermissionDenied()
                             else:
                                 if instance.has_view_permission(request.user) or instance.has_permission(request.user):
-                                    return instance.display(qs.metadata['view']['name']).contextualize(request)
+                                    return instance.display('self').contextualize(request)
                                 raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
                             relation = attr()

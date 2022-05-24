@@ -10,9 +10,25 @@
             <span>{{ settings.SLOTH.HEADER.TITLE }}</span>
           {% endif %}
         </a>
+        {% if dashboard.data.actions %}
         <div class="collapse navbar-collapse">
-          <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not dashboard.data.menu  %}visibility:hidden{% endif %}">
-          {% include "app/dashboard/menu.html" %}
+          <ul class="navbar-nav">
+            {% for action in dashboard.data.actions %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ action.url }}">
+                  {% if action.icon %}
+                    <i class="bi bi-{{ action.icon }}"></i>
+                  {% endif %}
+                  {{ action.label }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        <div class="collapse navbar-collapse">
+          <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not dashboard.data.search  %}visibility:hidden{% endif %}">
+          {% include "app/dashboard/search.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
               <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap">

@@ -200,14 +200,8 @@
     border-radius: 0;
 }
 main{
+    width:100%;
     min-height: 60vh;
-}
-main.margin{
-    margin:20px;
-}
-
-main.small-margin{
-    margin:10px;
 }
 
 main > .row > .col{

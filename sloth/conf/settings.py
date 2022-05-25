@@ -33,7 +33,7 @@ SLOTH = {
 		'TEXT': None,
 	},
 	'FOOTER': {
-		'TITLE': '© 2022 Slogth',
+		'TITLE': '© 2022 Sloth',
 		'TEXT': 'Todos os direitos reservados',
 		'LINKS': [],
 	},

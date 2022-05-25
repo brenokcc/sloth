@@ -261,7 +261,7 @@ class Servidor(models.Model):
     foto = models.ImageField(verbose_name='Foto', null=True, blank=True, upload_to='fotos')
     matricula = models.CharField('Matrícula')
     nome = models.CharField('Nome')
-    cpf = models.CharField('CPF', rmask='000.000.000-00')
+    cpf = models.BrCpfField('CPF')
     data_nascimento = models.DateField('Data de Nascimento', null=True)
     endereco = models.OneToOneField(Endereco, verbose_name='Endereço', null=True, blank=True)
     ativo = models.BooleanField('Ativo', default=True)

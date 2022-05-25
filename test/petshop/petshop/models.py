@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from sloth.db import models
-from sloth.decorators import role, verbose_name, renderer
+from sloth.db import models, role, meta
 
 
 @role('Administrador', 'cpf')
@@ -171,7 +170,7 @@ class Animal(models.Model):
     def __str__(self):
         return self.nome
 
-    @renderer('utils/badge')
+    @meta('Situação', 'utils/badge')
     def get_situacao(self):
         if self.get_tratamentos().filter(data_fim__isnull=True).exists():
             return 'warning', 'Em Tratamento'
@@ -238,7 +237,7 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
-    @renderer('utils/steps')
+    @meta('Etapas', 'utils/steps')
     def get_etapas(self):
         etapas = []
         etapas.append(('Início', self.data_inicio))

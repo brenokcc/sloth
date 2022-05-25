@@ -45,7 +45,7 @@ class Dashboard(metaclass=DashboardType):
         return
 
     def _load(self, key, models):
-        allways = 'floating', 'navigation', 'settings', 'actions', 'menu'
+        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links'
         for model in models:
             if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
                 if key in allways or self.request.path == '/app/':

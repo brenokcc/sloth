@@ -113,6 +113,42 @@ class CharField(CharField):
         return field
 
 
+class BrCepField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='00.000-000')
+        super().__init__(*args, **kwargs)
+
+
+class BrCpfField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='000.000.000-00')
+        super().__init__(*args, **kwargs)
+
+
+class BrCnpjField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='00.000.000/0000-00')
+        super().__init__(*args, **kwargs)
+
+
+class BrCarPlateField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='AAA-0A00')
+        super().__init__(*args, **kwargs)
+
+
+class BrPhoneField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='0000-0000')
+        super().__init__(*args, **kwargs)
+
+
+class BrRegionalPhoneField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(mask='(00) 0000-0000')
+        super().__init__(*args, **kwargs)
+
+
 class TextField(TextField):
     def __init__(self, *args, formatted=False, **kwargs):
         self.formatted = formatted

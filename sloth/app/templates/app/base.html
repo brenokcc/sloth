@@ -57,23 +57,10 @@
     {% block nav %}
       {% include "app/dashboard/header.html" %}
     {% endblock %}
+    {% include "app/dashboard/menu.html" with data=dashboard.data %}
 
-    {% if dashboard.data.menu %}
-    <div id="wrapper" style="display: flex; width: 100%; align-items: stretch;">
-      <aside id="sidebar" style="width: 150px; height: 100vh;">
-        <div align="center">
-          {% for item in dashboard.data.menu %}
-              <a class="nav-link" href="{{ item.url }}">
-                {% if item.icon %}
-                  <i class="bi bi-{{ item.icon }}" style="font-size:30px"></i>
-                {% endif %}
-                <div>{{ item.label }}</div>
-              </a>
-          {% endfor %}
-        </div>
-      </aside>
-    {% endif %}
       <main>
+        {% include "app/dashboard/links.html" with data=dashboard.data %}
 {% endif %}
 
 {% block content %}

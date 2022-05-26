@@ -6,7 +6,6 @@ from django.db import models
 from django.db.models import *
 from django.db.models import base
 from django.db.models.query_utils import DeferredAttribute
-from django.utils.safestring import mark_safe
 
 from sloth.core.queryset import QuerySet
 from sloth.core.base import ModelMixin
@@ -162,7 +161,14 @@ class TextField(TextField):
 
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
+        self.username_lookup = kwargs.pop('username_lookup', None)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
+
+    def formfield(self, **kwargs):
+        field = super().formfield(**kwargs)
+        if self.username_lookup:
+            field.username_lookup = self.username_lookup
+        return field
 
 
 class OneToOneField(OneToOneField):

@@ -100,6 +100,13 @@ class Action(metaclass=ActionMetaclass):
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id
                     field.widget = widgets.HiddenInput()
+            if hasattr(field, 'username_lookup'):
+                field.widget = widgets.HiddenInput()
+                field.queryset = field.queryset.model.objects.filter(
+                    **{field.username_lookup: self.request.user.username}
+                )
+                field.initial = field.queryset.first().pk
+                self.initial[field_name] = field.initial
 
         self.response = {}
         self.fieldsets = {}

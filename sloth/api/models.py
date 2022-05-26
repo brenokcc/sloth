@@ -9,7 +9,7 @@ class UserManager(models.Manager):
     def all(self):
         return self.display(
             'username', 'is_superuser', 'get_roles_names'
-        ).actions('LoginAsUser').verbose('Usuários')
+        ).actions('LoginAsUser').verbose_name('Usuários')
 
 
 class User(DjangoUser):
@@ -29,10 +29,10 @@ class User(DjangoUser):
         return self.values('get_general_info', 'get_access_info', 'get_roles')
 
     def get_general_info(self):
-        return self.values(('first_name', 'last_name'), 'username', 'email').verbose('Dados Gerais')
+        return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
 
     def get_access_info(self):
-        return self.values('is_superuser',).verbose('Dados de Acesso')
+        return self.values('is_superuser',).verbose_name('Dados de Acesso')
 
     @meta('Papéis')
     def get_roles(self):
@@ -122,13 +122,13 @@ class Application(AbstractApplication):
         return self.name
 
     def get_access_tokens(self):
-        return self.accesstoken_set.all().verbose('Tokens de Acesso')
+        return self.accesstoken_set.all().verbose_name('Tokens de Acesso')
 
     def general_data(self):
-        return self.values('id', 'name').verbose('Dados Gerais')
+        return self.values('id', 'name').verbose_name('Dados Gerais')
 
     def access_data(self):
-        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose('Dados de Acesso')
+        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
 
     def view(self):
         return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')

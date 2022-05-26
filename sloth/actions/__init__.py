@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 import math
-import os
 import re
 from copy import deepcopy
 from functools import lru_cache
-
-from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.forms import *
 from django.forms import fields
 from django.forms import models
 from django.forms import widgets
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
-from ..exceptions import JsonReadyResponseException
+from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params
 
 
@@ -363,13 +361,10 @@ class Action(metaclass=ActionMetaclass):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
 
     def has_permission(self, user):
-        pass
+        return user.is_superuser
 
     def check_permission(self, user):
-        has_permission = self.has_permission(user)
-        if has_permission is None:
-            return user.is_superuser or user.roles.contains(*getattr(self.metaclass, 'has_permission', ()))
-        return has_permission
+        return self.has_permission(user)
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
@@ -504,24 +499,6 @@ class Action(metaclass=ActionMetaclass):
             html=render_to_string([template], ctx, request=self.request)
         )
 
-    def download(self, file_path_or_bytes, file_name=None, message=None):
-        download_dir_path = os.path.join(settings.MEDIA_ROOT, 'download')
-        os.makedirs(download_dir_path, exist_ok=True)
-        if type(file_path_or_bytes) == bytes:
-            file_path = os.path.join(download_dir_path, file_name)
-            with open(file_path, 'w+b') as file:
-                file.write(file_path_or_bytes)
-        else:
-            if file_name is None:
-                file_name = file_path_or_bytes.split('/')[-1]
-            file_path = os.path.join(download_dir_path, file_name)
-            if os.path.exists(file_path):
-                os.unlink(file_path)
-            os.symlink(file_path_or_bytes, file_path)
-        self.response.update(type='redirect', url='/media/download/{}'.format(file_name))
-        if message is not None:
-            messages.add_message(self.request, messages.INFO, message)
-
     def submit(self):
         if self.instances:
             for instance in self.instances:
@@ -531,6 +508,12 @@ class Action(metaclass=ActionMetaclass):
         else:
             self.save()
         self.redirect(message='Ação realizada com sucesso.')
+
+    def process(self):
+        response = self.submit()
+        if isinstance(response, HttpResponse):
+            raise ReadyResponseException(response)
+
 
 class LoginForm(Action):
     username = CharField(label='Login')

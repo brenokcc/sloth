@@ -43,7 +43,7 @@ class ModelMixin(object):
         return user.is_superuser
 
     def has_view_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return self.has_permission(user)
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
@@ -75,16 +75,16 @@ class ModelMixin(object):
         return name in getattr(self.__class__, '__view__')
 
     def has_add_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return self.has_permission(user)
 
     def has_edit_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return self.has_permission(user)
 
     def has_delete_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return self.has_permission(user)
 
     def has_list_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return self.has_permission(user)
 
     ### VISUALIZATION ###
 

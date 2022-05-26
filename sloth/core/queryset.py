@@ -437,7 +437,7 @@ class QuerySet(models.QuerySet):
         self.metadata['totalizer'] = name
         return self
 
-    def verbose(self, name):
+    def verbose_name(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
 

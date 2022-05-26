@@ -90,7 +90,7 @@ class MunicipioManager(models.Manager):
         return self.valueset('potiguares', 'paraibanos', 'get_qtd_por_estado')
 
     def get_qtd_por_estado(self):
-        return self.count('estado').verbose('Quantidade por Estado')
+        return self.count('estado').verbose_name('Quantidade por Estado')
 
 
 class Municipio(models.Model):

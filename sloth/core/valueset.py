@@ -71,7 +71,7 @@ class ValueSet(dict):
         self.metadata['template'] = name
         return self
 
-    def verbose(self, name):
+    def verbose_name(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
 

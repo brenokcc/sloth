@@ -54,7 +54,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                         if ignore in form.fields:
                                             del form.fields[ignore]
                                     if form.is_valid():
-                                        form.submit()
+                                        form.process()
                                     return form
                                 raise PermissionDenied()
                             elif w.lower() == 'delete':  # /base/estado/1/get_cidades/1/delete/
@@ -62,7 +62,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.submit()
+                                        form.process()
                                     return form
                                 raise PermissionDenied()
                             elif hasattr(obj, w):  # /base/estado/1/get_cidades/1/get_dados_gerais/
@@ -75,7 +75,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.submit()
+                                        form.process()
                                     return form
                                 raise PermissionDenied()
                         else:  # /base/estado/1/get_cidades/1/
@@ -89,7 +89,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             # form = form_cls(request=request, instantiator=obj, instances=instances)
                             # if form.check_permission(request.user):
                             #     if form.is_valid():
-                            #         form.submit()
+                            #         form.process()
                             #     return form
                             # raise PermissionDenied()
                     else:
@@ -101,7 +101,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
-                                        form.submit()
+                                        form.process()
                                     return form
                                 raise PermissionDenied()
                             else:
@@ -122,7 +122,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                     del form.fields[related_field_name]
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    form.submit()
+                                    form.process()
                                 return form
                             raise PermissionDenied()
                 else:
@@ -131,7 +131,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                         form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.check_permission(request.user):
                             if form.is_valid():
-                                form.submit()
+                                form.process()
                             return form
                         raise PermissionDenied()
                     if y.lower() == 'delete':  # /base/estado/1/delete/
@@ -139,7 +139,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                         form = form_cls(request=request, instance=obj, instantiator=obj)
                         if form.check_permission(request.user):
                             if form.is_valid():
-                                form.submit()
+                                form.process()
                             return form
                         raise PermissionDenied()
                     else:  # /base/estado/1/editar_sigla/
@@ -148,7 +148,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             form = form_cls(request=request, instance=obj, instantiator=obj)
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    form.submit()
+                                    form.process()
                                 return form
                             raise PermissionDenied()
                         else:  # /base/servidor/3/get_ferias/
@@ -168,7 +168,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
             form = form_cls(request=request)
             if form.check_permission(request.user):
                 if form.is_valid():
-                    form.submit()
+                    form.process()
                 return form
             raise PermissionDenied()
         else:
@@ -189,7 +189,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                     form = form_cls(request=request, instances=instances)
                                     if form.check_permission(request.user):
                                         if form.is_valid():
-                                            result = form.submit()
+                                            result = form.process()
                                             if result is not None:
                                                 return result
                                         return form
@@ -205,7 +205,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             form = form_cls(request=request, instances=instances)
                             if form.check_permission(request.user):
                                 if form.is_valid():
-                                    result = form.submit()
+                                    result = form.process()
                                     if result is not None:
                                         return result
                                 return form
@@ -223,7 +223,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                     form = form_cls(request=request, instances=instances)
                     if form.check_permission(request.user):
                         if form.is_valid():
-                            form.submit()
+                            form.process()
                         return form
                     raise PermissionDenied()
                 else:
@@ -231,7 +231,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                     form = form_cls(request=request)
                     if form.check_permission(request.user):
                         if form.is_valid():
-                            form.submit()
+                            form.process()
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/

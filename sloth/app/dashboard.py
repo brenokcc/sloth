@@ -39,7 +39,8 @@ class Dashboard(metaclass=DashboardType):
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[]
         )
-        self.load(request)
+        if self.request.user.is_authenticated:
+            self.load(request)
 
     def to_item(self, model, count=True):
         return

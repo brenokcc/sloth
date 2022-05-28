@@ -233,20 +233,24 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         abstract = True
 
     def pre_save(self, *args, **kwargs):
-        pass
+        if hasattr(self, '__roles__'):
+            setattr(self, '_role_tuples', self.get_role_tuples(True))
 
     def save(self, *args, **kwargs):
-        if hasattr(self, '__roles__'):
-            setattr(self, '_role_tuples', self.get_role_tuples())
         super().save(*args, **kwargs)
 
     def post_save(self, *args, **kwargs):
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 
+    def persist(self):
+        self.pre_save()
+        self.save()
+        self.post_save()
+
     def delete(self, *args, **kwargs):
         if hasattr(self, '__roles__'):
-            setattr(self, '_role_tuples', self.get_role_tuples())
+            setattr(self, '_role_tuples', self.get_role_tuples(True))
         super().delete(*args, **kwargs)
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))

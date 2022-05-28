@@ -158,3 +158,8 @@ def get_item(dictionary, key):
 def getattr2(obj, name):
     return getattr(obj, name)
 
+
+@register.filter
+def distinct_role_names(roles):
+    return roles.values_list('name', flat=True).distinct()
+

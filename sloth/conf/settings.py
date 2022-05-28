@@ -26,6 +26,7 @@ SLOTH = {
 		'TITLE': None,
 		'TEXT': None,
 		'IMAGE': '/static/images/login.jpeg',
+		'USERNAME_MASK': None
 	},
 	'HEADER': {
 		'LOGO': '/static/images/logo.png',
@@ -55,7 +56,8 @@ SLOTH = {
             'ACCESS_TOKEN_URL': None,
             'USER_DATA_URL': None
         }
-    }
+    },
+	'DEFAULT_PASSWORD': lambda user: '123',
 }
 
 # #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

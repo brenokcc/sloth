@@ -61,6 +61,7 @@ jQuery.fn.extend({
         });
     },
     popup: function(url, method, data){
+        $('.alert-dismissible').hide();
         window['QUERYSET_RELOADER'] = window['reload'+$(this).data('uuid')];
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();

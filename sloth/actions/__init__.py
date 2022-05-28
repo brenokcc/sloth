@@ -9,6 +9,7 @@ from django.forms import *
 from django.forms import fields
 from django.forms import models
 from django.forms import widgets
+from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -370,6 +371,9 @@ class Action(metaclass=ActionMetaclass):
     def get_method(self):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
+    def get_instructions(self):
+        return None
+
     def get_reload_areas(self):
         reload = getattr(self.metaclass, 'reload', 'self')
         if isinstance(reload, tuple):
@@ -556,6 +560,9 @@ class LoginForm(Action):
     def __init__(self, *args, **kwargs):
         self.user = None
         super().__init__(*args, **kwargs)
+        if 'USERNAME_MASK' in settings.SLOTH['LOGIN']:
+            if settings.SLOTH['LOGIN']['USERNAME_MASK']:
+                self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
 
     def clean(self):
         if self.cleaned_data:

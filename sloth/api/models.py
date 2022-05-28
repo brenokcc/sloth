@@ -136,7 +136,7 @@ class Application(AbstractApplication):
 
 class TaskManager(models.Manager):
     def all(self):
-        return self.display('user', 'name', 'start', 'end', 'get_progress')
+        return self.display('id', 'user', 'name', 'start', 'end', 'get_progress')
 
 
 class Task(models.Model):
@@ -166,7 +166,7 @@ class Task(models.Model):
         self.stopped = True
         self.save()
 
-    @meta('Mensagem', 'app/messages/message')
+    @meta('Mensagem', 'messages/message')
     def get_message(self):
         if self.error:
             return 'danger', self.error
@@ -177,14 +177,14 @@ class Task(models.Model):
         else:
             return 'success', self.message or 'Concluída'
 
-    @meta('Progresso', 'app/formatters/progress')
+    @meta('Progresso', 'progress')
     def get_progress(self):
         return self.progress
 
     def get_info(self):
         return self.values(
             ('name', 'user'), ('start', 'end'), 'get_progress', 'get_message'
-        ).refresh(seconds=3, condition='in_progress', retry=10).actions('StopTask')
+        ).reload(seconds=3, condition='in_progress', max_requests=10).actions('StopTask')
 
     def in_progress(self):
         return self.progress < 100 and not self.stopped

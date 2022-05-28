@@ -12,6 +12,7 @@ from django.forms import widgets
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from . import inputs
 
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params
@@ -107,15 +108,24 @@ class Action(metaclass=ActionMetaclass):
                 )
                 field.initial = field.queryset.first().pk
                 self.initial[field_name] = field.initial
+            if hasattr(field, 'picker'):
+                grouper = field.picker if isinstance(field.picker, str) else None
+                if isinstance(field, ModelMultipleChoiceField):
+                    field.widget = inputs.MultiplePickInput(field.queryset, grouper=grouper)
+                else:
+                    field.widget = inputs.PickInput(field.queryset, grouper=grouper)
 
         self.response = {}
         self.fieldsets = {}
         self.one_to_one = {}
         self.one_to_many = {}
 
-        if self.requires_confirmation():
+        confirmation = self.requires_confirmation()
+        if confirmation:
+            help_text = confirmation if isinstance(confirmation, str) else ''
             self.fields['confirmation'] = BooleanField(
-                label='', initial='on', required=False, widget=TextInput(attrs={'style': 'display:none'})
+                label='', initial='on', required=False, help_text=help_text,
+                widget=TextInput(attrs={'style': 'display:none'})
             )
 
     def requires_confirmation(self):
@@ -360,9 +370,11 @@ class Action(metaclass=ActionMetaclass):
     def get_method(self):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
-    def get_refresh(self):
-        refresh = getattr(self.metaclass, 'reload', ())
-        return ','.join(refresh) if isinstance(refresh, tuple) else 'self'
+    def get_reload_areas(self):
+        reload = getattr(self.metaclass, 'reload', 'self')
+        if isinstance(reload, tuple):
+            return ','.join(reload)
+        return reload or ''
 
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
@@ -399,7 +411,7 @@ class Action(metaclass=ActionMetaclass):
                     js = js.format('$(document).download("{}");'.format(self.response['url']))
                 else:
                     js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-                messages = render_to_string('app/messages/messages.html', request=self.request)
+                messages = render_to_string('app/messages.html', request=self.request)
                 return '<!---->{}{}<!---->'.format(js, messages)
 
         for name, field in self.fields.items():
@@ -434,7 +446,8 @@ class Action(metaclass=ActionMetaclass):
                         pks.extend([obj.pk for obj in initial])
                 if self.data:
                     pks = [pk for pk in self.data.getlist(name) if pk]
-                field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
+                if getattr(field, 'picker', None) is None:
+                    field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
                 field.widget.attrs['data-choices-url'] = '{}?choices={}'.format(
                     self.request.path, name
                 )
@@ -493,9 +506,15 @@ class Action(metaclass=ActionMetaclass):
             messages.add_message(self.request, messages.INFO, message)
             self.response.update(message=message, style=style)
 
-    def run(self, task, message=None):
-        task.start(self.request)
-        self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
+    def run(self, *tasks, message=None):
+        for task in tasks:
+            task.start(self.request)
+        if len(tasks) > 1:
+            self.redirect(message=message or 'Tarefas iniciadas com sucesso')
+        elif message:
+            self.redirect(message=message)
+        else:
+            self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
 
     def display(self, data, template='app/default.html'):
         if isinstance(data, dict):

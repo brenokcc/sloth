@@ -426,7 +426,7 @@ class Demanda(models.Model):
     def get_dados_questionario(self):
         return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
-    @meta('Respostas do Questionário', 'app/formatters/progress')
+    @meta('Respostas do Questionário', 'progress')
     def get_progresso_questionario(self):
         total_perguntas = self.get_total_perguntas()
         total_respostas = self.get_total_respostas()

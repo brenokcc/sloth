@@ -263,8 +263,9 @@ class ModelMixin(object):
                 for name in dir(forms):
                     if name.lower() == to_camel_case(action).lower():
                         return getattr(forms, name)
-            except ModuleNotFoundError:
-                pass
+            except ModuleNotFoundError as e:
+                if not e.name.endswith('actions'):
+                    raise e
             return None
 
     @classmethod
@@ -319,8 +320,11 @@ class ModelMixin(object):
             return str(getattr(field, 'verbose_name', lookup)), True, None
         attr = getattr(cls, lookup)
         template = getattr(attr, '__template__', None)
-        if template and not template.endswith('.html'):
-            template = '{}.html'.format(template)
+        if template:
+            if not template.endswith('.html'):
+                template = '{}.html'.format(template)
+            if not template.startswith('.html'):
+                template = 'renders/{}'.format(template)
         return getattr(attr, '__verbose_name__', lookup), False, template
 
     @classmethod

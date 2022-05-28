@@ -61,8 +61,7 @@ jQuery.fn.extend({
         });
     },
     popup: function(url, method, data){
-        window['reloader'] = window['reload'+$(this).data('uuid')];
-        window['onreload'] = window['onreload'+$(this).data('uuid')];
+        window['QUERYSET_RELOADER'] = window['reload'+$(this).data('uuid')];
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');
@@ -88,9 +87,15 @@ jQuery.fn.extend({
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
             if(canceled==null){
-                if(window['reloader']) window['reloader']();
-                if(window['reloader'] && window['onreload']) window['onreload']();
-                if(window['refresh']) $(this).refresh(window['refresh']);
+                if(window['QUERYSET_RELOADER']){ // action in the scope of a queryset
+                    window['QUERYSET_RELOADER']();
+                    if(window['RELOAD_AREAS']){
+                        // trigger refresh only if specific areas was defined
+                        if(window['RELOAD_AREAS']!='self') $(this).refresh(window['RELOAD_AREAS']);
+                    }
+                } else { // action in the scope of fieldset or object itself
+                    if(window['RELOAD_AREAS']) $(this).refresh(window['RELOAD_AREAS']);
+                }
             }
         } else {
             $(document).open(document.referrer);
@@ -115,6 +120,13 @@ jQuery.fn.extend({
         });
         document.cookie = "width="+$(window).width()+";path=/";
         return this;
+    },
+    getCookie: function(name) {
+      var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
+    },
+    setCookie: function(name, value) {
+        document.cookie = name+"="+value;
     },
     initialize: function () {
         $(this).find('.popup').on('click', function(e){
@@ -240,11 +252,16 @@ jQuery.fn.extend({
     },
     refresh: function(areas){
         if(areas=='self'){
-            $(document).open(document.location.pathname);
+            var url = document.location.pathname;
+            if($(document).getCookie('current_tab')){
+                url += '?tab='+$(document).getCookie('current_tab');
+            }
+            $(document).open(url);
         } else {
             var areas = areas.split(',');
-            var url = '?only='+areas.join(',')
+            var url = '?only='+areas.join(',');
             $.get({url:url, success:function(html){
+             $('.valueset-header').html($(html).find('.valueset-header'));
              areas.forEach(function(attrName){
               var remote = $(html).find('#'+attrName);
               var local = $('#'+attrName);
@@ -264,7 +281,8 @@ jQuery.fn.extend({
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');
-    window['reloader'] = window['onreload'] = window['refresh'] = null;
+    window['QUERYSET_RELOADER'] = window['RELOAD_AREAS'] = null;
+    $(document).setCookie('current_tab', '');
 });
 $( window ).resize(function() {
     $(document).responsive();

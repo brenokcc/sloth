@@ -21,6 +21,7 @@
 </ul>
 <script>
     function reloadFieldsetGroup{{ item.uuid }}(tab, path){
+        // $(document).setCookie('current_tab', tab);
         $(document.body).addClass('page-loading');
         $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
         $.ajax({

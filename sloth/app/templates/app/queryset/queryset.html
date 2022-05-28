@@ -26,7 +26,7 @@
             {% if data.metadata.search %}
             <div class="filter">
                 <label>Busca:</label>
-                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}">
+                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}(false);return false;}">
             </div>
             {% endif %}
             {% for name, metadata in data.metadata.filters.items %}
@@ -102,7 +102,7 @@
             </div>
             {% endfor %}
             <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}($('#subset-{{ data.uuid }}').val())">
+                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false)">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
@@ -117,7 +117,7 @@
         <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item">
-            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
+            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false, '{{ subset.key }}')">
                 <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
@@ -131,8 +131,9 @@
     {% endif %}
 
     <script>
-        function reload{{ data.uuid }}(subset){
+        function reload{{ data.uuid }}(attaches, subset){
             $(document.body).addClass('page-loading');
+            if(attaches==null) attaches = true;
             if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
             else $('#subset-{{ data.uuid }}').val(subset);
             $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').removeClass('d-none');
@@ -150,20 +151,20 @@
                     $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').addClass('d-none');
                 }
             });
-        }
-        {% if data.attach %}
-        function onreload{{ data.uuid }}(){
-            $.ajax({
-                dataType: 'json',
-                url: '/app{{ data.path }}?attaches=',
-                success:function( totals ) {
-                    for (const [key, value] of Object.entries(totals)) {
-                        if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
+            {% if data.attach %}
+            if(attaches){
+                $.ajax({
+                    dataType: 'json',
+                    url: '/app{{ data.path }}?attaches=',
+                    success:function( totals ) {
+                        for (const [key, value] of Object.entries(totals)) {
+                            if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
+                        }
                     }
-                }
-            });
+                });
+            }
+            {% endif %}
         }
-        {% endif %}
         function toggleActions{{ data.uuid }}(input){
             if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
             if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
@@ -214,7 +215,7 @@
             <!--<a href="/app{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
-            <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}();"></i></a>
+            <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}(false);"></i></a>
         </div>
     </div>
 </div>
@@ -245,7 +246,7 @@
         </li>
        {% endif %}
         <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
-            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
+            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}(false);document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
                 {{ page }}
             </a>
         </li>

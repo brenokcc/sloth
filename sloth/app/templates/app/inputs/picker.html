@@ -1,0 +1,15 @@
+{% for grouper, objects in grouped_objects %}
+    <div>
+        {% if grouper %}
+            <div class="picker-grouper"><strong>{{ grouper }}</strong></div>
+        {% endif %}
+        {% for obj in objects.all %}
+            <div class="form-check picker-item">
+                <input id="id{{ name }}-{{ forloop.counter }}" class="form-check-input" name="{{ name }}" type="{% if multiple %}checkbox{% else %}radio{% endif %}" value="{{ obj.pk }}" {% if obj.pk in values %}checked{% endif %}/>
+                <label class="form-check-label" for="id{{ name }}-{{ forloop.counter }}">
+                {{ obj }}
+                </label>
+            </div>
+        {% endfor %}
+    </div>
+{% endfor %}

@@ -153,3 +153,8 @@ def group_by_icon(actions):
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+
+@register.filter('getattr')
+def getattr2(obj, name):
+    return getattr(obj, name)
+

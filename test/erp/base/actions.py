@@ -3,6 +3,14 @@
 from sloth import actions
 
 from .models import Servidor, Ferias, Estado, Frequencia, Municipio
+from .tasks import TarefaAssincrona
+
+class ExecutarTarefaAssincrona(actions.Action):
+    class Meta:
+        verbose_name = 'Executar Tarefa Assíncrona'
+
+    def submit(self):
+        self.run(TarefaAssincrona(), TarefaAssincrona())
 
 
 class AdicionarMunicipioEstado(actions.Action):
@@ -74,6 +82,7 @@ class FazerAlgumaCoisa(actions.Action):
         icon = 'chat-dots'
         verbose_name = 'Fazer Alguma Coisa'
         style = 'warning'
+        reload = 'get_dados_gerais',
 
 
 class EditarSiglaEstado(actions.Action):

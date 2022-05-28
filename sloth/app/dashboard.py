@@ -18,9 +18,9 @@ def initilize():
             try:
                 __import__(module, fromlist=app_label.split('.'))
                 # print('{} dashboard initilized!'.format(module))
-            except ImportError:
-                # print(app_label, module, 'ERROR')
-                pass
+            except ImportError as e:
+                if not e.name.endswith('dashboard'):
+                    raise e
 
 
 class DashboardType(type):

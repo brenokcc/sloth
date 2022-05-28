@@ -83,8 +83,8 @@ class ValueSet(dict):
         self.metadata['source'] = name
         return self
 
-    def refresh(self, seconds=5, condition=None, retry=12):
-        self.metadata['refresh'] = dict(seconds=seconds, condition=condition, retry=retry)
+    def reload(self, seconds=5, condition=None, max_requests=12):
+        self.metadata['refresh'] = dict(seconds=seconds, condition=condition, retry=max_requests)
         return self
 
     def contextualize(self, request):
@@ -149,7 +149,7 @@ class ValueSet(dict):
                         if not isinstance(value, QuerySet):  # ManyRelatedManager
                             value = value.filter()
                         value.metadata['uuid'] = attr_name
-                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
+                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
                             value = value.serialize(
@@ -163,14 +163,14 @@ class ValueSet(dict):
                             else:
                                 value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
-                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
+                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value.contextualize(self.metadata['request'])
                         value = value.serialize(path=path, wrap=wrap, lazy=False)
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                     elif isinstance(value, ValueSet):
-                        verbose_name = value.metadata['verbose_name'] or pretty(attr_name)
+                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
                         image_attr_name = getattr(value, 'metadata')['image']
@@ -224,8 +224,11 @@ class ValueSet(dict):
 
                         if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)
-                            if template and not template.endswith('.html'):
-                                template = '{}.html'.format(template)
+                            if template:
+                                if not template.endswith('.html'):
+                                    template = '{}.html'.format(template)
+                                if not template.startswith('.html'):
+                                    template = 'renders/{}'.format(template)
                             value = dict(value=value, width=width, template=template)
 
                     if verbose:

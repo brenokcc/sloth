@@ -1,0 +1,68 @@
+@font-face {
+    font-family: 'Rawline';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Rawline'), url('fonts/rawline-400.woff') format('woff');
+}
+@font-face {
+    font-family: 'Rawline';
+    font-style: italic;
+    font-weight: 400;
+    src: local('Rawline'), url('fonts/rawline-400i.woff') format('woff');
+}
+body, table{
+    color: #444;
+    font-family: Rawline, Raleway, sans-serif;
+}
+.navbar{
+    background-color: #FFF;
+    -webkit-box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+    -moz-box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+    box-shadow: 0 3px 5px rgba(57, 63, 72, 0.16);
+}
+.nav-link, a, h1, h2, h3, h4, h5{
+    color: #1351b4;
+}
+.single_quick_activity{
+    background-color: #1351C9 !important;
+    color: #FFF !important;
+}
+.single_quick_activity a, .single_quick_activity h3{
+    color: #FFF !important;
+}
+.btn-outline-primary {
+    color: #1351b4;
+    border-color: #1351b4;
+}
+.btn-outline-primary:hover, .nav-pills .nav-link.active{
+    color:#fff;
+    background-color:#1351b4;
+    border-color:#1351b4
+}
+.bg-primary{
+    background-color:#1351b4 !important;
+}
+.page-item.active .page-link, .btn-primary{
+    background-color:#1351b4 !important;
+    border-color:#1351b4 !important;
+}
+.table thead{
+    background-color: #ededed;
+}
+.table thead *{
+    border-bottom-color: #ededed !important;
+}
+
+select[readonly].select2-hidden-accessible + .select2-container {
+    pointer-events: none;
+    touch-action: none;
+}
+
+select[readonly].select2-hidden-accessible + .select2-container .select2-selection {
+    background: #eee;
+    box-shadow: none;
+}
+
+select[readonly].select2-hidden-accessible + .select2-container .select2-selection__arrow, select[readonly].select2-hidden-accessible + .select2-container .select2-selection__clear {
+    display: none;
+}

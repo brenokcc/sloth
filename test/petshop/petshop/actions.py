@@ -1,6 +1,7 @@
 from sloth import actions
 from .models import Tratamento, Procedimento
 
+
 class IniciarTratamento(actions.Action):
 
     class Meta:
@@ -8,7 +9,7 @@ class IniciarTratamento(actions.Action):
         fields = 'doenca', 'data_inicio'
         related_field = 'animal'
         has_permission = 'Funcionário',
-        refresh = 'get_dados_gerais', 'get_tratamentos_por_doenca'
+
 
 class ExcluirTratamento(actions.Action):
 
@@ -16,7 +17,6 @@ class ExcluirTratamento(actions.Action):
         style = 'danger'
         confirmation = True
         has_permission = 'Funcionário',
-        refresh = 'get_dados_gerais',
 
     def submit(self):
         self.instance.delete()
@@ -29,7 +29,6 @@ class RegistrarProcedimento(actions.Action):
         model = Procedimento
         related_field = 'tratamento'
         has_permission = 'Funcionário',
-        refresh = 'get_eficacia', 'get_procedimentos_por_tipo'
 
     def has_permission(self, user):
         return self.instantiator.eficaz is None
@@ -42,7 +41,6 @@ class FinalizarTratamento(actions.Action):
         fields = 'data_fim', 'eficaz',
         has_permission = 'Funcionário',
         style = 'success'
-        refresh = 'get_procedimentos', 'get_eficacia'
 
     def has_permission(self, user):
         return self.instance.procedimento_set.exists() and self.instance.eficaz is None

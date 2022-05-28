@@ -21,6 +21,7 @@
 </ul>
 <script>
     function reloadFieldsetList{{ item.uuid }}(tab, path){
+        // $(document).setCookie('current_tab', tab);
         $(document.body).addClass('page-loading');
         $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
         $.ajax({

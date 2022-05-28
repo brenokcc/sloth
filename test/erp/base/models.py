@@ -54,7 +54,7 @@ class Estado(models.Model):
     def __str__(self):
         return self.sigla
 
-    @meta('História', 'utils/formatted')
+    @meta('História', 'formatted')
     def get_historia(self):
         return self.historia
 
@@ -106,7 +106,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @meta('Progresso', 'app/formatters/progress')
+    @meta('Progresso', 'progress')
     def get_progresso(self):
         return 27
 
@@ -282,11 +282,11 @@ class Servidor(models.Model):
     def has_get_dados_gerais_permission(self, user):
         return self and user.is_superuser
 
-    @meta('Foto', 'app/formatters/image')
+    @meta('Foto', 'image')
     def get_foto(self):
         return self.foto or '/static/images/profile.png'
 
-    @meta('Progresso', 'app/formatters/progress')
+    @meta('Progresso', 'progress')
     def get_progresso(self):
         return 27
 
@@ -306,7 +306,7 @@ class Servidor(models.Model):
         return self.values(
             'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_dados_ferias2'
         ).actions(
-            'InformarEndereco', 'CorrigirNomeServidor1', 'Edit'
+            'InformarEndereco', 'CorrigirNomeServidor1', 'Edit', 'ExecutarTarefaAssincrona'
         ).append(
             'get_endereco', 'get_total_ferias_por_ano2', 'get_frequencias'
         ).attach(
@@ -335,6 +335,7 @@ class Servidor(models.Model):
     def get_total_ferias_por_ano2(self):
         return self.get_ferias().count('ano').chart('bar')
 
+    @meta('Dados das Férias')
     def get_dados_ferias(self):
         return self.values('get_ferias', 'get_total_ferias_por_ano')
 

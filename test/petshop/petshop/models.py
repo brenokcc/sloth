@@ -28,8 +28,9 @@ class DoencaManager(models.Manager):
     def nao_contagiosas(self):
         return self.filter(contagiosa=False)
 
+    @meta('Total de Doenças Contagiosas')
     def get_total_por_contagiosiade(self):
-        return self.count('contagiosa').verbose_name('Total de Doenças Contagiosas')
+        return self.count('contagiosa')
 
 
 class Doenca(models.Model):
@@ -170,7 +171,7 @@ class Animal(models.Model):
     def __str__(self):
         return self.nome
 
-    @meta('Situação', 'utils/badge')
+    @meta('Situação', 'badge')
     def get_situacao(self):
         if self.get_tratamentos().filter(data_fim__isnull=True).exists():
             return 'warning', 'Em Tratamento'
@@ -179,6 +180,7 @@ class Animal(models.Model):
     def get_dados_gerais(self):
         return self.values(('nome', 'tipo'), 'descricao', 'get_situacao').image('foto')
 
+    @meta('Proprietário')
     def get_proprietario(self):
         return self.proprietario.values(('nome', 'cpf'))
 
@@ -237,7 +239,7 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
-    @meta('Etapas', 'utils/steps')
+    @meta('Etapas', 'steps')
     def get_etapas(self):
         etapas = []
         etapas.append(('Início', self.data_inicio))
@@ -255,6 +257,7 @@ class Tratamento(models.Model):
     def get_procedimentos(self):
         return self.procedimento_set.ignore('tratamento').global_actions('RegistrarProcedimento').actions('edit').totalizer('tipo__valor').timeline()
 
+    @meta('Procedimentos por Tipo')
     def get_procedimentos_por_tipo(self):
         return self.procedimento_set.count('tipo').bar_chart()
 

@@ -79,7 +79,7 @@
 </form>
 <script>
 $( document ).ready(function() {
-    window['refresh'] = '{{ self.get_refresh }}';
+    window['RELOAD_AREAS'] = '{{ self.get_reload_areas }}';
     if(window['{{ self.get_metadata.key }}'] != null){
         window['{{ self.get_metadata.key }}']($('#{{ self.get_metadata.key|slugify }}'));
     }

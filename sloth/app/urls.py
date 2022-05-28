@@ -20,6 +20,7 @@ urlpatterns = [
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/', views.dispatcher),
-    path('logo', views.logo),
-    re_path(r'^apple-touch.*', views.logo),
+    path('icon', views.icon),
+    path('favicon.ico', views.favicon),
+    re_path(r'^apple-touch.*', views.icon),
 ]

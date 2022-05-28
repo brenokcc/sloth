@@ -30,7 +30,7 @@ def view(func):
         except JsonReadyResponseException as e:
             return JsonResponse(e.data)
         except HtmlJsonReadyResponseException as e:
-            messages = render_to_string('app/messages/messages.html', request=request)
+            messages = render_to_string('app/messages.html', request=request)
             return HttpResponse(messages + e.html)
         except PermissionDenied:
             return HttpResponseForbidden()
@@ -83,8 +83,16 @@ def icons(request):
     return render(request, ['app/icons.html'], dict(bootstrap=bootstrap.ICONS))
 
 
-def logo(request):
-    return HttpResponseRedirect(settings.LOGO)
+def icon(request):
+    return HttpResponseRedirect(
+        settings.SLOTH['ICON'] or '/static/images/icon.png'
+    )
+
+
+def favicon(request):
+    return HttpResponseRedirect(
+        settings.SLOTH['FAVICON'] or '/static/images/icon.png'
+    )
 
 
 def login(request):

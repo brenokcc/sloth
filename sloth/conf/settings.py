@@ -18,17 +18,17 @@ OAUTH2_PROVIDER = {
 
 SLOTH = {
 	'NAME': 'Sloth',
-	'ICON': '/static/images/sloth.png',
-	'FAVICON': None,
+	'ICON': '/static/images/icon.png',
+	'FAVICON': '/static/images/icon.png',
 	'VERSION': 1.0,
 	'LOGIN': {
-		'LOGO': '/static/images/sloth.png',
+		'LOGO': '/static/images/logo.png',
 		'TITLE': None,
 		'TEXT': None,
-		'IMAGE': None,
+		'IMAGE': '/static/images/login.jpeg',
 	},
 	'HEADER': {
-		'LOGO': '/static/images/sloth.png',
+		'LOGO': '/static/images/logo.png',
 		'TITLE': None,
 		'TEXT': None,
 	},

@@ -1,7 +1,18 @@
-# Sloth
+# Sloth - Take your time!
 
-![Kiku](sloth/app/static/images/sloth.png)
+**Sloth** is an extension of *Django framework* aimed at the fast development of
+web applications. It used metadate provided in the model classes to generate
+the backend (REST API) and the frontend (Web interface).
 
+![Kiku](sloth/app/static/images/logo.png)
+
+The main functionalities offered by the framework are:
+
+- Automatic generation of admin interface (listing, adding, editing, deleting and visualization of objects)
+- Object-level access control based on roles and scopes
+- Creation of applicaton dashboard
+- Asynchronous tasks
+- Responsive interface
 
 ## Installation
 

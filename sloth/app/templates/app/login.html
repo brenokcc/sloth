@@ -31,6 +31,7 @@
   {% endif %}
 
   .form-section img{
+    max-width:250px;
     max-height:200px;
   }
 
@@ -60,7 +61,7 @@
     <div class="row d-flex align-items-center justify-content-center" style="min-height: 60vh;">
       <div align="center">
         {% if settings.SLOTH.LOGIN.LOGO %}
-          <img src="{{ settings.SLOTH.LOGIN.LOGO }}" class="img-fluid" alt="{{ settings.SLOTH.LOGIN.TITLE }}">
+          <img src="{{ settings.SLOTH.LOGIN.LOGO }}" class="" alt="{{ settings.SLOTH.LOGIN.TITLE }}">
         {% endif %}
         {% if settings.SLOTH.LOGIN.TITLE %}
           <h1>{{ settings.SLOTH.LOGIN.TITLE }}</h1>

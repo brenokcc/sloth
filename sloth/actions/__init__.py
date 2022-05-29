@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from . import inputs
+from .fields import *
 
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params

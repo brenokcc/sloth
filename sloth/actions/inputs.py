@@ -74,3 +74,11 @@ class MultiplePickInput(PickInputMixin, widgets.SelectMultiple):
     def __init__(self, *args, **kwargs):
         kwargs.update(multiple=True)
         super().__init__(*args, **kwargs)
+
+
+class QrCodeInput(widgets.TextInput):
+
+    def render(self, name, value, attrs=None, **kwargs):
+        widget = super().render(name, value, attrs=attrs, **kwargs)
+        output = render_to_string('app/inputs/qrcode.html', dict(widget=widget, name=name))
+        return mark_safe(output)

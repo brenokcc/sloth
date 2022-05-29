@@ -1,0 +1,29 @@
+
+<div id="video-container" style="display:none">
+    <video id="qr-video" disablepictureinpicture="" playsinline="" style="transform: scaleX(-1);width:300px"></video>
+</div>
+
+{{ widget }}
+
+<script type="module">
+import QrScanner from "/static/js/qr-scanner.min.js";
+$( document ).ready(function() {
+    const video = document.getElementById('qr-video');
+    const videoContainer = document.getElementById('video-container');
+    function setResult(result) {
+        $('#video-container').css('display', 'none');
+        $('#id_{{ name }}').val(result.data);
+        scanner.stop();
+    }
+    window['scanner'] = new QrScanner(video, result => setResult(result), {
+        onDecodeError: error => {},
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+    });
+    $('#id_{{ name }}').on('focus', function(){
+        $('#video-container').css('display', 'block');
+        scanner.start().then(() => {});
+    });
+    $('#id_{{ name }}').on('blur', function(){scanner.stop();});
+});
+</script>

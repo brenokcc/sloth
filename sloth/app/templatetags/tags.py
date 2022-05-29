@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import unicodedata
 from django.template import Library
 from django.utils.safestring import mark_safe
 
@@ -162,4 +162,12 @@ def getattr2(obj, name):
 @register.filter
 def distinct_role_names(roles):
     return roles.values_list('name', flat=True).distinct()
+
+
+@register.filter
+def unaccented(s):
+    nfkd_form = unicodedata.normalize('NFKD', s)
+    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+
 

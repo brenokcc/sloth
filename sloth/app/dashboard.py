@@ -48,12 +48,19 @@ class Dashboard(metaclass=DashboardType):
     def _load(self, key, models):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links'
         for model in models:
-            if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
+            if isinstance(model, (list, tuple)):
+                html = mark_safe(render_to_string(model[1], model[0], request=self.request))
+                self.data[key].append(
+                    dict(
+                        html=html,
+                    )
+                )
+            elif model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
                 if key in allways or self.request.path == '/app/':
                     url = model.get_list_url('/app')
                     add_item = True
                     for item in self.data[key]:
-                        add_item = add_item and not item['url'] == url
+                        add_item = add_item and not item.get('url') == url
                     if add_item:
                         self.data[key].append(
                             dict(

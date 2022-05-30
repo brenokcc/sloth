@@ -322,3 +322,25 @@ textarea{
 .chart-legend li span {
   padding-left: 10px;
 }
+.single_quick_activity .count_content {
+    margin-left: 30px;
+    text-align: left;
+}
+.single_quick_activity {
+    border-radius: 10px;
+    -webkit-transition: 0.5s;
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    height: 120px;
+    box-shadow: 0 0.375rem 0.75rem rgb(140 152 164 / 8%);
+    border: 0.0625rem solid rgba(231,234,243,.7);
+    transition: .3s;
+}
+.single_quick_activity i{
+    font-size: 90px;
+    float:left;
+    margin-left: 20px;
+    margin-right: 20px;
+}

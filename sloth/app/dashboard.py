@@ -1,8 +1,10 @@
+import inspect
+
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-
 from sloth.app.templatetags.tags import mobile
+from sloth.db import models
 from sloth.utils import pretty
 
 INITIALIZE = True
@@ -37,7 +39,7 @@ class Dashboard(metaclass=DashboardType):
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], grids=[]
         )
         if self.request.user.is_authenticated:
             self.load(request)
@@ -111,6 +113,55 @@ class Dashboard(metaclass=DashboardType):
     def cards(self, *models):
         self._load('cards', models)
 
+    def grids(self, *grids):
+        for grid in grids:
+            self.add_grid(grid)
+
+    def add_grid(self, grid, template=None, size=1):
+        key = 'grids'
+        if isinstance(grid, (list, tuple)):
+            html = mark_safe(render_to_string(grid[1], grid[0], request=self.request))
+            self.data[key].append(
+                dict(
+                    html=html,
+                    size=size,
+                )
+            )
+        elif isinstance(grid, dict):
+            html = mark_safe(render_to_string(template, grid, request=self.request))
+            self.data[key].append(
+                dict(
+                    html=html,
+                    size=size,
+                )
+            )
+        elif inspect.isclass(grid) and issubclass(grid, models.Model):
+            model = grid
+            if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
+                if self.request.path == '/app/':
+                    url = model.get_list_url('/app')
+                    add_item = True
+                    # for item in self.data[key]:
+                    #     add_item = add_item and not item.get('url') == url
+                    if add_item:
+                        self.data[key].append(
+                            dict(
+                                url=url,
+                                label=model.metaclass().verbose_name_plural,
+                                count=model.objects.all().apply_role_lookups(self.request.user).count(),
+                                icon=getattr(model.metaclass(), 'icon', None),
+                                size=size,
+                            )
+                        )
+        elif isinstance(grid, models.QuerySet):
+            if self.request.path == '/app/':
+                self.data[key].append(
+                    dict(
+                        html=str(grid.contextualize(self.request)),
+                        size=size,
+                    )
+                )
+
     def floating(self, *models):
         self._load('floating', models)
 
@@ -145,6 +196,13 @@ class Dashboard(metaclass=DashboardType):
     def load(self, request):
         pass
 
+    def get_qtd_grid(self):
+        return 3
+
+    def get_grid_size(self):
+        qtd_grid = self.get_qtd_grid()
+        return 12//qtd_grid
+
 
 class Dashboards:
 
@@ -152,7 +210,7 @@ class Dashboards:
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], grids=[]
         )
         self.data['navigation'].append(
             dict(url='/app/', label='Principal', icon='house')
@@ -160,6 +218,7 @@ class Dashboards:
         initilize()
         for cls in DASHBOARDS:
             dashboard = cls(request)
+            self.grid_size = dashboard.get_grid_size()
             for key in dashboard.data:
                 self.data[key].extend(dashboard.data[key])
         if self.request.user.is_superuser:
@@ -184,7 +243,7 @@ class Dashboards:
         return items
 
     def __str__(self):
-        return mark_safe(render_to_string('app/dashboard/dashboards.html', dict(data=self.data), request=self.request))
+        return mark_safe(render_to_string('app/dashboard/dashboards.html', dict(data=self.data, grid_size=self.grid_size), request=self.request))
 
 
 

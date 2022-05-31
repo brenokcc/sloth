@@ -1,4 +1,5 @@
 {% load tags %}
+
 {% if self.get_metadata.name %}
 <h2>
     {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
@@ -13,6 +14,10 @@
         </div>
     {% endif %}
 {% endwith %}
+
+<div class="form-display">
+{{ self.display.html }}
+</div>
 
 {% endif %}
 <form id="{{ self.get_metadata.key|slugify }}" action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
@@ -96,4 +101,5 @@ $( document ).ready(function() {
     }
 });
 </script>
+
 <div class="clearfix"></div>

@@ -6,7 +6,7 @@
         <dt>{{ k2 }}</dt>
         <dd>
             {% if v2.template %}
-                {% include v2.template with value=v2.value %}
+                {% include v2.template with value=v2.value metadata=v2.metadata %}
             {% else %}
                 {{ v2.value|format|linebreaks }}
             {% endif %}
@@ -15,7 +15,7 @@
     </dl>
 {% else %}
     {% if v.template %}
-        {% include v.template with value=v.value %}
+        {% include v.template with value=v.value metadata=v.metadata %}
     {% else %}
         {{ v.value|format|linebreaks }}
     {% endif %}

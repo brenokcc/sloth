@@ -545,6 +545,9 @@ class Action(metaclass=ActionMetaclass):
         if isinstance(response, HttpResponse):
             raise ReadyResponseException(response)
 
+    def display(self):
+        return None
+
 
 class LoginForm(Action):
     username = CharField(label='Login')

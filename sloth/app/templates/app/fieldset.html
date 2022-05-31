@@ -33,7 +33,7 @@
                             <div class="fieldset-field width-{{ item.width }}">
                                 <b>{{ k }}:</b><br>
                                 {% if item.template %}
-                                    {% include item.template with value=item.value %}
+                                    {% include item.template with value=item.value metadata=item.metadata %}
                                 {% else %}
                                     {{ item.value|format }}
                                 {% endif %}

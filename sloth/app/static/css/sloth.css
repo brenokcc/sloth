@@ -244,7 +244,16 @@ dl dl {
 textarea{
     width: 100%;
 }
-
+.form-display .valueset-header{
+    display: none;
+}
+.form-display .fieldset-title {
+    display: none;
+}
+.form-display .valueset .col{
+    padding-right: 0;
+    padding-left: 0;
+}
 .form-field{
     display: inline-block;
     margin-bottom: 10px;

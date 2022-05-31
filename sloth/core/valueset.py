@@ -224,12 +224,13 @@ class ValueSet(dict):
 
                         if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)
+                            metadata = getattr(attr, '__metadata__', None)
                             if template:
                                 if not template.endswith('.html'):
                                     template = '{}.html'.format(template)
                                 if not template.startswith('.html'):
                                     template = 'renders/{}'.format(template)
-                            value = dict(value=value, width=width, template=template)
+                            value = dict(value=value, width=width, template=template, metadata=metadata)
 
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])

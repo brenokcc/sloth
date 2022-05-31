@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
 import xlwt
 import csv
+import tempfile
+import datetime
 from tempfile import mktemp
+from django.conf import settings
 from django.http import HttpResponse
+from django.template.loader import render_to_string
+
 
 CONTENT_TYPES = {
     'aac': 'audio/aac',
@@ -102,3 +108,28 @@ class FileResponse(HttpResponse):
         with open(file_path, 'r+b') as file:
             content = file.read()
         super().__init__(content=content, content_type=content_type)
+
+
+class HtmlToPdfResponse(HttpResponse):
+
+    def __init__(self, html, landscape=False):
+        import pdfkit
+        file_name = tempfile.mktemp('.pdf')
+        if landscape:
+            html = html.replace('logo_if_portrait', 'logo_if_landscape')
+            html = html.replace('content="Portrait"', 'content="Landscape"')
+        html = html.replace('/media', settings.MEDIA_ROOT)
+        html = html.replace('/static', '{}/{}/static'.format(settings.BASE_DIR, settings.BASE_DIR.name))
+        pdfkit.from_string(html, file_name)
+        str_bytes = open(file_name, "rb").read()
+        os.unlink(file_name)
+        super().__init__(str_bytes, content_type='application/pdf')
+
+
+class PdfReportResponse(HtmlToPdfResponse):
+    def __init__(self, request, data, landscape=False, template='app/report.html'):
+        data.update(
+            today=datetime.date.today(), settings=settings
+        )
+        html = render_to_string([template], data, request=request)
+        super().__init__(html, landscape=landscape)

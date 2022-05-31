@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import locale
 import unicodedata
 from django.template import Library
 from django.utils.safestring import mark_safe
@@ -170,4 +171,6 @@ def unaccented(s):
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 
-
+@register.filter
+def true(value):
+    return value in ('Sim', 'Yes', 'True')

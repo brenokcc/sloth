@@ -1,0 +1,6 @@
+{% load tags %}
+<div>
+    <span class="badge bg-{% if value|true %}success{% else %}danger{% endif %}" style="padding:10px">
+        {{ value }}
+    </span>
+</div>

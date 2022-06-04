@@ -27,7 +27,6 @@
         </div>
         {% endif %}
         <div class="collapse navbar-collapse">
-          <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onkeyup="search(this)"  onfocus="search(this)" style="{% if not dashboard.data.search  %}visibility:hidden{% endif %}">
           {% include "app/dashboard/search.html" %}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item dropdown">
@@ -69,10 +68,11 @@
                   {% if roles %}
                     <li><hr class="dropdown-divider"></li>
                     <li class="text-center fw-bold">Perfis</li>
-                    {% for name in roles|distinct_role_names %}
-                      <li class="text-center" style="{% if not role.active %}color:#CCC;{% endif %}padding:5px">
-                        {{ name }}
-                      </li>
+                    {% for name in request.user.roles.active.names %}
+                      <li class="text-center" style="padding:5px">{{ name }}</li>
+                    {% endfor %}
+                    {% for name in request.user.roles.inactive.names %}
+                      <li class="text-center" style="color:#CCC;padding:5px">{{ name }}</li>
                     {% endfor %}
                     <li><hr class="dropdown-divider"></li>
                     <li>

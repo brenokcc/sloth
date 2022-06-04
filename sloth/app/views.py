@@ -176,15 +176,15 @@ def app(request):
     return HttpResponseRedirect('/app/login/')
 
 @view
-def roles(request, activate=None):
-    if activate:
+def roles(request):
+    if 'names' in request.GET:
+        names = request.GET['names'].split('|')
         request.user.roles.update(active=False)
-        roles = request.user.roles.filter(pk__in=activate.split('-'))
-        updated = roles.update(active=True)
-        if updated == 1:
-            message = 'Perfil "{}" ativado com sucesso.'.format(roles.first().name)
+        request.user.roles.filter(name__in=names).update(active=True)
+        if len(names) == 1:
+            message = 'Perfil "{}" ativado com sucesso.'.format(names[0])
         else:
-            message = 'Perfis "{}" ativos com sucesso'.format(', '.join([role.name for role in roles]))
+            message = 'Perfis "{}" ativos com sucesso'.format(', '.join(names))
         messages.success(request, message)
         return HttpResponseRedirect('/app/')
     return render(request, ['app/roles.html'], context(request))

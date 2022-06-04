@@ -21,10 +21,16 @@
         Perfis de Acesso
     </h2>
     <ul class="single-role-selector">
-        {% for role in request.user.roles.all %}
+        {% for name in request.user.roles.active.names %}
             <li>
-                <input type="checkbox" value="{{ role.pk }}" name="role" {% if role.active %}checked{% endif %} onchange="checkRoles()">
-                <label>{{ role.name }} - {{ role.get_scope_value }}</label>
+                <input type="checkbox" value="{{ name }}" name="role" checked onchange="checkRoles()">
+                <label>{{ name }}</label>
+            </li>
+        {% endfor %}
+        {% for name in request.user.roles.inactive.names %}
+            <li>
+                <input type="checkbox" value="{{ name }}" name="role" onchange="checkRoles()">
+                <label>{{ name }}</label>
             </li>
         {% endfor %}
     </ul>
@@ -39,10 +45,10 @@
         Perfil de Acesso
     </h2>
     <ul class="single-role-selector">
-        {% for role in request.user.roles.all %}
+        {% for name in request.user.roles.names %}
             <li>
-                <a class="btn {% if role.active %}btn-primary{% else %}btn-outline-primary{% endif %}" href="/app/roles/{{ role.pk }}/">
-                    {{ role.name }} - {{ role.get_scope_value }}
+                <a class="btn btn-outline-primary" href="/app/roles/?names={{ name }}">
+                    {{ name }}
                 </a>
             </li>
         {% endfor %}
@@ -55,10 +61,10 @@
         else $('.role-selector').removeClass('disabled');
     }
     function getRoles(){
-        return $('input[name=role]:checked').map(function() { return $(this).val(); } ).get().join('-');
+        return $('input[name=role]:checked').map(function() { return $(this).val(); } ).get().join('|');
     }
     function selectRoles(){
-        var url = '/app/roles/'+getRoles()+'/';
+        var url = '/app/roles/?names='+getRoles();
         document.location.href = url;
     }
 </script>

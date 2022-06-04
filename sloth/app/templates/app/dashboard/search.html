@@ -1,3 +1,4 @@
+<input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onclick="search(this)" onkeyup="search(this)" onfocus="search(this)" style="{% if not dashboard.data.search  %}visibility:hidden{% endif %}">
 <div class="search-results d-none" onmouseleave="$(this).addClass('d-none')">
 <ul class="list-group search-menu">
   {% for item in dashboard.data.search %}
@@ -27,7 +28,6 @@
 </div>
 <script>
 function search(input){
-  console.log(input.value);
   $('.search-results li').addClass('d-none');
   $('.search-results li:icontains('+ input.value +')').removeClass('d-none');
   $('.search-results').css('width', $(input).css('width')).removeClass('d-none');

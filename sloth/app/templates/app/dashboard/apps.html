@@ -1,0 +1,42 @@
+{% if dashboard.apps %}
+  <style>
+    .apps-dropdown-menu{
+      width: 270px;
+    }
+    .apps-dropdown-menu > div{
+      width:85px;
+      height:95px;
+      display: inline-block;
+      text-align: center;
+      font-size: .7rem;
+      vertical-align: top;
+    }
+    .apps-dropdown-menu a{
+      text-decoration: none;
+    }
+    .apps-dropdown-menu i{
+        font-size: 2rem;
+    }
+    .apps-dropdown-menu a.disabled{
+        color: #BBB;
+        cursor: default;
+    }
+  </style>
+  <li class="nav-item dropdown">
+    <a class="nav-link" href="#" id="appsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap;padding-top:15px">
+      <span><i class="bi bi-border-all"></i></span>
+    </a>
+    <div class="dropdown-menu dropdown-menu-end apps-dropdown-menu" aria-labelledby="appsDropdown">
+      {% for app in dashboard.apps.values %}
+        {% if app.enabled or not app.hide %}
+          <div>
+            <a href="{% if app.enabled  %}{{ app.url }}{% else %}#{% endif %}" class="{% if app.enabled %}enabled{% else %}disabled{% endif %}">
+              <i class="bi bi-{{ app.icon }}"></i><br>
+              {{ app.label }}
+            </a>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </li>
+{% endif %}

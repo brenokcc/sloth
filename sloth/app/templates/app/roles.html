@@ -18,7 +18,7 @@
 {% if settings.SLOTH.ROLES.ALLOW_MULTIPLE %}
     <h2 align="center">
         <i class="bi bi-person-check"></i>
-        Perfis de Acesso
+        Selecione os papéis que deseja acessar
     </h2>
     <ul class="single-role-selector">
         {% for name in request.user.roles.active.names %}
@@ -36,13 +36,13 @@
     </ul>
     <div align="center">
         <a class="btn btn-outline-primary role-selector" href="javascript:" onclick="selectRoles()">
-            Ativar perfis selecionados
+            Ativar papéis selecionados
         </a>
     </div>
 {% else %}
     <h2 align="center">
         <i class="bi bi-person-check"></i>
-        Perfil de Acesso
+        Selecione o papel que deseja acessar
     </h2>
     <ul class="single-role-selector">
         {% for name in request.user.roles.names %}

@@ -1,5 +1,5 @@
 {% load tags %}
-{% if uuid is None or request.GET.uuid is None %}
+
 {% if not data.metadata.is_admin  %}
 <div class="card">
         <div class="card-body">
@@ -15,8 +15,30 @@
         </div>
     {% endif %}
     <div class="queryset-container" id="queryset-container{{ data.uuid }}">
-    {% include "app/queryset/actions/global.html" %}
-    <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}" style="{% if data.metadata.collapsed or compact or request|mobile %}display:none{% endif %}">
+        <div id="queryset-global-actions-{{ data.uuid }}" class="queryset-action-bar">
+            {% include "app/queryset/actions/global.html" %}
+        </div>
+        <div class="clearfix"></div>
+    {% if data.attach %}
+    <div class="clearfix"></div>
+    <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
+        <ul class="nav nav-pills nav-fill">
+            {% for subset in data.attach.values %}
+          <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">
+            <a class="nav-link" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false, '{{ subset.key }}')">
+                <div class="spinner-border spinner-border-sm d-none" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="nav-link-text">{{ subset.name }}</span>
+                <span class="badge rounded-pill text-white bg-primary total-{{ subset.key }}">{{ subset.count }}</span>
+            </a>
+          </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="search-and-filters">
         <form method="get" id="form-{{ data.uuid }}" action="/app{{ data.path }}">
             <input type="hidden" name="uuid" value="{{ data.uuid }}">
             <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
@@ -24,11 +46,24 @@
             <input type="hidden" name="subset" value="all" id="subset-{{ data.uuid }}">
             <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
             {% if data.metadata.search %}
-            <div class="filter">
-                <label>Busca:</label>
-                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}(false);return false;}">
+            <div class="search-and-filters-controls">
+                <input type="text" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}(false);return false;}" placeholder="Digite uma palavra-chave...">
+
+                <button type="button" class="btn btn-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false)">
+                    <div class="spinner-border spinner-border-sm d-none" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+
+                <a href="javascript:" onclick="javascript:slideSearchAndFilters{{ data.uuid }}(this)">
+                <i class="bi bi-funnel"></i> Filtros
+                <i class="bit bi-chevron-down"></i>
+                </a>
+
             </div>
             {% endif %}
+            <div id="filters-{{ data.uuid }}" style="display:none">
             {% for name, metadata in data.metadata.filters.items %}
             <div class="filter {% if metadata.hidden %}d-none{% endif %}">
                 <label>{{ name|truncatechars:25 }}</label>
@@ -101,34 +136,18 @@
                 {% endif %}
             </div>
             {% endfor %}
-            <div class="submit-panel">
-                <button type="button" class="btn btn-outline-primary" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false)">
+
+                <button type="button" class="btn btn-primary filter-button" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false)">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
                     </div>
-                    <i class="bi bi-funnel"></i> Filtrar
+                    Aplicar Filtros
                 </button>
+
             </div>
         </form>
     </div>
-    {% if data.attach %}
     <div class="clearfix"></div>
-    <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
-        <ul class="nav nav-pills nav-fill">
-            {% for subset in data.attach.values %}
-          <li class="nav-item">
-            <a class="nav-link {{ subset.key }} {% if subset.active %}active{% endif %}" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false, '{{ subset.key }}')">
-                <div class="spinner-border spinner-border-sm d-none" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-                <span class="nav-link-text">{{ subset.name }}</span>
-                <span class="badge rounded-pill {% if subset.active %}text-primary bg-white{% else %}text-white bg-primary{% endif %} total-{{ subset.key }}">{{ subset.count }}</span>
-            </a>
-          </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
 
     <script>
         function reload{{ data.uuid }}(attaches, subset){
@@ -136,19 +155,25 @@
             if(attaches==null) attaches = true;
             if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
             else $('#subset-{{ data.uuid }}').val(subset);
-            $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').removeClass('d-none');
-            $('#tabs-container-{{ data.uuid }}').find('.nav-link').removeClass('active').find('.badge').addClass('text-white').addClass('bg-primary').removeClass('text-primary').removeClass('bg-white');
-            $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).addClass('active').find('.badge').removeClass('text-white').removeClass('bg-primary').addClass('bg-white').addClass('text-primary');
+            $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
+            $('#tabs-container-{{ data.uuid }}').find('.nav-item').removeClass('selected')
+            $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).addClass('selected')
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
                 url:'/app{{ data.path }}',
                 data:data,
                 success:function( html ) {
-                    $('#queryset-data-{{ data.uuid }}').html(html).initialize();
+                    var remote = $(html);
+                    $('#queryset-data-{{ data.uuid }}').html(
+                        remote.find('#queryset-data-{{ data.uuid }}').html()
+                    ).initialize();
+                    $('#queryset-global-actions-{{ data.uuid }}').html(
+                        remote.find('#queryset-global-actions-{{ data.uuid }}').html()
+                    ).initialize();
                     $(document.body).removeClass('page-loading');
-                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('.spinner-border').addClass('d-none');
-                    $('#queryset-{{ data.uuid }}').find('.submit-panel').find('i').removeClass('d-none');
-                    $('#tabs-container-{{ data.uuid }}').find('.nav-link.'+subset).find('.spinner-border').addClass('d-none');
+                    $('#queryset-{{ data.uuid }}').find('.spinner-border').addClass('d-none');
+                    $('#queryset-{{ data.uuid }}').find('i').removeClass('d-none');
+                    $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').addClass('d-none');
                 }
             });
             {% if data.attach %}
@@ -179,39 +204,36 @@
                 $('#queryset-{{ data.uuid }}').find('.btn.queryset').addClass('disabled');
             }
         }
-        function slideSearchAndFilters{{ data.uuid }}(){
-            if($('#search-and-filters-{{ data.uuid }}').css('display') == 'none'){
-                $('#search-and-filters-{{ data.uuid }}').slideDown();
+        function slideSearchAndFilters{{ data.uuid }}(a){
+            $(a).find('i:last-child').toggleClass('bi-chevron-up').toggleClass('bi-chevron-down');
+            if($('#filters-{{ data.uuid }}').css('display') == 'none'){
+                $('#filters-{{ data.uuid }}').slideDown();
             } else {
-                $('#search-and-filters-{{ data.uuid }}').slideUp();
+                $('#filters-{{ data.uuid }}').slideUp();
             }
         }
     </script>
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
-{% else %}
-        <!--<h5>{{ data.name }}</h5>-->
-{% endif %}
+
 
 {% if data.metadata.calendar %}
     {% include "app/queryset/calendar.html" with data=data %}
 {% endif %}
 
 {% if data.metadata.pagination.total %}
+{% if data.metadata.pagination.pages|length > 1 %}
 <div class="clearfix" id="pagination-info-{{ data.uuid }}">
     <div class="float-start">
         <div class="mt-3 mb-3">
-            {% if data.metadata.pagination.pages|length > 1 %}
             Exibindo {{ data.metadata.pagination.interval }} de
             <strong>
                 {{ data.metadata.pagination.total }} registro{% if data.metadata.pagination.total > 1 %}s{% endif %}
             </strong>
-            {% endif %}
         </div>
     </div>
     <div class="float-end">
         <div class="mt-3 mb-3">
-            <a href="javascript:"><i class="bi bi-funnel" onclick="slideSearchAndFilters{{ data.uuid }}()"></i></a>
             <!--<a href="/app{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
@@ -219,6 +241,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 {% if data.metadata.total is not None %}
 <div class="float-end">
@@ -259,7 +282,7 @@
   </ul>
 </nav>
 {% endif %}
-{% if uuid is None or request.GET.uuid is None %}
+
     </div>
     </div>
 </div>
@@ -267,5 +290,5 @@
             </div>
     </div>
 {% endif %}
-{% endif %}
+
 

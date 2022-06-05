@@ -113,7 +113,7 @@ class SeleniumTestCase(LiveServerTestCase):
         self.wait()
 
     def logout(self):
-        self.browser.logout(self.current_username)
+        self.browser.logout()
         self.current_username = None
 
     @classmethod

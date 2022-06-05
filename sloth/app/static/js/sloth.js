@@ -252,7 +252,7 @@ jQuery.fn.extend({
         return this;
     },
     refresh: function(areas){
-        if(areas=='self'){
+        if(areas=='self' || areas=='True'){
             var url = document.location.pathname;
             if($(document).getCookie('current_tab')){
                 url += '?tab='+$(document).getCookie('current_tab');

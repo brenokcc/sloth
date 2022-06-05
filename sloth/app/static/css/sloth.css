@@ -124,7 +124,6 @@
     animation: 3s ease-out 0s 1 slideInFromLeft;
 }
 .search-and-filters {
-    background-color: #cfe2ff;
     border-radius: 5px;
     clear: both;
     display: flex;
@@ -134,7 +133,6 @@
     float: none;
     margin-top: 20px;
     margin-bottom: 10px;
-    padding: 20px 10px 5px;
     position: relative;
     width: 100%;
 }
@@ -150,7 +148,7 @@
 }
 .search-and-filters input[type=text]{
     height: 38px;
-    border: 1px solid #aaa;
+    border: 1px solid #ced4da;
     border-radius: 4px;
 }
 .search-and-filters form>div {
@@ -162,7 +160,7 @@
     flex-basis: 210px;
     flex-grow: 1;
     float: left;
-    margin: 0 10px 15px;
+    margin-right: 10px;
     max-width: 210px;
     min-width: 160px;
     padding: 0;
@@ -185,6 +183,31 @@
 }
 .search-and-filters .submit-panel{
     padding-top: 24px;
+}
+.queryset .nav-item.selected{
+   border-bottom-color: #1351b4;
+}
+.queryset .nav-item{
+    border-bottom: solid 3px #EEE;
+}
+.queryset .search-and-filters form{
+    width: 100%;
+}
+.queryset .search-and-filters-controls a{
+    text-decoration: none;
+}
+.queryset .search-and-filters-controls{
+    width: 100%;
+}
+.queryset .search-and-filters-controls *{
+    display: inline-block;
+}
+.queryset .search-and-filters-controls input{
+    width: calc(100% - 200px);
+}
+.queryset .filter-button{
+    margin-top:24px;
+    width: 210px;
 }
 .select2-selection__clear span{
     position: relative;

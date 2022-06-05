@@ -454,12 +454,12 @@ class QuerySet(models.QuerySet):
         return self
 
     def search(self, *names, q=None):
-        self.metadata['search'] = list(names)
         if q:
             lookups = []
             for search_field in self.metadata['search'] or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
+        self.metadata['search'] = list(names)
         return self
 
     def filters(self, *names):

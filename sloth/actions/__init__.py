@@ -564,9 +564,8 @@ class LoginForm(Action):
     def __init__(self, *args, **kwargs):
         self.user = None
         super().__init__(*args, **kwargs)
-        if 'USERNAME_MASK' in settings.SLOTH['LOGIN']:
-            if settings.SLOTH['LOGIN']['USERNAME_MASK']:
-                self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
+        if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
+            self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
 
     def clean(self):
         if self.cleaned_data:

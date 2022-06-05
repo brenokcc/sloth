@@ -20,6 +20,12 @@ from . import dashboard
 
 def view(func):
     def decorate(request, *args, **kwargs):
+        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](request.user)
+            if request.user.check_password(default_password):
+                message = 'Altere sua senha padrão'
+                messages.warning(request, message)
+                return HttpResponseRedirect('/app/password/')
         try:
             # import time; time.sleep(0.5)
             response = func(request, *args, **kwargs)

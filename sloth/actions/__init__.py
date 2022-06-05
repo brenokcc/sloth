@@ -597,6 +597,12 @@ class PasswordForm(Action):
         password2 = self.cleaned_data.get('password2')
         if password != password2:
             raise forms.ValidationError('Senhas não conferem.')
+
+        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.request.user)
+            if self.request.user.check_password(default_password) and self.request.user.check_password(password):
+                raise forms.ValidationError('Senha não pode ser a senha padrão.')
+
         return self.cleaned_data
 
     def submit(self):

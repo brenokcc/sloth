@@ -20,22 +20,28 @@ from . import dashboard
 
 def view(func):
     def decorate(request, *args, **kwargs):
+        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](request.user)
+            if request.user.check_password(default_password):
+                message = 'Altere sua senha padrão'
+                messages.warning(request, message)
+                return HttpResponseRedirect('/app/password/')
         try:
             # import time; time.sleep(0.5)
             response = func(request, *args, **kwargs)
             response["X-Frame-Options"] = "SAMEORIGIN"
             return response
-        except ReadyResponseException as e:
-            return e.response
-        except JsonReadyResponseException as e:
-            return JsonResponse(e.data)
-        except HtmlJsonReadyResponseException as e:
-            messages = render_to_string('app/messages.html', request=request)
-            return HttpResponse(messages + e.html)
+        except ReadyResponseException as error:
+            return error.response
+        except JsonReadyResponseException as error:
+            return JsonResponse(error.data)
+        except HtmlJsonReadyResponseException as error:
+            app_messages = render_to_string('app/messages.html', request=request)
+            return HttpResponse(app_messages + error.html)
         except PermissionDenied:
             return HttpResponseForbidden()
-        except BaseException as e:
-            raise e
+        except BaseException as error:
+            raise error
 
     return decorate
 

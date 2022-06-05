@@ -564,9 +564,8 @@ class LoginForm(Action):
     def __init__(self, *args, **kwargs):
         self.user = None
         super().__init__(*args, **kwargs)
-        if 'USERNAME_MASK' in settings.SLOTH['LOGIN']:
-            if settings.SLOTH['LOGIN']['USERNAME_MASK']:
-                self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
+        if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
+            self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
 
     def clean(self):
         if self.cleaned_data:
@@ -597,6 +596,12 @@ class PasswordForm(Action):
         password2 = self.cleaned_data.get('password2')
         if password != password2:
             raise forms.ValidationError('Senhas não conferem.')
+
+        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.request.user)
+            if self.request.user.check_password(default_password) and self.request.user.check_password(password):
+                raise forms.ValidationError('Senha não pode ser a senha padrão.')
+
         return self.cleaned_data
 
     def submit(self):

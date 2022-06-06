@@ -1,2 +1,2 @@
 python setup.py sdist
-"twine upload dist/$(ls -rt dist | tail -1)"
+twine upload "dist/$(ls -rt dist | tail -1)"

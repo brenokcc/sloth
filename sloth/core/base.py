@@ -132,7 +132,7 @@ class ModelMixin(object):
                 values = model.objects.filter(pk=self.pk).values(*set(lookups))
                 for value in values:
                     username = value[role['username']]
-                    email = value[role['emai']] if role['email'] else None
+                    email = value[role['email']] if role['email'] else None
                     if username:
                         for scope_key, lookup in role['scopes'].items():
                             scope_name = value[role['name']] if role['name'].islower() else role['name']
@@ -156,7 +156,7 @@ class ModelMixin(object):
                 if user_id is None:
                     user = User.objects.create(username=username)
                     if email:
-                        setattr(user, email)
+                        user.email = email
                     if 'DEFAULT_PASSWORD' in settings.SLOTH:
                         default_password = settings.SLOTH['DEFAULT_PASSWORD'](user)
                     else:

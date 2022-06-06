@@ -131,8 +131,6 @@
     flex-direction: row;
     flex-wrap: wrap;
     float: none;
-    margin-top: 20px;
-    margin-bottom: 10px;
     position: relative;
     width: 100%;
 }

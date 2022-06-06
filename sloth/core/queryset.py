@@ -74,7 +74,9 @@ class QuerySet(models.QuerySet):
         return display
 
     def get_list_filters(self):
-        if self.metadata['filters']:
+        if self.metadata['filters'] is None:
+            list_filter = []
+        elif self.metadata['filters']:
             list_filter = self.metadata['filters']
         else:
             list_filter = self.model.default_filter_fields()
@@ -82,9 +84,10 @@ class QuerySet(models.QuerySet):
 
     def get_search(self, verbose=False):
         search = {}
-        for lookup in self.metadata['search'] or self.model.default_search_fields():
-            verbose_name = self.model.get_attr_metadata(lookup)[0]
-            search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
+        if self.metadata['search'] is not None:
+            for lookup in self.metadata['search'] or self.model.default_search_fields():
+                verbose_name = self.model.get_attr_metadata(lookup)[0]
+                search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
         return search
 
     def get_display(self, verbose=False):
@@ -459,11 +462,11 @@ class QuerySet(models.QuerySet):
             for search_field in self.metadata['search'] or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
-        self.metadata['search'] = list(names)
+        self.metadata['search'] = list(names) if names else None
         return self
 
     def filters(self, *names):
-        self.metadata['filters'] = list(names)
+        self.metadata['filters'] = list(names) if names else None
         return self
 
     def dynamic_filters(self, *names):

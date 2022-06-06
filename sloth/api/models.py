@@ -42,7 +42,7 @@ class User(DjangoUser):
         return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
 
     def get_access_info(self):
-        return self.values('is_superuser',).verbose_name('Dados de Acesso')
+        return self.values(('is_superuser', 'is_active')).verbose_name('Dados de Acesso')
 
     @meta('Papéis')
     def get_roles(self):

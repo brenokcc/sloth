@@ -1,13 +1,19 @@
-from functools import lru_cache
 import types
+from functools import lru_cache
+
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
+from django.core.mail import send_mail
+from django.db import transaction
 from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from sloth.actions import Action
-from sloth.core.valueset import ValueSet
+from sloth.api.tokes import account_activation_token
 from sloth.core.queryset import QuerySet
+from sloth.core.valueset import ValueSet
 from sloth.utils import to_snake_case, to_camel_case, getattrr
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
@@ -144,6 +150,7 @@ class ModelMixin(object):
         # print('\n\n')
         return tuples
 
+    @transaction.atomic()
     def sync_roles(self, role_tuples):
         from django.contrib.auth.models import User
         user_id = None
@@ -159,10 +166,33 @@ class ModelMixin(object):
                         user.email = email
                     if 'DEFAULT_PASSWORD' in settings.SLOTH:
                         default_password = settings.SLOTH['DEFAULT_PASSWORD'](user)
+                    if settings.SLOTH.get('ADD_USER_CONFIRMATION') == True:
+                        user.is_active = False
                     else:
                         default_password = '123' if settings.DEBUG else str(abs(hash(username)))
                     user.set_password(default_password)
                     user.save()
+
+                    site = settings.CSRF_TRUSTED_ORIGINS[0]
+                    uid = urlsafe_base64_encode(force_bytes(user.pk))
+                    token = account_activation_token.make_token(user)
+                    send_mail(
+                        subject="Cadastro no RAIZ",
+                        message=None,
+                        html_message=f"""
+                        <h3>
+                            Olá {user},
+                        </h3>
+                        Para ativar o seu cadastro e definir sua senha clique no link abaixo:
+                        <br /><br />
+                        <a href="{site}/app/account_activate/{uid}/{token}">Definir senha</a>
+                        <br><br>
+                        Se o link acima não funcionar, por favor, copie e cole a URL no seu navegador.
+                        """,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=(email,),
+                    )
+
                     user_id = user.id
                 role.objects.get_or_create(
                     user_id=user_id, name=scope_name,

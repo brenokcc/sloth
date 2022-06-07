@@ -174,10 +174,14 @@ class QuerySet(models.QuerySet):
         attaches = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                attach = getattr(self._clone(), name)()
+                attr = getattr(self._clone(), name)
+                attach = attr()
                 if self.metadata['request'] and hasattr(attach, 'apply_role_lookups'):
                     attach = attach.apply_role_lookups(self.metadata['request'].user)
-                verbose_name = attach.metadata['verbose_name'] or pretty(name)
+                if hasattr(attr, '__verbose_name__'):
+                    verbose_name = attr.__verbose_name__
+                else:
+                    verbose_name = attach.metadata['verbose_name'] or pretty(name)
                 if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'

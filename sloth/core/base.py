@@ -68,9 +68,10 @@ class ModelMixin(object):
                 if valueset.has_children():
                     for attr_name in names:
                         attr_names.append(attr_name)
-                        attr = getattr(self, attr_name)()
-                        if isinstance(attr, ValueSet):
-                            append_attr_names(attr)
+                        if hasattr(self, attr_name):
+                            attr = getattr(self, attr_name)()
+                            if isinstance(attr, ValueSet):
+                                append_attr_names(attr)
             append_attr_names(self.view())
             setattr(self.__class__, '__view__', attr_names)
         return name in getattr(self.__class__, '__view__')

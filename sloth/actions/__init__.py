@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import math
 import re
+import traceback
 from copy import deepcopy
 from functools import lru_cache
 from django.contrib import auth
 from django.contrib import messages
-from django.forms import *
-from django.forms import fields
-from django.forms import models
-from django.forms import widgets
 from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -104,12 +101,15 @@ class Action(metaclass=ActionMetaclass):
                     field.initial = field.queryset.first().id
                     field.widget = widgets.HiddenInput()
             if hasattr(field, 'username_lookup'):
-                field.widget = widgets.HiddenInput()
-                field.queryset = field.queryset.model.objects.filter(
+                queryset = field.queryset.model.objects.filter(
                     **{field.username_lookup: self.request.user.username}
                 )
-                field.initial = field.queryset.first().pk
-                self.initial[field_name] = field.initial
+                if queryset.first():
+                    field.widget = widgets.HiddenInput()
+                    field.initial = queryset.first().pk
+                    self.initial[field_name] = field.initial
+                if not self.request.user.is_superuser:
+                    field.queryset = queryset
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
                 if isinstance(field, ModelMultipleChoiceField):
@@ -508,7 +508,7 @@ class Action(metaclass=ActionMetaclass):
         if message is None:
             message = getattr(self.metaclass, 'message', None)
         if message:
-            messages.add_message(self.request, messages.INFO, message)
+            messages.add_message(self.request, messages.SUCCESS, message)
             self.response.update(message=message, style=style)
 
     def run(self, *tasks, message=None):
@@ -541,9 +541,19 @@ class Action(metaclass=ActionMetaclass):
         self.redirect(message='Ação realizada com sucesso.')
 
     def process(self):
-        response = self.submit()
-        if isinstance(response, HttpResponse):
-            raise ReadyResponseException(response)
+        try:
+            response = self.submit()
+            if isinstance(response, HttpResponse):
+                raise ReadyResponseException(response)
+        except ValidationError as e:
+            message = 'Corrija os erros indicados no formulário'
+            messages.add_message(self.request, messages.WARNING, message)
+            self.add_error(None, e.message)
+        except BaseException as e:
+            traceback.print_exc()
+            message = 'Ocorreu um erro no servidor: {}'.format(e)
+            messages.add_message(self.request, messages.WARNING, message)
+            self.add_error(None, message)
 
     def display(self):
         return None

@@ -1,6 +1,12 @@
 {% load tags %}
 <div>
-    <span class="badge bg-{% if value|true %}success{% else %}danger{% endif %}" style="padding:10px">
-        {{ value }}
-    </span>
+    {% if value == None %}
+        <span class="badge bg-warning" style="padding:10px">Não Informado</span>
+    {% else %}
+        {% if value|true %}
+            <span class="badge bg-success" style="padding:10px">Sim</span>
+        {% else %}
+            <span class="badge bg-danger" style="padding:10px">Não</span>
+        {% endif %}
+    {% endif %}
 </div>

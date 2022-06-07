@@ -21,7 +21,7 @@
     <div class="queryset-container" id="queryset-container{{ data.uuid }}">
     {% if data.attach %}
     <div class="clearfix"></div>
-    <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
+    <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">
         <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">

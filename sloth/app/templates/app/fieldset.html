@@ -29,14 +29,21 @@
                   {% endif %}
                     <td>
                       <div class="responsive-container">
-                          {% for k, item in fieldset.data.items %}
-                            <div class="fieldset-field width-{{ item.width }}">
-                                <b>{{ k }}:</b><br>
-                                {% if item.template %}
-                                    {% include item.template with value=item.value metadata=item.metadata %}
-                                {% else %}
-                                    {{ item.value|format }}
+                          {% for k, v in fieldset.data.items %}
+                            <div class="fieldset-field width-{{ v.width }}">
+                                {% if not v.metadata.icon %}
+                                    <div class="fieldset-field-label">{{ k }}:</div>
                                 {% endif %}
+                                <div class="fieldset-field-value">
+                                    {% if v.metadata.icon %}
+                                        <i class="bi bi-{{ v.metadata.icon }}"></i>
+                                    {% endif %}
+                                    {% if v.template %}
+                                        {% include v.template with value=v.value metadata=v.metadata %}
+                                    {% else %}
+                                        {{ v.value|format|linebreaksbr }}
+                                    {% endif %}
+                                </div>
                             </div>
                           {% endfor %}
                       </div>

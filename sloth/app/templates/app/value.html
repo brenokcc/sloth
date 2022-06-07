@@ -3,20 +3,33 @@
 {% if v|is_valueset %}
     <dl>
     {% for k2, v2 in v.items %}
-        <dt>{{ k2 }}</dt>
-        <dd>
+        {% if v2.metadata.icon %}
+            <dt></dt>
+            <dd>
+            <i class="bi bi-{{ v2.metadata.icon }}"></i>
             {% if v2.template %}
                 {% include v2.template with value=v2.value metadata=v2.metadata %}
             {% else %}
-                {{ v2.value|format|linebreaks }}
+                {{ v2.value|format|linebreaksbr }}
             {% endif %}
-        </dd>
+            </dd>
+        {% else %}
+            <dt>{{ k2 }}</dt>
+            <dd>
+                {% if v2.template %}
+                    {% include v2.template with value=v2.value metadata=v2.metadata %}
+                {% else %}
+                    {{ v2.value|format|linebreaksbr }}
+                {% endif %}
+            </dd>
+        {% endif %}
     {% endfor %}
     </dl>
 {% else %}
     {% if v.template %}
         {% include v.template with value=v.value metadata=v.metadata %}
     {% else %}
-        {{ v.value|format|linebreaks }}
+        {% if v.metadata.icon %}<i class="bi bi-{{ v.metadata.icon }}"></i>{% endif %}
+        {{ v.value|format|linebreaksbr }}
     {% endif %}
 {% endif %}

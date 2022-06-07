@@ -343,9 +343,9 @@ class QuerySet(models.QuerySet):
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
-            n = self.count() // self.metadata['limit'] + 1
-            for page in range(0, n):
-                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n - 5:
+            n_pages = ((self.count()-1) // self.metadata['limit']) + 1
+            for page in range(0, n_pages):
+                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n_pages - 5:
                     pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
@@ -355,7 +355,7 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset',
-                name=verbose_name, key=None, icon=icon, count=n,
+                name=verbose_name, key=None, icon=icon, count=n_pages,
                 actions={}, metadata={}, data=values
             )
             if attach:

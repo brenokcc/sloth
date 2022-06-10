@@ -14,7 +14,10 @@ from . import inputs
 from .fields import *
 
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
-from ..utils import to_api_params
+from ..utils import to_api_params, to_camel_case
+
+
+ACTIONS = {}
 
 
 class PermissionChecker:
@@ -51,7 +54,11 @@ class ActionMetaclass(models.ModelFormMetaclass):
                     setattr(attrs['Meta'], 'exclude', ())
         elif name != 'Action':
             raise NotImplementedError('class {} must have a Meta class.'.format(name))
-        return super().__new__(mcs, name, bases, attrs)
+        cls = super().__new__(mcs, name, bases, attrs)
+        ACTIONS[name] = cls
+        ACTIONS[name.lower()] = cls
+        ACTIONS[to_camel_case(name).lower()] = cls
+        return cls
 
 
 class Action(metaclass=ActionMetaclass):

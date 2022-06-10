@@ -41,7 +41,8 @@ class ValueSet(dict):
         self.instance = instance
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh={},
-            attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None
+            attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None,
+            title=None, subtitle=None, status=None, icon=None
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -65,6 +66,18 @@ class ValueSet(dict):
 
     def image(self, image):
         self.metadata['image'] = image
+        return self
+
+    def title(self, title):
+        self.metadata['title'] = title
+        return self
+
+    def subtitle(self, subtitle):
+        self.metadata['subtitle'] = subtitle
+        return self
+
+    def status(self, status):
+        self.metadata['status'] = status
         return self
 
     def renderer(self, name):
@@ -261,13 +274,22 @@ class ValueSet(dict):
             check_fieldsets_type(data)
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             if isinstance(self.instance, QuerySet):
-                icon = getattr(self.instance.model.metaclass().app_label, 'icon', None)
+                icon = getattr(self.instance.model.metaclass(), 'icon', None)
             else:
-                icon = getattr(self.instance.metaclass().app_label, 'icon', None)
+                icon = getattr(self.instance.metaclass(), 'icon', None)
             output = dict(
-                uuid=uuid1().hex, type='object', name=str(self.instance),
-                icon=icon, data=data, actions=[], attach=[], append={}
+                uuid=uuid1().hex, type='object', name=str(self.instance)
             )
+            for key in ('title', 'subtitle', 'status'):
+                if self.metadata[key]:
+                    value = getattr(self.instance, self.metadata[key])
+                    if self.metadata[key]:
+                        verbose_name, ordering, template, metadata = self.instance.get_attr_metadata(self.metadata[key])
+                    else:
+                        verbose_name, ordering, template, metadata = str(self.instance), None, None, {}
+                    output[key] = dict(value=value, template=template, metadata=metadata)
+
+            output.update(icon=icon, data=data, actions=[], attach=[], append={})
             for form_name in self.metadata['actions']:
                 form_cls = self.instance.action_form_cls(form_name)
                 if self.metadata['request'] is None or form_cls.check_fake_permission(
@@ -308,9 +330,11 @@ class ValueSet(dict):
             else:
                 name = self.metadata['source']
             data = dict(
-                type='object', name=str(name),
-                icon=None, data=serialized['data'], actions=[], attach=[], append={}
+                type='object', name=str(name), title=self.metadata['title'], subtitle=self.metadata['subtitle'],
+                status=self.metadata['status'], icon=self.metadata['icon'], data=serialized['data'],
+                actions=[], attach=[], append={}
             )
+
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
         else:

@@ -11,7 +11,7 @@
         </div>
     {% else %}
         <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}">
-            <h2>{% if data.icon %}<i class="bi bi-{{ data.icon }}"></i>{% endif %} {{ data.name }}</h2>
+            <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
         </div>
     {% endif %}
     <div id="queryset-global-actions-{{ data.uuid }}" class="queryset-action-bar">

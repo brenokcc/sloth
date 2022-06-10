@@ -154,5 +154,7 @@ SLOTH = {
 	},
 	'ROLES':{
 		'ALLOW_MULTIPLE': True
-	}
+	},
+    'DEFAULT_PASSWORD': lambda user=None: '123',
+	'FORCE_PASSWORD_DEFINITION': False,
 }

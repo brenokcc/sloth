@@ -6,7 +6,7 @@
         {% if v2.metadata.icon %}
             <dt></dt>
             <dd>
-            <i class="bi bi-{{ v2.metadata.icon }}"></i>
+            {{ v2.metadata.icon|icontag }}
             {% if v2.template %}
                 {% include v2.template with value=v2.value metadata=v2.metadata %}
             {% else %}
@@ -29,7 +29,7 @@
     {% if v.template %}
         {% include v.template with value=v.value metadata=v.metadata %}
     {% else %}
-        {% if v.metadata.icon %}<i class="bi bi-{{ v.metadata.icon }}"></i>{% endif %}
+        {{ v.metadata.icon|icontag }}
         {{ v.value|format|linebreaksbr }}
     {% endif %}
 {% endif %}

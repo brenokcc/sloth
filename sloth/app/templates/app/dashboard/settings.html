@@ -1,3 +1,4 @@
+{% load tags %}
 <style>
   .settings-dropdown li{
     text-align:center;
@@ -33,7 +34,7 @@
     {% for item in dashboard.data.settings %}
         <li>
           <a class="dropdown-item" href="{{ item.url }}">
-            <i class="bi bi-{{ item.icon }}"></i>
+            {{ item.icon|icontag }}
             {{ item.label }}
           </a>
         </li>

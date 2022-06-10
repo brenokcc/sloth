@@ -1,15 +1,36 @@
-
+{% load tags %}
 <div class="valueset row clearfix">
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
         <div class="valueset-header">
             <div class="valueset-title">
-                {% if data.name %}
-                    <h2>
-                        {% if data.icon %}
-                            <i class="bi bi-{{ data.icon }}"></i>
+                {% if data.title %}
+                    <div class="valueset-title pb-1">
+                        {% if data.title.template %}
+                            {% include data.subtitle.template with value=data.title.value metadata=data.title.metadata %}
+                        {% else %}
+                            <h2>{{ data.title.value }}</h2>
                         {% endif %}
-                        {{ data.name }}
-                    </h2>
+                    </div>
+                {% else %}
+                    <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
+                {% endif %}
+                {% if data.subtitle.value %}
+                    <div class="valueset-subtitle pb-1">
+                        {% if data.subtitle.template %}
+                            {% include data.subtitle.template with value=data.subtitle.value metadata=data.subtitle.metadata %}
+                        {% else %}
+                            <div class="valueset-subtitle-text">{{ data.subtitle.value }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if data.status.value %}
+                    <div class="valueset-status pb-1">
+                        {% if data.status.template %}
+                            {% include data.status.template with value=data.status.value metadata=data.status.metadata %}
+                        {% else %}
+                            <div class="valueset-status-text">{{ data.status.value }}</div>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
             <div class="valueset-action-bar">

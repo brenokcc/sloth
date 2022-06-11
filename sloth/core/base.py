@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.template.loader import render_to_string
 
-from sloth.actions import Action
+from sloth.actions import Action, ACTIONS
 from sloth.core.valueset import ValueSet
 from sloth.core.queryset import QuerySet
 from sloth.utils import to_snake_case, to_camel_case, getattrr
@@ -68,9 +68,10 @@ class ModelMixin(object):
                 if valueset.has_children():
                     for attr_name in names:
                         attr_names.append(attr_name)
-                        attr = getattr(self, attr_name)()
-                        if isinstance(attr, ValueSet):
-                            append_attr_names(attr)
+                        if hasattr(self, attr_name):
+                            attr = getattr(self, attr_name)()
+                            if isinstance(attr, ValueSet):
+                                append_attr_names(attr)
             append_attr_names(self.view())
             setattr(self.__class__, '__view__', attr_names)
         return name in getattr(self.__class__, '__view__')
@@ -132,7 +133,7 @@ class ModelMixin(object):
                 values = model.objects.filter(pk=self.pk).values(*set(lookups))
                 for value in values:
                     username = value[role['username']]
-                    email = value[role['emai']] if role['email'] else None
+                    email = value[role['email']] if role['email'] else None
                     if username:
                         for scope_key, lookup in role['scopes'].items():
                             scope_name = value[role['name']] if role['name'].islower() else role['name']
@@ -156,7 +157,7 @@ class ModelMixin(object):
                 if user_id is None:
                     user = User.objects.create(username=username)
                     if email:
-                        setattr(user, email)
+                        user.email = email
                     if 'DEFAULT_PASSWORD' in settings.SLOTH:
                         default_password = settings.SLOTH['DEFAULT_PASSWORD'](user)
                     else:
@@ -266,19 +267,7 @@ class ModelMixin(object):
         elif action.lower() == 'delete':
             return cls.delete_form_cls()
         else:
-            config = apps.get_app_config(cls.metaclass().app_label)
-            try:
-                forms = __import__(
-                    '{}.actions'.format(config.module.__package__),
-                    fromlist=config.module.__package__.split()
-                )
-                for name in dir(forms):
-                    if name.lower() == to_camel_case(action).lower():
-                        return getattr(forms, name)
-            except ModuleNotFoundError as e:
-                if not e.name.endswith('actions'):
-                    raise e
-            return None
+            return ACTIONS.get(action)
 
     @classmethod
     def get_field(cls, lookup):

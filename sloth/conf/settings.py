@@ -57,8 +57,10 @@ SLOTH = {
             'USER_DATA_URL': None
         }
     },
-	'DEFAULT_PASSWORD': lambda user: '123',
 	'LIST_PER_PAGE': 20,
+	'DEFAULT_PASSWORD': lambda user=None: '123',
+	'FORCE_PASSWORD_DEFINITION': False,
+	'ICONS': ['fontawesome', 'materialicons']
 }
 
 # #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

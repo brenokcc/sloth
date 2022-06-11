@@ -161,11 +161,6 @@ def getattr2(obj, name):
 
 
 @register.filter
-def distinct_role_names(roles):
-    return roles.values_list('name', flat=True).distinct()
-
-
-@register.filter
 def unaccented(s):
     nfkd_form = unicodedata.normalize('NFKD', s)
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -174,3 +169,39 @@ def unaccented(s):
 @register.filter
 def true(value):
     return value in ('Sim', 'Yes', 'True')
+
+
+@register.filter
+def split(value):
+    return value.split('\n')
+
+
+@register.filter
+def tabsplit(value):
+    return value.split('\t')
+
+
+@register.filter
+def icontag(value):
+    if value:
+        if value.startswith('fa-'):
+            return mark_safe('<i class="fa-solid {}"></i>'.format(value))
+        elif value.startswith('bi-'):
+            return mark_safe('<i class="bi {}"></i>'.format(value))
+        elif value.startswith('mi-'):
+            suffix = ''
+            if value.endswith('-outlined'):
+                suffix = '-outlined'
+            elif value.endswith('-round'):
+                suffix = '-round'
+            elif value.endswith('-sharp'):
+                suffix = '-sharp'
+            if suffix:
+                icon = '-'.join(value.split('-')[1:-1])
+            else:
+                icon = '-'.join(value.split('-')[1:])
+            return mark_safe('<span class="material-icons{}">{}</span>'.format(suffix, icon.replace('-', '_')))
+        else:
+            return mark_safe('<i class="bi bi-{}"></i>'.format(value))
+    return ''
+

@@ -13,29 +13,35 @@ from .templatetags.tags import is_ajax
 from ..core import views
 from ..actions import Action, LoginForm, PasswordForm
 
-from ..utils.icons import bootstrap
+from ..utils.icons import bootstrap, materialicons, fontawesome
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import dashboard
 
 
 def view(func):
     def decorate(request, *args, **kwargs):
+        if request.user.is_authenticated and settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](request.user)
+            if request.user.check_password(default_password):
+                message = 'Altere sua senha padrão'
+                messages.warning(request, message)
+                return HttpResponseRedirect('/app/password/')
         try:
             # import time; time.sleep(0.5)
             response = func(request, *args, **kwargs)
             response["X-Frame-Options"] = "SAMEORIGIN"
             return response
-        except ReadyResponseException as e:
-            return e.response
-        except JsonReadyResponseException as e:
-            return JsonResponse(e.data)
-        except HtmlJsonReadyResponseException as e:
-            messages = render_to_string('app/messages.html', request=request)
-            return HttpResponse(messages + e.html)
+        except ReadyResponseException as error:
+            return error.response
+        except JsonReadyResponseException as error:
+            return JsonResponse(error.data)
+        except HtmlJsonReadyResponseException as error:
+            app_messages = render_to_string('app/messages.html', request=request)
+            return HttpResponse(app_messages + error.html)
         except PermissionDenied:
             return HttpResponseForbidden()
-        except BaseException as e:
-            raise e
+        except BaseException as error:
+            raise error
 
     return decorate
 
@@ -80,7 +86,16 @@ def manifest(request):
 
 
 def icons(request):
-    return render(request, ['app/icons.html'], dict(bootstrap=bootstrap.ICONS))
+    libraries = {}
+    libraries['Bootstrap'] = bootstrap.ICONS
+    if 'materialicons' in settings.SLOTH.get('ICONS', ()):
+        libraries['Material Icons'] = materialicons.ICONS
+    if 'fontawesome' in settings.SLOTH.get('ICONS', ()):
+        libraries['Font Awesome'] = fontawesome.ICONS
+    return render(
+        request, ['app/icons.html'],
+        dict(settings=settings, libraries=libraries)
+    )
 
 
 def icon(request):
@@ -176,18 +191,29 @@ def app(request):
     return HttpResponseRedirect('/app/login/')
 
 @view
-def roles(request, activate=None):
-    if activate:
+def roles(request):
+    if 'names' in request.GET:
+        names = request.GET['names'].split('|')
         request.user.roles.update(active=False)
-        roles = request.user.roles.filter(pk__in=activate.split('-'))
-        updated = roles.update(active=True)
-        if updated == 1:
-            message = 'Perfil "{}" ativado com sucesso.'.format(roles.first().name)
+        request.user.roles.filter(name__in=names).update(active=True)
+        if len(names) == 1:
+            message = 'Perfil "{}" ativado com sucesso.'.format(names[0])
         else:
-            message = 'Perfis "{}" ativos com sucesso'.format(', '.join([role.name for role in roles]))
+            message = 'Perfis "{}" ativos com sucesso'.format(', '.join(names))
         messages.success(request, message)
         return HttpResponseRedirect('/app/')
     return render(request, ['app/roles.html'], context(request))
+
+
+@view
+def action(request, name):
+    form = views.action(request, name)
+    if form.check_permission(request.user):
+        ctx = context(request, dashboard=dashboard.Dashboards(request), form=form)
+        if form.response:
+            return HttpResponse(form.html())
+        return render(request, ['app/default.html'], ctx)
+    raise PermissionDenied()
 
 
 @view

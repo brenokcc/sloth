@@ -24,7 +24,7 @@
 
 {% for item in dashboard.data.floating %}
     <a href="{{ item.url }}" class="action-button btn btn-circle btn-primary floating-btn floating-{{ forloop.counter0 }}">
-     <i class="bi bi-{{ item.icon }}"></i>
+     {{ item.icon|icontag }}
     </a>
 {% endfor %}
 
@@ -87,7 +87,7 @@ body::-webkit-scrollbar {
   {% for item in dashboard.data.navigation %}
   <a href="{{ item.url }}" class="active">
     <div>
-      <i class="bi bi-{{ item.icon }}"></i>
+      {{ item.icon|icontag }}
       <p>{{ item.label }}</p>
     </div>
   </a>

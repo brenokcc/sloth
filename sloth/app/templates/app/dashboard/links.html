@@ -1,20 +1,32 @@
+{% load tags %}
 {% if data.links %}
 <style>
-    .links-wrapper{
-        text-align: center;
+    .app-title{
+        float: left;
+        font-size: 1.1rem;
+    }
+    .app-links-wrapper{
+        float: right;
+        text-align: right;
         margin-bottom: 30px;
     }
-    .links-wrapper a{
+    .app-links-wrapper a{
         margin: 5px;
         text-decoration: none;
     }
 </style>
-<div class="links-wrapper">
-{% for item in data.links %}
-    <a href="{{ item.url }}" class="shortcut-link">
-        {{ item.label }}
-    </a>
-{% endfor %}
+
+<div class="app-links">
+    <div class="app-title">
+        {{ request.session.app_icon|icontag }} {{ request.session.app_name }}
+    </div>
+    <div class="app-links-wrapper">
+    {% for item in data.links %}
+        <a href="{{ item.url }}" class="shortcut-link">
+            {{ item.label }}
+        </a>
+    {% endfor %}
+    </div>
 </div>
 <div class="clearfix"></div>
 {% endif %}

@@ -248,9 +248,9 @@ class Browser(webdriver.Firefox):
             self.watch(e)
         self.wait()
 
-    def logout(self, username):
+    def logout(self):
         self.print('Logging out')
-        self.click_link(username)
+        self.click_link('settings')
         self.wait()
         self.click_link('Sair')
         self.wait()

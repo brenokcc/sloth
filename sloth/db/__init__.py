@@ -8,6 +8,7 @@ def meta(verbose_name=None, renderer=None, **metadata):
             setattr(func, '__verbose_name__', verbose_name)
         if renderer:
             setattr(func, '__template__', renderer)
+        if metadata:
             setattr(func, '__metadata__', metadata)
 
         return func

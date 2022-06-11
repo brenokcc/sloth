@@ -101,8 +101,9 @@ function click(name, type, index){
     else if(tab){
         element = $(document).find('a.nav-link').filter(function() {return $(this).find('.nav-link-text').text().trim() == name;}).first();
     } else {
-        if (element.length == 0 && (link || button)) element = $(cursor).find("button:visible, button[name='" + name + "']").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
-        if (element.length == 0 && (link || button)) element = $(cursor).find("a:visible, a[name='" + name + "']").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
+        if (element.length == 0 && (link || button)) element = $(cursor).find("button:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
+        if (element.length == 0 && (link || button)) element = $(cursor).find("a:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
+        if (element.length == 0 && (link || button)) element = $(cursor).find("a[name='" + name + "']").first();
     }
 
     if(recursively(element)){

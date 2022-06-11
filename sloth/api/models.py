@@ -9,7 +9,17 @@ class UserManager(models.Manager):
     def all(self):
         return self.display(
             'username', 'is_superuser', 'get_roles_names'
-        ).actions('LoginAsUser').verbose_name('Usuários')
+        ).actions('LoginAsUser').verbose_name('Usuários').attach(
+            'active', 'inactive'
+        )
+
+
+    def active(self):
+        return self.all().filter(is_active=True).verbose_name('Ativos')
+
+
+    def inactive(self):
+        return self.all().filter(is_active=False).verbose_name('Inativos')
 
 
 class User(DjangoUser):
@@ -52,6 +62,12 @@ class RoleManager(models.Manager):
             'ActivateUserRole', 'DeactivateUserRole', 'Delete'
         ).limit_per_page(20)
 
+    def active(self):
+        return self.filter(active=True)
+
+    def inactive(self):
+        return self.filter(active=False)
+
     def contains(self, *names):
         if 'instance' in self._hints:
             if not hasattr(self._hints['instance'], '_cached_role_names'):
@@ -61,6 +77,9 @@ class RoleManager(models.Manager):
                     return True
             return False
         return self.filter(active=True, name__in=names).exists()
+
+    def names(self):
+        return self.values_list('name', flat=True).distinct()
 
 
 class Role(models.Model):

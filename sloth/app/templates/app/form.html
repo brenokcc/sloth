@@ -2,7 +2,7 @@
 
 {% if self.get_metadata.name %}
 <h2>
-    {% if self.get_metadata.icon %}<i class="bi bi-{{ self.get_metadata.icon }}"></i>{% endif %}
+    {{ self.get_metadata.icon|icontag }}
     {{ self.get_metadata.name }}
 </h2>
 
@@ -61,9 +61,12 @@
                         {% if item.name|is_one_to_many_field_controller %}
                             {{ field }} <i>{{ field.field.label }}</i>
                         {% else %}
-                            <label>
-                                {{ field.field.label }}{% if field.field.required %}*{% endif %}
-                            </label> {{ field }}
+                            {% if field.field.label  %}
+                                <label>
+                                    {{ field.field.label }}{% if field.field.required %}*{% endif %}
+                                </label>
+                            {% endif %}
+                            {{ field }}
                             {% if field.help_text %}
                         <span class="help"><i>{{ field.help_text|safe }}</i></span>
                             {% endif %}
@@ -93,6 +96,7 @@
         </button>
     </div>
 </form>
+
 <script>
 $( document ).ready(function() {
     window['RELOAD_AREAS'] = '{{ self.get_reload_areas }}';
@@ -102,4 +106,10 @@ $( document ).ready(function() {
 });
 </script>
 
+<div class="clearfix"></div>
+<div class="action-ouput">
+    {% if self.output_data %}
+        {{ self.output_data|safe }}
+    {% endif %}
+</div>
 <div class="clearfix"></div>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),
     path('app/password/', views.password),
+    path('app/action/<str:name>/', views.action),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/<str:y>/<str:z>/<str:w>/<str:k>/', views.dispatcher),

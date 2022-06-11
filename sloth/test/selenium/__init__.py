@@ -9,6 +9,7 @@ from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.contrib.auth.models import User
 from sloth.test.selenium.browser import Browser
 
+
 CACHE = dict(
     SEQUENCE=0,
     STEP=None,
@@ -113,7 +114,7 @@ class SeleniumTestCase(LiveServerTestCase):
         self.wait()
 
     def logout(self):
-        self.browser.logout(self.current_username)
+        self.browser.logout()
         self.current_username = None
 
     @classmethod

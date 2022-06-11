@@ -76,7 +76,9 @@ class QuerySet(models.QuerySet):
         return display
 
     def get_list_filters(self):
-        if self.metadata['filters']:
+        if self.metadata['filters'] is None:
+            list_filter = []
+        elif self.metadata['filters']:
             list_filter = self.metadata['filters']
         else:
             list_filter = self.model.default_filter_fields()
@@ -84,9 +86,10 @@ class QuerySet(models.QuerySet):
 
     def get_search(self, verbose=False):
         search = {}
-        for lookup in self.metadata['search'] or self.model.default_search_fields():
-            verbose_name = self.model.get_attr_metadata(lookup)[0]
-            search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
+        if self.metadata['search'] is not None:
+            for lookup in self.metadata['search'] or self.model.default_search_fields():
+                verbose_name = self.model.get_attr_metadata(lookup)[0]
+                search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
         return search
 
     def get_display(self, verbose=False):
@@ -173,10 +176,14 @@ class QuerySet(models.QuerySet):
         attaches = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
-                attach = getattr(self._clone(), name)()
+                attr = getattr(self._clone(), name)
+                attach = attr()
                 if self.metadata['request'] and hasattr(attach, 'apply_role_lookups'):
                     attach = attach.apply_role_lookups(self.metadata['request'].user)
-                verbose_name = attach.metadata['verbose_name'] or pretty(name)
+                if hasattr(attr, '__verbose_name__'):
+                    verbose_name = attr.__verbose_name__
+                else:
+                    verbose_name = attach.metadata['verbose_name'] or pretty(name)
                 if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'
@@ -342,9 +349,9 @@ class QuerySet(models.QuerySet):
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
-            n = self.count() // self.metadata['limit'] + 1
-            for page in range(0, n):
-                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n - 5:
+            n_pages = ((self.count()-1) // self.metadata['limit']) + 1
+            for page in range(0, n_pages):
+                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n_pages - 5:
                     pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
@@ -354,7 +361,7 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset',
-                name=verbose_name, key=None, icon=icon, count=n,
+                name=verbose_name, key=None, icon=icon, count=n_pages,
                 actions={}, metadata={}, data=values
             )
             if attach:
@@ -456,16 +463,16 @@ class QuerySet(models.QuerySet):
         return self
 
     def search(self, *names, q=None):
-        self.metadata['search'] = list(names)
         if q:
             lookups = []
             for search_field in self.metadata['search'] or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
+        self.metadata['search'] = list(names) if names else None
         return self
 
     def filters(self, *names):
-        self.metadata['filters'] = list(names)
+        self.metadata['filters'] = list(names) if names else None
         return self
 
     def dynamic_filters(self, *names):

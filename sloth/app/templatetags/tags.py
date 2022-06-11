@@ -172,6 +172,16 @@ def true(value):
 
 
 @register.filter
+def split(value):
+    return value.split('\n')
+
+
+@register.filter
+def tabsplit(value):
+    return value.split('\t')
+
+
+@register.filter
 def icontag(value):
     if value:
         if value.startswith('fa-'):
@@ -194,3 +204,4 @@ def icontag(value):
         else:
             return mark_safe('<i class="bi bi-{}"></i>'.format(value))
     return ''
+

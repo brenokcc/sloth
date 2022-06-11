@@ -1,4 +1,5 @@
 
+from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.db.models import options
@@ -7,6 +8,7 @@ from django.db.models.base import ModelBase
 
 from sloth.core.base import ModelMixin
 from sloth.core.queryset import QuerySet
+from sloth.core.validation import validate_model
 
 # import os
 # import zipfile
@@ -17,21 +19,20 @@ from sloth.core.queryset import QuerySet
 
 PROXIED_MODELS = []
 
-INITIALIZE = True
-
 
 def initilize():
-    global INITIALIZE
-    if INITIALIZE:
-        INITIALIZE = False
-        for module in ('dashboard', 'actions'):
-            for app_label in settings.INSTALLED_APPS:
-                try:
-                    __import__('{}.{}'.format(app_label, module), fromlist=app_label.split('.'))
-                    # print('{} {} initilized!'.format(app_label, module))
-                except ImportError as e:
-                    if not e.name.endswith('dashboard') and not e.name.endswith('actions'):
-                        raise e
+    for module in ('dashboard', 'actions'):
+        for app_label in settings.INSTALLED_APPS:
+            try:
+                __import__('{}.{}'.format(app_label, module), fromlist=app_label.split('.'))
+                # print('{} {} initilized!'.format(app_label, module))
+            except ImportError as e:
+                if not e.name.endswith('dashboard') and not e.name.endswith('actions'):
+                    raise e
+            except BaseException as e:
+                raise e
+    for model in apps.get_models():
+        validate_model(model)
 
 
 class BaseManager(manager.BaseManager):

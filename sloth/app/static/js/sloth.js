@@ -63,6 +63,8 @@ jQuery.fn.extend({
     popup: function(url, method, data){
         $('.alert-dismissible').hide();
         window['QUERYSET_RELOADER'] = window['reload'+$(this).data('uuid')];
+        if(url.indexOf('?')>0) url = url+='&modal=1'
+        else url+='?modal=1'
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             $('#modal').modal('show');

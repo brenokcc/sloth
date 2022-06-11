@@ -69,9 +69,10 @@
     {% include "app/dashboard/menu.html" with data=dashboard.data %}
 
       <main>
-        {% include "app/dashboard/links.html" with data=dashboard.data %}
 {% endif %}
-
+        {% if not request.GET.modal %}
+          {% include "app/dashboard/links.html" with data=dashboard.data %}
+        {% endif %}
 {% block content %}
 {% endblock %}
 {% include "app/messages.html" %}

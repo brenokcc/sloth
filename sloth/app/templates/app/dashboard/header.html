@@ -26,12 +26,9 @@
         {% endif %}
         <div class="collapse navbar-collapse">
           {% include "app/dashboard/search.html" %}
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-            {% include "app/dashboard/apps.html" %}
-            {% include "app/dashboard/settings.html" %}
-
-          </ul>
+          {% include "app/dashboard/tools.html" %}
+          {% include "app/dashboard/apps.html" %}
+          {% include "app/dashboard/settings.html" %}
         </div>
 
       </div>

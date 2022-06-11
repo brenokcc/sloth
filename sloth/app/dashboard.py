@@ -6,6 +6,7 @@ from django.utils.safestring import mark_safe
 from sloth.app.templatetags.tags import mobile
 from sloth.exceptions import ReadyResponseException
 from sloth.utils import pretty
+from.actions import ExecuteQuery, ExecuteScript
 
 
 DASHBOARDS = []
@@ -25,7 +26,7 @@ class Dashboard(metaclass=DashboardType):
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
         )
         self.defined_apps = {}
         self.enabled_apps = set()
@@ -35,66 +36,75 @@ class Dashboard(metaclass=DashboardType):
     def to_item(self, model, count=True):
         return
 
-    def _load(self, key, models, app=None):
-        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links'
-        for model in models:
-            if model().has_list_permission(self.request.user) or model().has_permission(self.request.user):
-                if key in allways or self.request.path == '/app/':
-                    url = model.get_list_url('/app')
-                    add_item = True
-                    if app:
-                        self.enabled_apps.add(app)
-                        add_item = self.request.session.get('app_name') == app
-                    for item in self.data[key]:
-                        add_item = add_item and not item['url'] == url
-                    if add_item:
-                        self.data[key].append(
-                            dict(
-                                url=url,
-                                label=model.metaclass().verbose_name_plural,
-                                count=model.objects.all().apply_role_lookups(self.request.user).count(),
-                                icon=getattr(model.metaclass(), 'icon', None),
-                                app=app
-                            )
-                        )
+    def _load(self, key, items, app=None):
+        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools'
+        for cls in items:
+            add_item = True
+            if app:
+                self.enabled_apps.add(app)
+                add_item = self.request.session.get('app_name') == app
+            if add_item:
+                if hasattr(cls, 'check_fake_permission'):
+                    if cls.check_fake_permission(request=self.request):
+                        metadata = cls.get_metadata()
+                        self.data[key].append(dict(
+                            url='/app/action/{}/'.format(metadata['key']),
+                            label=metadata['name'], icon=metadata['icon'], app=app
+                        ))
+                else:
+                    if cls().has_list_permission(self.request.user) or cls().has_permission(self.request.user):
+                        if key in allways or self.request.path == '/app/':
+                            url = cls.get_list_url('/app')
+                            for item in self.data[key]:
+                                add_item = add_item and not item['url'] == url
+                            if add_item:
+                                self.data[key].append(
+                                    dict(
+                                        url=url,
+                                        label=cls.metaclass().verbose_name_plural,
+                                        count=cls.objects.all().apply_role_lookups(self.request.user).count(),
+                                        icon=getattr(cls.metaclass(), 'icon', None),
+                                        app=app
+                                    )
+                                )
 
     def _item(self, key, url, label, icon, count=None, app=None):
         self.data[key].append(
             dict(url=url, label=label, count=count, icon=icon, app=app)
         )
 
-    def info(self, *models, app=None):
-        self._load('info', models, app=app)
+    def info(self, *items, app=None):
+        self._load('info', items, app=app)
 
-    def warning(self, *models, app=None):
-        self._load('warning', models, app=app)
+    def warning(self, *items, app=None):
+        self._load('warning', items, app=app)
 
-    def search(self, *models, app=None):
-        self._load('search', models, app=app)
+    def search(self, *items, app=None):
+        self._load('search', items, app=app)
 
-    def menu(self, *models, app=None):
+    def menu(self, *items, app=None):
         if mobile(self.request):
-            self._load('search', models, app=app)
+            self._load('search', items, app=app)
         else:
-            self._load('menu', models, app=app)
+            self._load('menu', items, app=app)
 
-    def links(self, *models, app=None):
-        self._load('links', models, app=app)
+    def links(self, *items, app=None):
+        self._load('links', items, app=app)
 
     def add_link(self, url, label, app=None):
         self._item(self, 'links', url, label, app=app)
 
-    def shortcuts(self, *models, app=None):
-        self._load('shortcuts', models, app=app)
+    def shortcuts(self, *items, app=None):
+        self._load('shortcuts', items, app=app)
 
     def add_shortcut(self, url, label, icon, app=None):
         self._item(self, 'shortcut', url, label, icon, app=app)
 
-    def actions(self, *models, app=None):
+    def actions(self, *items, app=None):
         if mobile(self.request):
-            self._load('search', models, app=app)
+            self._load('search', items, app=app)
         else:
-            self._load('actions', models, app=app)
+            self._load('actions', items, app=app)
 
     def add_action(self, url, label, icon, app=None):
         if mobile(self.request):
@@ -103,20 +113,23 @@ class Dashboard(metaclass=DashboardType):
             self._item(self, 'actions', url, label, icon, app=app)
 
     def add_app(self, label, icon, hide=False):
-        url = '/app/?activate-application={}'.format(label)
+        url = '/app/?toggle-application={}'.format(label)
         self.defined_apps[label] = dict(label=label, icon=icon, hide=hide, url=url, enabled=False)
 
-    def cards(self, *models, app=None):
-        self._load('cards', models, app=app)
+    def cards(self, *items, app=None):
+        self._load('cards', items, app=app)
 
-    def floating(self, *models, app=None):
-        self._load('floating', models, app=app)
+    def floating(self, *items, app=None):
+        self._load('floating', items, app=app)
 
-    def navigation(self, *models, app=None):
+    def tools(self, *items, app=None):
+        self._load('tools', items, app=app)
+
+    def navigation(self, *items, app=None):
         if mobile(self.request):
-            self._load('floating', models, app=app)
+            self._load('floating', items, app=app)
         else:
-            self._load('navigation', models, app=app)
+            self._load('navigation', items, app=app)
 
     def add_navigation(self, url, label, icon, app=None):
         if mobile(self.request):
@@ -124,8 +137,8 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._item('navigation', url, label, icon, app=app)
 
-    def settings(self, *models, app=None):
-        self._load('settings', models, app=app)
+    def settings(self, *items, app=None):
+        self._load('settings', items, app=app)
 
     def append(self, data, aside=False):
         if aside and hasattr(data, 'compact'):
@@ -144,6 +157,11 @@ class Dashboard(metaclass=DashboardType):
         pass
 
 
+class AppDashboard(Dashboard):
+    def load(self, request):
+        self.tools(ExecuteQuery, ExecuteScript)
+
+
 class Dashboards:
 
     def __init__(self, request):
@@ -151,7 +169,7 @@ class Dashboards:
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
         )
         self.apps = {}
         self.data['navigation'].append(
@@ -168,14 +186,18 @@ class Dashboards:
 
         for name in dashboard.enabled_apps:
             self.apps[name]['enabled'] = True
-        if 'activate-application' in request.GET:
+        if 'toggle-application' in request.GET:
             for name in self.apps:
-                if name == request.GET['activate-application']:
-                    request.session['app_name'] = name
-                    request.session['app_icon'] = self.apps[name]['icon']
+                if name == request.GET['toggle-application']:
+                    if request.session.get('app_name') == name:
+                        del request.session['app_name']
+                        del request.session['app_icon']
+                    else:
+                        request.session['app_name'] = name
+                        request.session['app_icon'] = self.apps[name]['icon']
                     request.session.save()
+                    break
             raise ReadyResponseException(HttpResponseRedirect('/app/'))
-
 
     def superuser_search(self, items):
         from django.apps import apps

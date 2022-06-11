@@ -7,6 +7,7 @@ import operator
 from functools import reduce
 from uuid import uuid1
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import models
 from django.db.models import Q
@@ -23,9 +24,10 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=20, interval='', total=0, ignore=[], is_admin=False,
+            page=1, limit=limit, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
             totalizer=None, calendar=None

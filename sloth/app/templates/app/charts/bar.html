@@ -48,7 +48,7 @@
        background-color: #aaa;
 }
 {% for serie in series %}
-    .bar-chart .percentage-{{ serie.percentage }}:after{
+    .bar-chart .percentage-{{ forloop.counter }}:after{
         width: {{ serie.percentage }}%;
         padding:1px;
         color: #FFF;
@@ -60,7 +60,7 @@
 <div class="bar-chart">
     <dl class="barchart">
         {% for serie in series %}
-        <dd class="percentage percentage-{{ serie.percentage }}"><span class="text">{{ serie.description }}</span></dd>
+        <dd class="percentage percentage-{{ forloop.counter }}"><span class="text">{{ serie.description }}</span></dd>
         {% endfor %}
     </dl>
     {% include "app/charts/legend.html" %}

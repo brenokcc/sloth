@@ -120,11 +120,14 @@ def to_api_params(form_field_tuples):
     return params
 
 
-def colors():
-    return getattr(
+def colors(i=None):
+    palette = getattr(
         settings, 'COLORS', [
-            '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0',
-            '#0d47a1', '#66bb6a', '#4caf50', '#43a047', '#388e3c',
-            '#2e7d32', '#1b5e20'
+            '#845EC2', '#D65DB1', '#FF6F91', '#FF9671', '#FFC75F',
+            '#008F7A', '#B39CD0', '#C34A36', '#FF8066', '#4E8397',
+            '#D5CABD', '#936C00'
         ]
     )
+    if i is None:
+        return palette
+    return palette[0] if i == len(palette) else palette[i]

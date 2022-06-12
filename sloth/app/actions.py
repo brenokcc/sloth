@@ -9,7 +9,7 @@ class ExecuteQuery(actions.Action):
 
     class Meta:
         icon = 'chat-left-dots'
-        verbose_name = 'Executar Consulta'
+        verbose_name = 'Executar SQL'
         modal = False
         style = 'primary'
 
@@ -20,7 +20,7 @@ class ExecuteQuery(actions.Action):
             self.output(dict(value=output.getvalue()), 'renders/programing/strtable.html')
 
     def has_permission(self, user):
-        return user.is_superuser
+        return user.is_superuser and user.roles.contains('Remote Developer')
 
 
 class ExecuteScript(actions.Action):
@@ -43,4 +43,4 @@ class ExecuteScript(actions.Action):
         self.output(dict(value=output), 'renders/programing/terminal.html')
 
     def has_permission(self, user):
-        return user.is_superuser
+        return user.is_superuser and user.roles.contains('Remote Developer')

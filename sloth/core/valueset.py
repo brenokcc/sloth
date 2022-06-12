@@ -233,7 +233,7 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
-                        value = serialize(value)
+                        value = serialize(value) if not wrap else value
 
                         if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)

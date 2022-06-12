@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import locale
+import datetime
 import unicodedata
 from django.template import Library
 from django.utils.safestring import mark_safe
-
+from django.template.loader import render_to_string
 from sloth.utils.formatter import format_value
+from sloth.utils import colors
+
 
 register = Library()
 
@@ -205,3 +208,55 @@ def icontag(value):
             return mark_safe('<i class="bi bi-{}"></i>'.format(value))
     return ''
 
+
+@register.filter
+def calendar(value):
+    html = []
+    items = []
+    legend = []
+    months = []
+    for i, item in enumerate(value):
+        if len(item) == 2: #  description, date
+            item = (item[0], item[1], item[1], colors(i))
+        elif len(item) == 3:
+            if isinstance(item[2], str): #  description, date, color
+                item = (item[0], item[1], item[1], item[2])
+            else: #  description, date, date
+                item = (item[0], item[1], item[2], colors(i))
+        first_day_of_month = datetime.date(item[1].year, item[1].month, 1)
+        if first_day_of_month not in months:
+            months.append(first_day_of_month)
+        first_day_of_month = datetime.date(item[2].year, item[2].month, 1)
+        if first_day_of_month not in months:
+            months.append(first_day_of_month)
+        legend.append((item[3], item[0]))
+        items.append(item)
+
+    def color(day):
+        for item in items:
+            if day >= item[1] and day <= item[2]:
+                return item[3]
+
+    def month(first_day_of_month):
+        days = {}
+        first_day_of_calendar = first_day_of_month - datetime.timedelta(days=first_day_of_month.weekday())
+        for i in range(0, (first_day_of_month - first_day_of_calendar).days):
+            day = first_day_of_calendar + datetime.timedelta(days=i)
+            days[day] = color(day)
+        last_day_of_month = first_day_of_month + datetime.timedelta(days=0)
+        while first_day_of_month.month == last_day_of_month.month:
+            days[last_day_of_month] = color(last_day_of_month)
+            last_day_of_month += datetime.timedelta(days=1)
+        last_day_of_month += datetime.timedelta(days=-1)
+        last_day_of_calendar = last_day_of_month + datetime.timedelta(days=0)
+        while last_day_of_calendar.weekday() < 6:
+            last_day_of_calendar += datetime.timedelta(days=1)
+            days[last_day_of_calendar] = color(last_day_of_calendar)
+        context = dict(days=days, start=first_day_of_month, today=datetime.date.today())
+        return render_to_string('renders/calendar/calendar.html', context=context)
+
+    for first_day_of_month in months:
+        html.append(month(first_day_of_month))
+    html.append(render_to_string('renders/calendar/legend.html', dict(legend=legend)))
+
+    return mark_safe(''.join(html))

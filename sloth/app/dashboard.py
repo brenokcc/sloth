@@ -140,18 +140,24 @@ class Dashboard(metaclass=DashboardType):
     def settings(self, *items, app=None):
         self._load('settings', items, app=app)
 
-    def append(self, data, aside=False):
-        if aside and hasattr(data, 'compact'):
-            data.compact()
+    def append(self, data, aside=False, grid=1):
         if self.request.path == '/app/':
-            self.data['right' if aside else 'center'].append(
-                str(data.contextualize(self.request))
-            )
+            if aside and hasattr(data, 'compact'):
+                data.compact()
+            if self.request.path == '/app/':
+                html = str(data.contextualize(self.request))
+                if aside:
+                    self.data['right'].append(html)
+                else:
+                    self.data['center'].append((grid, html))
 
-    def extend(self, data, template, aside=False):
+    def extend(self, data, template, aside=False, grid=1):
         if self.request.path == '/app/':
             html = mark_safe(render_to_string(template, data, request=self.request))
-            self.data['right' if aside else 'center'].append(html)
+            if aside:
+                self.data['right'].append(html)
+            else:
+                self.data['center'].append((grid, html))
 
     def load(self, request):
         pass

@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='role',
             name='active',
-            field=models.BooleanField(default=True, verbose_name='Ativo'),
+            field=models.BooleanField(default=True, verbose_name='Ativo', blank=True),
         ),
         migrations.AlterField(
             model_name='role',
@@ -25,17 +25,17 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='role',
             name='scope_key',
-            field=sloth.db.models.CharField(max_length=50, null=True, verbose_name='Escopo'),
+            field=sloth.db.models.CharField(max_length=50, null=True, verbose_name='Escopo', blank=True),
         ),
         migrations.AlterField(
             model_name='role',
             name='scope_type',
-            field=sloth.db.models.CharField(db_index=True, max_length=50, null=True, verbose_name='Tipo do Escopo'),
+            field=sloth.db.models.CharField(db_index=True, max_length=50, null=True, verbose_name='Tipo do Escopo', blank=True),
         ),
         migrations.AlterField(
             model_name='role',
             name='scope_value',
-            field=models.IntegerField(db_index=True, null=True, verbose_name='Valor do Escopo'),
+            field=models.IntegerField(db_index=True, null=True, verbose_name='Valor do Escopo', blank=True),
         ),
         migrations.AlterField(
             model_name='role',

@@ -37,36 +37,39 @@ class ModelTestCase(TestCase):
         self.debug = True
         super().__init__(*args, **kwargs)
 
-    def log(self, data):
+    def log(self, data, dumps=True):
         if self.debug:
-            print(json.dumps(data, indent=4, ensure_ascii=False))
+            if dumps:
+                print(json.dumps(data, indent=4, ensure_ascii=False))
+            else:
+                print(data)
 
     def test(self):
         loaddata()
-        self.log(Municipio.objects.first().serialize(wrap=True, verbose=True))
+        self.log(Municipio.objects.first().serialize(wrap=True, verbose=True), dumps=False)
         self.log(Municipio.objects.count('estado').serialize())
-        self.log(Municipio.objects.all().serialize(wrap=True, verbose=True))
+        self.log(Municipio.objects.all().serialize(wrap=True, verbose=True), dumps=False)
         servidor = Servidor.objects.first()
-        self.log(servidor.serialize(wrap=True, verbose=True))
+        self.log(servidor.serialize(wrap=True, verbose=True), dumps=False)
         self.log(Servidor.objects.count('naturalidade').serialize())
         self.log(Servidor.objects.count('naturalidade', 'ativo').serialize())
-        self.log(Servidor.objects.serialize(wrap=True, verbose=True))
+        self.log(Servidor.objects.serialize(wrap=True, verbose=True), dumps=False)
 
         self.log(servidor.get_ferias().count('ano').serialize())
-        self.log(servidor.serialize(wrap=True, verbose=True))
-        self.log(Servidor.objects.com_endereco().serialize(wrap=True, verbose=True))
+        self.log(servidor.serialize(wrap=True, verbose=True), dumps=False)
+        self.log(Servidor.objects.com_endereco().serialize(wrap=True, verbose=True), dumps=False)
         self.log(Group.objects.first().serialize())
         self.log(Group.objects.all().serialize())
         self.log(Ferias.objects.all().serialize())
 
         servidor = Servidor.objects.first()
-        self.log(servidor.serialize())
-        self.log(servidor.serialize('get_dados_gerais'))
-        self.log(servidor.serialize('get_dados_recursos_humanos'))
-        self.log(servidor.serialize('get_endereco'))
-        self.log(Servidor.objects.serialize())
-        self.log(Servidor.objects.com_endereco().serialize())
-        self.log(Servidor.objects.sem_endereco().serialize())
+        self.log(servidor.serialize(), dumps=False)
+        self.log(servidor.serialize('get_dados_gerais'), dumps=False)
+        self.log(servidor.serialize('get_dados_recursos_humanos'), dumps=False)
+        self.log(servidor.serialize('get_endereco'), dumps=False)
+        self.log(Servidor.objects.serialize(), dumps=False)
+        self.log(Servidor.objects.com_endereco().serialize(), dumps=False)
+        self.log(Servidor.objects.sem_endereco().serialize(), dumps=False)
 
 
 class ApiTestCase(ServerTestCase):

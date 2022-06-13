@@ -615,6 +615,12 @@ class PasswordForm(Action):
     class Meta:
         verbose_name = 'Alterar Senha'
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if not self.user:
+            self.user = self.request.user
+
     def clean(self):
         password = self.cleaned_data.get('password')
         password2 = self.cleaned_data.get('password2')
@@ -622,14 +628,14 @@ class PasswordForm(Action):
             raise forms.ValidationError('Senhas não conferem.')
 
         if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
-            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.request.user)
-            if self.request.user.check_password(default_password) and self.request.user.check_password(password):
+            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.user)
+            if self.user.check_password(default_password) and self.user.check_password(password):
                 raise forms.ValidationError('Senha não pode ser a senha padrão.')
 
         return self.cleaned_data
 
     def submit(self):
-        self.request.user.set_password(self.cleaned_data.get('password'))
-        self.request.user.save()
-        auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
+        self.user.set_password(self.cleaned_data.get('password'))
+        self.user.save()
+        auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
         self.redirect(message='Senha alterada com sucesso.')

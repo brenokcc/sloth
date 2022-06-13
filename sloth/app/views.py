@@ -5,9 +5,13 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib import auth, messages
 from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from sloth.api.tokes import account_activation_token
 
 from .templatetags.tags import is_ajax
 from ..core import views
@@ -173,6 +177,23 @@ def password(request):
 def logout(request):
     request.session.clear()
     auth.logout(request)
+    return HttpResponseRedirect('/')
+
+
+def account_activate(request, uid64, token):
+    uid = force_str(urlsafe_base64_decode(uid64))
+    user = get_object_or_404(User, pk=uid)
+    if user is not None and account_activation_token.check_token(user, token):
+        form = PasswordForm(request=request, user=user)
+        if form.is_valid():
+            form.submit()
+            user.is_active = True
+            user.save()
+            auth.login(request, user)
+            return HttpResponseRedirect('/app/')
+        return render(request, ['app/default.html'], context(request, form=form))
+
+    messages.warning(request, "Link de ativação inválido")
     return HttpResponseRedirect('/')
 
 

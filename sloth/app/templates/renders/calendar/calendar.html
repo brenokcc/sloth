@@ -1,0 +1,61 @@
+<style>
+    .calendar table th, .calendar table caption{
+        font-weiht: bold;
+        text-align: center;
+    }
+    .calendar table td{
+        border: solid 1px #EEE;
+    }
+    .calendar .active-day{
+        color:#FFF;
+    }
+    .calendar .inactive-day{
+        color:#BBB;
+    }
+    .calendar .date-container{
+        width:100%;
+        text-align:right;
+        padding-right:5px;
+    }
+    .calendar .today{
+        background-color: #faf7f7;
+    }
+</style>
+<div class="calendar" style="display:inline-block;vertical-align:top">
+    <table width="300px">
+        <caption>{{ start|date:'F' }}</caption>
+        <thead>
+            <tr>
+                <th>Seg</th>
+                <th>Ter</th>
+                <th>Qua</th>
+                <th>Qui</th>
+                <th>Sex</th>
+                <th>Sab</th>
+                <th>Dom</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% for date, color in days.items %}
+                    <td align="center" class="{% if today.day == date.day and today.month == date.month %}today{% endif %}" style="{% if color %}background-color:{{ color }};border-color:{{ color }}{% endif %}">
+                        <div style="min-height:40px">
+                            <div class="date-container">
+                                {% if color %}
+                                    <span class="active-day">
+                                        {{ date.day }}
+                                    </span>
+                                {% else %}
+                                    <span class="inactive-day">{{ date.day }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    {% if forloop.counter > 1 and forloop.counter|divisibleby:7 %}
+                        <tr></tr>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+</div>

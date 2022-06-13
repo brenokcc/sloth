@@ -63,8 +63,15 @@ jQuery.fn.extend({
     popup: function(url, method, data){
         $('.alert-dismissible').hide();
         window['QUERYSET_RELOADER'] = window['reload'+$(this).data('uuid')];
+        if(url.indexOf('?')>0) url = url+='&modal=1'
+        else url+='?modal=1'
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
+            if($('.modal-body input[type=text]:first').length > 0){
+                window.setTimeout(function () {
+                    $('.modal-body input[type=text]:first').focus();
+                }, 200);
+            }
             $('#modal').modal('show');
             document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });

@@ -57,6 +57,7 @@ SLOTH = {
             'USER_DATA_URL': None
         }
     },
+	'LIST_PER_PAGE': 20,
 	'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,
 	'ADD_USER_CONFIRMATION': False,

@@ -1,0 +1,22 @@
+<style>
+    .g1, .g2.s, .g2.n, .g3.s, .g3.n, .g4.n, .g4.s{ width: 100%; }
+    .g2, .g2.m, .g3.m, .g4.m{ width: 49.5%; }
+    .g3{ width: 33%; }
+    .g4{ width: 24.6%; }
+</style>
+<div class="responsive-container">
+    {% for grid, item in data.center %}
+        {% if grid == 1 %}<div class="g1 mb-3">{{ item }}</div>{% endif %}
+    {% endfor %}
+    {% for grid, item in data.center %}
+        {% if grid == 2 %}<div class="g2 mb-3">{{ item }}</div>{% endif %}
+    {% endfor %}
+    {% for grid, item in data.center %}
+        {% if grid == 3 %}<div class="g3 mb-3">{{ item }}</div>{% endif %}
+    {% endfor %}
+    {% for grid, item in data.center %}
+        {% if grid == 4 %}<div class="g4 mb-3">{{ item }}</div>{% endif %}
+    {% endfor %}
+</div>
+
+

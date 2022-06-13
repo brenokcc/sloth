@@ -125,44 +125,33 @@
 }
 .search-and-filters {
     border-radius: 5px;
-    clear: both;
-    display: flex;
-    align-items: flex-end;
-    flex-direction: row;
-    flex-wrap: wrap;
-    float: none;
-    position: relative;
     width: 100%;
 }
 .search-and-filters label {
     color: #666;
 }
 .search-and-filters .select2-container{
-    width: 210px !important;
+    width: 100% !important;
 }
 .search-and-filters .select2-container--default .select2-selection--single{
     height: 38px !important;
     padding-top: 3px;
+    width: 100% !important;
 }
 .search-and-filters input[type=text]{
+    min-width: 210px:
     height: 38px;
     border: 1px solid #ced4da;
     border-radius: 4px;
 }
 .search-and-filters form>div {
     display: inline;
-    float: left;
-    width: auto;
 }
 .search-and-filters .filter {
-    flex-basis: 210px;
-    flex-grow: 1;
-    float: left;
+    display: inline-block;
     margin-right: 10px;
-    max-width: 210px;
-    min-width: 160px;
     padding: 0;
-    width: auto;
+    margin-bottom: 5px;
 }
 .search-and-filters .filter .fa-calendar{
     position: relative;
@@ -202,10 +191,6 @@
 }
 .queryset .search-and-filters-controls input{
     width: calc(100% - 200px);
-}
-.queryset .filter-button{
-    margin-top:24px;
-    width: 210px;
 }
 .select2-selection__clear span{
     position: relative;
@@ -287,6 +272,10 @@ textarea{
     float: right;
     margin-top: 25px;
 }
+.responsive-container > div{
+    display: inline-block;
+    vertical-align: top;
+}
 .width-100, .n.width-50, .n.width-33, .n.width-25, .s.width-25{
     width: 98.5%;
 }
@@ -299,6 +288,7 @@ textarea{
 .l.width-25{
     width: 24.2%;
 }
+
 
 .errors ul{
     padding-inline-start: 0;

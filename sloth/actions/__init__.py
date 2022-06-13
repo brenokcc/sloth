@@ -68,6 +68,7 @@ class Action(metaclass=ActionMetaclass):
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
         self.metaclass = getattr(self, 'Meta')
+        self.output_data = None
 
         if ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
@@ -564,6 +565,12 @@ class Action(metaclass=ActionMetaclass):
 
     def display(self):
         return None
+
+    def output(self, data, template=None):
+        if template:
+            self.output_data = render_to_string(template, data, request=self.request)
+        else:
+            self.output_data = data
 
 
 class LoginForm(Action):

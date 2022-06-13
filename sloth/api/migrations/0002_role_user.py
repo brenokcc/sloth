@@ -33,9 +33,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=50, verbose_name='Nome')),
-                ('scope_key', models.CharField(max_length=50, null=True, verbose_name='Escopo')),
-                ('scope_value', models.IntegerField(null=True, verbose_name='Valor do Escopo')),
-                ('scope_type', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype', verbose_name='Tipo do Escopo')),
+                ('scope_key', models.CharField(max_length=50, null=True, verbose_name='Escopo', blank=True)),
+                ('scope_value', models.IntegerField(null=True, verbose_name='Valor do Escopo', blank=True)),
+                ('scope_type', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype', verbose_name='Tipo do Escopo', blank=True)),
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='roles', to='api.user', verbose_name='Usuário')),
             ],
             options={

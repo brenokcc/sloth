@@ -23,21 +23,23 @@
         cursor: default;
     }
   </style>
-  <li class="nav-item dropdown">
-    <a class="nav-link" href="#" id="appsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap;padding-top:15px">
-      <span><i class="bi bi-border-all"></i></span>
-    </a>
-    <div class="dropdown-menu dropdown-menu-end apps-dropdown-menu" aria-labelledby="appsDropdown">
-      {% for app in dashboard.apps.values %}
-        {% if app.enabled or not app.hide %}
-          <div>
-            <a href="{% if app.enabled  %}{{ app.url }}{% else %}#{% endif %}" class="{% if app.enabled %}enabled{% else %}disabled{% endif %}">
-              {{ app.icon|icontag }}
-              {{ app.label }}
-            </a>
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
-  </li>
+  <ul class="navbar-nav">
+    <li class="nav-item dropdown">
+      <a class="nav-link" href="#" id="appsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}">
+        <span><i class="bi bi-border-all"></i></span>
+      </a>
+      <div class="dropdown-menu dropdown-menu-end apps-dropdown-menu" aria-labelledby="appsDropdown">
+        {% for app in dashboard.apps.values %}
+          {% if app.enabled or not app.hide %}
+            <div>
+              <a href="{% if app.enabled  %}{{ app.url }}{% else %}#{% endif %}" class="{% if app.enabled %}enabled{% else %}disabled{% endif %}">
+                {{ app.icon|icontag }}
+                {{ app.label }}
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </li>
+  </ul>
 {% endif %}

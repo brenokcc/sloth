@@ -17,14 +17,14 @@ from .templatetags.tags import is_ajax
 from ..core import views
 from ..actions import Action, LoginForm, PasswordForm
 
-from ..utils.icons import bootstrap
+from ..utils.icons import bootstrap, materialicons, fontawesome
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import dashboard
 
 
 def view(func):
     def decorate(request, *args, **kwargs):
-        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
+        if request.user.is_authenticated and settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
             default_password = settings.SLOTH['DEFAULT_PASSWORD'](request.user)
             if request.user.check_password(default_password):
                 message = 'Altere sua senha padrão'
@@ -90,7 +90,16 @@ def manifest(request):
 
 
 def icons(request):
-    return render(request, ['app/icons.html'], dict(bootstrap=bootstrap.ICONS))
+    libraries = {}
+    libraries['Bootstrap'] = bootstrap.ICONS
+    if 'materialicons' in settings.SLOTH.get('ICONS', ()):
+        libraries['Material Icons'] = materialicons.ICONS
+    if 'fontawesome' in settings.SLOTH.get('ICONS', ()):
+        libraries['Font Awesome'] = fontawesome.ICONS
+    return render(
+        request, ['app/icons.html'],
+        dict(settings=settings, libraries=libraries)
+    )
 
 
 def icon(request):

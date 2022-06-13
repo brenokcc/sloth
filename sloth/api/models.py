@@ -92,10 +92,10 @@ class Role(models.Model):
         verbose_name='Usuário'
     )
     name = models.CharField(max_length=50, verbose_name='Nome')
-    scope_key = models.CharField(max_length=50, verbose_name='Escopo', null=True)
-    scope_type = models.CharField(max_length=50, verbose_name='Tipo do Escopo', null=True, db_index=True)
-    scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True, db_index=True)
-    active = models.BooleanField(verbose_name='Ativo', default=True)
+    scope_key = models.CharField(max_length=50, verbose_name='Escopo', null=True, blank=True)
+    scope_type = models.CharField(max_length=50, verbose_name='Tipo do Escopo', null=True, db_index=True, blank=True)
+    scope_value = models.IntegerField(verbose_name='Valor do Escopo', null=True, db_index=True, blank=True)
+    active = models.BooleanField(verbose_name='Ativo', default=True, blank=True)
 
     objects = RoleManager()
 

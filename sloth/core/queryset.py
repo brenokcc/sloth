@@ -7,6 +7,7 @@ import operator
 from functools import reduce
 from uuid import uuid1
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import models
 from django.db.models import Q
@@ -23,9 +24,10 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=20, interval='', total=0, ignore=[], is_admin=False,
+            page=1, limit=limit, interval='', total=0, ignore=[], is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
             totalizer=None, calendar=None
@@ -347,9 +349,9 @@ class QuerySet(models.QuerySet):
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
-            n = self.count() // self.metadata['limit'] + 1
-            for page in range(0, n):
-                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n - 5:
+            n_pages = ((self.count()-1) // self.metadata['limit']) + 1
+            for page in range(0, n_pages):
+                if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n_pages - 5:
                     pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
@@ -359,7 +361,7 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset',
-                name=verbose_name, key=None, icon=icon, count=n,
+                name=verbose_name, key=None, icon=icon, count=n_pages,
                 actions={}, metadata={}, data=values
             )
             if attach:

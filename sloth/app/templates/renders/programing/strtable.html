@@ -1,0 +1,29 @@
+{% load tags %}
+<div style="width:100%;overflow-x:auto">
+{% for row in value|split %}
+    {% if row %}
+        {% if forloop.first %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        {% for col in row|tabsplit %}
+                            <th>{{ col|upper }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+        {% else %}
+            <tr>
+                {% for col in row|tabsplit %}
+                    <td>{{ col }}</td>
+                {% endfor %}
+            </tr>
+
+            {% if forloop.last %}
+                </tbody>
+            </table>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+</div>

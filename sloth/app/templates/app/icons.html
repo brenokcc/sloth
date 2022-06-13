@@ -28,6 +28,12 @@
         .icon-container span{
             font-size:10px;
         }
+        .icon-container span.material-icons{
+            font-size:35px;
+        }
+        .icon-container svg{
+            font-size:30px;
+        }
     </style>
     <script>
         function searchIcons(q){
@@ -39,10 +45,13 @@
             }
         }
     </script>
-    {% for icon in bootstrap %}
-    <div align="center" class="icon-container">
-        {{ icon|icontag }}<br>
-        <span>{{ icon }}</span>
-    </div>
+    {% for library, icons in libraries.items  %}
+        <h1>{{ library }}</h1>
+        {% for icon in icons %}
+        <div align="center" class="icon-container">
+            {{ icon|icontag }}<br>
+            <span>{{ icon }}</span>
+        </div>
+        {% endfor %}
     {% endfor %}
 {% endblock %}

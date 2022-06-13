@@ -1,0 +1,8 @@
+<ul class="chart-legend">
+  {% for color, label in legend %}
+  <li>
+    <div class="percent" style="white-space:nowrap;background-color: {{ color }}"></div>
+    <span class="choice">{{ label }}</span>
+  </li>
+  {% endfor %}
+</ul>

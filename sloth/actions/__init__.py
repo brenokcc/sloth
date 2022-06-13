@@ -109,7 +109,10 @@ class Action(metaclass=ActionMetaclass):
                     field.initial = field.queryset.first().id
                     field.widget = widgets.HiddenInput()
             if hasattr(field, 'username_lookup'):
-                queryset = field.queryset.model.objects.filter(
+                queryset = field.queryset
+                if hasattr(self, 'get_{}_queryset'.format(field_name)):
+                    queryset = getattr(self, 'get_{}_queryset'.format(field_name))(queryset)
+                queryset = queryset.filter(
                     **{field.username_lookup: self.request.user.username}
                 )
                 if queryset.first():
@@ -558,6 +561,8 @@ class Action(metaclass=ActionMetaclass):
             messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, e.message)
         except BaseException as e:
+            if isinstance(e, ReadyResponseException):
+                raise e
             traceback.print_exc()
             message = 'Ocorreu um erro no servidor: {}'.format(e)
             messages.add_message(self.request, messages.WARNING, message)

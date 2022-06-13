@@ -45,7 +45,7 @@ SLOTH = {
 	'ROLES':{
 		'ALLOW_MULTIPLE': True
 	},
-    'OAUTH_LOGIN': {
+	'OAUTH_LOGIN': {
         'APP': {
             'TEXT': 'Acessar com APP',
             'LOGO': None,
@@ -57,10 +57,11 @@ SLOTH = {
             'USER_DATA_URL': None
         }
     },
-	'DEFAULT_PASSWORD': lambda user: '123',
+	'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,
 	'ADD_USER_CONFIRMATION': False,
 	'LIST_PER_PAGE': 20,
+	'ICONS': ['fontawesome', 'materialicons']
 }
 
 # #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

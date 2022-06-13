@@ -1,3 +1,4 @@
+{% load tags %}
 <style>
     .single_quick_activity .count_content {
         margin-left: 30px;
@@ -29,7 +30,7 @@
             <a href="{{ item.url }}" style="text-decoration:none">
             <div class="single_quick_activity">
                 <div class="icon">
-                    <i class="bi bi-{{ item.icon }}"></i>
+                    {{ item.icon|icontag }}
                 </div>
                 <div class="count_content">
                     <h3><span class="counter text-primary">{{ item.count }}</span> </h3>

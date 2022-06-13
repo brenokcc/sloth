@@ -9,6 +9,7 @@ from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.contrib.auth.models import User
 from sloth.test.selenium.browser import Browser
 
+
 CACHE = dict(
     SEQUENCE=0,
     STEP=None,

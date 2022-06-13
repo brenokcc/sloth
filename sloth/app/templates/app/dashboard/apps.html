@@ -1,3 +1,4 @@
+{% load tags %}
 {% if dashboard.apps %}
   <style>
     .apps-dropdown-menu{
@@ -31,7 +32,7 @@
         {% if app.enabled or not app.hide %}
           <div>
             <a href="{% if app.enabled  %}{{ app.url }}{% else %}#{% endif %}" class="{% if app.enabled %}enabled{% else %}disabled{% endif %}">
-              <i class="bi bi-{{ app.icon }}"></i><br>
+              {{ app.icon|icontag }}
               {{ app.label }}
             </a>
           </div>

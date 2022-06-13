@@ -2,11 +2,17 @@
 
 import base64
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
+from ..actions import ACTIONS
 from ..app.templatetags.tags import is_ajax
+from .. import initilize
+
+
+initilize()
 
 
 def is_authenticated(request):
@@ -31,6 +37,16 @@ def is_authenticated(request):
         else:
             return False
     return True
+
+
+def action(request, name):
+    form_cls = ACTIONS[name]
+    form = form_cls(request=request, instances=(), instantiator=None)
+    if form.check_permission(request.user):
+        if form.is_valid():
+            form.process()
+        return form
+    raise PermissionDenied()
 
 
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):

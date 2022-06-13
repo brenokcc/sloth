@@ -1,3 +1,4 @@
+{% load tags %}
 <input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onclick="search(this)" onkeyup="search(this)" onfocus="search(this)" style="{% if not dashboard.data.search  %}visibility:hidden{% endif %}">
 <div class="search-results d-none" onmouseleave="$(this).addClass('d-none')">
 <ul class="list-group search-menu">
@@ -19,7 +20,7 @@
     </div>
     {% if item.icon %}
     <span>
-      <i class="bi bi-{{ item.icon }}"></i>
+      {{ item.icon|icontag }}
     </span>
     {% endif %}
   </li>

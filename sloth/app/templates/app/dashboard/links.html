@@ -1,3 +1,4 @@
+{% load tags %}
 {% if data.links %}
 <style>
     .app-title{
@@ -17,7 +18,7 @@
 
 <div class="app-links">
     <div class="app-title">
-        <i class="bi bi-{{ request.session.app_icon }}"></i> {{ request.session.app_name }}
+        {{ request.session.app_icon|icontag }} {{ request.session.app_name }}
     </div>
     <div class="app-links-wrapper">
     {% for item in data.links %}

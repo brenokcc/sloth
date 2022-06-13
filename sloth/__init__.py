@@ -1,3 +1,5 @@
+
+from django.conf import settings
 from django.db import models
 from django.db.models import options
 from django.db.models import manager
@@ -6,8 +8,30 @@ from django.db.models.base import ModelBase
 from sloth.core.base import ModelMixin
 from sloth.core.queryset import QuerySet
 
+# import os
+# import zipfile
+# file_name = os.path.join(os.path.dirname(__file__), 'app', 'static', 'icons', 'fontawesome', 'fontawesome.min.js')
+# if not os.path.exists(file_name):
+#     with zipfile.ZipFile('{}.zip'.format(file_name), 'r') as file:
+#         file.extractall(os.path.dirname(file_name))
 
 PROXIED_MODELS = []
+
+INITIALIZE = True
+
+
+def initilize():
+    global INITIALIZE
+    if INITIALIZE:
+        INITIALIZE = False
+        for module in ('dashboard', 'actions'):
+            for app_label in settings.INSTALLED_APPS:
+                try:
+                    __import__('{}.{}'.format(app_label, module), fromlist=app_label.split('.'))
+                    # print('{} {} initilized!'.format(app_label, module))
+                except ImportError as e:
+                    if not e.name.endswith('dashboard') and not e.name.endswith('actions'):
+                        raise e
 
 
 class BaseManager(manager.BaseManager):

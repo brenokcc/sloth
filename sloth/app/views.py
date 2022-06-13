@@ -218,6 +218,17 @@ def roles(request):
 
 
 @view
+def action(request, name):
+    form = views.action(request, name)
+    if form.check_permission(request.user):
+        ctx = context(request, dashboard=dashboard.Dashboards(request), form=form)
+        if form.response:
+            return HttpResponse(form.html())
+        return render(request, ['app/default.html'], ctx)
+    raise PermissionDenied()
+
+
+@view
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
     ctx = context(request, dashboard=dashboard.Dashboards(request))
     data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w, k=k)

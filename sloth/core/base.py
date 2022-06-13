@@ -10,11 +10,11 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from sloth.actions import Action
+from sloth.actions import Action, ACTIONS
 from sloth.api.tokes import account_activation_token
 from sloth.core.queryset import QuerySet
 from sloth.core.valueset import ValueSet
-from sloth.utils import to_snake_case, to_camel_case, getattrr
+from sloth.utils import to_snake_case, getattrr
 
 FILTER_FIELD_TYPES = 'BooleanField', 'NullBooleanField', 'ForeignKey', 'ForeignKeyPlus', 'DateField', 'DateFieldPlus'
 SEARCH_FIELD_TYPES = 'CharField', 'CharFieldPlus', 'TextField'
@@ -74,9 +74,10 @@ class ModelMixin(object):
                 if valueset.has_children():
                     for attr_name in names:
                         attr_names.append(attr_name)
-                        attr = getattr(self, attr_name)()
-                        if isinstance(attr, ValueSet):
-                            append_attr_names(attr)
+                        if hasattr(self, attr_name):
+                            attr = getattr(self, attr_name)()
+                            if isinstance(attr, ValueSet):
+                                append_attr_names(attr)
             append_attr_names(self.view())
             setattr(self.__class__, '__view__', attr_names)
         return name in getattr(self.__class__, '__view__')
@@ -296,19 +297,7 @@ class ModelMixin(object):
         elif action.lower() == 'delete':
             return cls.delete_form_cls()
         else:
-            config = apps.get_app_config(cls.metaclass().app_label)
-            try:
-                forms = __import__(
-                    '{}.actions'.format(config.module.__package__),
-                    fromlist=config.module.__package__.split()
-                )
-                for name in dir(forms):
-                    if name.lower() == to_camel_case(action).lower():
-                        return getattr(forms, name)
-            except ModuleNotFoundError as e:
-                if not e.name.endswith('actions'):
-                    raise e
-            return None
+            return ACTIONS.get(action)
 
     @classmethod
     def get_field(cls, lookup):

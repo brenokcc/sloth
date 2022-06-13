@@ -11,7 +11,7 @@
         </div>
     {% else %}
         <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}">
-            <h2>{% if data.icon %}<i class="bi bi-{{ data.icon }}"></i>{% endif %} {{ data.name }}</h2>
+            <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
         </div>
     {% endif %}
     <div id="queryset-global-actions-{{ data.uuid }}" class="queryset-action-bar">
@@ -21,7 +21,7 @@
     <div class="queryset-container" id="queryset-container{{ data.uuid }}">
     {% if data.attach %}
     <div class="clearfix"></div>
-    <div class="tabs-container" id="tabs-container-{{ data.uuid }}">
+    <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">
         <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">

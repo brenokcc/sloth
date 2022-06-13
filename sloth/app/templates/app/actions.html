@@ -11,7 +11,7 @@
                data-uuid="{{ uuid }}"
                title="{{ action.submit }}"
                class="action-button btn btn-circle btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
-                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
+                {{ action.icon|icontag }}
             </a>
             {% endif %}
         {% endfor %}
@@ -31,7 +31,7 @@
                                data-url="/app{{ action.path }}"
                                data-id="{{ id }}"
                                data-uuid="{{ uuid }}">
-                                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
+                                {{ action.icon|icontag }}
                                 {{ action.submit }}
                             </a>
                         </li>
@@ -50,7 +50,7 @@
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
-                {% if action.icon %}<i class="bi bi-{{ action.icon }}"></i>{% endif %}
+                {{ action.icon|icontag }}
                 {{ action.submit }}
             </a>
             {% endif %}

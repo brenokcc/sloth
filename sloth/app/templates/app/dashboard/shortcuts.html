@@ -1,5 +1,5 @@
+{% load tags %}
 <style>
-
 .shortcut-wrapper {
     padding: 15px;
     display: flex;
@@ -26,9 +26,7 @@
 {% for item in data.shortcuts %}
     <a href="{{ item.url }}" class="shortcut-link">
         <div>
-          {% if item.icon %}
-            <i class="bi bi-{{ item.icon }}"></i>
-          {% endif %}
+          {{ item.icon|icontag }}
           <p>{{ item.label }}</p>
         </div>
     </a>

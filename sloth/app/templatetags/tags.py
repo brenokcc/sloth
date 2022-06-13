@@ -169,3 +169,28 @@ def unaccented(s):
 @register.filter
 def true(value):
     return value in ('Sim', 'Yes', 'True')
+
+
+@register.filter
+def icontag(value):
+    if value:
+        if value.startswith('fa-'):
+            return mark_safe('<i class="fa-solid {}"></i>'.format(value))
+        elif value.startswith('bi-'):
+            return mark_safe('<i class="bi {}"></i>'.format(value))
+        elif value.startswith('mi-'):
+            suffix = ''
+            if value.endswith('-outlined'):
+                suffix = '-outlined'
+            elif value.endswith('-round'):
+                suffix = '-round'
+            elif value.endswith('-sharp'):
+                suffix = '-sharp'
+            if suffix:
+                icon = '-'.join(value.split('-')[1:-1])
+            else:
+                icon = '-'.join(value.split('-')[1:])
+            return mark_safe('<span class="material-icons{}">{}</span>'.format(suffix, icon.replace('-', '_')))
+        else:
+            return mark_safe('<i class="bi bi-{}"></i>'.format(value))
+    return ''

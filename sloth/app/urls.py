@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.urls import path, re_path
-from . import views
 
+from . import views
 
 urlpatterns = [
     path('', views.index),
@@ -14,6 +14,7 @@ urlpatterns = [
     path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),
     path('app/password/', views.password),
+    path('app/action/<str:name>/', views.action),
     path('app/account_activate/<str:uid64>/<str:token>/', views.account_activate),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/', views.dispatcher),

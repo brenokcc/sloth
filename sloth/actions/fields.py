@@ -18,3 +18,10 @@ class TextField(CharField):
     def __init__(self, *args, **kwargs):
         kwargs.update(widget=Textarea())
         super().__init__(*args, **kwargs)
+
+
+class CurrentUserField(ModelChoiceField):
+    def __init__(self, **kwargs):
+        from django.contrib.auth.models import User
+        kwargs['username_lookup'] = 'username'
+        super().__init__(User.objects, **kwargs)

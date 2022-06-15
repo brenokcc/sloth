@@ -5,6 +5,16 @@ from django.contrib.auth.models import User as DjangoUser
 from sloth.db import models, meta
 
 
+def user_post_save(instance, created, **kwargs):
+    if created:
+        Role.objects.get_or_create(
+            user=instance, name='Usuário', scope_key='user', scope_type='auth.user', scope_value=instance.pk
+        )
+
+
+models.signals.post_save.connect(user_post_save, sender=DjangoUser)
+
+
 class UserManager(models.Manager):
     def all(self):
         return self.display(
@@ -51,6 +61,11 @@ class User(DjangoUser):
     @meta('Papéis')
     def get_roles_names(self):
         return list(self.roles.values_list('name', flat=True).distinct())
+
+    def save(self, *args, **kwargs):
+        created = self.pk is None
+        super().save(*args, **kwargs)
+        user_post_save(self, created=created)
 
 
 class RoleManager(models.Manager):

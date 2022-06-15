@@ -174,6 +174,13 @@ class ForeignKey(ForeignKey):
         return field
 
 
+class CurrentUserField(ForeignKey):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(to='auth.User')
+        kwargs.update(username_lookup='username')
+        super().__init__(*args, **kwargs)
+
+
 class ManyToManyField(ManyToManyField):
     def __init__(self, *args, **kwargs):
         self.picker = kwargs.pop('picker', None)

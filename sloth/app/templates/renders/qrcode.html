@@ -1,9 +1,8 @@
 {% load tags %}
 <div>
-<div id="qrcode"></div>
+<div id="qrcode{{ value|slugify }}"></div>
 <script src="/static/js/qrcode.min.js"></script>
 <script type="text/javascript">
-new QRCode(document.getElementById("qrcode"), "{{ value|unaccented }}");
+new QRCode(document.getElementById("qrcode{{ value|slugify }}"), "{{ value|unaccented }}");
 </script>
-{{ value|unaccented }}
 </div>

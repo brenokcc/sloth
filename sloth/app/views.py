@@ -8,8 +8,10 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
 
 from .templatetags.tags import is_ajax
+from ..api.models import PushNotification
 from ..core import views
 from ..actions import Action, LoginForm, PasswordForm
 
@@ -173,6 +175,12 @@ def password(request):
 def logout(request):
     request.session.clear()
     auth.logout(request)
+    return HttpResponseRedirect('/')
+
+
+@csrf_exempt
+def push_subscription(request):
+    PushNotification.objects.get_or_create(user=request.user, subscription=request.POST.get('subscription'))
     return HttpResponseRedirect('/')
 
 

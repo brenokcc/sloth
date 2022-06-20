@@ -188,7 +188,7 @@ class Animal(models.Model):
         return self.tratamento_set.ignore(
             'animal'
         ).global_actions(
-            'IniciarTratamento'
+            'IniciarTratamento', 'Batata'
         ).actions(
             'ExcluirTratamento'
         ).accordion()

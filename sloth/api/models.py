@@ -228,3 +228,8 @@ class Task(models.Model):
 
     def has_view_permission(self, user):
         return user.is_superuser or self.user == user
+
+
+class PushNotification(models.Model):
+    user = models.OneToOneField(User, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
+    subscription = models.JSONField(verbose_name='Dados da Inscrição')

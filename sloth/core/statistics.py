@@ -116,6 +116,23 @@ class QuerySetStatistics(object):
             self._ydict = {}
             self._values_dict = {(vx, None): calc for vx, calc in values_list}
 
+    def tabulate(self):
+        self._calc()
+        rows = []
+        row = []
+        row.append('')
+        for info in self._xdict.values():
+            row.append(info)
+        rows.append(row)
+        for i in self._xdict:
+            row = []
+            for j in self._ydict:
+                if not row:
+                    row.append(self._ydict[j])
+                row.append(self._values_dict.get((i, j), 0))
+            rows.append(row)
+        return rows
+
     def filter(self, **kwargs):
         self._clear()
         self.qs = self.qs.filter(**kwargs)

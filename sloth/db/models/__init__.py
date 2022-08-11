@@ -144,7 +144,7 @@ class BrPhoneField(CharField):
 
 class BrRegionalPhoneField(CharField):
     def __init__(self, *args, **kwargs):
-        kwargs.update(mask='(00) 0000-0000')
+        kwargs.update(mask='(00) 00000-0000')
         super().__init__(*args, **kwargs)
 
 

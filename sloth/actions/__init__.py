@@ -464,7 +464,7 @@ class Action(metaclass=ActionMetaclass):
                     pks = [pk for pk in self.data.getlist(name) if pk]
                 if getattr(field, 'picker', None) is None:
                     field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
-                field.widget.attrs['data-choices-url'] = '{}?choices={}'.format(
+                field.widget.attrs['data-choices-url'] = '{}?action_choices={}'.format(
                     self.request.path, name
                 )
 
@@ -491,9 +491,9 @@ class Action(metaclass=ActionMetaclass):
 
     def is_valid(self):
         self.load_fieldsets()
-        if 'choices' in self.request.GET:
+        if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(
-                self.choices(self.request.GET['choices'], q=self.request.GET.get('term'))
+                self.choices(self.request.GET['action_choices'], q=self.request.GET.get('term'))
             )
         return super().is_valid()
 

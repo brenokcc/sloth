@@ -664,7 +664,7 @@ class QuerySet(models.QuerySet):
                 qs.default_actions()
             qs = qs.page(page)
             # qs.debug()
-            return qs
+            return qs.order_by('id').distinct()
         if isinstance(attach, ValueSet):
             attach.instance = qs
             return attach

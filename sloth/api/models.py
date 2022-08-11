@@ -231,5 +231,5 @@ class Task(models.Model):
 
 
 class PushNotification(models.Model):
-    user = models.OneToOneField(User, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
+    user = models.OneToOneField(DjangoUser, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
     subscription = models.JSONField(verbose_name='Dados da Inscrição')

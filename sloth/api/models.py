@@ -6,10 +6,7 @@ from sloth.db import models, meta
 
 
 def user_post_save(instance, created, **kwargs):
-    if created:
-        Role.objects.get_or_create(
-            user=instance, name='Usuário', scope_key='user', scope_type='auth.user', scope_value=instance.pk
-        )
+    pass
 
 
 models.signals.post_save.connect(user_post_save, sender=DjangoUser)

@@ -27,8 +27,9 @@ SECRET_KEY = 'django-insecure-@wex+s-m33v5m=$@a_a64*(ped0p(ud-vkv@#jo7+!s@8^(ess
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['https://192168019.aplicativo.click']
-SITE_URL = CSRF_TRUSTED_ORIGINS[0]
+SITE_URL = 'http://localhost:8000'
+# CSRF_TRUSTED_ORIGINS = ['https://192168019.aplicativo.click']
+# SITE_URL = CSRF_TRUSTED_ORIGINS[0]
 
 
 # Application definition

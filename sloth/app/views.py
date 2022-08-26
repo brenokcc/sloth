@@ -131,8 +131,8 @@ def login(request):
 
 def oauth_login(request, provider_name):
     provider = settings.SLOTH['OAUTH_LOGIN'][provider_name.upper()]
-    authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
-        provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI']
+    authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}&scope={}'.format(
+        provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI'], provider.get('SCOPE', '')
     )
     if 'code' in request.GET:
         access_token_request_data = dict(

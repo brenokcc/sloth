@@ -53,12 +53,15 @@ class GenericValue(object):
         return self.value
 
     def dumps(self):
-        if self.value is not None:
-            if isinstance(self.value, GenericModelWrapper):
+        value = self.value
+        if value is not None:
+            if isinstance(value, Model):
+                value = GenericModelWrapper(value)
+            if isinstance(value, GenericModelWrapper):
                 return '{}.{}::{}'.format(
-                    self.value.metaclass().app_label, self.value.metaclass().model_name, self.value.pk
+                    value.metaclass().app_label, value.metaclass().model_name, value.pk
                 )
-            return '{}::{}'.format(type(self.value).__name__, self.value)
+            return '{}::{}'.format(type(value).__name__, value)
         return None
 
 

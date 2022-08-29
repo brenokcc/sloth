@@ -31,6 +31,9 @@ def view(func):
         try:
             # import time; time.sleep(0.5)
             response = func(request, *args, **kwargs)
+            if isinstance(response, dict):
+                response.update(context(request, dashboard=dashboard.Dashboards(request)))
+                response = render(request, ['views/{}.html'.format(func.__name__), '{}.html'.format(func.__name__)], response)
             response["X-Frame-Options"] = "SAMEORIGIN"
             return response
         except ReadyResponseException as error:
@@ -126,7 +129,7 @@ def login(request):
             else:
                 request.user.roles.update(active=False)
                 return HttpResponseRedirect('/app/roles/')
-    return render(request, ['app/login.html'], context(request, form=form))
+    return render(request, ['views/login.html', 'app/views/login.html'], context(request, form=form))
 
 
 def oauth_login(request, provider_name):
@@ -151,14 +154,17 @@ def oauth_login(request, provider_name):
         else:
             data = json.loads(requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers).text)
         user = User.objects.filter(username=data[provider['USER_DATA']['USERNAME']]).first()
-        if user is None:
+        if user is None and provider.get('USER_AUTO_CREATE'):
             user = User.objects.create(
                 username=data[provider['USER_DATA']['USERNAME']],
                 email=data[provider['USER_DATA']['EMAIL']] if provider['USER_DATA']['EMAIL'] else '',
                 first_name=data[provider['USER_DATA']['FIRST_NAME']] if provider['USER_DATA']['FIRST_NAME'] else '',
                 last_name=data[provider['USER_DATA']['LAST_NAME']] if provider['USER_DATA']['LAST_NAME'] else ''
             )
-        auth.login(request, user)
+        if user:
+            auth.login(request, user)
+        else:
+            messages.warning(request, 'Usuário inexistente.')
         return HttpResponseRedirect('/app/')
     else:
         return HttpResponse('<html><script>document.location.href="{}";</script></html>'.format(authorize_url))
@@ -210,7 +216,7 @@ def roles(request):
             message = 'Perfis "{}" ativos com sucesso'.format(', '.join(names))
         messages.success(request, message)
         return HttpResponseRedirect('/app/')
-    return render(request, ['app/roles.html'], context(request))
+    return render(request, ['app/views/roles.html'], context(request))
 
 
 @view

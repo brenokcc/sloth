@@ -151,7 +151,7 @@ class Dashboard(metaclass=DashboardType):
                 else:
                     self.data['center'].append((grid, html))
 
-    def extend(self, data, template, aside=False, grid=1):
+    def extend(self, template, aside=False, grid=1, **data):
         if self.request.path == '/app/':
             html = mark_safe(render_to_string(template, data, request=self.request))
             if aside:

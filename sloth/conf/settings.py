@@ -54,7 +54,14 @@ SLOTH = {
             'CLIENT_SECRET': None,
             'AUTHORIZE_URL': None,
             'ACCESS_TOKEN_URL': None,
-            'USER_DATA_URL': None
+            'USER_DATA_URL': None,
+			'USER_AUTO_CREATE': False,
+			'USER_DATA':{
+				'USERNAME': 'username',
+				'EMAIL': 'email',
+				'FIRST_NAME': None,
+				'LAST_NAME': None
+			}
         }
     },
 	'LIST_PER_PAGE': 20,

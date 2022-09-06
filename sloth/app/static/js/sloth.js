@@ -16,7 +16,7 @@ jQuery.expr[':'].icontains = function(a, i, m) {
       .indexOf(m[3].toUpperCase()) >= 0;
 };
 jQuery.fn.extend({
-    request: function(url, method, data, callback){
+    request: function(url, method, data, callback, formcallback){
         var xhr = $.ajax({
             dataType:'binary',
             type: method,
@@ -28,7 +28,13 @@ jQuery.fn.extend({
                     var reader = new FileReader();
                     reader.onload = function (event) {
                         if(reader.result.startsWith('<!---->') && reader.result.endsWith('<!---->')){
-                            $(document.body).append(reader.result);
+                            if(window['formcallback']){
+                                result = reader.result.replace('$(document).back();', '$(document).back(true);');
+                                setTimeout(function(){window['formcallback'](result);}, 500);
+                            } else {
+                                result = reader.result;
+                            }
+                            $(document.body).append(result);
                         } else {
                             callback(reader.result);
                         }

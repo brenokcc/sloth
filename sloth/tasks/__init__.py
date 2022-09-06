@@ -1,4 +1,4 @@
-
+import traceback
 import datetime
 from threading import Thread
 
@@ -25,11 +25,16 @@ class Task(Thread):
             if self.task_id in TaskModel.STOPPED_TASKS:
                 break
             self.partial += 1
-            progress = 100 if self.total == 0 else int(self.partial/self.total*100)
-            if (progress - previous_progress) > 5 or progress == 100:
+            progress = 100 if self.total in (0, 100) else int(self.partial/self.total*100)
+            if (previous_progress == 0 and progress) or (progress - previous_progress) > 5 or progress == 100:
                 previous_progress = progress
                 TaskModel.objects.filter(pk=self.task_id).update(progress=progress)
             yield obj
 
-    def finalize(self, message):
-        TaskModel.objects.filter(pk=self.task_id).update(message=message, end=datetime.datetime.now())
+    def finalize(self, text):
+        TaskModel.objects.filter(pk=self.task_id).update(message=text, end=datetime.datetime.now())
+
+    def error(self, text, exception=None):
+        if exception:
+            traceback.print_exc()
+        TaskModel.objects.filter(pk=self.task_id).update(error=text, end=datetime.datetime.now())

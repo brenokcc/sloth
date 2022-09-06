@@ -215,10 +215,10 @@ class Task(models.Model):
     def get_info(self):
         return self.values(
             ('name', 'user'), ('start', 'end'), 'get_progress', 'get_message'
-        ).reload(seconds=3, condition='in_progress', max_requests=10).actions('StopTask')
+        ).reload(seconds=5, condition='in_progress', max_requests=120).actions('StopTask')
 
     def in_progress(self):
-        return self.progress < 100 and not self.stopped
+        return self.end is None
 
     def view(self):
         return self.values('get_info')

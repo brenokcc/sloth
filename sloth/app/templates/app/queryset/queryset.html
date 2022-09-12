@@ -128,7 +128,9 @@
             <!--<a href="/app{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
             <!--<a href="/app{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
+            {% if data.metadata.search or data.metadata.filters %}
             <a href="javascript:"><i class="bi bi-funnel" onclick="slideSearchAndFilters{{ data.uuid }}()"></i></a>
+            {% endif %}
             <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}(false);"></i></a>
         </div>
     </div>

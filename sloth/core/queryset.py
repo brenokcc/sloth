@@ -13,6 +13,7 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.aggregates import Sum, Count
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
@@ -447,6 +448,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def verbose_name(self, name):
+        self.metadata['uuid'] = slugify(name).replace('-', '_')
         self.metadata['verbose_name'] = pretty(name)
         return self
 
@@ -660,7 +662,7 @@ class QuerySet(models.QuerySet):
         if 'page' in request.GET:
             page = int(request.GET['page'] or 1)
         if isinstance(attach, QuerySet):
-            if qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
+            if request.GET.get('is_admin') and qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
                 qs.default_actions()
             qs = qs.page(page)
             # qs.debug()

@@ -14,7 +14,7 @@ from . import inputs
 from .fields import *
 
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
-from ..utils import to_api_params, to_camel_case
+from ..utils import to_api_params, to_camel_case, to_snake_case
 
 
 ACTIONS = {}
@@ -57,7 +57,7 @@ class ActionMetaclass(models.ModelFormMetaclass):
         cls = super().__new__(mcs, name, bases, attrs)
         ACTIONS[name] = cls
         ACTIONS[name.lower()] = cls
-        ACTIONS[to_camel_case(name).lower()] = cls
+        ACTIONS[to_snake_case(name)] = cls
         return cls
 
 
@@ -348,7 +348,9 @@ class Action(metaclass=ActionMetaclass):
             data.update(self.get_metadata())
             data.update(fields=form_fields, errors=self.errors)
             return data
-        return {}
+        else:
+            data = dict(type='form', errors=self.errors)
+            return data
 
     @classmethod
     @lru_cache
@@ -518,7 +520,7 @@ class Action(metaclass=ActionMetaclass):
         self.response.update(type='redirect', url=url)
         if message is None:
             message = getattr(self.metaclass, 'message', None)
-        if message:
+        if message and self.request.path.startswith('/app/'):
             messages.add_message(self.request, messages.SUCCESS, message)
             self.response.update(message=message, style=style)
 
@@ -557,15 +559,17 @@ class Action(metaclass=ActionMetaclass):
             if isinstance(response, HttpResponse):
                 raise ReadyResponseException(response)
         except ValidationError as e:
-            message = 'Corrija os erros indicados no formulário'
-            messages.add_message(self.request, messages.WARNING, message)
+            if self.request.path.startswith('/app/'):
+                message = 'Corrija os erros indicados no formulário'
+                messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, e.message)
         except BaseException as e:
             if isinstance(e, ReadyResponseException):
                 raise e
             traceback.print_exc()
-            message = 'Ocorreu um erro no servidor: {}'.format(e)
-            messages.add_message(self.request, messages.WARNING, message)
+            if self.request.path.startswith('/app/'):
+                message = 'Ocorreu um erro no servidor: {}'.format(e)
+                messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, message)
 
     def display(self):

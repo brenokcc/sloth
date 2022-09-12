@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run a multi-line script
+      - name: Test execution
         run: |
           echo $GITHUB_WORKSPACE
           pip install -r requirements.txt
+          export PYTHONPATH="$GITHUB_WORKSPACE"
           python test/erp/manage.py test base.tests

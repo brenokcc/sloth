@@ -74,7 +74,7 @@ models.QuerySet = QuerySet
 models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'fieldsets', 'select_template', 'select_fields'
+    'icon', 'fieldsets', 'select_template', 'select_fields', 'search_fields'
 ))
 
 

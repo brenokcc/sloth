@@ -5,12 +5,13 @@ import datetime
 import traceback
 from selenium import webdriver
 from django.conf import settings
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import WebDriverException
 
 
 class Browser(webdriver.Firefox):
-    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=False):
+    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=True):
 
         if not options:
             options = Options()
@@ -86,12 +87,12 @@ class Browser(webdriver.Firefox):
                 self.execute_script("enter('{}', '{}', 1)".format(name, value))
             else:
                 self.execute_script("enter('{}', '{}')".format(name, value))
-                elements = self.find_elements_by_name('hidden-upload-value')
+                elements = self.find_elements(By.NAME, 'hidden-upload-value')
                 for element in elements:
                     element_id, file_path = element.get_property('value').split(':')
                     if file_path.startswith('/static'):
                         file_path = '{}/{}/{}'.format(settings.BASE_DIR, settings.PROJECT_NAME, file_path)
-                    self.find_element_by_id(element_id).send_keys(file_path)
+                    self.find_element(By.ID, element_id).send_keys(file_path)
         except WebDriverException as e:
             if count:
                 self.wait()
@@ -117,7 +118,7 @@ class Browser(webdriver.Firefox):
             self.wait(2)
 
     def dont_see_error_message(self, testcase=None):
-        elements = self.find_elements_by_class_name('alert-danger')
+        elements = self.find_elements(By.CLASS_NAME, 'alert-danger')
         if elements:
             messages = [element.text for element in elements]
             if True:
@@ -130,7 +131,7 @@ class Browser(webdriver.Firefox):
         if flag:
             self.print('See "{}"'.format(text))
             try:
-                assert text in self.find_element_by_tag_name('body').text
+                assert text in self.find_element(By.TAG_NAME, 'body').text
             except WebDriverException as e:
                 if count:
                     self.wait()
@@ -141,7 +142,7 @@ class Browser(webdriver.Firefox):
                 self.wait(2)
         else:
             self.print('Can\'t see "{}"'.format(text))
-            assert text not in self.find_element_by_tag_name('body').text
+            assert text not in self.find_element(By.TAG_NAME, 'body').text
 
     def see_message(self, text, count=2):
         self.print('See message {}'.format(text))

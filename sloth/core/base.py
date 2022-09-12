@@ -308,10 +308,13 @@ class ModelMixin(object):
     @classmethod
     def default_search_fields(cls):
         search = []
-        for field in cls.metaclass().fields:
+        metaclass = cls.metaclass()
+        search_fields = getattr(metaclass, 'search_fields', ())
+        for field in metaclass.fields:
             cls_name = type(field).__name__
-            if cls_name in SEARCH_FIELD_TYPES:
+            if cls_name in SEARCH_FIELD_TYPES or field.name in search_fields:
                 search.append(field.name)
+
         return search
 
     @classmethod

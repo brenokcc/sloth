@@ -1,1 +1,1 @@
-docker build -t sloth .
+docker build --target sloth -t sloth .

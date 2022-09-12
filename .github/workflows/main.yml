@@ -11,9 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Test execution
+      - name: Configuration
         run: |
           echo $GITHUB_WORKSPACE
-          pip install -r requirements.txt
           export PYTHONPATH="$GITHUB_WORKSPACE"
+          pip install -r requirements.txt
+          pip install selenium
+      - name: Execution
+        run:
           python test/erp/manage.py test base.tests

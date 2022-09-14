@@ -108,11 +108,6 @@
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 
-
-{% if data.metadata.calendar %}
-    {% include "app/queryset/calendar.html" with data=data %}
-{% endif %}
-
 {% if data.metadata.pagination.total %}
 <div class="clearfix" id="pagination-info-{{ data.uuid }}">
     <div class="float-start">
@@ -136,6 +131,9 @@
     </div>
 </div>
 
+{% if data.metadata.calendar %}
+    {% include "app/queryset/calendar.html" with data=data %}
+{% endif %}
 
 {% if data.metadata.total is not None %}
 <div class="float-end">

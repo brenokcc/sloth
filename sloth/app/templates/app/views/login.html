@@ -67,7 +67,7 @@
           <h1>{{ settings.SLOTH.LOGIN.TITLE }}</h1>
         {% endif %}
       </div>
-      <div class="col-lg-4 col-md-6 col-sm-8">
+      <div class="" style="max-width:300px">
         {{ form }}
         <div style="margin:auto;width:250px">
           {% for provider_name, provider_data in settings.SLOTH.OAUTH_LOGIN.items %}
@@ -83,12 +83,17 @@
           {% endfor %}
         </div>
       </div>
+      {% if settings.SLOTH.LOGIN.REGISTER_URL %}
+      <div class="text-center m-5">
+        <a href="{{ settings.SLOTH.LOGIN.REGISTER_URL }}">Cadastrar-se</a>
+      </div>
+      {% endif %}
+      {% include "app/footer.html" %}
     </div>
   </div>
 </section>
 {% endblock %}
 
 {% block footer %}
-{% include "app/footer.html" %}
 {% endblock %}
 

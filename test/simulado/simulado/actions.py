@@ -20,7 +20,7 @@ class AdicionarCoordenador(actions.Action):
         has_permission = 'Administrador',
 
 
-class AddTurma(actions.Action):
+class CadastrarTurma(actions.Action):
     escola = actions.ModelChoiceField(queryset=Escola.objects.role_lookups('Administrador').role_lookups('Coordenador', id='escola'), label='Escola')
 
     class Meta:
@@ -28,7 +28,7 @@ class AddTurma(actions.Action):
         has_permission = 'Administrador', 'Coordenador'
 
 
-class AddAluno(actions.Action):
+class CadastrarAluno(actions.Action):
     escola = actions.ModelChoiceField(queryset=Escola.objects.role_lookups('Administrador').role_lookups('Coordenador', id='escola'), label='Escola')
 
     class Meta:

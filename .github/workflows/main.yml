@@ -20,3 +20,4 @@ jobs:
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE"
           python test/erp/manage.py test base.tests
+          python test/papeis/manage.py test papeis.tests

@@ -273,3 +273,8 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 
+    def __str__(self):
+        for field in self.metaclass().fields:
+            if isinstance(field, models.CharField):
+                return getattr(self, field.name)
+        return '{} #{}'.format(self.metaclass().verbose_name, self.pk)

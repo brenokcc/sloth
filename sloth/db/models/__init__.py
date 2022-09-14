@@ -164,14 +164,11 @@ class TextField(TextField):
 
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
-        self.username_lookup = kwargs.pop('username_lookup', None)
         self.picker = kwargs.pop('picker', None)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
-        if self.username_lookup:
-            field.username_lookup = self.username_lookup
         if self.picker:
             field.picker = self.picker
         return field
@@ -180,7 +177,6 @@ class ForeignKey(ForeignKey):
 class CurrentUserField(ForeignKey):
     def __init__(self, *args, **kwargs):
         kwargs.update(to='auth.User')
-        kwargs.update(username_lookup='username')
         super().__init__(*args, **kwargs)
 
 

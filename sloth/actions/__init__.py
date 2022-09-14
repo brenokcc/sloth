@@ -108,19 +108,6 @@ class Action(metaclass=ActionMetaclass):
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id
                     field.widget = widgets.HiddenInput()
-            if hasattr(field, 'username_lookup'):
-                queryset = field.queryset
-                if hasattr(self, 'get_{}_queryset'.format(field_name)):
-                    queryset = getattr(self, 'get_{}_queryset'.format(field_name))(queryset)
-                queryset = queryset.filter(
-                    **{field.username_lookup: self.request.user.username}
-                )
-                if queryset.first():
-                    field.widget = widgets.HiddenInput()
-                    field.initial = queryset.first().pk
-                    self.initial[field_name] = field.initial
-                if not self.request.user.is_superuser:
-                    field.queryset = queryset
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
                 if isinstance(field, ModelMultipleChoiceField):

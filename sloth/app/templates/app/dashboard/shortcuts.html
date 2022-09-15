@@ -1,14 +1,13 @@
 {% load tags %}
+{% if data.shortcuts %}
 <style>
 .shortcut-wrapper {
-    padding: 15px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
     align-content: stretch;
     align-items: self-start;
-    margin-bottom: 10px;
     text-align: center;
 }
 .shortcut-wrapper .shortcut-link {
@@ -33,3 +32,4 @@
 {% endfor %}
 </div>
 <div class="clearfix"></div>
+{% endif %}

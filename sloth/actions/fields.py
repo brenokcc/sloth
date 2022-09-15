@@ -9,6 +9,7 @@ class QrCodeField(CharField):
 
 class ModelChoiceField(ModelChoiceField):
     def __init__(self, *args, **kwargs):
+        self.auto_user = kwargs.pop('auto_user', False)
         super().__init__(*args, **kwargs)
 
 

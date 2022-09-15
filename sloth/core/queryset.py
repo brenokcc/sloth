@@ -55,18 +55,16 @@ class QuerySet(models.QuerySet):
         return self
 
     def has_list_permission(self, user):
+        return False # TODO
         for role_name in [t[0] for t in self.metadata['lookups']]:
             if user.roles.contains(role_name):
                 return True
         return False
 
     def apply_role_lookups(self, user):
-        if self.metadata['ignore_by']:
+        if self.metadata['ignore_by'] and not user.is_superuser:
             user_role_names = set(user.roles.all().names())
-            print(user_role_names, 111)
             for field_name, role_names in self.metadata['ignore_by'].items():
-                print(role_names, 2222)
-                print(user_role_names - role_names)
                 if not user_role_names - role_names:
                     self.ignore(field_name)
         if user.is_superuser:
@@ -275,10 +273,15 @@ class QuerySet(models.QuerySet):
             '{}__gte'.format(attr_name): first_day_of_month,
             '{}__lt'.format(attr_name): last_day_of_month + datetime.timedelta(days=i)
         })
-        total = {x.date() if hasattr(x, 'date') else x:y for x, y in qs.values_list(attr_name).annotate(Count('id'))}
+        total = {}
+        for k, v in [(x.date() if hasattr(x, 'date') else x, y) for x, y in qs.values_list(attr_name).annotate(Count('id'))]:
+            if k in total:
+                total[k] += v
+            else:
+                total[k] = v
         for i, date in enumerate(days):
             if date in total:
-                days[date] = total[date]
+                days[date] += total[date]
         last_day_of_previous_month = first_day_of_month - datetime.timedelta(days=1)
         first_day_of_previous_month = last_day_of_previous_month + datetime.timedelta(days=0)
         while first_day_of_previous_month.day > 1:
@@ -590,7 +593,10 @@ class QuerySet(models.QuerySet):
         if self.metadata['calendar'] and 'selected-date' in self.metadata['request'].GET:
             selected_date = self.metadata['request'].GET['selected-date']
             if selected_date:
-                lookups = {self.metadata['calendar']: datetime.datetime.strptime(selected_date, '%d/%m/%Y')}
+                lookups = {
+                    '{}__gte'.format(self.metadata['calendar']): datetime.datetime.strptime(selected_date, '%d/%m/%Y').date(),
+                    '{}__lt'.format(self.metadata['calendar']): datetime.datetime.strptime(selected_date, '%d/%m/%Y').date() + datetime.timedelta(days=1)
+                }
                 qs = qs.filter(**lookups)
 
         return qs

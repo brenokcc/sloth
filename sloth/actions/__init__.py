@@ -108,6 +108,15 @@ class Action(metaclass=ActionMetaclass):
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id
                     field.widget = widgets.HiddenInput()
+            if hasattr(field, 'queryset') and getattr(field, 'auto_user', False):
+                scope_type = '{}.{}'.format(
+                    field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
+                )
+                pks = self.request.user.roles.filter(scope_type=scope_type).values_list('scope_value', flat=True)
+                field.queryset = field.queryset.model.objects.filter(pk__in=pks)
+                if len(pks) == 1:
+                    field.initial = pks.first()
+                    field.widget = widgets.HiddenInput()
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
                 if isinstance(field, ModelMultipleChoiceField):

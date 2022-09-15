@@ -1,3 +1,6 @@
+.dashboard .card{
+    border: 0;
+}
 .action-container{
     text-align: right;
 }

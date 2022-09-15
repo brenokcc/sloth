@@ -165,12 +165,15 @@ class TextField(TextField):
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
         self.picker = kwargs.pop('picker', None)
+        self.auto_user = kwargs.pop('auto_user', False)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
         if self.picker:
             field.picker = self.picker
+        if self.auto_user:
+            field.auto_user = self.auto_user
         return field
 
 

@@ -11,7 +11,7 @@ from selenium.common.exceptions import WebDriverException
 
 
 class Browser(webdriver.Firefox):
-    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=False):
+    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=True):
 
         if not options:
             options = Options()

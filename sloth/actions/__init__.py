@@ -11,11 +11,13 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from . import inputs
-from .fields import *
-
+from django import forms
+from django.forms.models import ModelFormMetaclass
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params, to_camel_case, to_snake_case
-
+from django.forms.fields import *
+from django.forms.widgets import *
+from .fields import *
 
 ACTIONS = {}
 
@@ -32,13 +34,13 @@ class PermissionChecker:
         pass
 
 
-class ActionMetaclass(models.ModelFormMetaclass):
+class ActionMetaclass(ModelFormMetaclass):
     def __new__(mcs, name, bases, attrs):
         if 'Meta' in attrs:
             if hasattr(attrs['Meta'], 'model'):
-                bases += ModelForm,
+                bases += forms.ModelForm,
             else:
-                bases += Form,
+                bases += forms.Form,
             if not hasattr(attrs['Meta'], 'fields') and not hasattr(attrs['Meta'], 'exclude'):
                 form_fields = []
                 fieldsets = getattr(attrs['Meta'], 'fieldsets', {})
@@ -70,7 +72,7 @@ class Action(metaclass=ActionMetaclass):
         self.metaclass = getattr(self, 'Meta')
         self.output_data = None
 
-        if ModelForm in self.__class__.__bases__:
+        if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
             if self.instances:
                 kwargs.update(instance=self.instances[0])
@@ -107,7 +109,7 @@ class Action(metaclass=ActionMetaclass):
                 field.queryset = field.queryset.apply_role_lookups(self.request.user)
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id
-                    field.widget = widgets.HiddenInput()
+                    field.widget = forms.HiddenInput()
             if hasattr(field, 'username_lookup'):
                 queryset = field.queryset
                 if hasattr(self, 'get_{}_queryset'.format(field_name)):
@@ -116,14 +118,14 @@ class Action(metaclass=ActionMetaclass):
                     **{field.username_lookup: self.request.user.username}
                 )
                 if queryset.first():
-                    field.widget = widgets.HiddenInput()
+                    field.widget = forms.HiddenInput()
                     field.initial = queryset.first().pk
                     self.initial[field_name] = field.initial
                 if not self.request.user.is_superuser:
                     field.queryset = queryset
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
-                if isinstance(field, ModelMultipleChoiceField):
+                if isinstance(field, forms.ModelMultipleChoiceField):
                     field.widget = inputs.MultiplePickInput(field.queryset, grouper=grouper)
                 else:
                     field.widget = inputs.PickInput(field.queryset, grouper=grouper)
@@ -136,9 +138,9 @@ class Action(metaclass=ActionMetaclass):
         confirmation = self.requires_confirmation()
         if confirmation:
             help_text = confirmation if isinstance(confirmation, str) else ''
-            self.fields['confirmation'] = BooleanField(
+            self.fields['confirmation'] = forms.BooleanField(
                 label='', initial='on', required=False, help_text=help_text,
-                widget=TextInput(attrs={'style': 'display:none'})
+                widget=forms.TextInput(attrs={'style': 'display:none'})
             )
 
     def requires_confirmation(self):
@@ -191,7 +193,7 @@ class Action(metaclass=ActionMetaclass):
                 *form_cls.base_fields.keys()
             ).first() or {}
             key = one_to_one_field_name.upper()
-            self.fields[key] = fields.BooleanField(
+            self.fields[key] = forms.BooleanField(
                 required=one_to_one_field.required, initial=bool(initial) or one_to_one_field.required
             )
             self.fields[key].widget.attrs['class'] = 'field-controller'
@@ -240,7 +242,7 @@ class Action(metaclass=ActionMetaclass):
                 ).first() if pk else {}
                 key = '{}--{}'.format(one_to_many_field_name.upper(), i)
                 required = i < one_to_many_field.min
-                self.fields[key] = fields.CharField(
+                self.fields[key] = forms.CharField(
                     label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i + 1),
                     required=required, initial=(pk or 'on') if required else pk, widget=fields.CheckboxInput()
                 )
@@ -271,11 +273,11 @@ class Action(metaclass=ActionMetaclass):
                 if isinstance(name, tuple) or isinstance(name, list):
                     for _name in name:
                         if _name in self.fields:
-                            if not isinstance(self.fields[_name].widget, widgets.HiddenInput):
+                            if not isinstance(self.fields[_name].widget, forms.HiddenInput):
                                 field_list.append(dict(name=_name, width=100 // len(name)))
                 else:
                     if name in self.fields:
-                        if not isinstance(self.fields[name].widget, widgets.HiddenInput):
+                        if not isinstance(self.fields[name].widget, forms.HiddenInput):
                             field_list.append(dict(name=name, width=100))
             if field_list:
                 self.fieldsets[title] = field_list
@@ -434,27 +436,27 @@ class Action(metaclass=ActionMetaclass):
 
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
-            if isinstance(field.widget, widgets.CheckboxInput):
+            if isinstance(field.widget, forms.CheckboxInput):
                 classes.append('form-check-input')
-            elif isinstance(field.widget, widgets.Input):
+            elif isinstance(field.widget, forms.widgets.Input):
                 classes.append('form-control')
 
-            if isinstance(field, DateTimeField):
+            if isinstance(field, forms.DateTimeField):
                 classes.append('date-time-input')
 
-            if isinstance(field, DateField):
+            if isinstance(field, forms.DateField):
                 classes.append('date-input')
 
-            if isinstance(field, DecimalField):
+            if isinstance(field, forms.DecimalField):
                 field.localize = True
                 field.widget.is_localized = True
                 field.widget.input_type = 'text'
-                field.widget.rmask = '#.##0,00'
+                field.widget.rmask = getattr(field.widget, 'rmask', '#.##0,00')
 
-            if isinstance(field, ImageField):
+            if isinstance(field, forms.ImageField):
                 classes.append('image-input')
 
-            if isinstance(field, ModelChoiceField):
+            if isinstance(field, forms.ModelChoiceField):
                 initial = self.initial.get(name)
                 pks = []
                 if initial:
@@ -558,7 +560,7 @@ class Action(metaclass=ActionMetaclass):
             response = self.submit()
             if isinstance(response, HttpResponse):
                 raise ReadyResponseException(response)
-        except ValidationError as e:
+        except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):
                 message = 'Corrija os erros indicados no formulário'
                 messages.add_message(self.request, messages.WARNING, message)
@@ -583,8 +585,8 @@ class Action(metaclass=ActionMetaclass):
 
 
 class LoginForm(Action):
-    username = CharField(label='Login')
-    password = CharField(label='Senha', widget=widgets.PasswordInput())
+    username = forms.CharField(label='Login')
+    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
 
     class Meta:
         verbose_name = None
@@ -618,8 +620,8 @@ class LoginForm(Action):
 
 
 class PasswordForm(Action):
-    password = CharField(label='Senha', widget=widgets.PasswordInput())
-    password2 = CharField(label='Confirmação', widget=widgets.PasswordInput())
+    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
+    password2 = forms.CharField(label='Confirmação', widget=forms.PasswordInput())
 
     class Meta:
         verbose_name = 'Alterar Senha'

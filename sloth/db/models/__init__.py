@@ -233,6 +233,21 @@ class DecimalField(models.DecimalField):
         return field
 
 
+class Decimal3Field(models.DecimalField):
+    def __init__(self, *args, **kwargs):
+        decimal_places = kwargs.pop('decimal_places', 3)
+        max_digits = kwargs.pop('max_digits', 9)
+        super().__init__(*args, decimal_places=decimal_places, max_digits=max_digits, **kwargs)
+
+    def formfield(self, **kwargs):
+        field = super().formfield(**kwargs)
+        field.localize = True
+        field.widget.is_localized = True
+        field.widget.input_type = 'text'
+        field.widget.rmask = '#.##0,000'
+        return field
+
+
 class Manager(QuerySet):
     pass
 

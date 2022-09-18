@@ -13,7 +13,6 @@ urlpatterns = [
     path('app/roles/', views.roles),
     path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),
-    path('app/password/', views.password),
     path('app/push_subscription/', views.push_subscription),
     path('app/action/<str:name>/', views.action),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),

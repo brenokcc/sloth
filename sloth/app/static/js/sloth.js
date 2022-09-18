@@ -75,7 +75,7 @@ jQuery.fn.extend({
             $('#modal').find('.modal-body').html(html).initialize();
             if($('.modal-body input[type=text]:first').length > 0){
                 window.setTimeout(function () {
-                    $('.modal-body').find('input[type=text], input[type=number]').first().focus();
+                    //$('.modal-body').find('input[type=text], input[type=number]').first().focus();
                 }, 200);
             }
             $('#modal').modal('show');

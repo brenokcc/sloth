@@ -18,6 +18,7 @@ from ..utils import to_api_params, to_camel_case, to_snake_case
 from django.forms.fields import *
 from django.forms.widgets import *
 from .fields import *
+from django.core.exceptions import ValidationError
 
 ACTIONS = {}
 
@@ -110,7 +111,7 @@ class Action(metaclass=ActionMetaclass):
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id
                     field.widget = forms.HiddenInput()
-            if hasattr(field, 'queryset') and getattr(field, 'auto_user', False):
+            if hasattr(field, 'queryset') and getattr(field, 'auto_user', False) and not self.request.user.is_superuser:
                 scope_type = '{}.{}'.format(
                     field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
                 )
@@ -578,65 +579,3 @@ class Action(metaclass=ActionMetaclass):
             self.output_data = render_to_string(template, data, request=self.request)
         else:
             self.output_data = data
-
-
-class LoginForm(Action):
-    username = forms.CharField(label='Login')
-    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
-
-    class Meta:
-        verbose_name = None
-        ajax = False
-        submit_label = 'Acessar'
-        fieldsets = {
-            None: ('username', 'password')
-        }
-
-    def __init__(self, *args, **kwargs):
-        self.user = None
-        super().__init__(*args, **kwargs)
-        if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
-            self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
-
-    def clean(self):
-        if self.cleaned_data:
-            username = self.cleaned_data.get('username')
-            password = self.cleaned_data.get('password')
-            if username and password:
-                self.user = auth.authenticate(
-                    self.request, username=username, password=password
-                )
-                if self.user is None:
-                    raise ValidationError('Login e senha não conferem.')
-        return self.cleaned_data
-
-    def submit(self):
-        if self.user:
-            auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
-
-
-class PasswordForm(Action):
-    password = forms.CharField(label='Senha', widget=forms.PasswordInput())
-    password2 = forms.CharField(label='Confirmação', widget=forms.PasswordInput())
-
-    class Meta:
-        verbose_name = 'Alterar Senha'
-
-    def clean(self):
-        password = self.cleaned_data.get('password')
-        password2 = self.cleaned_data.get('password2')
-        if password != password2:
-            raise forms.ValidationError('Senhas não conferem.')
-
-        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
-            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.request.user)
-            if self.request.user.check_password(default_password) and self.request.user.check_password(password):
-                raise forms.ValidationError('Senha não pode ser a senha padrão.')
-
-        return self.cleaned_data
-
-    def submit(self):
-        self.request.user.set_password(self.cleaned_data.get('password'))
-        self.request.user.save()
-        auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.redirect(message='Senha alterada com sucesso.')

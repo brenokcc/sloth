@@ -231,6 +231,8 @@ class ModelMixin(object):
 
         class Edit(form_cls):
             class Meta(form_cls.Meta):
+                icon = 'pencil'
+                submit_label = 'Editar'
                 verbose_name = getattr(
                     form_cls.Meta, 'verbose_name', 'Editar {}'.format(cls.metaclass().verbose_name)
                 )

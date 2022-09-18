@@ -65,6 +65,9 @@
     vertical-align: top;
     margin-bottom: 20px;
 }
+.fieldset-field-label{
+    font-weight: bold;
+}
 .fieldset-data{
     clear: both;
 }

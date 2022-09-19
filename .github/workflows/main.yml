@@ -11,13 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Configuration
+      - name: Docker
         run: |
           echo $GITHUB_WORKSPACE
-          pip install -r requirements.txt
-          pip install selenium
-      - name: Execution
-        run: |
+          ls $GITHUB_WORKSPACE
           export PYTHONPATH="$GITHUB_WORKSPACE"
-          python test/erp/manage.py test base.tests
-          python test/papeis/manage.py test papeis.tests
+          bin/test/docker.sh

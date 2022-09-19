@@ -251,7 +251,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        if model().has_list_permission(request.user) or model().has_permission(request.user):
+        if model().has_list_permission(request.user) or model().has_permission(request.user) or model.objects.all().has_list_permission(request.user):
             qs = model.objects.all() if request.GET.get('subset', 'all') == 'all' else model.objects
             return qs.contextualize(request).default_actions().collapsed(False).is_admin()
         raise PermissionDenied()

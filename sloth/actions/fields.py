@@ -10,8 +10,7 @@ class QrCodeField(forms.CharField):
 
 class ModelChoiceField(forms.ModelChoiceField):
     def __init__(self, *args, **kwargs):
-        if 'username_lookup' in kwargs:
-            self.username_lookup = kwargs.pop('username_lookup')
+        self.auto_user = kwargs.pop('auto_user', False)
         super().__init__(*args, **kwargs)
 
 
@@ -24,5 +23,4 @@ class TextField(forms.CharField):
 class CurrentUserField(forms.ModelChoiceField):
     def __init__(self, **kwargs):
         from django.contrib.auth.models import User
-        kwargs['username_lookup'] = 'username'
         super().__init__(User.objects, **kwargs)

@@ -164,23 +164,22 @@ class TextField(TextField):
 
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
-        self.username_lookup = kwargs.pop('username_lookup', None)
         self.picker = kwargs.pop('picker', None)
+        self.auto_user = kwargs.pop('auto_user', False)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
-        if self.username_lookup:
-            field.username_lookup = self.username_lookup
         if self.picker:
             field.picker = self.picker
+        if self.auto_user:
+            field.auto_user = self.auto_user
         return field
 
 
 class CurrentUserField(ForeignKey):
     def __init__(self, *args, **kwargs):
         kwargs.update(to='auth.User')
-        kwargs.update(username_lookup='username')
         super().__init__(*args, **kwargs)
 
 
@@ -288,3 +287,8 @@ class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 
+    def __str__(self):
+        for field in self.metaclass().fields:
+            if isinstance(field, models.CharField):
+                return getattr(self, field.name)
+        return '{} #{}'.format(self.metaclass().verbose_name, self.pk)

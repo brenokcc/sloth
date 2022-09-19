@@ -9,12 +9,11 @@ from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpR
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
-
+from ..actions import Action
 from .templatetags.tags import is_ajax
 from ..api.models import PushNotification
+from ..api.actions import Login
 from ..core import views
-from ..actions import Action, LoginForm, PasswordForm
-
 from ..utils.icons import bootstrap, materialicons, fontawesome
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import dashboard
@@ -118,7 +117,7 @@ def favicon(request):
 def login(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('/app/')
-    form = LoginForm(request=request)
+    form = Login(request=request)
     if form.is_valid():
         form.submit()
         if request.user.is_superuser or settings.SLOTH['ROLES']['ALLOW_MULTIPLE']:
@@ -168,14 +167,6 @@ def oauth_login(request, provider_name):
         return HttpResponseRedirect('/app/')
     else:
         return HttpResponse('<html><script>document.location.href="{}";</script></html>'.format(authorize_url))
-
-
-def password(request):
-    form = PasswordForm(request=request)
-    if form.is_valid():
-        form.submit()
-        return HttpResponseRedirect('..')
-    return render(request, ['app/default.html'], context(request, form=form))
 
 
 def logout(request):

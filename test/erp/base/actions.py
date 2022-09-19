@@ -44,7 +44,7 @@ class DefinirSetor(actions.Action):
         update = '', ''
 
 
-class AddForm(actions.Action):
+class CadastrarForm(actions.Action):
     class Meta:
         verbose_name = 'Cadastrar Estado'
         model = Estado
@@ -53,7 +53,7 @@ class AddForm(actions.Action):
         }
 
 
-class AddServidor(actions.Action):
+class CadastrarServidor(actions.Action):
 
     class Meta:
         model = Servidor

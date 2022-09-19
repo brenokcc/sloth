@@ -25,10 +25,13 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.reset()
+
+    def reset(self):
         limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=limit, interval='', total=0, ignore=[], is_admin=False,
+            page=1, limit=limit, interval='', total=0, ignore=[], ignore_by={}, is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
             totalizer=None, calendar=None
@@ -39,12 +42,31 @@ class QuerySet(models.QuerySet):
         clone.metadata = dict(self.metadata)
         return clone
 
+    def filter_by_role(self, *names):
+        return self.role_lookups(*names)
+
+    def filter_by_scope(self, name, **scopes):
+        scopes = scopes or dict(pk='self')
+        return self.role_lookups(name, **scopes)
+
     def role_lookups(self, *names, **scopes):
         for name in names:
             self.metadata['lookups'].append((name, scopes))
         return self
 
+    def has_list_permission(self, user):
+        return False # TODO
+        for role_name in [t[0] for t in self.metadata['lookups']]:
+            if user.roles.contains(role_name):
+                return True
+        return False
+
     def apply_role_lookups(self, user):
+        if self.metadata['ignore_by'] and not user.is_superuser:
+            user_role_names = set(user.roles.all().names())
+            for field_name, role_names in self.metadata['ignore_by'].items():
+                if not user_role_names - role_names:
+                    self.ignore(field_name)
         if user.is_superuser:
             return self
         if self.metadata['lookups']:
@@ -249,12 +271,17 @@ class QuerySet(models.QuerySet):
             days[last_day_of_calendar] = None
         qs = self.filter(**{
             '{}__gte'.format(attr_name): first_day_of_month,
-            '{}__lte'.format(attr_name): last_day_of_month
+            '{}__lt'.format(attr_name): last_day_of_month + datetime.timedelta(days=i)
         })
-        total = {x:y for x, y in qs.values_list(attr_name).annotate(Count('id'))}
+        total = {}
+        for k, v in [(x.date() if hasattr(x, 'date') else x, y) for x, y in qs.values_list(attr_name).annotate(Count('id'))]:
+            if k in total:
+                total[k] += v
+            else:
+                total[k] = v
         for i, date in enumerate(days):
             if date in total:
-                days[date] = total[date]
+                days[date] += total[date]
         last_day_of_previous_month = first_day_of_month - datetime.timedelta(days=1)
         first_day_of_previous_month = last_day_of_previous_month + datetime.timedelta(days=0)
         while first_day_of_previous_month.day > 1:
@@ -497,8 +524,12 @@ class QuerySet(models.QuerySet):
         self.metadata['attach'] = list(names)
         return self
 
-    def ignore(self, *names):
-        self.metadata['ignore'] = list(names)
+    def ignore(self, *names, role=None, roles=()):
+        self.metadata['ignore'].extend(names)
+        return self
+
+    def ignore_by_role(self, *names, field=None):
+        self.metadata['ignore_by'][field] = set([name for name in names])
         return self
 
     def collapsed(self, flag=True):
@@ -562,7 +593,10 @@ class QuerySet(models.QuerySet):
         if self.metadata['calendar'] and 'selected-date' in self.metadata['request'].GET:
             selected_date = self.metadata['request'].GET['selected-date']
             if selected_date:
-                lookups = {self.metadata['calendar']: datetime.datetime.strptime(selected_date, '%d/%m/%Y')}
+                lookups = {
+                    '{}__gte'.format(self.metadata['calendar']): datetime.datetime.strptime(selected_date, '%d/%m/%Y').date(),
+                    '{}__lt'.format(self.metadata['calendar']): datetime.datetime.strptime(selected_date, '%d/%m/%Y').date() + datetime.timedelta(days=1)
+                }
                 qs = qs.filter(**lookups)
 
         return qs

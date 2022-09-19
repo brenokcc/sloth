@@ -1,7 +1,5 @@
 import json
 
-from pywebpush import webpush
-
 from sloth import actions
 from .models import Tratamento, Procedimento
 
@@ -61,6 +59,7 @@ class Batata(actions.Action):
         return True
 
     def submit(self):
+        from pywebpush import webpush
         super(Batata, self).submit()
         webpush(subscription_info=json.loads(self.request.user.push_notification.subscription),
                 data="Hello World!",

@@ -126,7 +126,7 @@ class ModelMixin(object):
                 if role['email']:
                     lookups.append(role['email'])
                 if model.__name__.lower() not in role['scopes']:
-                    role['scopes'][model.__name__.lower()] = 'id'
+                    role['scopes']['self'] = 'id'
                 lookups.extend(role['scopes'].values())
                 if role['name'].islower():
                     lookups.append(role['name'])
@@ -186,7 +186,7 @@ class ModelMixin(object):
 
     @classmethod
     def add_form_cls(cls):
-        form_cls = cls.action_form_cls('Add{}'.format(cls.__name__))
+        form_cls = cls.action_form_cls('{}{}'.format('Cadastrar', cls.__name__))
         if form_cls is None:
             class Add(Action):
                 class Meta:
@@ -211,23 +211,21 @@ class ModelMixin(object):
 
     @classmethod
     def edit_form_cls(cls):
-        form_cls = cls.action_form_cls('Edit{}'.format(cls.__name__))
+        form_cls = cls.action_form_cls('Editar{}'.format(cls.__name__))
         if form_cls is None:
-            form_cls = cls.action_form_cls('Add{}'.format(cls.__name__))
-            if form_cls is None:
-                class Edit(Action):
-                    class Meta:
-                        model = cls
-                        verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
-                        submit_label = 'Editar'
-                        icon = 'pencil'
-                        style = 'primary'
-                        if hasattr(cls.metaclass(), 'fieldsets'):
-                            fieldsets = cls.metaclass().fieldsets
+            class Edit(Action):
+                class Meta:
+                    model = cls
+                    verbose_name = 'Editar {}'.format(cls.metaclass().verbose_name)
+                    submit_label = 'Editar'
+                    icon = 'pencil'
+                    style = 'primary'
+                    if hasattr(cls.metaclass(), 'fieldsets'):
+                        fieldsets = cls.metaclass().fieldsets
 
-                    def has_permission(self, user):
-                        return self.instance.has_edit_permission(user) or self.instance.has_permission(user)
-                return Edit
+                def has_permission(self, user):
+                    return self.instance.has_edit_permission(user) or self.instance.has_permission(user)
+            return Edit
 
         class Edit(form_cls):
             class Meta(form_cls.Meta):
@@ -461,6 +459,3 @@ class ModelMixin(object):
     @classmethod
     def metaclass(cls):
         return getattr(cls, '_meta')
-
-    def __str__(self):
-        return '{} #{}'.format(self.metaclass().verbose_name, self.pk)

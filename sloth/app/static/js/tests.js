@@ -182,7 +182,7 @@ function lookAtPanel(text){
 
 function enter(name, value, submit){
     if(String(value)!='null' && String(value)){
-        var element = $(cursor).find( "input[name='"+name+"'], textarea[name='"+name+"']" ).not("input[type='checkbox']").first();
+        var element = $(cursor).find( "input[name='"+name+"'], textarea[name='"+name+"']" ).not("input[type='checkbox']").not("input[type='hidden']").first();
         if (!element[0]) element = $(cursor).find( "label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('input, textarea').not("input[type='checkbox']").first();
         $('input[name=hidden-upload-value]').remove();
         if(element.prop("type")=='file'){

@@ -104,6 +104,47 @@ $( document ).ready(function() {
         window['{{ self.get_metadata.key }}']($('#{{ self.get_metadata.key|slugify }}'));
     }
 });
+{% for field_name in self.get_on_change_fields %}
+    $('#id_{{ field_name }}').change(
+        function(){
+            if(!window['last-value']) window['last-value'] = {};
+            if(window['last-value']['{{ field_name }}']==$(this).val()) return;
+            else window['last-value']['{{ field_name }}']=$(this).val();
+            var data = $('#{{ self.get_metadata.key|slugify }}').serialize();
+            $.post('?on_change={{ field_name }}&value='+$(this).val(), data, function(data){
+                data['hide'].forEach(function(field_name) {
+                    $('#id_'+field_name).closest('.form-field').hide();
+                });
+                data['hide_fieldset'].forEach(function(name) {
+                    $('#{{ self.get_metadata.key|slugify }}').find('.'+name).hide();
+                });
+                data['show'].forEach(function(field_name) {
+                    $('#id_'+field_name).closest('.form-field').show();
+                });
+                data['show_fieldset'].forEach(function(name) {
+                    $('#{{ self.get_metadata.key|slugify }}').find('.'+name).show();
+                });
+                data['set'].forEach(function(field) {
+                    if(field.text){
+                        if ($('#id_'+field.name).find("option[value='" + field.value + "']").length) {
+                            $('#id_'+field.name).val(data.value).trigger('change');
+                        } else {
+                            $('#id_'+field.name).append(new Option(field.text, field.value, true, true)).trigger('change');
+                        }
+                    } else {
+                        $('#id_'+field.name).val(field.value);
+                    }
+                });
+            });
+        }
+    );
+{% endfor %}
+{% for name in self.on_change_data.hide %}
+    $('#id_{{ name }}').closest('.form-field').hide();
+{% endfor %}
+{% for name in self.on_change_data.hide_fieldset %}
+    $('#{{ self.get_metadata.key|slugify }}').find('.{{ name }}').hide();
+{% endfor %}
 </script>
 
 <div class="clearfix"></div>

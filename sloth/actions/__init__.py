@@ -10,6 +10,8 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from django.utils.text import slugify
+
 from . import inputs
 from django import forms
 from django.forms.models import ModelFormMetaclass
@@ -19,6 +21,8 @@ from django.forms.fields import *
 from django.forms.widgets import *
 from .fields import *
 from django.core.exceptions import ValidationError
+
+from ..utils.formatter import format_value
 
 ACTIONS = {}
 
@@ -72,6 +76,7 @@ class Action(metaclass=ActionMetaclass):
         self.instances = kwargs.pop('instances', ())
         self.metaclass = getattr(self, 'Meta')
         self.output_data = None
+        self.on_change_data = {'show': [], 'hide': [], 'set': [], 'show_fieldset': [], 'hide_fieldset': []}
 
         if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
@@ -351,6 +356,15 @@ class Action(metaclass=ActionMetaclass):
             data = dict(type='form', errors=self.errors)
             return data
 
+    @lru_cache()
+    def get_on_change_fields(self):
+        on_change = []
+        for attr_name in dir(self):
+            if attr_name.startswith('on_') and attr_name.endswith('_change'):
+                field_name = attr_name[3:-7]
+                on_change.append(field_name)
+        return on_change
+
     @classmethod
     @lru_cache
     def get_metadata(cls, path=None, inline=False, batch=False):
@@ -490,12 +504,42 @@ class Action(metaclass=ActionMetaclass):
             )
         )
 
+    def show(self, *names):
+        for name in names:
+            if name.islower():
+                self.on_change_data['show'].append(name)
+            else:
+                self.on_change_data['show_fieldset'].append(slugify(name))
+
+    def hide(self, *names):
+        for name in names:
+            if name.islower():
+                self.on_change_data['hide'].append(name)
+            else:
+                self.on_change_data['hide_fieldset'].append(slugify(name))
+
+    def set(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(v, 'pk'):
+                value = v.pk
+                text = str(v)
+            else:
+                value = format_value(v)
+                text = None
+            self.on_change_data['set'].append(dict(name=k, value=value, text=text))
+
     def is_valid(self):
         self.load_fieldsets()
         if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(
                 self.choices(self.request.GET['action_choices'], q=self.request.GET.get('term'))
             )
+        if 'on_change' in self.request.GET:
+            for data in self.on_change_data.values():
+                data.clear()
+            field_name = self.request.GET['on_change']
+            getattr(self, 'on_{}_change'.format(field_name))()
+            raise JsonReadyResponseException(self.on_change_data)
         return super().is_valid()
 
     def choices(self, field_name, q=None):

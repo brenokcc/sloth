@@ -159,6 +159,9 @@
     padding: 0;
     margin-bottom: 5px;
 }
+.search-and-filters .filter label{
+    font-weight: bold;
+}
 .search-and-filters .filter .fa-calendar{
     position: relative;
     left: -75px;

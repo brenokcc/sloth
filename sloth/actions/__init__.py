@@ -507,16 +507,30 @@ class Action(metaclass=ActionMetaclass):
     def show(self, *names):
         for name in names:
             if name.islower():
-                self.on_change_data['show'].append(name)
+                if name in self.on_change_data['hide']:
+                    self.on_change_data['hide'].remove(name)
+                if name not in self.on_change_data['show']:
+                    self.on_change_data['show'].append(name)
             else:
-                self.on_change_data['show_fieldset'].append(slugify(name))
+                name = slugify(name)
+                if name in self.on_change_data['hide_fieldset']:
+                    self.on_change_data['hide_fieldset'].remove(name)
+                if name not in self.on_change_data['show_fieldset']:
+                    self.on_change_data['show_fieldset'].append(name)
 
     def hide(self, *names):
         for name in names:
             if name.islower():
-                self.on_change_data['hide'].append(name)
+                if name in self.on_change_data['show']:
+                    self.on_change_data['show'].remove(name)
+                if name not in self.on_change_data['hide']:
+                    self.on_change_data['hide'].append(name)
             else:
-                self.on_change_data['hide_fieldset'].append(slugify(name))
+                name = slugify(name)
+                if name in self.on_change_data['show_fieldset']:
+                    self.on_change_data['show_fieldset'].remove(name)
+                if name not in self.on_change_data['hide_fieldset']:
+                    self.on_change_data['hide_fieldset'].append(name)
 
     def set(self, **kwargs):
         for k, v in kwargs.items():
@@ -534,11 +548,16 @@ class Action(metaclass=ActionMetaclass):
             raise JsonReadyResponseException(
                 self.choices(self.request.GET['action_choices'], q=self.request.GET.get('term'))
             )
-        if 'on_change' in self.request.GET:
+        if 'on_change_field' in self.request.POST:
             for data in self.on_change_data.values():
                 data.clear()
-            field_name = self.request.GET['on_change']
-            getattr(self, 'on_{}_change'.format(field_name))()
+            field_name = self.request.POST['on_change_field']
+            value = self.request.POST.get('on_change_value')
+            if value == 'true':
+                value = True
+            if value == 'false':
+                value = False
+            getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
         return super().is_valid()
 

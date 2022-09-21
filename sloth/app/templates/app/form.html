@@ -115,7 +115,6 @@ var lastChangedValue = {};
             var data = $('#{{ self.get_metadata.key|slugify }}').serialize();
             data += '&on_change_field={{ field_name }}&on_change_value='+value;
             $.post('{{ self.request.get_full_path }}', data, function(data){
-                console.log(data);
                 data['hide_fieldset'].forEach(function(name) {
                     $('#{{ self.get_metadata.key|slugify }}').find('.'+name).hide();
                 });

@@ -52,6 +52,12 @@
           </li>
         {% endif %}
       {% endwith %}
+      {% if settings.SLOTH.2FA %}
+        <li><hr class="dropdown-divider"></li>
+        <a class="dropdown-item popup" href="/app/2fa/">
+              Autenticação 2FA
+        </a>
+      {% endif %}
       <li><hr class="dropdown-divider"></li>
       <li>
         <a class="dropdown-item" href="/app/logout/">

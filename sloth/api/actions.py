@@ -1,6 +1,8 @@
+import onetimepass
 from sloth import actions
 from django.contrib import auth
 from django.conf import settings
+from .models import AuthCode
 
 
 class DeleteUserRole(actions.Action):
@@ -84,13 +86,14 @@ class StopTask(actions.Action):
 class Login(actions.Action):
     username = actions.CharField(label='Login')
     password = actions.CharField(label='Senha', widget=actions.PasswordInput())
+    auth_code = actions.CharField(label='Código', widget=actions.PasswordInput(), required=False)
 
     class Meta:
         verbose_name = None
         ajax = False
         submit_label = 'Acessar'
         fieldsets = {
-            None: ('username', 'password')
+            None: ('username', 'password', 'auth_code'),
         }
 
     def __init__(self, *args, **kwargs):
@@ -98,17 +101,30 @@ class Login(actions.Action):
         super().__init__(*args, **kwargs)
         if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
             self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
+        if not self.data.get('username'):
+            self.hide('auth_code')
+
+    def on_username_change(self, username):
+        if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username).exists():
+            self.show('auth_code')
+        else:
+            self.hide('auth_code')
 
     def clean(self):
         if self.cleaned_data:
             username = self.cleaned_data.get('username')
             password = self.cleaned_data.get('password')
+            auth_code = self.cleaned_data.get('auth_code')
             if username and password:
                 self.user = auth.authenticate(
                     self.request, username=username, password=password
                 )
                 if self.user is None:
                     raise actions.ValidationError('Login e senha não conferem.')
+            if self.user.authcode_set.exists():
+                user_auth_code = self.user.authcode_set.values_list('secret', flat=True).first()
+                if settings.SLOTH.get('2FA', False) and not onetimepass.valid_totp(auth_code, user_auth_code):
+                    raise actions.ValidationError('Código de autenticação inválido.')
         return self.cleaned_data
 
     def submit(self):

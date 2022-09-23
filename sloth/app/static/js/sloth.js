@@ -325,13 +325,12 @@ function urlB64ToUint8Array(base64String) {
 }
 
 if ('serviceWorker' in navigator && 'PushManager' in window) {
-    console.log('Service Worker and Push is supported');
-
+    //console.log('Service Worker and Push is supported');
     navigator.serviceWorker.register('/static/js/sw.js')
         .then(function (swReg) {
-            console.log('Service Worker is registered', swReg);
+            //console.log('Service Worker is registered', swReg);
             swRegistration = swReg;
-            subscribeUser();
+            //subscribeUser();
         })
         .catch(function (error) {
             console.error('Service Worker Error', error);
@@ -346,10 +345,10 @@ function subscribeUser() {
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey
     }).then(function (subscription) {
-        console.log('User is subscribed:', subscription);
+        //console.log('User is subscribed:', subscription);
         updateSubscriptionOnServer(subscription);
     }).catch(function (err) {
-        console.log('Failed to subscribe the user: ', err);
+        //console.log('Failed to subscribe the user: ', err);
     });
 }
 

@@ -10,6 +10,7 @@ urlpatterns = [
     path('app/icons/', views.icons),
     path('app/login/', views.login),
     path('app/login/<str:provider_name>/', views.oauth_login),
+    path('app/2fa/', views.two_factor_auth),
     path('app/roles/', views.roles),
     path('app/roles/<str:activate>/', views.roles),
     path('app/logout/', views.logout),

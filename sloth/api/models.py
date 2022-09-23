@@ -94,6 +94,22 @@ class RoleManager(models.Manager):
         return self.values_list('name', flat=True).distinct()
 
 
+class AuthCode(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuário'
+    )
+    secret = models.CharField(max_length=16, verbose_name='Chave')
+
+    class Meta:
+        verbose_name = 'Código de Autenticação'
+        verbose_name_plural = 'Códigos de Autenticação'
+
+    def __str__(self):
+        return self.secret
+
+
 class Role(models.Model):
     user = models.ForeignKey(
         User,

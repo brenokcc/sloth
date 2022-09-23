@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
 import requests
+import os
+import base64
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib import auth, messages
@@ -11,7 +13,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from ..actions import Action
 from .templatetags.tags import is_ajax
-from ..api.models import PushNotification
+from ..api.models import PushNotification, AuthCode
 from ..api.actions import Login
 from ..core import views
 from ..utils.icons import bootstrap, materialicons, fontawesome
@@ -50,7 +52,9 @@ def view(func):
     return decorate
 
 
-def context(request, **kwargs):
+def context(request, add_dashboard=False, **kwargs):
+    if add_dashboard:
+        kwargs.update(dashboard=dashboard.Dashboards(request))
     kwargs.update(settings=settings)
     if request.user.is_authenticated:
         if request.path.startswith('/app/') and not is_ajax(request):
@@ -114,6 +118,7 @@ def favicon(request):
     )
 
 
+@view
 def login(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('/app/')
@@ -129,6 +134,16 @@ def login(request):
                 request.user.roles.update(active=False)
                 return HttpResponseRedirect('/app/roles/')
     return render(request, ['views/login.html', 'app/views/login.html'], context(request, form=form))
+
+
+def two_factor_auth(request):
+    auth_code = request.user.authcode_set.first()
+    if auth_code is None:
+        auth_code = AuthCode.objects.create(
+            user=request.user, secret=base64.b32encode(os.urandom(10)).decode('utf-8')
+        )
+    url = 'otpauth://totp/Agenda:{}?secret={}&issuer=Agenda'.format(request.user.username, auth_code.secret)
+    return render(request, ['app/views/2fa.html'], context(request, True, url=url))
 
 
 def oauth_login(request, provider_name):
@@ -191,7 +206,7 @@ def app(request):
     if request.user.is_authenticated:
         return render(
             request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-            context(request, dashboard=dashboard.Dashboards(request))
+            context(request, True)
         )
     return HttpResponseRedirect('/app/login/')
 

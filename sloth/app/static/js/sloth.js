@@ -112,8 +112,9 @@ jQuery.fn.extend({
                 }
             }
         } else {
-            $(document).open(document.referrer);
-            window.history.pushState("string", "Title", document.referrer);
+            //$(document).open(document.referrer);
+            //window.history.pushState("string", "Title", document.referrer);
+            document.location.href = document.referrer;
         }
     },
     responsive: function(){
@@ -293,8 +294,51 @@ jQuery.fn.extend({
              });
            }});
         }
+    },
+    dynamic: function(name, initial){
+        var form = $(this);
+        var lastChangedValue = {};
+        initial.hide.forEach(function(name) {
+            form.find("input[name="+name+"], select[name="+name+"], textarea[name="+name+"]").closest('.form-field').hide();
+        });
+        initial.hide_fieldset.forEach(function(name) {
+            form.find("."+name).hide();
+        });
+        $("input[name="+name+"],select[name="+name+"],textarea[name="+name+"]").change(
+            function(){
+                var value = $(this).val();
+                if(value=='on') value = $(this).prop('checked');
+                if(lastChangedValue[name]==value) return;
+                else lastChangedValue[name]=value;
+                var data = form.serialize();
+                data += '&on_change_field='+name+'&on_change_value='+value;
+                $.post(form.prop('action'), data, function(data){
+                    data['hide_fieldset'].forEach(function(name) {
+                        form.find('.'+name).hide();
+                    });
+                    data['show_fieldset'].forEach(function(name) {
+                        form.find('.'+name).show();
+                    });
+                    data['hide'].forEach(function(field_name) {
+                        form.find("input[name="+ field_name +"], select[name="+ field_name +"], textarea[name="+ field_name +"]").closest('.form-field').hide();
+                    });
+                    data['show'].forEach(function(field_name) {
+                        form.find("input[name="+ field_name +"], select[name="+ field_name +"], textarea[name="+ field_name +"]").closest('.form-field').show();
+                    });
+                    data['set'].forEach(function(field) {
+                        var widget = form.find("input[name=" + field.name + "],select[name=" + field.name + "],textarea[name=" + field.name + "]");
+                        if(field.text){
+                            if (false && widget.find("option[value=" + field.value + "]").length) widget.val(data.value).trigger('change');
+                            else widget.append(new Option(field.text, field.value, true, true)).trigger('change');
+                        } else {
+                            widget.val(field.value);
+                        }
+                    });
+                });
+            }
+        );
     }
-    });
+});
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');

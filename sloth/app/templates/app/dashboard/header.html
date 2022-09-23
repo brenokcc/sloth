@@ -1,5 +1,5 @@
 {% load tags %}
-{% if request.user.is_authenticated and not request.GET.modal %}
+{% if not request.GET.modal %}
     <nav class="navbar navbar-expand" style="box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);">
       <div class="container-fluid">
         <a class="navbar-brand" href="/app/">
@@ -28,7 +28,9 @@
           {% include "app/dashboard/search.html" %}
           {% include "app/dashboard/tools.html" %}
           {% include "app/dashboard/apps.html" %}
+          {% if request.user.is_authenticated %}
           {% include "app/dashboard/settings.html" %}
+          {% endif %}
         </div>
 
       </div>

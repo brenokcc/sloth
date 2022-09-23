@@ -229,7 +229,7 @@ def roles(request):
 def action(request, name):
     form = views.action(request, name)
     if form.check_permission(request.user):
-        ctx = context(request, dashboard=dashboard.Dashboards(request), form=form)
+        ctx = context(request, True, form=form)
         if form.response:
             return HttpResponse(form.html())
         return render(request, ['app/default.html'], ctx)

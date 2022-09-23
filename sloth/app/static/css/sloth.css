@@ -1,3 +1,6 @@
+body main{
+    font-family: Nunito Sans,sans-serif!important
+}
 .dashboard .card{
     border: 0;
 }
@@ -158,9 +161,6 @@
     margin-right: 10px;
     padding: 0;
     margin-bottom: 5px;
-}
-.search-and-filters .filter label{
-    font-weight: bold;
 }
 .search-and-filters .filter .fa-calendar{
     position: relative;

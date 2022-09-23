@@ -373,7 +373,7 @@ class QuerySet(models.QuerySet):
             search = self.get_search(verbose)
             display = self.get_display(verbose)
             filters = self.get_filters(verbose)
-            attach = self.get_attach(verbose)
+            attach = self.get_attach(verbose) if self.metadata['attr'] is None else {}
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
             pages = []
@@ -475,7 +475,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def verbose_name(self, name):
-        self.metadata['uuid'] = slugify(name).replace('-', '_')
+        # self.metadata['uuid'] = slugify(name).replace('-', '_')
         self.metadata['verbose_name'] = pretty(name)
         return self
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from uuid import uuid1
-
+import pprint
 from django.template.loader import render_to_string
 
 from sloth.core.queryset import QuerySet
@@ -165,14 +165,18 @@ class ValueSet(dict):
                         verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
-                            value = value.serialize(
-                                path=path, wrap=wrap, verbose=verbose, lazy=False
-                            )
+                            if self.metadata['primitive']:
+                                value = dict(value=serialize(value), width=width, template=None, type='primitive')
+                                print(value)
+                            else:
+                                value = value.serialize(
+                                    path=path, wrap=wrap, verbose=verbose, lazy=False
+                                )
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                         else:
                             if self.metadata['primitive']:  # one-to-many or many-to-many
-                                value = dict(value=serialize(value), width=width, template=None)
+                                value = dict(value=serialize(value), width=width, template=None, type='primitive')
                             else:
                                 value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
@@ -243,7 +247,7 @@ class ValueSet(dict):
                                     template = '{}.html'.format(template)
                                 if not template.startswith('.html'):
                                     template = 'renders/{}'.format(template)
-                            value = dict(value=value, width=width, template=template, metadata=metadata)
+                            value = dict(value=value, width=width, template=template, metadata=metadata, type='primitive')
 
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
@@ -263,22 +267,16 @@ class ValueSet(dict):
     def serialize(self, wrap=False, verbose=False):
         self.load(wrap=wrap, verbose=verbose, detail=wrap and verbose)
         if wrap:
-            data = {}
-            if self.metadata['primitive']:
-                data['Dados Gerais'] = dict(
-                    uuid=uuid1().hex, type='fieldset', name='Dados Gerais', key='default', actions=[], data=self,
-                    path=None
-                )
-            else:
-                data.update(self)
-            check_fieldsets_type(data)
+            check_fieldsets_type(self)
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             if isinstance(self.instance, QuerySet):
+                name = self.instance.model.metaclass().verbose_name_plural
                 icon = getattr(self.instance.model.metaclass(), 'icon', None)
             else:
+                name = str(self.instance)
                 icon = getattr(self.instance.metaclass(), 'icon', None)
             output = dict(
-                uuid=uuid1().hex, type='object', name=str(self.instance)
+                uuid=uuid1().hex, type='object', name=name
             )
             for key in ('title', 'subtitle', 'status'):
                 if self.metadata[key]:
@@ -289,7 +287,7 @@ class ValueSet(dict):
                         verbose_name, ordering, template, metadata = str(self.instance), None, None, {}
                     output[key] = dict(value=value, template=template, metadata=metadata)
 
-            output.update(icon=icon, data=data, actions=[], attach=[], append={})
+            output.update(icon=icon, data=self, actions=[], attach=[], append={})
             for form_name in self.metadata['actions']:
                 form_cls = self.instance.action_form_cls(form_name)
                 if self.metadata['request'] is None or form_cls.check_fake_permission(
@@ -324,6 +322,7 @@ class ValueSet(dict):
 
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
+        # pprint.pprint(serialized)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
@@ -334,11 +333,21 @@ class ValueSet(dict):
                 status=self.metadata['status'], icon=self.metadata['icon'], data=serialized['data'],
                 actions=[], attach=[], append={}
             )
-
-            # print(json.dumps(data, indent=4, ensure_ascii=False))
+            # pprint.pprint(data)
             return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
-            # print(json.dumps(serialized, indent=4, ensure_ascii=False))
-            return render_to_string(
-                'app/valueset.html', dict(data=serialized), request=self.metadata['request']
-            )
+            if self.metadata['attr']:
+                # pprint.pprint(data)
+                data = serialized['data'].pop(next(iter(serialized['data'])))
+                if data['type']=='fieldset':
+                    return render_to_string('app/fieldset.html', dict(fieldset=data), request=self.metadata['request'])
+                elif data['type']=='queryset':
+                    return render_to_string('app/queryset/queryset.html', dict(data=data), request=self.metadata['request'])
+                elif data['type']=='statistics':
+                    return render_to_string('app/statistics.html', dict(data=data), request=self.metadata['request'])
+                else:
+                    return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+            else:
+                data = serialized
+                # pprint.pprint(data)
+                return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])

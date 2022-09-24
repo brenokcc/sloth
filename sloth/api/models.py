@@ -39,7 +39,7 @@ class User(DjangoUser):
         verbose_name_plural = 'Usuários'
         fieldsets = {
             'Dados Gerais': (('first_name', 'last_name'), 'username', 'email'),
-            'Dados de Acesso': ('is_superuser',)
+            'Dados de Acesso': (('is_superuser', 'is_staff', 'is_active'),)
         }
 
     def view(self):
@@ -101,6 +101,7 @@ class AuthCode(models.Model):
         verbose_name='Usuário'
     )
     secret = models.CharField(max_length=16, verbose_name='Chave')
+    active = models.BooleanField(verbose_name='Ativo', default=False)
 
     class Meta:
         verbose_name = 'Código de Autenticação'

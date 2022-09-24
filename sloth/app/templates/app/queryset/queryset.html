@@ -57,7 +57,7 @@
                 success:function( html ) {
                     var remote = $(html);
                     $('#queryset-data-{{ data.uuid }}').html(
-                        remote.find('#queryset-data-{{ data.uuid }}').html()
+                        remote.find('#queryset-data-{{ data.uuid }},.valueset-fieldsets,.fieldset-data').html()
                     ).initialize();
                     $('#queryset-global-actions-{{ data.uuid }}').html(
                         remote.find('#queryset-global-actions-{{ data.uuid }}').html()

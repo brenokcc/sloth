@@ -72,6 +72,13 @@
                 {% if item.type == 'statistics' %}
                     {% include 'app/fieldset.html' with fieldset=item %}
                 {% endif %}
+                {% if item.type == 'primitive' %}
+                    {% if item.template %}
+                        {% include item.template with value=item.value metadata=item.metadata %}
+                    {% else %}
+                        {% include "app/field.html" with k=name v=item %}
+                    {% endif %}
+                {% endif %}
             </div>
         {% endfor %}
         </div>

@@ -69,7 +69,7 @@ body main{
 .fieldset-field{
     display: inline-block;
     vertical-align: top;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 .fieldset-field-label{
     font-weight: bold;
@@ -97,6 +97,10 @@ body main{
 .fieldset-side-panel .action-checkbox{
     font-size: 22px;
     margin: 5px;
+}
+.card-body{
+    padding-top: 10px;
+    padding-bottom: 3px;
 }
 .card-body .queryset-title h2{
     font-size: 1.25rem;
@@ -321,6 +325,9 @@ textarea{
 .valueset-action-bar{
     display: inline-block;
     float: right;
+}
+.fieldset-tab .valueset-fieldsets .card-body{
+    padding: 0px !important;
 }
 .row{
     margin-left: 0px;

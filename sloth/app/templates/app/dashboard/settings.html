@@ -17,6 +17,7 @@
         </div>
       </li>
       {% if dashboard.data.settings %}
+      <li><hr class="dropdown-divider"></li>
       {% for item in dashboard.data.settings %}
           <li>
             <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">
@@ -25,10 +26,10 @@
             </a>
           </li>
       {% endfor %}
-      <li><hr class="dropdown-divider"></li>
       {% endif %}
       {% with roles=request.user.roles.all %}
         {% if roles %}
+          <li><hr class="dropdown-divider"></li>
           <li class="text-center fw-bold">Papéis</li>
           {% for name in request.user.roles.active.names %}
             <li class="text-center" style="padding:5px">{{ name }}</li>

@@ -106,7 +106,7 @@ class Login(actions.Action):
         super().__init__(*args, **kwargs)
         if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
             self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
-        if not self.data.get('username'):
+        if not self.data.get('username') or not settings.SLOTH.get('2FA', False):
             self.hide('auth_code')
 
     def on_username_change(self, username):
@@ -163,6 +163,9 @@ class ChangePassword(actions.Action):
         self.request.user.save()
         auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
         self.redirect('..', message='Senha alterada com sucesso.')
+
+    def has_permission(self, user):
+        return user.is_authenticated
 
 
 class Activate2FAuthentication(actions.Action):

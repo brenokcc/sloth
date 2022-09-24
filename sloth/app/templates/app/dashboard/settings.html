@@ -16,16 +16,10 @@
           {{ request.user.username }}
         </div>
       </li>
-      <li>
-        <a class="dropdown-item popup" href="/app/action/change_password/">
-          <i class="bi bi-input-cursor"></i>
-          Alterar Senha
-        </a>
-      </li>
       {% if dashboard.data.settings %}
       {% for item in dashboard.data.settings %}
           <li>
-            <a class="dropdown-item" href="{{ item.url }}">
+            <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">
               {{ item.icon|icontag }}
               {{ item.label }}
             </a>
@@ -35,7 +29,6 @@
       {% endif %}
       {% with roles=request.user.roles.all %}
         {% if roles %}
-          <li><hr class="dropdown-divider"></li>
           <li class="text-center fw-bold">Papéis</li>
           {% for name in request.user.roles.active.names %}
             <li class="text-center" style="padding:5px">{{ name }}</li>
@@ -50,15 +43,9 @@
               Gerenciar Papéis
             </a>
           </li>
+          <li><hr class="dropdown-divider"></li>
         {% endif %}
       {% endwith %}
-      {% if settings.SLOTH.2FA %}
-        <li><hr class="dropdown-divider"></li>
-        <a class="dropdown-item popup" href="/app/2fa/">
-              Autenticação 2FA
-        </a>
-      {% endif %}
-      <li><hr class="dropdown-divider"></li>
       <li>
         <a class="dropdown-item" href="/app/logout/">
           <i class="bi bi-box-arrow-right"></i>

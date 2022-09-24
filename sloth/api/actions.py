@@ -1,5 +1,10 @@
+import os
 import onetimepass
-from sloth import actions
+import base64
+
+from django.core.exceptions import ValidationError
+
+from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings
 from .models import AuthCode
@@ -105,7 +110,7 @@ class Login(actions.Action):
             self.hide('auth_code')
 
     def on_username_change(self, username):
-        if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username).exists():
+        if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username, active=True).exists():
             self.show('auth_code')
         else:
             self.hide('auth_code')
@@ -121,7 +126,7 @@ class Login(actions.Action):
                 )
                 if self.user is None:
                     raise actions.ValidationError('Login e senha não conferem.')
-            if self.user.authcode_set.exists():
+            if self.user.authcode_set.filter(active=True).exists():
                 user_auth_code = self.user.authcode_set.values_list('secret', flat=True).first()
                 if settings.SLOTH.get('2FA', False) and not onetimepass.valid_totp(auth_code, user_auth_code):
                     raise actions.ValidationError('Código de autenticação inválido.')
@@ -137,6 +142,7 @@ class ChangePassword(actions.Action):
     password2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())
 
     class Meta:
+        modal = True
         verbose_name = 'Alterar Senha'
 
     def clean(self):
@@ -157,3 +163,64 @@ class ChangePassword(actions.Action):
         self.request.user.save()
         auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
         self.redirect('..', message='Senha alterada com sucesso.')
+
+
+class Activate2FAuthentication(actions.Action):
+    code = actions.CharField(label='Código')
+
+    class Meta:
+        modal = True
+        verbose_name = 'Ativar Autentição 2FA'
+
+    def has_permission(self, user):
+        return settings.SLOTH.get('2FA', False) \
+               and not self.request.user.authcode_set.filter(active=True).exists()
+
+    @meta('QrCode', renderer='qrcode')
+    def get_qrcode(self):
+        auth_code = self.request.user.authcode_set.first()
+        if auth_code is None:
+            auth_code = AuthCode.objects.create(
+                user=self.request.user, secret=base64.b32encode(os.urandom(10)).decode('utf-8')
+            )
+        url = 'otpauth://totp/Agenda:{}?secret={}&issuer=Agenda'.format(
+            self.request.user.username, auth_code.secret
+        )
+        return url
+
+    def display(self):
+        return self.values('get_qrcode')
+
+    def get_instructions(self):
+        return '''Para ativar a autenticação de dois fatores,
+        baixe o aplicativo (Google Authenticator, Duo Mobile, etc)
+        e escaneio o QrCode exibido na tela. Em seguida, digite o
+        número gerado pelo aplicativo para validar a configuração'''
+
+    def clean_code(self):
+        code = self.cleaned_data['code']
+        secret = self.request.user.authcode_set.values_list('secret', flat=True).first()
+        print(secret, onetimepass.get_totp(secret))
+        if not onetimepass.valid_totp(code, secret):
+            raise ValidationError('Código inválido')
+        return code
+
+    def submit(self):
+        self.request.user.authcode_set.update(active=True)
+        return self.redirect('..', 'Ativação realizada com sucesso.')
+
+
+class Deactivate2FAuthentication(actions.Action):
+
+    class Meta:
+        modal = True
+        style = 'danger'
+        verbose_name = 'Desativar Autentição 2FA'
+
+    def has_permission(self, user):
+        return settings.SLOTH.get('2FA', False) \
+               and self.request.user.authcode_set.filter(active=True).exists()
+
+    def submit(self):
+        self.request.user.authcode_set.update(active=False)
+        return self.redirect('..', 'Desativação realizada com sucesso.')

@@ -6,7 +6,8 @@ from django.template import Library
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from sloth.utils.formatter import format_value
-from sloth.utils import colors
+from sloth.utils import colors, to_snake_case
+from sloth.actions import ACTIONS
 
 
 register = Library()
@@ -260,3 +261,11 @@ def calendar(value):
     html.append(render_to_string('renders/calendar/legend.html', dict(legend=legend)))
 
     return mark_safe(''.join(html))
+
+@register.filter
+def action_link(action_name):
+    cls = ACTIONS[action_name]
+    metadata = cls.get_metadata()
+    return mark_safe('<a href="/app/action/{}/" class="{}">{}</a>'.format(
+        to_snake_case(action_name), 'popup' if metadata['modal'] else '', metadata['name']
+    ))

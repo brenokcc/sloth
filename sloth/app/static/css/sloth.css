@@ -266,9 +266,6 @@ textarea{
 .form-display .valueset-header{
     display: none;
 }
-.form-display .fieldset-title {
-    display: none;
-}
 .form-display .valueset .col{
     padding-right: 0;
     padding-left: 0;

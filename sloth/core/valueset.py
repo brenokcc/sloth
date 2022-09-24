@@ -2,6 +2,8 @@
 import json
 from uuid import uuid1
 import pprint
+
+from django.db.models import Model
 from django.template.loader import render_to_string
 
 from sloth.core.queryset import QuerySet
@@ -155,9 +157,10 @@ class ValueSet(dict):
 
                     if isinstance(self.instance, QuerySet):
                         path = '/{}/{}/{}/'.format(self.instance.model.metaclass().app_label, self.instance.model.metaclass().model_name, attr_name)
-                    else:
+                    elif isinstance(self.instance, Model):
                         path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
-
+                    else:
+                        path = None
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         if not isinstance(value, QuerySet):  # ManyRelatedManager
                             value = value.filter()
@@ -272,9 +275,12 @@ class ValueSet(dict):
             if isinstance(self.instance, QuerySet):
                 name = self.instance.model.metaclass().verbose_name_plural
                 icon = getattr(self.instance.model.metaclass(), 'icon', None)
-            else:
+            elif isinstance(self.instance, Model):
                 name = str(self.instance)
                 icon = getattr(self.instance.metaclass(), 'icon', None)
+            else:
+                name = ''
+                icon = None
             output = dict(
                 uuid=uuid1().hex, type='object', name=name
             )

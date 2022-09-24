@@ -48,7 +48,7 @@ class Dashboard(metaclass=DashboardType):
                     if cls.check_fake_permission(request=self.request):
                         metadata = cls.get_metadata()
                         self.data[key].append(dict(
-                            url='/app/action/{}/'.format(metadata['key']),
+                            url='/app/action/{}/'.format(metadata['key']), modal=metadata['modal'],
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:

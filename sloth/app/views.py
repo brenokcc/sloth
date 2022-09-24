@@ -136,16 +136,6 @@ def login(request):
     return render(request, ['views/login.html', 'app/views/login.html'], context(request, form=form))
 
 
-def two_factor_auth(request):
-    auth_code = request.user.authcode_set.first()
-    if auth_code is None:
-        auth_code = AuthCode.objects.create(
-            user=request.user, secret=base64.b32encode(os.urandom(10)).decode('utf-8')
-        )
-    url = 'otpauth://totp/Agenda:{}?secret={}&issuer=Agenda'.format(request.user.username, auth_code.secret)
-    return render(request, ['app/views/2fa.html'], context(request, True, url=url))
-
-
 def oauth_login(request, provider_name):
     provider = settings.SLOTH['OAUTH_LOGIN'][provider_name.upper()]
     authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}&scope={}'.format(
@@ -228,12 +218,9 @@ def roles(request):
 @view
 def action(request, name):
     form = views.action(request, name)
-    if form.check_permission(request.user):
-        ctx = context(request, True, form=form)
-        if form.response:
-            return HttpResponse(form.html())
-        return render(request, ['app/default.html'], ctx)
-    raise PermissionDenied()
+    if form.response:
+        return HttpResponse(form.html())
+    return render(request, ['app/default.html'], context(request, True, form=form))
 
 
 @view

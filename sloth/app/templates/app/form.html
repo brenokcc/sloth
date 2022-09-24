@@ -9,8 +9,7 @@
 {% with instructions=self.get_instructions %}
     {% if instructions %}
         <div class="alert alert-primary" role="alert">
-          <h4 class="alert-heading">Instruções</h4>
-          <p>{{ instructions|safe }}</p>
+            <strong>Atenção</strong>: {{ instructions|safe }}
         </div>
     {% endif %}
 {% endwith %}

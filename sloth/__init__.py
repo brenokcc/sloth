@@ -20,6 +20,19 @@ from sloth.core.validation import validate_model
 PROXIED_MODELS = []
 
 
+def meta(verbose_name=None, renderer=None, **metadata):
+    def decorate(func):
+        if verbose_name:
+            setattr(func, '__verbose_name__', verbose_name)
+        if renderer:
+            setattr(func, '__template__', renderer)
+        if metadata:
+            setattr(func, '__metadata__', metadata)
+
+        return func
+    return decorate
+
+
 def initilize():
     for module in ('dashboard', 'actions'):
         for app_label in settings.INSTALLED_APPS:

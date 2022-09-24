@@ -84,7 +84,7 @@ class QuerySet(models.QuerySet):
             return self.none()
         return self
 
-    def valueset(self, *names):
+    def append(self, *names):
         from sloth.core.valueset import ValueSet
         return ValueSet(self, names)
 

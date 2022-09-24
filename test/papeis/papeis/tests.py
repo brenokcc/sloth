@@ -30,7 +30,7 @@ class AppTestCase(TestCase):
             print('---')
 
     def test(self):
-        self.debug()
+        # self.debug()
         self.assertEqual(User.objects.count(), 7)
         self.assertEqual(Role.objects.count(), 13)
 

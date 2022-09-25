@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
 import requests
+import os
+import base64
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib import auth, messages
@@ -11,7 +13,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from ..actions import Action
 from .templatetags.tags import is_ajax
-from ..api.models import PushNotification
+from ..api.models import PushNotification, AuthCode
 from ..api.actions import Login
 from ..core import views
 from ..utils.icons import bootstrap, materialicons, fontawesome
@@ -50,7 +52,9 @@ def view(func):
     return decorate
 
 
-def context(request, **kwargs):
+def context(request, add_dashboard=False, **kwargs):
+    if add_dashboard:
+        kwargs.update(dashboard=dashboard.Dashboards(request))
     kwargs.update(settings=settings)
     if request.user.is_authenticated:
         if request.path.startswith('/app/') and not is_ajax(request):
@@ -114,6 +118,7 @@ def favicon(request):
     )
 
 
+@view
 def login(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('/app/')
@@ -191,7 +196,7 @@ def app(request):
     if request.user.is_authenticated:
         return render(
             request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-            context(request, dashboard=dashboard.Dashboards(request))
+            context(request, True)
         )
     return HttpResponseRedirect('/app/login/')
 
@@ -213,12 +218,9 @@ def roles(request):
 @view
 def action(request, name):
     form = views.action(request, name)
-    if form.check_permission(request.user):
-        ctx = context(request, dashboard=dashboard.Dashboards(request), form=form)
-        if form.response:
-            return HttpResponse(form.html())
-        return render(request, ['app/default.html'], ctx)
-    raise PermissionDenied()
+    if form.response:
+        return HttpResponse(form.html())
+    return render(request, ['app/default.html'], context(request, True, form=form))
 
 
 @view

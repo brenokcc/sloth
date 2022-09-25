@@ -16,22 +16,16 @@
           {{ request.user.username }}
         </div>
       </li>
-      <li>
-        <a class="dropdown-item popup" href="/app/action/change_password/">
-          <i class="bi bi-input-cursor"></i>
-          Alterar Senha
-        </a>
-      </li>
       {% if dashboard.data.settings %}
+      <li><hr class="dropdown-divider"></li>
       {% for item in dashboard.data.settings %}
           <li>
-            <a class="dropdown-item" href="{{ item.url }}">
+            <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">
               {{ item.icon|icontag }}
               {{ item.label }}
             </a>
           </li>
       {% endfor %}
-      <li><hr class="dropdown-divider"></li>
       {% endif %}
       {% with roles=request.user.roles.all %}
         {% if roles %}
@@ -50,9 +44,9 @@
               Gerenciar Papéis
             </a>
           </li>
+          <li><hr class="dropdown-divider"></li>
         {% endif %}
       {% endwith %}
-      <li><hr class="dropdown-divider"></li>
       <li>
         <a class="dropdown-item" href="/app/logout/">
           <i class="bi bi-box-arrow-right"></i>

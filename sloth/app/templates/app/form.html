@@ -9,8 +9,7 @@
 {% with instructions=self.get_instructions %}
     {% if instructions %}
         <div class="alert alert-primary" role="alert">
-          <h4 class="alert-heading">Instruções</h4>
-          <p>{{ instructions|safe }}</p>
+            <strong>Atenção</strong>: {{ instructions|safe }}
         </div>
     {% endif %}
 {% endwith %}
@@ -104,49 +103,8 @@ $( document ).ready(function() {
         window['{{ self.get_metadata.key }}']($('#{{ self.get_metadata.key|slugify }}'));
     }
 });
-var lastChangedValue = {};
 {% for field_name in self.get_on_change_fields %}
-    $("input[name={{ field_name }}]").change(
-        function(){
-            var value = $(this).val();
-            if(value=='on') value = $(this).prop('checked');
-            if(lastChangedValue['{{ field_name }}']==value) return;
-            else lastChangedValue['{{ field_name }}']=value;
-            var data = $('#{{ self.get_metadata.key|slugify }}').serialize();
-            data += '&on_change_field={{ field_name }}&on_change_value='+value;
-            $.post('{{ self.request.get_full_path }}', data, function(data){
-                data['hide_fieldset'].forEach(function(name) {
-                    $('#{{ self.get_metadata.key|slugify }}').find('.'+name).hide();
-                });
-                data['show_fieldset'].forEach(function(name) {
-                    $('#{{ self.get_metadata.key|slugify }}').find('.'+name).show();
-                });
-                data['hide'].forEach(function(field_name) {
-                    $("input[name="+ field_name +"], select[name="+ field_name +"], textarea[name="+ field_name +"]").closest('.form-field').hide();
-                });
-                data['show'].forEach(function(field_name) {
-                    $("input[name="+ field_name +"], select[name="+ field_name +"], textarea[name="+ field_name +"]").closest('.form-field').show();
-                });
-                data['set'].forEach(function(field) {
-                    if(field.text){
-                        if ($("input[name={{ field_name }}]").find("option[value='" + field.value + "']").length) {
-                            $("input[name={{ field_name }}]").val(data.value).trigger('change');
-                        } else {
-                            $("input[name={{ field_name }}]").append(new Option(field.text, field.value, true, true)).trigger('change');
-                        }
-                    } else {
-                        $("input[name={{ field_name }}]").val(field.value);
-                    }
-                });
-            });
-        }
-    );
-{% endfor %}
-{% for name in self.on_change_data.hide %}
-    $("input[name={{ name }}], select[name={{ name }}], textarea[name={{ name }}]").closest('.form-field').hide();
-{% endfor %}
-{% for name in self.on_change_data.hide_fieldset %}
-    $('#{{ self.get_metadata.key|slugify }}').find('.{{ name }}').hide();
+    $('#{{ self.get_metadata.key|slugify }}').dynamic('{{ field_name }}', {{ self.on_change_data|safe }});
 {% endfor %}
 </script>
 

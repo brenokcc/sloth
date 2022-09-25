@@ -11,7 +11,6 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-
 from . import inputs
 from django import forms
 from django.forms.models import ModelFormMetaclass
@@ -21,7 +20,6 @@ from django.forms.fields import *
 from django.forms.widgets import *
 from .fields import *
 from django.core.exceptions import ValidationError
-
 from ..utils.formatter import format_value
 
 ACTIONS = {}
@@ -435,15 +433,16 @@ class Action(metaclass=ActionMetaclass):
             else:
                 js = '<script>{}</script>'
                 if self.response['url'] == '.':
+                    display_messages = True
                     js = js.format('$(document).reload();')
                 elif self.response['url'] == '..':
+                    display_messages = 'modal' in self.request.GET
                     js = js.format('$(document).back();')
-                elif self.response['url'].startswith('/media/download/'):
-                    js = js.format('$(document).download("{}");'.format(self.response['url']))
                 else:
+                    display_messages = False
                     js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-                messages = render_to_string('app/messages.html', request=self.request)
-                return '<!---->{}{}<!---->'.format(js, messages)
+                html = render_to_string('app/messages.html', request=self.request) if display_messages else ''
+                return '<!---->{}{}<!---->'.format(js, html)
 
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
@@ -642,3 +641,19 @@ class Action(metaclass=ActionMetaclass):
             self.output_data = render_to_string(template, data, request=self.request)
         else:
             self.output_data = data
+
+    @classmethod
+    def get_attr_metadata(cls, lookup):
+        attr = getattr(cls, lookup)
+        template = getattr(attr, '__template__', None)
+        metadata = getattr(attr, '__metadata__', None)
+        if template:
+            if not template.endswith('.html'):
+                template = '{}.html'.format(template)
+            if not template.startswith('.html'):
+                template = 'renders/{}'.format(template)
+        return getattr(attr, '__verbose_name__', lookup), False, template, metadata
+
+    def values(self, *names):
+        from sloth.core.base import ValueSet
+        return ValueSet(self, names)

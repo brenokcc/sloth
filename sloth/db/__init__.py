@@ -1,19 +1,7 @@
 # -*- coding: utf-8 -*-
+from sloth import meta
 
 ROLE_DEFINER_CLASSES = set()
-
-def meta(verbose_name=None, renderer=None, **metadata):
-    def decorate(func):
-        if verbose_name:
-            setattr(func, '__verbose_name__', verbose_name)
-        if renderer:
-            setattr(func, '__template__', renderer)
-        if metadata:
-            setattr(func, '__metadata__', metadata)
-
-        return func
-    return decorate
-
 
 def role(name, username, email=None, active=None, **scopes):
     def decorate(cls):

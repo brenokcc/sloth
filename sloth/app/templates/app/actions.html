@@ -50,8 +50,8 @@
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
-                {{ action.icon|icontag }}
-                {{ action.submit }}
+                &nbsp;{{ action.icon|icontag }}
+                {% if target != 'instance' or not action.icon %}{{ action.submit }}{% endif %}&nbsp;
             </a>
             {% endif %}
         {% endfor %}

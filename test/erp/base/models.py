@@ -87,7 +87,7 @@ class MunicipioManager(models.Manager):
         return self.filter(estado__sigla='PB')
 
     def agrupados(self):
-        return self.valueset('potiguares', 'paraibanos', 'get_qtd_por_estado')
+        return self.append('potiguares', 'paraibanos', 'get_qtd_por_estado')
 
     def get_qtd_por_estado(self):
         return self.count('estado').verbose_name('Quantidade por Estado')
@@ -253,7 +253,7 @@ class ServidorManager(models.Manager):
         return self.count('setor', 'ativo').pie_chart()
 
     def get_estatisticas(self):
-        return self.valueset('total_por_setor_e_ativo', 'total_por_situacao')
+        return self.append('total_por_setor_e_ativo', 'total_por_situacao')
 
 
 @role('Servidor', 'matricula', setor='setor', uo='setor__uo', instituto='setor__uo__instituto')

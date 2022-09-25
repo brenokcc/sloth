@@ -64,6 +64,7 @@ SLOTH = {
 			}
         }
     },
+	'2FA': False,
 	'LIST_PER_PAGE': 20,
 	'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,

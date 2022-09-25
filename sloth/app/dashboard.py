@@ -36,7 +36,7 @@ class Dashboard(metaclass=DashboardType):
     def to_item(self, model, count=True):
         return
 
-    def _load(self, key, items, app=None):
+    def _load(self, key, items, app=None, count=False):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools'
         for cls in items:
             add_item = True
@@ -48,7 +48,7 @@ class Dashboard(metaclass=DashboardType):
                     if cls.check_fake_permission(request=self.request):
                         metadata = cls.get_metadata()
                         self.data[key].append(dict(
-                            url='/app/action/{}/'.format(metadata['key']),
+                            url='/app/action/{}/'.format(metadata['key']), modal=metadata['modal'],
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:
@@ -62,7 +62,7 @@ class Dashboard(metaclass=DashboardType):
                                     dict(
                                         url=url,
                                         label=cls.metaclass().verbose_name_plural,
-                                        count=cls.objects.all().apply_role_lookups(self.request.user).count(),
+                                        count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
                                         icon=getattr(cls.metaclass(), 'icon', None),
                                         app=app
                                     )
@@ -117,7 +117,7 @@ class Dashboard(metaclass=DashboardType):
         self.defined_apps[label] = dict(label=label, icon=icon, hide=hide, url=url, enabled=False)
 
     def cards(self, *items, app=None):
-        self._load('cards', items, app=app)
+        self._load('cards', items, app=app, count=True)
 
     def floating(self, *items, app=None):
         self._load('floating', items, app=app)

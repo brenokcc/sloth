@@ -169,8 +169,8 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             raise PermissionDenied()
                         else:  # /base/servidor/3/get_ferias/
                             if obj.has_view_attr_permission(request.user, y):
-                                attr = getattr(obj, y)
-                                output = attr().attr(y).contextualize(request)
+                                attr = obj.values(y)
+                                output = attr.attr(y).contextualize(request)
                                 if not is_ajax(request):
                                     output = output.source(obj)
                                 return output

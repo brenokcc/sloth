@@ -1,5 +1,5 @@
 {% extends super_template|default:"app/base.html" %}
-
+{% load tags %}
 {% block extrahead %}
 <style>
   main{
@@ -46,6 +46,10 @@
 </style>
 {% endblock %}
 
+{% block header %}
+
+{% endblock %}
+
 {% block content %}
 
 {% if settings.SLOTH.LOGIN.IMAGE %}
@@ -83,9 +87,9 @@
           {% endfor %}
         </div>
       </div>
-      {% if settings.SLOTH.LOGIN.REGISTER_URL %}
+      {% if settings.SLOTH.LOGIN.ACTIONS %}
       <div class="text-center m-5">
-        <a href="{{ settings.SLOTH.LOGIN.REGISTER_URL }}">Cadastrar-se</a>
+        {% for name in settings.SLOTH.LOGIN.ACTIONS %}{{ name|action_link }}{% endfor %}
       </div>
       {% endif %}
       {% include "app/footer.html" %}

@@ -147,28 +147,29 @@ class QuerySetStatistics(object):
         print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
 
     def serialize(self, wrap=True, verbose=True, path=None, lazy=False):
+        series = dict()
+        verbose_name = self.metadata['verbose_name']
         if not lazy:
             self._calc()
-        series = dict()
-        formatter = {True: 'Sim', False: 'Não', None: ''}
-        verbose_name = self.metadata['verbose_name']
 
-        def format_value(value):
-            return float(value) if isinstance(value, Decimal) else value
+            formatter = {True: 'Sim', False: 'Não', None: ''}
 
-        if self._ydict:
-            for i, (yk, yv) in enumerate(self._ydict.items()):
-                data = []
-                self.cursor = 0
+            def format_value(value):
+                return float(value) if isinstance(value, Decimal) else value
+
+            if self._ydict:
+                for i, (yk, yv) in enumerate(self._ydict.items()):
+                    data = []
+                    self.cursor = 0
+                    for j, (xk, xv) in enumerate(self._xdict.items()):
+                        data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
+                    series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
+            else:
+                data = list()
                 for j, (xk, xv) in enumerate(self._xdict.items()):
-                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
-                series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
-        else:
-            data = list()
-            for j, (xk, xv) in enumerate(self._xdict.items()):
-                data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
-            if data:
-                series['default'] = data
+                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
+                if data:
+                    series['default'] = data
 
         if wrap:
             return dict(

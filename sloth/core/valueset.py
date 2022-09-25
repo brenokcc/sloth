@@ -140,8 +140,9 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=True, verbose=False, detail=False):
+    def load(self, wrap=True, verbose=False, detail=False, deep=0):
         only = []
+        is_meta_api = self.metadata['request'] and self.metadata['request'].path.startswith('/meta/')
         if self.metadata['request'] and 'only' in self.metadata['request'].GET:
             only.extend(self.metadata['request'].GET['only'].split(','))
             self.metadata['request'].GET._mutable = True
@@ -149,12 +150,12 @@ class ValueSet(dict):
             self.metadata['request'].GET._mutable = False
 
         if self.metadata['names']:
-            for attr_name, width in self.metadata['names'].items():
+            for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if only and attr_name not in only:
                     continue
                 if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                    lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
-
                     if isinstance(self.instance, QuerySet):
                         path = '/{}/{}/{}/'.format(self.instance.model.metaclass().app_label, self.instance.model.metaclass().model_name, attr_name)
                     elif isinstance(self.instance, Model):
@@ -162,6 +163,7 @@ class ValueSet(dict):
                     else:
                         path = None
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
+                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
                         if not isinstance(value, QuerySet):  # ManyRelatedManager
                             value = value.filter()
                         value.metadata['uuid'] = attr_name
@@ -170,10 +172,9 @@ class ValueSet(dict):
                         if wrap:
                             if self.metadata['primitive']:
                                 value = dict(value=serialize(value), width=width, template=None, type='primitive')
-                                print(value)
                             else:
                                 value = value.serialize(
-                                    path=path, wrap=wrap, verbose=verbose, lazy=False
+                                    path=path, wrap=wrap, verbose=verbose, lazy=lazy
                                 )
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
@@ -183,13 +184,15 @@ class ValueSet(dict):
                             else:
                                 value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
+                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
                         verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value.contextualize(self.metadata['request'])
-                        value = value.serialize(path=path, wrap=wrap, lazy=False)
+                        value = value.serialize(path=path, wrap=wrap, lazy=lazy)
                         if wrap:
                             value['name'] = verbose_name if verbose else attr_name
                             value['key'] = attr_name
                     elif isinstance(value, ValueSet):
+                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
                         verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
                         value.contextualize(self.metadata['request'])
                         actions = getattr(value, 'metadata')['actions']
@@ -197,7 +200,7 @@ class ValueSet(dict):
                         refresh = getattr(value, 'metadata')['refresh']
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
-                        value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail)
+                        value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail, deep= 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1)
 
                         if refresh:
                             if refresh['condition']:
@@ -240,7 +243,8 @@ class ValueSet(dict):
                     else:
                         verbose_name = None
                         self.metadata['primitive'] = True
-                        value = serialize(value) if not wrap else value
+                        if not wrap or is_meta_api:
+                            value = serialize(value)
 
                         if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)

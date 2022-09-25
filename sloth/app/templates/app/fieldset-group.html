@@ -28,7 +28,7 @@
             url:'/app'+path,
             data:{},
             success:function( html ) {
-                $('#fieldset-group').html(html).initialize();
+                $('#fieldset-group-{{ item.uuid }}-tab').html(html).initialize();
                 $('#fieldset-group-{{ item.uuid }}').find('.nav-link').removeClass('active');
                 $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
                 $(document.body).removeClass('page-loading');
@@ -37,7 +37,7 @@
         });
     }
  </script>
-<div class="fieldset-tab" id="fieldset-group">
+<div class="fieldset-tab" id="fieldset-group-{{ item.uuid }}-tab">
 {% for name, item in item.data.items %}
     {% if forloop.first %}
         {% if item.type == 'fieldset-list' %}

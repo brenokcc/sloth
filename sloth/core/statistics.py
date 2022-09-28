@@ -255,3 +255,7 @@ class QuerySetStatistics(object):
         if self.cursor == len(colors()):
             self.cursor = 0
         return color
+
+    def has_permission(self):
+        return self.qs.has_permission()
+

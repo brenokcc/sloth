@@ -106,8 +106,7 @@ class Login(actions.Action):
         super().__init__(*args, **kwargs)
         if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
             self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
-        if not self.data.get('username') or not settings.SLOTH.get('2FA', False):
-            self.hide('auth_code')
+        self.hide('auth_code')
 
     def on_username_change(self, username):
         if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username, active=True).exists():

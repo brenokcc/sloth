@@ -21,14 +21,22 @@ class Diretor(models.Model):
 class Loja(models.Model):
     nome = models.CharField()
     rede = models.ForeignKey(Rede)
-    gerente = models.ForeignKey(Funcionario)
+    gerente = models.ForeignKey(Funcionario, null=True)
     funcionarios = models.ManyToManyField(Funcionario, related_name='lojas')
+
+
+class ProdutoManager(models.Manager):
+    def all(self):
+        return self.role_lookups(
+            'Gerente', 'Funcionário', loja='loja'
+        ).role_lookups('Diretor', loja__rede='rede')
 
 
 class Produto(models.Model):
     nome = models.CharField()
     loja = models.ForeignKey(Loja)
 
+    objects = ProdutoManager()
 
 
 

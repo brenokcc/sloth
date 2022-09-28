@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import json
 from decimal import Decimal
 from django.apps import apps
 from django.db import models
@@ -50,6 +50,8 @@ class GenericValue(object):
                 self.value = Decimal(value)
             elif value_type == 'float':
                 self.value = float(value)
+            elif value_type == 'list':
+                self.value = json.loads(value)
         return self.value
 
     def dumps(self):
@@ -61,6 +63,10 @@ class GenericValue(object):
                 return '{}.{}::{}'.format(
                     value.metaclass().app_label, value.metaclass().model_name, value.pk
                 )
+            if hasattr(value, 'model'):
+                value = list(value.values_list('pk', flat=True))
+            if isinstance(value, list):
+                value = json.dumps(value)
             return '{}::{}'.format(type(value).__name__, value)
         return None
 

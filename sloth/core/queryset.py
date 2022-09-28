@@ -31,7 +31,7 @@ class QuerySet(models.QuerySet):
         limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=limit, interval='', total=0, ignore=[], ignore_by={}, is_admin=False,
+            page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False,
             actions=[], attach=[], template=None, request=None, attr=None, source=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
             totalizer=None, calendar=None
@@ -42,33 +42,21 @@ class QuerySet(models.QuerySet):
         clone.metadata = dict(self.metadata)
         return clone
 
-    def filter_by_role(self, *names):
-        return self.role_lookups(*names)
-
-    def filter_by_scope(self, name, **scopes):
-        scopes = scopes or dict(pk='self')
-        return self.role_lookups(name, **scopes)
-
     def role_lookups(self, *names, **scopes):
         for name in names:
             self.metadata['lookups'].append((name, scopes))
         return self
 
-    def has_list_permission(self, user):
-        return False # TODO
-        for role_name in [t[0] for t in self.metadata['lookups']]:
-            if user.roles.contains(role_name):
-                return True
-        return False
+    def has_permission(self, user):
+        return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
 
     def apply_role_lookups(self, user):
-        if self.metadata['ignore_by'] and not user.is_superuser:
-            user_role_names = set(user.roles.all().names())
-            for field_name, role_names in self.metadata['ignore_by'].items():
-                if not user_role_names - role_names:
-                    self.ignore(field_name)
         if user.is_superuser:
             return self
+        else:
+            for field_name, role_names in self.metadata['only'].items():
+                if not self.metadata['request'].user.roles.contains(*role_names):
+                    self.ignore(field_name)
         if self.metadata['lookups']:
             lookups = []
             for name, scopes in self.metadata['lookups']:
@@ -524,13 +512,20 @@ class QuerySet(models.QuerySet):
         self.metadata['attach'] = list(names)
         return self
 
-    def ignore(self, *names, role=None, roles=()):
+    def ignore(self, *names):
         self.metadata['ignore'].extend(names)
         return self
 
-    def ignore_by_role(self, *names, field=None):
-        self.metadata['ignore_by'][field] = set([name for name in names])
-        return self
+    def only(self, *names, role=None, roles=()):
+        if role or roles:
+            for name in names:
+                if name not in self.metadata['only']:
+                    self.metadata['only'][name] = []
+                if role:
+                    self.metadata['only'][name].append(role)
+                self.metadata['only'][name].extend(roles)
+            return self
+        return super().only(*names)
 
     def collapsed(self, flag=True):
         self.metadata['collapsed'] = flag
@@ -728,8 +723,7 @@ class QuerySet(models.QuerySet):
         return self.aggregate(sum=Sum(z))['sum'] or 0
 
     def has_attr_permission(self, user, name):
-        attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return attr is None or user.is_superuser or attr(user)
+        return user.is_superuser or getattr(self, name)().has_permission(user)
 
     # rendering template functions
 

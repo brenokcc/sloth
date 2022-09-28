@@ -40,6 +40,10 @@ class ModelMixin(object):
 
     ### PERMISSIONS ###
 
+    def role_lookups(self, *names, **scopes):
+        from sloth import RoleLookup
+        return RoleLookup(self).role_lookups(*names, **scopes)
+
     def has_permission(self, user):
         return user.is_superuser
 
@@ -53,7 +57,7 @@ class ModelMixin(object):
     def has_view_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         if attr:
-            return attr(user)
+            return user.is_superuser or attr(user)
         return self.is_view_attr(name) and (self.has_permission(user) or self.has_view_permission(user))
 
     def is_view_attr(self, name):
@@ -83,9 +87,6 @@ class ModelMixin(object):
         return self.has_permission(user)
 
     def has_delete_permission(self, user):
-        return self.has_permission(user)
-
-    def has_list_permission(self, user):
         return self.has_permission(user)
 
     ### VISUALIZATION ###
@@ -207,6 +208,9 @@ class ModelMixin(object):
                 verbose_name = getattr(
                     form_cls.Meta, 'verbose_name', 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 )
+
+            def has_permission(self, user):
+                return form_cls.has_permission(self, user) or self.instance.has_add_permission(user) or self.instance.has_permission(user)
         return Add
 
     @classmethod

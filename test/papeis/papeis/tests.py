@@ -21,6 +21,16 @@ class AppTestCase(TestCase):
         self.data['l1'].funcionarios.add(self.data['f2'])
         self.data['l1'].persist()
 
+        self.data['l2'] = Loja.objects.create(nome='l2', rede=self.data['r2'], gerente=self.data['f4'])
+        self.data['l2'].funcionarios.add(self.data['f5'])
+        self.data['l2'].persist()
+
+        self.data['l3'] = Loja.objects.create(nome='l3', rede=self.data['r1'], gerente=None)
+
+        for i in range(1, 4):
+            for j in range(1, 3):
+                Produto.objects.create(nome='p{}l{}'.format(j, i), loja=self.data['l{}'.format(i)])
+
     def debug(self):
         for user in User.objects.all():
             print(user)
@@ -32,12 +42,27 @@ class AppTestCase(TestCase):
     def test(self):
         # self.debug()
         self.assertEqual(User.objects.count(), 7)
-        self.assertEqual(Role.objects.count(), 13)
+        self.assertEqual(Role.objects.count(), 17)
 
-        user = User.objects.get(username='f1')
-        qs = Funcionario.objects.filter_by_scope('Funcionário').apply_role_lookups(user)
+        user_f1 = User.objects.get(username='f1')
+        qs = Funcionario.objects.role_lookups('Funcionário', pk='self').apply_role_lookups(user_f1)
         self.assertEqual(qs.count(), 1)
 
-        user = User.objects.get(username='d1')
-        qs = Rede.objects.filter_by_scope('Diretor', pk='rede').apply_role_lookups(user)
+        user_f2 = User.objects.get(username='f2')
+        qs = Loja.objects.role_lookups('Funcionário', pk='loja').apply_role_lookups(user_f2)
+        print(qs)
+        print('----')
+        l1 = Loja.objects.get(nome='l1')
+        print(l1.role_lookups('Funcionário', pk='loja').apply(user_f2))
+        print(Produto.objects.role_lookups('Funcionário', loja='loja').apply_role_lookups(user_f2))
+        p1l1 = Produto.objects.get(nome='p1l1')
+        print(p1l1.role_lookups('Funcionário', loja='loja').apply(user_f2))
+        print('----')
+        user_d1 = User.objects.get(username='d1')
+        qs = Rede.objects.role_lookups('Diretor', pk='rede').apply_role_lookups(user_d1)
         self.assertEqual(qs.count(), 1)
+        print('----')
+        user_f4 = User.objects.get(username='f4')
+        for user in (user_f1, user_f2, user_d1, user_f4):
+            print(user, Produto.objects.all().apply_role_lookups(user))
+            print(user, Produto.objects.all().apply_role_lookups(user).has_permission(user))

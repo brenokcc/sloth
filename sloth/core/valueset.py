@@ -44,7 +44,7 @@ class ValueSet(dict):
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh={},
             attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None,
-            title=None, subtitle=None, status=None, icon=None
+            title=None, subtitle=None, status=None, icon=None, only={}
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -53,6 +53,14 @@ class ValueSet(dict):
             else:
                 self.metadata['names'][attr_name] = 100
         super().__init__()
+
+    def only(self, name, role=None, roles=()):
+        if name not in self.metadata['only']:
+            self.metadata['only'][name] = []
+        if role:
+            self.metadata['only'][name].append(role)
+        self.metadata['only'][name].extend(roles)
+        return self
 
     def actions(self, *names):
         self.metadata['actions'] = list(names)
@@ -112,6 +120,9 @@ class ValueSet(dict):
     def apply_role_lookups(self, user):
         return self
 
+    def has_permission(self):
+        return self.instance.has_permission()
+
     def has_children(self):
         if type(self.instance):
             field_names = [field.name for field in self.instance.metaclass().fields]
@@ -153,6 +164,10 @@ class ValueSet(dict):
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if only and attr_name not in only:
                     continue
+                if self.metadata['request'] and not self.metadata['request'].user.is_superuser:
+                    if self.metadata['only'] and attr_name in self.metadata['only']:
+                        if not self.metadata['request'].user.roles.contains(*self.metadata['only'][attr_name]):
+                            continue
                 if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
@@ -201,7 +216,8 @@ class ValueSet(dict):
                         template = getattr(value, 'metadata')['template']
                         key = attr_name
                         value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail, deep= 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1)
-
+                        if not value:
+                            continue
                         if refresh:
                             if refresh['condition']:
                                 deny = 'not ' in refresh['condition']
@@ -333,31 +349,32 @@ class ValueSet(dict):
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
         # pprint.pprint(serialized)
-        if self.metadata['source']:
-            if hasattr(self.metadata['source'], 'model'):
-                name = self.metadata['source'].model.metaclass().verbose_name_plural
+        if self.metadata['attr']:
+            is_ajax = self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest'
+            is_modal = 'modal' in self.metadata['request'].GET
+            is_tab = self.metadata['request'].GET.get('title_class')
+            data = serialized['data'][next(iter(serialized['data']))]
+            if data['type'] == 'fieldset-list':
+                data['name'] = serialized['name']
+                data['icon'] = serialized['icon']
+            elif data['type'] == 'fieldset-group':
+                data['name'] = serialized['name']
+                data['icon'] = serialized['icon']
+            # pprint.pprint(data)
+            print(data['type'])
+            if data['type']=='fieldset':
+                if is_ajax and not is_modal:
+                    return render_to_string('app/fieldset.html', dict(fieldset=data), request=self.metadata['request'])
+                return render_to_string('app/valueset.html', dict(data=serialized), request=self.metadata['request'])
+            elif data['type']=='fieldset-list' and not self.metadata['source'] and not is_modal:
+                return render_to_string('app/fieldset-tab.html', dict(data=data), request=self.metadata['request'])
+            elif data['type']=='queryset':
+                return render_to_string('app/queryset/queryset.html', dict(data=data), request=self.metadata['request'])
+            elif data['type']=='statistics':
+                return render_to_string('app/statistics.html', dict(data=data), request=self.metadata['request'])
             else:
-                name = self.metadata['source']
-            data = dict(
-                type='object', name=str(name), title=self.metadata['title'], subtitle=self.metadata['subtitle'],
-                status=self.metadata['status'], icon=self.metadata['icon'], data=serialized['data'],
-                actions=[], attach=[], append={}
-            )
+                return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+        else:
+            data = serialized
             # pprint.pprint(data)
             return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
-        else:
-            if self.metadata['attr']:
-                # pprint.pprint(data)
-                data = serialized['data'].pop(next(iter(serialized['data'])))
-                if data['type']=='fieldset':
-                    return render_to_string('app/fieldset.html', dict(fieldset=data), request=self.metadata['request'])
-                elif data['type']=='queryset':
-                    return render_to_string('app/queryset/queryset.html', dict(data=data), request=self.metadata['request'])
-                elif data['type']=='statistics':
-                    return render_to_string('app/statistics.html', dict(data=data), request=self.metadata['request'])
-                else:
-                    return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
-            else:
-                data = serialized
-                # pprint.pprint(data)
-                return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])

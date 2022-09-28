@@ -64,13 +64,13 @@
                     {% include 'app/fieldset-list.html' with item=item %}
                 {% endif %}
                 {% if item.type == 'fieldset' %}
-                    {% include 'app/fieldset.html' with fieldset=item %}
+                    {% include 'app/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'queryset' %}
-                    {% include 'app/fieldset.html' with fieldset=item %}
+                    {% include 'app/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'statistics' %}
-                    {% include 'app/fieldset.html' with fieldset=item %}
+                    {% include 'app/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'primitive' %}
                     {% if item.template %}
@@ -86,7 +86,7 @@
     {% if data.append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
         {% for name, item in data.append.items %}
-            {% include 'app/fieldset.html' with fieldset=item compact=True %}
+            {% include 'app/fieldset.html' with data=item compact=True %}
         {% endfor %}
     </div>
     {% endif %}

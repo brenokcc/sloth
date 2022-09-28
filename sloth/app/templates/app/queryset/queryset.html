@@ -6,7 +6,7 @@
 {% endif %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.metadata.collapsed or compact %}
-        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$('#queryset-container{{ data.uuid }}').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+        <div class="queryset-title {{ title_class }} {{ request.GET.title_class }}" style="cursor:pointer" onclick="$(this).parent().find('.toogle-data').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
             <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
         </div>
     {% else %}
@@ -18,7 +18,7 @@
         {% include "app/queryset/actions/global.html" %}
     </div>
     <div class="clearfix"></div>
-    <div class="queryset-container" id="queryset-container{{ data.uuid }}">
+    <div class="queryset-container toogle-data" id="queryset-container{{ data.uuid }}">
     {% if data.attach %}
     <div class="clearfix"></div>
     <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">

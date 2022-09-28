@@ -55,10 +55,12 @@ class ModelMixin(object):
         return  attr is None or user.is_superuser or attr(user)
 
     def has_view_attr_permission(self, user, name):
+        if user.is_superuser or self.has_permission(user):
+            return True
+        if self.is_view_attr(name) and self.has_view_permission(user):
+            return True
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        if attr:
-            return user.is_superuser or attr(user)
-        return self.is_view_attr(name) and (self.has_permission(user) or self.has_view_permission(user))
+        return attr(user) if attr else False
 
     def is_view_attr(self, name):
         if not hasattr(self.__class__, '__view__'):

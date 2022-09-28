@@ -348,33 +348,36 @@ class ValueSet(dict):
 
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
-        # pprint.pprint(serialized)
         if self.metadata['attr']:
             is_ajax = self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest'
             is_modal = 'modal' in self.metadata['request'].GET
-            is_tab = self.metadata['request'].GET.get('title_class')
             data = serialized['data'][next(iter(serialized['data']))]
-            if data['type'] == 'fieldset-list':
+            if data['type'] in ('fieldset-list', 'fieldset-group'):
                 data['name'] = serialized['name']
                 data['icon'] = serialized['icon']
-            elif data['type'] == 'fieldset-group':
-                data['name'] = serialized['name']
-                data['icon'] = serialized['icon']
-            # pprint.pprint(data)
-            print(data['type'])
             if data['type']=='fieldset':
                 if is_ajax and not is_modal:
-                    return render_to_string('app/fieldset.html', dict(fieldset=data), request=self.metadata['request'])
-                return render_to_string('app/valueset.html', dict(data=serialized), request=self.metadata['request'])
-            elif data['type']=='fieldset-list' and not self.metadata['source'] and not is_modal:
-                return render_to_string('app/fieldset-tab.html', dict(data=data), request=self.metadata['request'])
+                    template_name = 'app/fieldset.html'
+                else:
+                    template_name, data = 'app/valueset.html', serialized
+            elif data['type']=='fieldset-list':
+                if self.metadata['source'] or is_modal:
+                    template_name = 'app/valueset.html'
+                else:
+                    template_name = 'app/fieldset-tab.html'
             elif data['type']=='queryset':
-                return render_to_string('app/queryset/queryset.html', dict(data=data), request=self.metadata['request'])
+                if self.metadata['source'] or is_modal:
+                    template_name, data = 'app/valueset.html', serialized
+                else:
+                    template_name = 'app/queryset/queryset.html'
             elif data['type']=='statistics':
-                return render_to_string('app/statistics.html', dict(data=data), request=self.metadata['request'])
+                if self.metadata['source'] or is_modal:
+                    template_name, data = 'app/valueset.html', serialized
+                else:
+                    template_name = 'app/statistics.html'
             else:
-                return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+                template_name = 'app/valueset.html'
         else:
-            data = serialized
-            # pprint.pprint(data)
-            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+            template_name, data = 'app/valueset.html', serialized
+        # pprint.pprint(data)
+        return render_to_string(template_name, dict(data=data), request=self.metadata['request'])

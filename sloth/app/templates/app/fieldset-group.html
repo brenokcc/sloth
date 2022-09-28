@@ -42,10 +42,10 @@
     {% if forloop.first %}
         {% if item.type == 'fieldset-list' %}
             {% for name, fieldset in item.data.items %}
-                {% include 'app/fieldset.html' with fieldset=fieldset %}
+                {% include 'app/fieldset.html' with data=fieldset %}
             {% endfor %}
         {% else %}
-            {% include 'app/fieldset.html' with fieldset=item title_class="d-none" %}
+            {% include 'app/fieldset.html' with data=item title_class="d-none" %}
         {% endif %}
     {% endif %}
 {% endfor %}

@@ -70,3 +70,7 @@
     {% include 'app/statistics.html' with data=data title_class=title_class %}
 {% endif %}
 
+{% if data.type == 'primitive' %}
+    {% include 'app/primitive.html' with data=data %}
+{% endif %}
+

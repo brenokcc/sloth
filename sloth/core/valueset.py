@@ -179,7 +179,7 @@ class ValueSet(dict):
                     elif isinstance(self.instance, Model):
                         path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
                     else:
-                        path = None
+                        path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
                         if not isinstance(value, QuerySet):  # ManyRelatedManager
@@ -189,7 +189,7 @@ class ValueSet(dict):
                         value = value.contextualize(self.metadata['request'])
                         if wrap:
                             if self.metadata['primitive']:
-                                value = dict(value=serialize(value), width=width, template=None, type='primitive')
+                                value = dict(value=serialize(value), width=width, template=None, type='primitive', path=path)
                             else:
                                 value = value.serialize(
                                     path=path, wrap=wrap, verbose=verbose, lazy=lazy
@@ -198,7 +198,7 @@ class ValueSet(dict):
                             value['key'] = attr_name
                         else:
                             if self.metadata['primitive']:  # one-to-many or many-to-many
-                                value = dict(value=serialize(value), width=width, template=None, type='primitive')
+                                value = dict(value=serialize(value), width=width, template=None, type='primitive', path=path)
                             else:
                                 value = value.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
@@ -273,7 +273,7 @@ class ValueSet(dict):
                                     template = '{}.html'.format(template)
                                 if not template.startswith('.html'):
                                     template = 'renders/{}'.format(template)
-                            value = dict(value=value, width=width, template=template, metadata=metadata, type='primitive')
+                            value = dict(value=value, width=width, template=template, metadata=metadata, type='primitive', path=path)
 
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
@@ -381,6 +381,8 @@ class ValueSet(dict):
                 else:
                     data['name'] = None
                     template_name = 'app/statistics.html'
+            elif data['type'] == 'primitive':
+                template_name = 'app/primitive.html'
             else:
                 template_name = 'app/valueset.html'
         else:

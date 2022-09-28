@@ -38,7 +38,7 @@
         });
     }
  </script>
-<div class="fieldset-tab" id="fieldset-list-{{ item.uuid }}-tab">222
+<div class="fieldset-tab" id="fieldset-list-{{ item.uuid }}-tab">
 {% for name, item in item.data.items %}
     {% if forloop.first %}
         {% include 'app/fieldset.html' with data=item %}

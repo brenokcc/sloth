@@ -19,6 +19,9 @@ def check_fieldsets_type(item):
 
 def check_fieldset_type(item):
     if is_fieldset_group(item['data']):
+        first = item['data'][next(iter(item['data']))]
+        if first['type'] != 'fieldset-lit':
+            first['name'] = None
         return 'fieldset-group'
     elif is_fieldset_list(item['data']):
         return 'fieldset-list'
@@ -357,6 +360,7 @@ class ValueSet(dict):
                 data['icon'] = serialized['icon']
             if data['type']=='fieldset':
                 if is_ajax and not is_modal:
+                    data['name'] = None
                     template_name = 'app/fieldset.html'
                 else:
                     template_name, data = 'app/valueset.html', serialized
@@ -369,11 +373,13 @@ class ValueSet(dict):
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset.html', serialized
                 else:
+                    data['name'] = None
                     template_name = 'app/queryset/queryset.html'
             elif data['type']=='statistics':
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset.html', serialized
                 else:
+                    data['name'] = None
                     template_name = 'app/statistics.html'
             else:
                 template_name = 'app/valueset.html'

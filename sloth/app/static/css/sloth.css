@@ -53,9 +53,7 @@ body main{
 .fieldset-tab{
     margin-top: 10px;
 }
-.fieldset-tab .valueset-title, .fieldset-tab .statistics-title{
-    display: none;
-}
+
 .fieldset-tab .card{
     border: 0;
 }

@@ -87,7 +87,7 @@
         <button type="button" class="btn btn-light" onclick="$(document).back(true);">
             Cancelar
         </button>
-        <button type="submit" class="btn btn-{{ self.get_metadata.style }} btn-submit">
+        <button type="submit" class="btn btn-{{ self.get_metadata.style }} btn-submit" onclick="$(this).addClass('disabled').find('.spinner-border').removeClass('d-none')">
             <div class="spinner-border spinner-border-sm d-none" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>

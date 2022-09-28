@@ -125,7 +125,7 @@ class Login(actions.Action):
                 )
                 if self.user is None:
                     raise actions.ValidationError('Login e senha não conferem.')
-            if self.user.authcode_set.filter(active=True).exists():
+            if self.user and self.user.authcode_set.filter(active=True).exists():
                 user_auth_code = self.user.authcode_set.values_list('secret', flat=True).first()
                 if settings.SLOTH.get('2FA', False) and not onetimepass.valid_totp(auth_code, user_auth_code):
                     raise actions.ValidationError('Código de autenticação inválido.')

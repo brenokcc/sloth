@@ -32,7 +32,7 @@
                     <td>
                       <div class="responsive-container">
                           {% for k, v in data.data.items %}
-                                {% include "app/field.html" with k=k v=v %}
+                                {% include 'app/valueset/field.html' with k=k v=v %}
                           {% endfor %}
                       </div>
                     </td>
@@ -71,6 +71,6 @@
 {% endif %}
 
 {% if data.type == 'primitive' %}
-    {% include 'app/primitive.html' with data=data %}
+    {% include 'app/valueset/primitive.html' with data=data %}
 {% endif %}
 

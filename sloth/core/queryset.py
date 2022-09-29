@@ -610,7 +610,7 @@ class QuerySet(models.QuerySet):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.metadata['request'])
         return render_to_string(
             'app/queryset/queryset.html',
             dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.metadata['request'])),

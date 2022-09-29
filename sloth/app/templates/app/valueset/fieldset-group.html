@@ -43,10 +43,10 @@
     {% if forloop.first %}
         {% if item.type == 'fieldset-list' %}
             {% for name, fieldset in item.data.items %}
-                {% include 'app/fieldset.html' with data=fieldset %}
+                {% include 'app/valueset/fieldset.html' with data=fieldset %}
             {% endfor %}
         {% else %}
-            {% include 'app/fieldset.html' with data=item %}
+            {% include 'app/valueset/fieldset.html' with data=item %}
         {% endif %}
     {% endif %}
 {% endfor %}

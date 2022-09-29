@@ -361,31 +361,31 @@ class ValueSet(dict):
             if data['type']=='fieldset':
                 if is_ajax and not is_modal:
                     data['name'] = None
-                    template_name = 'app/fieldset.html'
+                    template_name = 'app/valueset/fieldset.html'
                 else:
-                    template_name, data = 'app/valueset.html', serialized
+                    template_name, data = 'app/valueset/valueset.html', serialized
             elif data['type']=='fieldset-list':
                 if self.metadata['source'] or is_modal:
-                    template_name = 'app/valueset.html'
+                    template_name = 'app/valueset/valueset.html'
                 else:
-                    template_name = 'app/fieldset-tab.html'
+                    template_name = 'app/valueset/fieldset-tab.html'
             elif data['type']=='queryset':
                 if self.metadata['source'] or is_modal:
-                    template_name, data = 'app/valueset.html', serialized
+                    template_name, data = 'app/valueset/valueset.html', serialized
                 else:
                     data['name'] = None
                     template_name = 'app/queryset/queryset.html'
             elif data['type']=='statistics':
                 if self.metadata['source'] or is_modal:
-                    template_name, data = 'app/valueset.html', serialized
+                    template_name, data = 'app/valueset/valueset.html', serialized
                 else:
                     data['name'] = None
                     template_name = 'app/statistics.html'
             elif data['type'] == 'primitive':
-                template_name = 'app/primitive.html'
+                template_name = 'app/valueset/primitive.html'
             else:
-                template_name = 'app/valueset.html'
+                template_name = 'app/valueset/valueset.html'
         else:
-            template_name, data = 'app/valueset.html', serialized
+            template_name, data = 'app/valueset/valueset.html', serialized
         # pprint.pprint(data)
         return render_to_string(template_name, dict(data=data), request=self.metadata['request'])

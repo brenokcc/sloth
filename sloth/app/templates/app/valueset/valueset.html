@@ -58,25 +58,25 @@
         {% for name, item in data.data.items %}
             <div class="fieldset" id="{{ item.key }}">
                 {% if item.type == 'fieldset-group' %}
-                    {% include 'app/fieldset-group.html' with item=item %}
+                    {% include 'app/valueset/fieldset-group.html' with item=item %}
                 {% endif %}
                 {% if item.type == 'fieldset-list' %}
-                    {% include 'app/fieldset-list.html' with item=item %}
+                    {% include 'app/valueset/fieldset-list.html' with item=item %}
                 {% endif %}
                 {% if item.type == 'fieldset' %}
-                    {% include 'app/fieldset.html' with data=item %}
+                    {% include 'app/valueset/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'queryset' %}
-                    {% include 'app/fieldset.html' with data=item %}
+                    {% include 'app/valueset/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'statistics' %}
-                    {% include 'app/fieldset.html' with data=item %}
+                    {% include 'app/valueset/fieldset.html' with data=item %}
                 {% endif %}
                 {% if item.type == 'primitive' %}
                     {% if item.template %}
                         {% include item.template with value=item.value metadata=item.metadata %}
                     {% else %}
-                        {% include "app/field.html" with k=name v=item %}
+                        {% include 'app/valueset/field.html' with k=name v=item %}
                     {% endif %}
                 {% endif %}
             </div>
@@ -86,7 +86,7 @@
     {% if data.append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
         {% for name, item in data.append.items %}
-            {% include 'app/fieldset.html' with data=item compact=True %}
+            {% include 'app/valueset/fieldset.html' with data=item compact=True %}
         {% endfor %}
     </div>
     {% endif %}

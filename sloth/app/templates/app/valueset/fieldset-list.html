@@ -41,7 +41,7 @@
 <div class="fieldset-tab" id="fieldset-list-{{ item.uuid }}-tab">
 {% for name, item in item.data.items %}
     {% if forloop.first %}
-        {% include 'app/fieldset.html' with data=item %}
+        {% include 'app/valueset/fieldset.html' with data=item %}
     {% endif %}
 {% endfor %}
 </div>

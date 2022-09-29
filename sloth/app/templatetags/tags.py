@@ -172,7 +172,7 @@ def unaccented(s):
 
 @register.filter
 def true(value):
-    return value in ('Sim', 'Yes', 'True')
+    return value in ('Sim', 'Yes', 'True', True)
 
 
 @register.filter
@@ -254,11 +254,11 @@ def calendar(value):
             last_day_of_calendar += datetime.timedelta(days=1)
             days[last_day_of_calendar] = color(last_day_of_calendar)
         context = dict(days=days, start=first_day_of_month, today=datetime.date.today())
-        return render_to_string('renders/calendar/calendar.html', context=context)
+        return render_to_string('renderers/calendar/calendar.html', context=context)
 
     for first_day_of_month in months:
         html.append(month(first_day_of_month))
-    html.append(render_to_string('renders/calendar/legend.html', dict(legend=legend)))
+    html.append(render_to_string('renderers/calendar/legend.html', dict(legend=legend)))
 
     return mark_safe(''.join(html))
 

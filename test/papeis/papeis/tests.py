@@ -1,3 +1,4 @@
+import os
 from django.test import TestCase
 from .models import *
 from sloth.api.models import Role, User
@@ -40,7 +41,8 @@ class AppTestCase(TestCase):
             print('---')
 
     def test(self):
-        # self.debug()
+        if os.path.exists('/Users/breno'):
+            self.debug()
         self.assertEqual(User.objects.count(), 7)
         self.assertEqual(Role.objects.count(), 17)
 

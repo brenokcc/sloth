@@ -651,7 +651,7 @@ class Action(metaclass=ActionMetaclass):
             if not template.endswith('.html'):
                 template = '{}.html'.format(template)
             if not template.startswith('.html'):
-                template = 'renders/{}'.format(template)
+                template = 'renderers/{}'.format(template)
         return getattr(attr, '__verbose_name__', lookup), False, template, metadata
 
     def values(self, *names):

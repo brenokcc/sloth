@@ -272,7 +272,7 @@ class ValueSet(dict):
                                 if not template.endswith('.html'):
                                     template = '{}.html'.format(template)
                                 if not template.startswith('.html'):
-                                    template = 'renders/{}'.format(template)
+                                    template = 'renderers/{}'.format(template)
                             value = dict(value=value, width=width, template=template, metadata=metadata, type='primitive', path=path)
 
                     if verbose:

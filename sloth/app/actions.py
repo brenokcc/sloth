@@ -17,7 +17,7 @@ class ExecuteQuery(actions.Action):
         query = self.cleaned_data['query']
         with io.StringIO() as output:
             call_command('query', query, stdout=output, stderr=output)
-            self.output(dict(value=output.getvalue()), 'renders/programing/strtable.html')
+            self.output(dict(value=output.getvalue()), 'renderers/programing/strtable.html')
 
     def has_permission(self, user):
         return user.is_superuser and user.roles.contains('Remote Developer')
@@ -40,7 +40,7 @@ class ExecuteScript(actions.Action):
         )
         stdout, stderr = p.communicate()
         output = '{}{}'.format(stdout.decode(), stderr.decode())
-        self.output(dict(value=output), 'renders/programing/terminal.html')
+        self.output(dict(value=output), 'renderers/programing/terminal.html')
 
     def has_permission(self, user):
         return user.is_superuser and user.roles.contains('Remote Developer')

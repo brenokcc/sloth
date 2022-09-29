@@ -19,6 +19,35 @@ from sloth.core.validation import validate_model
 
 PROXIED_MODELS = []
 
+class RoleLookup:
+    def __init__(self, instance):
+        self.instance = instance
+        self.lookups = []
+
+    def role_lookups(self, *names, **scopes):
+        self.lookups.append((names, scopes))
+        return self
+
+    def _apply(self, user):
+        qs = type(self.instance).objects.filter(pk=self.instance.pk)
+        for names, scopes in self.lookups:
+            qs.role_lookups(*names, **scopes)
+        return qs.apply_role_lookups(user)
+
+    def apply(self, user):
+        for names, scopes in self.lookups:
+            for role in user.roles.all():
+                if role.name in names:
+                    if scopes:
+                        for scope_value_attr, scope_key in scopes.items():
+                            if role.scope_key == scope_key:
+                                scope_value = getattr(self.instance, scope_value_attr)
+                                scope_value = scope_value if type(scope_value) == int else scope_value.pk
+                                if role.scope_value == scope_value:
+                                    return True
+                    else:
+                        return True
+        return False
 
 def meta(verbose_name=None, renderer=None, **metadata):
     def decorate(func):

@@ -54,6 +54,8 @@
   - Método has_get_{fieldset_name}_permission(user)
 - Restringir acesso a um determinado campo
   - Métodos get_{fieldset_name}() e has_get_{fieldset_name}_permission(user)
+- Ignorar campos baseado no papel do usuário
+  - Método ignore(*field_names, role=None, roles=())
 - Adicionar ações aos fieldsets
   - Método actions(*names) da classe ValueSet
 - Definir um título customizado

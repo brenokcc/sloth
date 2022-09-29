@@ -157,7 +157,6 @@ jQuery.fn.extend({
         $(this).find('.form').on('submit', function(e){
             var form = this;
             var method = form.method.toUpperCase();
-            $(form).find('.btn-submit').addClass('disabled').find('.spinner-border').removeClass('d-none');
             if(method=='GET'){
                 var data = $(form).serialize();
             } else {

@@ -196,7 +196,7 @@ class QuerySetStatistics(object):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.metadata['request'])
         else:
             return render_to_string('app/statistics.html', dict(data=serialized), request=self.metadata['request'])
 
@@ -255,3 +255,7 @@ class QuerySetStatistics(object):
         if self.cursor == len(colors()):
             self.cursor = 0
         return color
+
+    def has_permission(self):
+        return self.qs.has_permission()
+

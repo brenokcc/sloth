@@ -28,7 +28,7 @@
                                 {% for k, v in row.data.items %}
                                     {% if k != image_key %}
                                         <dt>{{ k }}</dt>
-                                        <dd>{% include "app/value.html" %}</dd>
+                                        <dd>{% include 'app/valueset/value.html' %}</dd>
                                     {% endif %}
                                 {% endfor %}
                             </dl>

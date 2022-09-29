@@ -1,3 +1,4 @@
+<div class="fieldset-group">
 <div class="fieldset-title">
     <h5>{{ item.name }}</h5>
 </div>
@@ -10,7 +11,7 @@
   {% for name, fieldset in item.data.items %}
       <li class="nav-item">
           <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page"
-             href="javascript:" onclick="reloadFieldsetGroup{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}{% if fieldset.type != 'fieldset-list' %}?title_class=d-none{% endif %}')">
+             href="javascript:" onclick="reloadFieldsetGroup{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">
               <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
               </div>
@@ -42,11 +43,12 @@
     {% if forloop.first %}
         {% if item.type == 'fieldset-list' %}
             {% for name, fieldset in item.data.items %}
-                {% include 'app/fieldset.html' with fieldset=fieldset %}
+                {% include 'app/valueset/fieldset.html' with data=fieldset %}
             {% endfor %}
         {% else %}
-            {% include 'app/fieldset.html' with fieldset=item title_class="d-none" %}
+            {% include 'app/valueset/fieldset.html' with data=item %}
         {% endif %}
     {% endif %}
 {% endfor %}
+</div>
 </div>

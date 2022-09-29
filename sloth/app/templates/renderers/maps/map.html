@@ -1,0 +1,50 @@
+<link rel="stylesheet" href="/static/css/leaflet.css"/>
+<div id='map' style="width:600; height:300"></div>
+<script>
+$.getScript( "/static/js/leaflet.js", function( data, textStatus, jqxhr ) {
+	var map = L.map('map', {minZoom: 7,maxZoom: 10});
+	map.createPane('labels');
+	// This pane is above markers but below popups
+	map.getPane('labels').style.zIndex = 650;
+	// Layers in this pane are non-interactive and do not obscure mouse/touch events
+	map.getPane('labels').style.pointerEvents = 'none';
+	var cartodbAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attribution">CARTO</a>';
+
+	var positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
+		attribution: cartodbAttribution
+	}).addTo(map);
+
+	var positronLabels = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png', {
+		attribution: cartodbAttribution,
+		pane: 'labels'
+	}).addTo(map);
+
+	var data = {"type":"FeatureCollection","features":[
+		{"type":"Feature","properties":{"name":"Acari - escrevendo aqui <br><b>Teste</b>: um tese mais longo"},"geometry": {"type":"Polygon","coordinates":[[[-36.6752824479, -6.2695704427], [-36.6721661976, -6.2748710057], [-36.6621971359, -6.2781206182], [-36.6544080838, -6.2718175581], [-36.6302770363, -6.2681148661], [-36.625658466, -6.2854823428], [-36.6151351174, -6.292907263], [-36.6042576558, -6.2899699655], [-36.595723618, -6.2878348922], [-36.592155387, -6.2965905174], [-36.5839051708, -6.300143773], [-36.5844180215, -6.3059773274], [-36.5641014276, -6.3124566042], [-36.5596074435, -6.3270377373], [-36.5544893832, -6.3304039133], [-36.5528973655, -6.3394789997], [-36.5476492661, -6.3439752057], [-36.5505221875, -6.3536185214], [-36.5505219847, -6.3614560301], [-36.545503695, -6.3634059823], [-36.5420902739, -6.3725037009], [-36.517493878, -6.3778133912], [-36.5040431445, -6.3860516598], [-36.5071574456, -6.3997173571], [-36.5306368773, -6.4516718256], [-36.5304905779, -6.4714315941], [-36.5278762804, -6.47888422], [-36.5511106803, -6.4836771942], [-36.5582875944, -6.4777807765], [-36.5675171729, -6.4776739147], [-36.5794420655, -6.4725083863], [-36.586730447, -6.4837613365], [-36.5942559171, -6.4850603334], [-36.6254644547, -6.5108609666], [-36.6228477358, -6.5163088827], [-36.630580889, -6.5259395242], [-36.64831519, -6.5385227905], [-36.6765053656, -6.5790910567], [-36.678640129, -6.5509384025], [-36.694725601, -6.5574924974], [-36.7031795341, -6.5377990367], [-36.7120720168, -6.5364866754], [-36.7218676654, -6.5289450031], [-36.7363996642, -6.5246291962], [-36.742532633, -6.516329436], [-36.7470867873, -6.5178143273], [-36.748820667, -6.5130175566], [-36.751344432, -6.5155675483], [-36.7577568943, -6.5125477772], [-36.7607739903, -6.5152706719], [-36.7653880194, -6.508387394], [-36.7728207942, -6.475105382], [-36.7729092142, -6.4730397082], [-36.7608918567, -6.4781465642], [-36.7463872296, -6.4144887854], [-36.7414165014, -6.37722443], [-36.7520934665, -6.353496117], [-36.7482487186, -6.3499243978], [-36.7480921131, -6.3411695459], [-36.7388147611, -6.3360244595], [-36.7532494459, -6.3207456003], [-36.7538170365, -6.3201446106], [-36.7392328254, -6.3026269349], [-36.7160586869, -6.3005984934], [-36.7092535993, -6.2765586942], [-36.7013197678, -6.2736474241], [-36.6982521047, -6.2764602804], [-36.6925484244, -6.2722079321], [-36.6892626008, -6.2741768473], [-36.68125826, -6.2694071238], [-36.6752824479, -6.2695704427]]]}}
+	]}
+	var geojson = L.geoJson(data).addTo(map);
+	geojson.eachLayer(function (layer) {
+		layer.bindPopup(layer.feature.properties.name);
+		layer.setStyle({
+		        weight: 1,
+		        color: 'pink',
+		        dashArray: 3,
+		        fillOpacity: 0.7
+		    });
+	});
+	map.setView({lat: -6.2695704427, lng: -36.6752824479}, 7);
+	//var marker = L.marker([-6.2695704427, -36.6752824479]).addTo(map);
+	//var popup = L.popup().setLatLng([-6.2695704427, -36.6752824479]).setContent("I am a standalone popup.").openOn(map);
+	//var popup = L.popup();
+	//function onMapClick(e) {popup.setLatLng(e.latlng).setContent("You clicked the map at " + e.latlng.toString()).openOn(map);}
+	//map.on('click', onMapClick);
+
+	//map.locate({setView: true, maxZoom: 7});
+	function onLocationFound(e) {
+	    var radius = e.accuracy;
+	    //L.marker(e.latlng).addTo(map).bindPopup("You are within " + radius + " meters from this point").openPopup();
+	    L.circle(e.latlng, radius).addTo(map);
+	}
+	//map.on('locationfound', onLocationFound);
+  });
+</script>

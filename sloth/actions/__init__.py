@@ -13,7 +13,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from . import inputs
 from django import forms
-from django.forms.models import ModelFormMetaclass
+from django.forms.models import ModelFormMetaclass, ModelMultipleChoiceField
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params, to_camel_case, to_snake_case
 from django.forms.fields import *
@@ -651,7 +651,7 @@ class Action(metaclass=ActionMetaclass):
             if not template.endswith('.html'):
                 template = '{}.html'.format(template)
             if not template.startswith('.html'):
-                template = 'renders/{}'.format(template)
+                template = 'renderers/{}'.format(template)
         return getattr(attr, '__verbose_name__', lookup), False, template, metadata
 
     def values(self, *names):

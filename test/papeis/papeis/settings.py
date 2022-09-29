@@ -193,5 +193,22 @@ SLOTH = {
 	'ICONS': ['fontawesome', 'materialicons']
 }
 
+_LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'sloth.utils.logging.SqlStreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'DEBUG',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+    }
+}
+
 #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 #CACHES = {'default': {'BACKEND': 'django_redis.cache.RedisCache', 'LOCATION': 'redis://127.0.0.1:6379/1', 'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'}}}

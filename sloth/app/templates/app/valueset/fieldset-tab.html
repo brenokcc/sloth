@@ -1,0 +1,3 @@
+{% for name, item in data.data.items %}
+    {% include 'app/valueset/fieldset.html' with data=item %}
+{% endfor %}

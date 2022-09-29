@@ -106,8 +106,7 @@ class Login(actions.Action):
         super().__init__(*args, **kwargs)
         if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
             self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
-        if not self.data.get('username') or not settings.SLOTH.get('2FA', False):
-            self.hide('auth_code')
+        self.hide('auth_code')
 
     def on_username_change(self, username):
         if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username, active=True).exists():
@@ -126,7 +125,7 @@ class Login(actions.Action):
                 )
                 if self.user is None:
                     raise actions.ValidationError('Login e senha não conferem.')
-            if self.user.authcode_set.filter(active=True).exists():
+            if self.user and self.user.authcode_set.filter(active=True).exists():
                 user_auth_code = self.user.authcode_set.values_list('secret', flat=True).first()
                 if settings.SLOTH.get('2FA', False) and not onetimepass.valid_totp(auth_code, user_auth_code):
                     raise actions.ValidationError('Código de autenticação inválido.')

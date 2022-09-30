@@ -28,16 +28,6 @@ SLOTH = {
 		'IMAGE': '/static/images/login.jpeg',
 		'USERNAME_MASK': None
 	},
-	'HEADER': {
-		'LOGO': '/static/images/logo.png',
-		'TITLE': None,
-		'TEXT': None,
-	},
-	'FOOTER': {
-		'TITLE': '© 2022 Sloth',
-		'TEXT': 'Todos os direitos reservados',
-		'LINKS': [],
-	},
 	'INCLUDE': {
 		'CSS': [],
 		'JS': [],

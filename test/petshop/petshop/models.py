@@ -171,7 +171,7 @@ class Animal(models.Model):
     def __str__(self):
         return self.nome
 
-    @meta('Situação', 'badge')
+    @meta('Situação', renderer='badges/status')
     def get_situacao(self):
         if self.get_tratamentos().filter(data_fim__isnull=True).exists():
             return 'warning', 'Em Tratamento'
@@ -239,7 +239,7 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
-    @meta('Etapas', 'steps')
+    @meta('Etapas', renderer='utils/steps')
     def get_etapas(self):
         etapas = []
         etapas.append(('Início', self.data_inicio))

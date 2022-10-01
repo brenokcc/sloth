@@ -156,16 +156,6 @@ SLOTH = {
 		'TEXT': None,
 		'IMAGE': None,
 	},
-	'HEADER': {
-		'LOGO': None,
-		'TITLE': 'PetShop',
-		'TEXT': None,
-	},
-	'FOOTER': {
-		'TITLE': '© 2022 Petshop',
-		'TEXT': 'Todos os direitos reservados',
-		'LINKS': [],
-	},
 	'INCLUDE': {
 		'CSS': [
             # '/static/themes/endless.css'

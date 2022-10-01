@@ -4,6 +4,8 @@ from .models import Animal, Cliente, Doenca, Tratamento
 class PetshopDashboard(Dashboard):
 
     def load(self, request):
+        self.header(title='Petshop', shadow=True)
+        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts(Animal, Cliente, Tratamento)
         self.cards(Animal, Cliente)
         self.navigation(Animal, Cliente)

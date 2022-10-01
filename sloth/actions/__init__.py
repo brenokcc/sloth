@@ -417,12 +417,11 @@ class Action(metaclass=ActionMetaclass):
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        checker = PermissionChecker(request, instance=instance, instantiator=instantiator,
-                                    metaclass=getattr(cls, 'Meta', None))
-        has_permission = cls.has_permission(checker, request.user)
-        if has_permission is None:
-            return cls.check_permission(checker, request.user)
-        return has_permission
+        if request:
+            checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
+            has_permission = cls.has_permission(checker, request.user)
+            return cls.check_permission(checker, request.user) if has_permission is None else has_permission
+        return True
 
     def __str__(self):
         return self.html()

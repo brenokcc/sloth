@@ -12,10 +12,12 @@ from sloth.utils import getattrr, serialize, pretty
 
 
 def check_fieldsets_type(item):
+    types = 'fieldset', 'fieldset-list', 'fieldset-group'
     for name, subitem in item.items():
-        if 'type' in subitem and subitem['type'] in ('fieldset', 'fieldset-list', 'fieldset-group'):
+        if 'type' in subitem and subitem['type'] in types:
             check_fieldsets_type(subitem['data'])
             subitem['type'] = check_fieldset_type(subitem)
+
 
 def check_fieldset_type(item):
     if is_fieldset_group(item['data']):
@@ -28,11 +30,14 @@ def check_fieldset_type(item):
     else:
         return 'fieldset'
 
+
 def is_fieldset_list(item):
+    types = 'fieldset', 'queryset', 'statistics'
     for name, subitem in item.items():
-        if 'type' in subitem and subitem['type'] in ('fieldset', 'queryset', 'statistics'):
+        if 'type' in subitem and subitem['type'] in types:
             return True
     return False
+
 
 def is_fieldset_group(item):
     for name, subitem in item.items():
@@ -43,11 +48,12 @@ def is_fieldset_group(item):
 
 class ValueSet(dict):
     def __init__(self, instance, names, image=None):
+        self.request = None
         self.instance = instance
         self.metadata = dict(
-            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None, refresh={},
-            attach=[], append=[], image=image, template=None, request=None, primitive=False, verbose_name=None,
-            title=None, subtitle=None, status=None, icon=None, only={}
+            model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
+            attach=[], append=[], image=image, template=None, primitive=False, verbose_name=None,
+            title=None, subtitle=None, status=None, icon=None, only={}, refresh={},
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -114,7 +120,7 @@ class ValueSet(dict):
         return self
 
     def contextualize(self, request):
-        self.metadata.update(request=request)
+        self.request = request
         return self
 
     def debug(self):
@@ -134,6 +140,29 @@ class ValueSet(dict):
                     return False
             return True
         return False
+
+    def refresh_data(self):
+        refresh = self.metadata['refresh']
+        if refresh:
+            if refresh['condition']:
+                deny = 'not ' in refresh['condition']
+                satisfied = getattr(value.instance, refresh['condition'].replace('not ', ''))
+                if callable(satisfied):
+                    satisfied = satisfied()
+                if deny and not satisfied or satisfied:  # condition was satisfied
+                    return dict(seconds=refresh['seconds'], retry=refresh['retry'])
+                else:
+                    return dict(seconds=refresh['seconds'], retry=0)
+            else:
+                return dict(seconds=refresh['seconds'], retry=refresh['retry'])
+        return {}
+
+    def get_path(self, attr_name):
+        if isinstance(self.instance, QuerySet):
+            metaclass = self.instance.model.metaclass()
+            return '/{}/{}/{}/'.format(metaclass.app_label,metaclass.model_name, attr_name)
+        metaclass = self.instance.metaclass()
+        return '/{}/{}/{}/{}/'.format(metaclass.app_label, metaclass.model_name,self.instance.pk, attr_name)
 
     def get_api_schema(self, recursive=False):
         schema = dict()
@@ -156,129 +185,92 @@ class ValueSet(dict):
 
     def load(self, wrap=True, verbose=False, detail=False, deep=0):
         only = []
-        is_meta_api = self.metadata['request'] and self.metadata['request'].path.startswith('/meta/')
-        if self.metadata['request'] and 'only' in self.metadata['request'].GET:
-            only.extend(self.metadata['request'].GET['only'].split(','))
-            self.metadata['request'].GET._mutable = True
-            self.metadata['request'].GET.pop('only')
-            self.metadata['request'].GET._mutable = False
+        is_meta_api = False
+        if self.request:
+            is_meta_api = self.request.path.startswith('/meta/')
+            if 'only' in self.request.GET:
+                only.extend(self.request.GET['only'].split(','))
+                self.request.GET._mutable = True
+                self.request.GET.pop('only')
+                self.request.GET._mutable = False
 
         if self.metadata['names']:
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if only and attr_name not in only:
                     continue
-                if self.metadata['request'] and not self.metadata['request'].user.is_superuser:
+                if self.request and not self.request.user.is_superuser:
                     if self.metadata['only'] and attr_name in self.metadata['only']:
-                        if not self.metadata['request'].user.roles.contains(*self.metadata['only'][attr_name]):
+                        if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
                             continue
-                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
-                    if isinstance(self.instance, QuerySet):
-                        path = '/{}/{}/{}/'.format(self.instance.model.metaclass().app_label, self.instance.model.metaclass().model_name, attr_name)
-                    elif isinstance(self.instance, Model):
-                        path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
-                    else:
-                        path = '/{}/{}/{}/{}/'.format(self.instance.metaclass().app_label, self.instance.metaclass().model_name, self.instance.pk, attr_name)
+                    path = self.get_path(attr_name)
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
-                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
-                        if not isinstance(value, QuerySet):  # ManyRelatedManager
-                            value = value.filter()
-                        value.metadata['uuid'] = attr_name
-                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
-                        value = value.contextualize(self.metadata['request'])
+                        qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
+                        qs.metadata['uuid'] = attr_name
+                        verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
+                        qs = qs.contextualize(self.request)
                         if wrap:
                             if self.metadata['primitive']:
-                                value = dict(value=serialize(value), width=width, template=None, type='primitive', path=path)
+                                data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
                             else:
-                                value = value.serialize(
-                                    path=path, wrap=wrap, verbose=verbose, lazy=lazy
-                                )
-                            value['name'] = verbose_name if verbose else attr_name
-                            value['key'] = attr_name
+                                data = qs.serialize(path=path, wrap=wrap, verbose=verbose, lazy=lazy)
+                            data.update(name=verbose_name if verbose else attr_name, key=attr_name)
                         else:
                             if self.metadata['primitive']:  # one-to-many or many-to-many
-                                value = dict(value=serialize(value), width=width, template=None, type='primitive', path=path)
+                                data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
                             else:
-                                value = value.to_list(detail=False)
+                                data = qs.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
-                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
-                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
-                        value.contextualize(self.metadata['request'])
-                        value = value.serialize(path=path, wrap=wrap, lazy=lazy)
-                        if wrap:
-                            value['name'] = verbose_name if verbose else attr_name
-                            value['key'] = attr_name
+                        statistics = value
+                        verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'] or pretty(attr_name))
+                        statistics.contextualize(self.request)
+                        data = statistics.serialize(path=path, wrap=wrap, lazy=lazy)
+                        data.update(name=verbose_name if verbose else attr_name, key=attr_name) if wrap else None
                     elif isinstance(value, ValueSet):
-                        # print(deep*' ', deep, i, attr_name, self.metadata['attr'], lazy)
-                        verbose_name = getattr(attr, '__verbose_name__', value.metadata['verbose_name'] or pretty(attr_name))
-                        value.contextualize(self.metadata['request'])
-                        actions = getattr(value, 'metadata')['actions']
-                        image_attr_name = getattr(value, 'metadata')['image']
-                        refresh = getattr(value, 'metadata')['refresh']
-                        template = getattr(value, 'metadata')['template']
+                        valueset = value
+                        verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'] or pretty(attr_name))
+                        valueset.contextualize(self.request)
                         key = attr_name
-                        value.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail, deep= 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1)
-                        if not value:
+                        inner_deep = 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1
+                        valueset.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail, deep=inner_deep)
+                        if not valueset:
                             continue
-                        if refresh:
-                            if refresh['condition']:
-                                deny = 'not ' in refresh['condition']
-                                satisfied = getattr(value.instance, refresh['condition'].replace('not ', ''))
-                                if callable(satisfied):
-                                    satisfied = satisfied()
-                                if deny and not satisfied or satisfied:  # condition was satisfied
-                                    refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
-                                else:
-                                    refresh_data = dict(seconds=refresh['seconds'], retry=0)
-                            else:
-                                refresh_data = dict(seconds=refresh['seconds'], retry=refresh['retry'])
-                        else:
-                            refresh_data = {}
-
-                        value = dict(
-                            uuid=uuid1().hex, type='fieldset',
-                            name=verbose_name if verbose else attr_name, key=key, refresh=refresh_data, actions=[], data=value, path=path
-                        ) if wrap else value
+                        refresh = valueset.refresh_data()
+                        data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name if verbose else attr_name,
+                            key=key, refresh=refresh, actions=[], data=valueset, path=path) if wrap else valueset
                         if wrap:
-                            for form_name in actions:
+                            for form_name in valueset.metadata['actions']:
                                 form_cls = self.instance.action_form_cls(form_name)
-                                if self.metadata['request'] is None or form_cls.check_fake_permission(
-                                        request=self.metadata['request'], instance=self.instance, instantiator=self.instance,
-                                ):
-                                    action = form_cls.get_metadata(path)
-                                    value['actions'].append(action)
-                            value['path'] = path
-                            if image_attr_name:
-                                image_attr = getattr(self.instance, image_attr_name)
+                                if form_cls.check_fake_permission(self.request, self.instance, self.instance):
+                                    valueset['actions'].append(form_cls.get_metadata(path))
+                            data.update(path=path)
+                            if valueset.metadata['image']:
+                                image_attr = getattr(self.instance, valueset.metadata['image'])
                                 image = image_attr() if callable(image_attr) else image_attr
                                 if image:
                                     image = str(image)
                                     if not image.startswith('/') and not image.startswith('http'):
                                         image = '/media/{}'.format(image)
-                                    value['image'] = image
-                            if template:
-                                value['template'] = '{}.html'.format(template)
+                                    data.update(image=image)
+                            if valueset.metadata['template']:
+                                data.update(template='{}.html'.format(valueset.metadata['template']))
                     else:
+                        data = value
                         verbose_name = None
                         self.metadata['primitive'] = True
                         if not wrap or is_meta_api:
-                            value = serialize(value)
-
+                            data = serialize(data)
                         if wrap and verbose or detail:
                             template = getattr(attr, '__template__', None)
                             metadata = getattr(attr, '__metadata__', None)
                             if template:
-                                if not template.endswith('.html'):
-                                    template = '{}.html'.format(template)
-                                if not template.startswith('.html'):
-                                    template = 'renderers/{}'.format(template)
-                            value = dict(value=value, width=width, template=template, metadata=metadata, type='primitive', path=path)
-
+                                template = 'renderers/{}.html'.format(template)
+                            data = dict(value=data, width=width, template=template, metadata=metadata, type='primitive', path=path)
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
-
-                    self[attr_name] = value
+                    self[attr_name] = data
         else:
             self['id'] = self.instance.id
             self[self.metadata['model'].__name__.lower()] = str(self.instance)
@@ -286,7 +278,7 @@ class ValueSet(dict):
         return self
 
     def __str__(self):
-        if self.metadata['request']:
+        if self.request:
             return self.html()
         return json.dumps(self, indent=4, ensure_ascii=False)
 
@@ -319,8 +311,8 @@ class ValueSet(dict):
             output.update(icon=icon, data=self, actions=[], attach=[], append={})
             for form_name in self.metadata['actions']:
                 form_cls = self.instance.action_form_cls(form_name)
-                if self.metadata['request'] is None or form_cls.check_fake_permission(
-                        request=self.metadata['request'], instance=self.instance, instantiator=self.instance,
+                if self.request is None or form_cls.check_fake_permission(
+                        request=self.request, instance=self.instance, instantiator=self.instance,
                 ):
                     path = '/{}/{}/{}/'.format(
                         self.instance.metaclass().app_label,
@@ -334,13 +326,13 @@ class ValueSet(dict):
                     self.instance.metaclass().model_name,
                     self.instance.pk, attr_name
                 )
-                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     output['attach'].append(dict(name=name, path=path))
             for attr_name in self.metadata['append']:
-                if self.metadata['request'] is None or self.instance.has_attr_permission(self.metadata['request'].user, attr_name):
+                if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     output['append'].update(
                         self.instance.values(attr_name).contextualize(
-                            self.metadata['request']
+                            self.request
                         ).load(wrap=wrap, verbose=verbose)
                     )
             return output
@@ -352,8 +344,8 @@ class ValueSet(dict):
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
         if self.metadata['attr']:
-            is_ajax = self.metadata['request'].headers.get('x-requested-with') == 'XMLHttpRequest'
-            is_modal = 'modal' in self.metadata['request'].GET
+            is_ajax = self.request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            is_modal = 'modal' in self.request.GET
             data = serialized['data'][next(iter(serialized['data']))]
             if data['type'] in ('fieldset-list', 'fieldset-group'):
                 data['name'] = serialized['name']
@@ -388,4 +380,4 @@ class ValueSet(dict):
         else:
             template_name, data = 'app/valueset/valueset.html', serialized
         # pprint.pprint(data)
-        return render_to_string(template_name, dict(data=data), request=self.metadata['request'])
+        return render_to_string(template_name, dict(data=data), request=self.request)

@@ -24,21 +24,22 @@ from sloth.utils import getattrr, serialize, pretty, to_api_params
 class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
+        self.request = None
         super().__init__(*args, **kwargs)
         self.reset()
 
     def reset(self):
         limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
-            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[], ordering=[],
-            page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False,
-            actions=[], attach=[], template=None, request=None, attr=None, source=None,
+            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[],
+            page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
+            actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
             global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
-            totalizer=None, calendar=None
         )
 
     def _clone(self):
         clone = super()._clone()
+        clone.request = self.request
         clone.metadata = dict(self.metadata)
         return clone
 
@@ -55,7 +56,7 @@ class QuerySet(models.QuerySet):
             return self
         else:
             for field_name, role_names in self.metadata['only'].items():
-                if not self.metadata['request'].user.roles.contains(*role_names):
+                if not self.request.user.roles.contains(*role_names):
                     self.ignore(field_name)
         if self.metadata['lookups']:
             lookups = []
@@ -189,8 +190,8 @@ class QuerySet(models.QuerySet):
             for i, name in enumerate(['all'] + self.metadata['attach']):
                 attr = getattr(self._clone(), name)
                 attach = attr()
-                if self.metadata['request'] and hasattr(attach, 'apply_role_lookups'):
-                    attach = attach.apply_role_lookups(self.metadata['request'].user)
+                if self.request and hasattr(attach, 'apply_role_lookups'):
+                    attach = attach.apply_role_lookups(self.request.user)
                 if hasattr(attr, '__verbose_name__'):
                     verbose_name = attr.__verbose_name__
                 else:
@@ -239,7 +240,7 @@ class QuerySet(models.QuerySet):
     def to_calendar(self):
         days = {}
         attr_name = self.metadata['calendar']
-        start = self.metadata['request'].GET.get('{}__gte'.format(attr_name))
+        start = self.request.GET.get('{}__gte'.format(attr_name))
         if start:
             start = datetime.datetime.strptime(start, '%d/%m/%Y').date()
         else:
@@ -279,7 +280,7 @@ class QuerySet(models.QuerySet):
         while last_day_of_next_month.month == first_day_of_next_month.month:
             last_day_of_next_month = last_day_of_next_month + datetime.timedelta(days=1)
         last_day_of_next_month = last_day_of_next_month - datetime.timedelta(days=1)
-        selected_date = self.metadata['request'].GET.get('selected-date')
+        selected_date = self.request.GET.get('selected-date')
         if  selected_date:
             selected_date = datetime.datetime.strptime(selected_date, '%d/%m/%Y').date()
         # print(first_day_of_month, last_day_of_month)
@@ -299,13 +300,13 @@ class QuerySet(models.QuerySet):
         for obj in self:
             add_id = not wrap and not verbose
             actions = self.get_obj_actions(obj)
-            if self.metadata['request']:
+            if self.request:
                 for view in self.metadata['view']:
                     if view['name'] == 'self':
-                        has_view_permission = obj.has_view_permission(self.metadata['request'].user)
+                        has_view_permission = obj.has_view_permission(self.request.user)
                     else:
-                        has_view_permission = obj.has_view_attr_permission(self.metadata['request'].user, view['name'])
-                    if has_view_permission or obj.has_permission(self.metadata['request'].user):
+                        has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
+                    if has_view_permission or obj.has_permission(self.request.user):
                         actions.append(view['name'])
             item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
@@ -337,8 +338,8 @@ class QuerySet(models.QuerySet):
             form_cls = self.model.action_form_cls(form_name)
             if form_cls is None:
                 raise BaseException('Action does not exist: {}'.format(form_name))
-            if self.metadata['request'] is None or form_cls.check_fake_permission(
-                    request=self.metadata['request'], instance=obj
+            if self.request is None or form_cls.check_fake_permission(
+                    request=self.request, instance=obj
             ):
                 actions.append(form_cls.__name__)
         return actions
@@ -384,14 +385,14 @@ class QuerySet(models.QuerySet):
                 data.update(attach=attach)
 
             # path where queryset is instantiated
-            if self.metadata['request']:
-                prefix = self.metadata['request'].path.split('/')[1]
+            if self.request:
+                prefix = self.request.path.split('/')[1]
                 if self.metadata['attr']:
                     # if it is a relationship of an object. Ex: /base/servidor/3/get_ferias/
-                    path = self.metadata['request'].path.replace('/{}'.format(prefix), '')
+                    path = self.request.path.replace('/{}'.format(prefix), '')
                 if path is None:
-                    if self.metadata['request']:
-                        data.update(path=self.metadata['request'].get_full_path().replace('/{}'.format(prefix), ''))
+                    if self.request:
+                        data.update(path=self.request.get_full_path().replace('/{}'.format(prefix), ''))
                 else:
                     data.update(path=path)
 
@@ -432,8 +433,8 @@ class QuerySet(models.QuerySet):
                 for action_type in ('global_actions', 'actions', 'batch_actions'):
                     for form_name in self.metadata[action_type]:
                         form_cls = self.model.action_form_cls(form_name)
-                        if action_type == 'actions' or self.metadata['request'] is None or form_cls.check_fake_permission(
-                                request=self.metadata['request'], instance=self.model(), instantiator=self._hints.get('instance')
+                        if action_type == 'actions' or self.request is None or form_cls.check_fake_permission(
+                                request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
                         ):
                             action = form_cls.get_metadata(
                                 path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
@@ -585,8 +586,8 @@ class QuerySet(models.QuerySet):
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
             qs = self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
 
-        if self.metadata['calendar'] and 'selected-date' in self.metadata['request'].GET:
-            selected_date = self.metadata['request'].GET['selected-date']
+        if self.metadata['calendar'] and 'selected-date' in self.request.GET:
+            selected_date = self.request.GET['selected-date']
             if selected_date:
                 lookups = {
                     '{}__gte'.format(self.metadata['calendar']): datetime.datetime.strptime(selected_date, '%d/%m/%Y').date(),
@@ -610,15 +611,15 @@ class QuerySet(models.QuerySet):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)
         return render_to_string(
             'app/queryset/queryset.html',
-            dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.metadata['request'])),
-            request=self.metadata['request']
+            dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.request)),
+            request=self.request
         )
 
     def __str__(self):
-        if self.metadata['request']:
+        if self.request:
             return self.html()
         return super().__str__()
 
@@ -626,7 +627,7 @@ class QuerySet(models.QuerySet):
 
     def contextualize(self, request):
         if request:
-            self.metadata.update(request=request)
+            self.request = request
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
                     self.choices(request)
@@ -708,7 +709,7 @@ class QuerySet(models.QuerySet):
     def count(self, x=None, y=None):
         if x:
             statistcs = QuerySetStatistics(self, x, y=y)
-            return statistcs.contextualize(self.metadata['request'])
+            return statistcs.contextualize(self.request)
         total = super().count()
         self.metadata['total'] = total
         return total
@@ -719,7 +720,7 @@ class QuerySet(models.QuerySet):
                 statistcs = QuerySetStatistics(self, x, y=y, func=Sum, z=z)
             else:
                 statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
-            return statistcs.contextualize(self.metadata['request'])
+            return statistcs.contextualize(self.request)
         return self.aggregate(sum=Sum(z))['sum'] or 0
 
     def has_attr_permission(self, user, name):

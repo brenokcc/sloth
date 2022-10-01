@@ -244,7 +244,7 @@ class ValueSet(dict):
                             for form_name in valueset.metadata['actions']:
                                 form_cls = self.instance.action_form_cls(form_name)
                                 if form_cls.check_fake_permission(self.request, self.instance, self.instance):
-                                    valueset['actions'].append(form_cls.get_metadata(path))
+                                    data['actions'].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:
                                 image_attr = getattr(self.instance, valueset.metadata['image'])

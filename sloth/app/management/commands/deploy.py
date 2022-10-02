@@ -61,9 +61,17 @@ class Command(BaseCommand):
                 nginx_file.write(nginx_conf)
             os.system('nginx -s reload')
         address = '0.0.0.0:{}'.format(port)
-        cmd = 'gunicorn -b {} {}.wsgi:application -w 1 -t 360 -u {} -p {}/gunicorn.pid --daemon'.format(
-            address, app, NGINX_USER, settings.BASE_DIR)
-        print(cmd)
+        if 1:
+            cmd = 'docker run --rm --name {} --memory="256m" --memory-swap="512m" --cpus="1.0" -p {}:80 -v {}:/app -w /app -d sloth-src gunicorn -b 0.0.0.0:80 {}.wsgi:application -w 1 -t 360'.format(
+                app, port, settings.BASE_DIR, app
+            )
+            print(cmd)
+            os.system(cmd)
+        else:
+            cmd = 'gunicorn -b {} {}.wsgi:application -w 1 -t 360 -u {} -p {}/gunicorn.pid --daemon'.format(
+                address, app, NGINX_USER, settings.BASE_DIR)
+            print(cmd)
+            sys.argv = cmd.split()
+            sys.exit(run())
+
         print('http://{}'.format(address))
-        sys.argv = cmd.split()
-        sys.exit(run())

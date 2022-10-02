@@ -12,10 +12,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         app = os.path.basename(settings.BASE_DIR)
-        with open('{}/gunicorn.pid'.format(settings.BASE_DIR)) as pid_file:
-            pid = int(pid_file.read())
-            print('Killing gunicorn process with PIP {}...'.format(pid))
-            os.kill(pid, signal.SIGKILL)
+        if 1:
+            cmd = 'docker stop {}'.format(app)
+            print(cmd)
+            os.system(cmd)
+        else:
+            with open('{}/gunicorn.pid'.format(settings.BASE_DIR)) as pid_file:
+                pid = int(pid_file.read())
+                print('Killing gunicorn process with PIP {}...'.format(pid))
+                os.kill(pid, signal.SIGKILL)
         if os.path.exists('/etc/nginx'):
             nginx_config_file = '/etc/nginx/conf.d/{}.conf'.format(app)
             print('Removing nignx config file {}...'.format(nginx_config_file))

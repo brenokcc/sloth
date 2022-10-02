@@ -1,16 +1,24 @@
 {% load tags %}
 {% if not request.GET.modal %}
-    <nav class="navbar navbar-expand" style="box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);">
+    {% if dashboard.extra.header.shadow %}
+      <style>
+        .navbar {box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);}
+      </style>
+    {% endif %}
+    <nav class="navbar navbar-expand">
       <div class="container-fluid">
         <a class="navbar-brand" href="/app/">
-          {% if settings.SLOTH.HEADER.LOGO %}
-            <img height="30" src="{{ settings.SLOTH.HEADER.LOGO }}">
+          {% if dashboard.extra.header.logo %}
+            <img height="30" src="{{ dashboard.extra.header.logo }}">
           {% endif %}
-          {% if settings.SLOTH.HEADER.TITLE %}
-            <span>{{ settings.SLOTH.HEADER.TITLE }}</span>
+          {% if dashboard.extra.header.title %}
+            <span>{{ dashboard.extra.header.title }}</span>
           {% endif %}
         </a>
-        {% if dashboard.data.actions %}
+        {% if dashboard.extra.header.text and not request|mobile %}
+          {{ dashboard.extra.header.text }}
+        {% endif %}
+
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav">
             {% for action in dashboard.data.actions %}
@@ -23,7 +31,7 @@
             {% endfor %}
           </ul>
         </div>
-        {% endif %}
+
         <div class="collapse navbar-collapse">
           {% include "app/dashboard/search.html" %}
           {% include "app/dashboard/tools.html" %}

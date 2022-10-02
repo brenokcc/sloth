@@ -25,7 +25,8 @@ class QuerySetStatistics(object):
         self._ydict = {}
         self._values_dict = None
         self.cursor = 0
-        self.metadata = dict(request=None, attr=None, source=None, template='', verbose_name=None)
+        self.request = None
+        self.metadata = dict(attr=None, source=None, template='', verbose_name=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
@@ -37,9 +38,8 @@ class QuerySetStatistics(object):
         return self
 
     def contextualize(self, request):
-        self.metadata.update(request=request)
-        if request:
-            self.qs = self.qs.apply_role_lookups(request.user)
+        self.request = request
+        self.qs = self.qs.apply_role_lookups(request.user) if request else self.qs
         return self
 
     def _calc(self):
@@ -196,14 +196,12 @@ class QuerySetStatistics(object):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.metadata['request'])
+            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)
         else:
-            return render_to_string('app/statistics.html', dict(data=serialized), request=self.metadata['request'])
+            return render_to_string('app/statistics.html', dict(data=serialized), request=self.request)
 
     def __str__(self):
-        if self.metadata['request']:
-            return self.html()
-        return super().__str__()
+        return self.html() if self.request else super().__str__()
 
     def normalize(self, series):
         if 'default' in series:

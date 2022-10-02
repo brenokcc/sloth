@@ -28,8 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 SITE_URL = 'http://localhost:8000'
-# CSRF_TRUSTED_ORIGINS = ['https://192168019.aplicativo.click']
-# SITE_URL = CSRF_TRUSTED_ORIGINS[0]
+CSRF_TRUSTED_ORIGINS = ['https://petshop.aplicativo.space', 'http://s1.localhost']
+SITE_URL = CSRF_TRUSTED_ORIGINS[0]
 
 
 # Application definition
@@ -155,16 +155,6 @@ SLOTH = {
 		'TITLE': None,
 		'TEXT': None,
 		'IMAGE': None,
-	},
-	'HEADER': {
-		'LOGO': None,
-		'TITLE': 'PetShop',
-		'TEXT': None,
-	},
-	'FOOTER': {
-		'TITLE': '© 2022 Petshop',
-		'TEXT': 'Todos os direitos reservados',
-		'LINKS': [],
 	},
 	'INCLUDE': {
 		'CSS': [

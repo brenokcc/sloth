@@ -10,16 +10,16 @@
         font-size: 75%;
     }
 </style>
-{% if settings.SLOTH.FOOTER.TITLE %}
+{% if dashboard.extra.footer.title %}
     <footer>
         <div class="footer-title">
-            {{ settings.SLOTH.FOOTER.TITLE }}
+            {{ dashboard.extra.footer.title }}
         </div>
-        {% if settings.SLOTH.FOOTER.TEXT %}
+        {% if dashboard.extra.footer.text %}
             <div class="footer-text">
-                <div>{{ settings.SLOTH.FOOTER.TEXT }}</div>
-                {% if settings.SLOTH.VERSION %}
-                    <div>Versão {{ settings.SLOTH.VERSION|stringformat:'s' }}</div>
+                <div>{{ dashboard.extra.footer.text }}</div>
+                {% if dashboard.extra.footer.version %}
+                    <div>Versão {{ dashboard.extra.footer.version|stringformat:'s' }}</div>
                 {% endif %}
             </div>
         {% endif %}

@@ -171,7 +171,7 @@ class Animal(models.Model):
     def __str__(self):
         return self.nome
 
-    @meta('Situação', 'badge')
+    @meta('Situação', renderer='badges/status')
     def get_situacao(self):
         if self.get_tratamentos().filter(data_fim__isnull=True).exists():
             return 'warning', 'Em Tratamento'
@@ -197,7 +197,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos').append('get_tratamentos_por_doenca')
+        return self.values('get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')
@@ -239,7 +239,7 @@ class Tratamento(models.Model):
     def __str__(self):
         return '{} - Tratamento de {} contra {}'.format(self.id, self.animal, self.doenca)
 
-    @meta('Etapas', 'steps')
+    @meta('Etapas', renderer='utils/steps')
     def get_etapas(self):
         etapas = []
         etapas.append(('Início', self.data_inicio))

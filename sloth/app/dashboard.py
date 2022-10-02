@@ -28,10 +28,17 @@ class Dashboard(metaclass=DashboardType):
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
         )
+        self.extra = {}
         self.defined_apps = {}
         self.enabled_apps = set()
         if self.request.user.is_authenticated:
             self.load(request)
+
+    def header(self, logo=None, title=None, text=None, shadow=True):
+        self.extra['header'] = dict(logo=logo, title=title, text=text, shadow=shadow)
+
+    def footer(self, title=None, text=None, version=None):
+        self.extra['footer'] = dict(title=title, text=text, version=version)
 
     def to_item(self, model, count=True):
         return
@@ -177,6 +184,7 @@ class Dashboards:
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
         )
+        self.extra = dict(header={}, footer={})
         self.apps = {}
         self.data['navigation'].append(
             dict(url='/app/', label='Principal', icon='house', app=None)
@@ -186,6 +194,8 @@ class Dashboards:
             for key in dashboard.data:
                 self.data[key].extend(dashboard.data[key])
             self.apps.update(dashboard.defined_apps)
+            if dashboard.extra:
+                self.extra.update(dashboard.extra)
 
         if self.request.user.is_superuser:
             self.superuser_search(self.data['search'])

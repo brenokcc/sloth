@@ -4,6 +4,8 @@ from .models import Animal, Cliente, Doenca, Tratamento
 class PetshopDashboard(Dashboard):
 
     def load(self, request):
+        self.header(title='Petshop', shadow=True)
+        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts(Animal, Cliente, Tratamento)
         self.cards(Animal, Cliente)
         self.navigation(Animal, Cliente)
@@ -11,5 +13,5 @@ class PetshopDashboard(Dashboard):
         self.settings(Animal, Cliente)
         self.append(Animal.objects.all().ignore('foto').accordion())
         self.append(Doenca.objects.contagiosas())
-        self.append(Doenca.objects.get_total_por_contagiosiade(), aside=True)
+        self.append(Doenca.objects.get_total_por_contagiosiade().verbose_name('Doenças por Contagiosidade'), aside=True)
         self.append(Animal.objects.get_qtd_por_tipo().verbose_name('Animais por Tipo').bar_chart(), aside=True)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 import time
 import datetime
 import traceback
@@ -10,8 +10,11 @@ from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import WebDriverException
 
 
+HEADLESS = os.environ.get('HEADLESS') in (None, '1')
+
+
 class Browser(webdriver.Firefox):
-    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=True):
+    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=HEADLESS):
 
         if not options:
             options = Options()

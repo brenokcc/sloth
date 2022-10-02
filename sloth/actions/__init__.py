@@ -2,6 +2,7 @@
 import math
 import re
 import traceback
+from decimal import Decimal
 from copy import deepcopy
 from functools import lru_cache
 from django.contrib import auth
@@ -416,12 +417,11 @@ class Action(metaclass=ActionMetaclass):
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        checker = PermissionChecker(request, instance=instance, instantiator=instantiator,
-                                    metaclass=getattr(cls, 'Meta', None))
-        has_permission = cls.has_permission(checker, request.user)
-        if has_permission is None:
-            return cls.check_permission(checker, request.user)
-        return has_permission
+        if request:
+            checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
+            has_permission = cls.has_permission(checker, request.user)
+            return cls.check_permission(checker, request.user) if has_permission is None else has_permission
+        return True
 
     def __str__(self):
         return self.html()
@@ -458,10 +458,10 @@ class Action(metaclass=ActionMetaclass):
                 classes.append('date-input')
 
             if isinstance(field, forms.DecimalField):
-                field.localize = True
-                field.widget.is_localized = True
                 field.widget.input_type = 'text'
                 field.widget.rmask = getattr(field.widget, 'rmask', '#.##0,00')
+                if name in self.initial and self.initial[name] is not None:
+                    self.initial[name] =  Decimal('%.2f' % self.initial[name])
 
             if isinstance(field, forms.ImageField):
                 classes.append('image-input')
@@ -542,6 +542,9 @@ class Action(metaclass=ActionMetaclass):
             self.on_change_data['set'].append(dict(name=k, value=value, text=text))
 
     def is_valid(self):
+        for field in self.fields.values():
+            if isinstance(field, forms.DecimalField):
+                field.clean = lambda value: value.replace('.', '').replace(',','.')
         self.load_fieldsets()
         if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(

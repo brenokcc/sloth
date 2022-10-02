@@ -106,7 +106,7 @@ class Municipio(models.Model):
     def __str__(self):
         return '{}/{}'.format(self.nome, self.estado)
 
-    @meta('Progresso', 'progress')
+    @meta('Progresso', renderer='utils/progress')
     def get_progresso(self):
         return 27
 
@@ -286,7 +286,7 @@ class Servidor(models.Model):
     def get_foto(self):
         return self.foto or '/static/images/profile.png'
 
-    @meta('Progresso', 'progress')
+    @meta('Progresso', renderer='utils/progress')
     def get_progresso(self):
         return 27
 

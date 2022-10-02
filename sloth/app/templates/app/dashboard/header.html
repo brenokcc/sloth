@@ -15,7 +15,7 @@
             <span>{{ dashboard.extra.header.title }}</span>
           {% endif %}
         </a>
-        {% if dashboard.extra.header.text %}
+        {% if dashboard.extra.header.text and not request|mobile %}
           {{ dashboard.extra.header.text }}
         {% endif %}
 

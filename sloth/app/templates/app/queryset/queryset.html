@@ -110,7 +110,7 @@
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 
-{% if data.metadata.pagination.total %}
+{% if data.metadata.pagination.total or data.metadata.calendar %}
 <div class="clearfix" id="pagination-info-{{ data.uuid }}">
     <div class="float-start">
         <div class="mt-3 mb-3" style="font-size: 80%">

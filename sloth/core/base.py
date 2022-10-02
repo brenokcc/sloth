@@ -210,6 +210,9 @@ class ModelMixin(object):
                 verbose_name = getattr(
                     form_cls.Meta, 'verbose_name', 'Cadastrar {}'.format(cls.metaclass().verbose_name)
                 )
+                icon = getattr(form_cls.Meta, 'icon', 'plus')
+                style = getattr(form_cls.Meta, 'style', 'success')
+                submit_label = getattr(form_cls.Meta, 'submit_label', 'Cadastrar')
 
             def has_permission(self, user):
                 return form_cls.has_permission(self, user) or self.instance.has_add_permission(user) or self.instance.has_permission(user)

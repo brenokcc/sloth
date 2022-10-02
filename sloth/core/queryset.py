@@ -49,7 +49,9 @@ class QuerySet(models.QuerySet):
         return self
 
     def has_permission(self, user):
-        return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
+        if user.is_authenticated:
+            return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
+        return False
 
     def apply_role_lookups(self, user):
         if user.is_superuser:
@@ -121,6 +123,8 @@ class QuerySet(models.QuerySet):
         filters = {}
         list_filter = self.get_list_filters()
         list_filter.extend(self.metadata['dfilters'])
+        if self.metadata['calendar']:
+            list_filter.append(self.metadata['calendar'])
         for lookup in list_filter:
             field = self.model.get_field(lookup)
             formfield = field.formfield()
@@ -682,7 +686,7 @@ class QuerySet(models.QuerySet):
                 if item['key'] == 'ordering':
                     qs = qs.order_by(value)
                 else:
-                    if item['type'] == 'date':
+                    if item['type'] in ('date', 'datetime'):
                         value = datetime.datetime.strptime(value, '%d/%m/%Y')
                     if item['type'] == 'boolean':
                         value = bool(int(value)) if value.isdigit() else value == 'true'

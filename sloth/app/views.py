@@ -101,7 +101,7 @@ def icons(request):
     if 'fontawesome' in settings.SLOTH.get('ICONS', ()):
         libraries['Font Awesome'] = fontawesome.ICONS
     return render(
-        request, ['app/icons.html'],
+        request, ['app/views/icons.html'],
         dict(settings=settings, libraries=libraries)
     )
 

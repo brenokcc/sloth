@@ -197,7 +197,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_proprietario', 'get_tratamentos').append('get_tratamentos_por_doenca')
+        return self.values('get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')

@@ -20,6 +20,18 @@ server {
 }
 '''
 
+NGINX_SSL_CONF = '''
+server {
+ listen 443 ssl;
+ server_name %s;
+ ssl_certificate %s;
+ ssl_certificate_key %s;
+ location /media { alias %s/media;}
+ location /static { alias %s/static;}
+ location / {proxy_pass http://127.0.0.1:%s;}
+}
+'''
+
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
@@ -39,7 +51,11 @@ class Command(BaseCommand):
         s.close()
         if os.path.exists('/etc/nginx'):
             server_name = ' '.join([url.split('//')[-1] for url in settings.CSRF_TRUSTED_ORIGINS])
-            nginx_conf = NGINX_CONF % (server_name, settings.BASE_DIR, settings.BASE_DIR, port)
+            if 'SSL' in settings.SLOTH:
+                cert, key = settings.SLOTH['SSL']
+                nginx_conf = NGINX_SSL_CONF % (server_name, cert, key, settings.BASE_DIR, settings.BASE_DIR, port)
+            else:
+                nginx_conf = NGINX_CONF % (server_name, settings.BASE_DIR, settings.BASE_DIR, port)
             print(nginx_conf)
             with open('/etc/nginx/conf.d/{}.conf'.format(app), 'w') as nginx_file:
                 nginx_file.write(nginx_conf)

@@ -167,4 +167,8 @@ SLOTH = {
 	},
     'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,
+    'SSL': (
+        '/etc/letsencrypt/live/aplicativo.space/fullchain.pem',
+        '/etc/letsencrypt/live/aplicativo.space/privkey.pem'
+    )
 }

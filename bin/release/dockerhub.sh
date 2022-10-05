@@ -1,5 +1,5 @@
 CURRENT_VERSION=$(cat setup.py | grep version | sed "s/',//" | sed "s/.*='//")
-DOCKERHUB_VERSION=$(curl -s https://hub.docker.com/v2/repositories/brenokcc/sloth/tags/ | grep -o $CURRENT_VERSION)
+DOCKERHUB_VERSION=$(curl -s https://hub.docker.com/v2/repositories/brenokcc/sloth/tags/?page_size=1 | grep -o $CURRENT_VERSION)
 echo "Current version: $CURRENT_VERSION"
 echo "Dockerhub version: $DOCKERHUB_VERSION"
 if [[ "$DOCKERHUB_VERSION" != "$CURRENT_VERSION" ]]; then

@@ -20,14 +20,14 @@ class Task(Thread):
 
     def iterate(self, iterable):
         self.total = len(iterable)
-        previous_progress = 0
+        previous = 0
         for obj in iterable:
             if self.task_id in TaskModel.STOPPED_TASKS:
                 break
             self.partial += 1
             progress = 100 if self.total in (0, 100) else int(self.partial/self.total*100)
-            if (previous_progress == 0 and progress) or (progress - previous_progress) > 5 or progress == 100:
-                previous_progress = progress
+            if (previous == 0 and progress) or (progress - previous) > 5 or self.partial % 1000 == 0 or progress == 100:
+                previous = progress
                 TaskModel.objects.filter(pk=self.task_id).update(progress=progress)
             yield obj
 

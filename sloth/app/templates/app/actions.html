@@ -30,7 +30,8 @@
                                href="/app{{ action.path }}"
                                data-url="/app{{ action.path }}"
                                data-id="{{ id }}"
-                               data-uuid="{{ uuid }}">
+                               data-uuid="{{ uuid }}"
+                               title="{{ action.submit }}">
                                 {{ action.icon|icontag }}
                                 {{ action.submit }}
                             </a>
@@ -49,6 +50,7 @@
                data-url="/app{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
+               title="{{ action.submit }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
                 &nbsp;{{ action.icon|icontag }}
                 {% if target != 'instance' or not action.icon %}{{ action.submit }}{% endif %}&nbsp;

@@ -146,7 +146,7 @@ class ValueSet(dict):
         if refresh:
             if refresh['condition']:
                 deny = 'not ' in refresh['condition']
-                satisfied = getattr(value.instance, refresh['condition'].replace('not ', ''))
+                satisfied = getattr(self.instance, refresh['condition'].replace('not ', ''))
                 if callable(satisfied):
                     satisfied = satisfied()
                 if deny and not satisfied or satisfied:  # condition was satisfied

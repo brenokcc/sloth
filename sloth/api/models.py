@@ -225,7 +225,7 @@ class Task(models.Model):
         else:
             return 'success', self.message or 'Concluída'
 
-    @meta('Progresso', 'progress')
+    @meta('Progresso', renderer='utils/progress')
     def get_progress(self):
         return self.progress
 

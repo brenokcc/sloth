@@ -53,6 +53,14 @@ class QuerySet(models.QuerySet):
             return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
         return False
 
+    def has_attr_permission(self, user, name):
+        if user.is_superuser:
+            return True
+        qs = self.model.objects.all()
+        if name == 'all' or name in qs.metadata['attach']:
+            return qs.has_permission(user)
+        return getattr(self, name)().has_permission(user)
+
     def apply_role_lookups(self, user):
         if user.is_superuser:
             return self
@@ -726,9 +734,6 @@ class QuerySet(models.QuerySet):
                 statistcs = QuerySetStatistics(self, x, func=Sum, z=z)
             return statistcs.contextualize(self.request)
         return self.aggregate(sum=Sum(z))['sum'] or 0
-
-    def has_attr_permission(self, user, name):
-        return user.is_superuser or getattr(self, name)().has_permission(user)
 
     # rendering template functions
 

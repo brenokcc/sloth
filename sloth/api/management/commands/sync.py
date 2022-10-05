@@ -3,6 +3,7 @@
 import os
 from django.conf import settings
 from django.utils import termcolors
+from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
@@ -27,3 +28,8 @@ class Command(BaseCommand):
         # if it is the production enverinoment, lets collect static files
         if os.path.exists(os.path.join(settings.BASE_DIR, 'logs')):
             print_and_call('collectstatic', clear=True, verbosity=0, interactive=False)
+
+        if 'DEFAULT_PASSWORD' in settings.SLOTH and not User.objects.exists():
+            password = settings.SLOTH['DEFAULT_PASSWORD']()
+            User.objects.create_superuser('admin', password=password)
+            print('Superuser "admin" with password "{}" was created.'.format(password))

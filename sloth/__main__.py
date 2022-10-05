@@ -2,6 +2,7 @@ import sys
 import os
 from sloth.conf import settings
 
+
 URLS_FILE_CONTENT = '''from django.urls import path, include
 
 urlpatterns = [
@@ -51,5 +52,6 @@ if __name__ == "__main__":
             dashboard_path = os.path.join(name, 'dashboard.py')
             with open(dashboard_path, 'w') as file:
                 file.write(DASHBOARD_FILE_CONTENT)
+            os.system('python manage.py sync')
     else:
         print('Usage: python -m <action>')

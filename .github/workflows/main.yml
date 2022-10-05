@@ -7,11 +7,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Docker
+      - name: Test
         run: |
           echo $GITHUB_WORKSPACE
           bin/test.sh

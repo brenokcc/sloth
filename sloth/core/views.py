@@ -50,7 +50,10 @@ def action(request, name):
 
 
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
-    model = apps.get_model(app_label, model_name)
+    try:
+        model = apps.get_model(app_label, model_name)
+    except LookupError:
+        raise PermissionDenied()
     if x:
         x = str(x)
         if x.isdigit():
@@ -251,7 +254,10 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                         return form
                     raise PermissionDenied()
     else:  # /base/estado/
-        qs = model.objects.all() if request.GET.get('subset', 'all') == 'all' else model.objects
-        if qs.has_permission(request.user):
-            return qs.contextualize(request).default_actions().collapsed(False).is_admin()
+        subset = request.GET.get('subset', 'all')
+        if model.objects.has_attr_permission(request.user, subset):
+            obj = getattr(model.objects, subset)().contextualize(request)
+            if hasattr(obj, 'model'):
+                obj = obj.default_actions().collapsed(False).is_admin()
+            return obj
         raise PermissionDenied()

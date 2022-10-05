@@ -39,6 +39,8 @@ class QuerySetStatistics(object):
 
     def contextualize(self, request):
         self.request = request
+        if self.qs.request is None:
+            self.qs.contextualize(request)
         self.qs = self.qs.apply_role_lookups(request.user) if request else self.qs
         return self
 
@@ -254,6 +256,6 @@ class QuerySetStatistics(object):
             self.cursor = 0
         return color
 
-    def has_permission(self):
-        return self.qs.has_permission()
+    def has_permission(self, user):
+        return self.qs.has_permission(user)
 

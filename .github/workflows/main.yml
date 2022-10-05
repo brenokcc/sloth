@@ -19,7 +19,7 @@ jobs:
         env:
           PIP_PASSWORD: ${{ secrets.PIP_PASSWORD }}
         run: |
-          echo bin/release/pypi.sh
+          bin/release/pypi.sh
       - name: DockerHub
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}

@@ -12,8 +12,8 @@ if [[ "$DOCKERHUB_VERSION" != "$CURRENT_VERSION" ]]; then
   PYPI_VERSION=$(pip install django-sloth==0.0.0 2>&1 >/dev/null | grep -o $CURRENT_VERSION)
   echo "PyPi version: $PYPI_VERSION"
   if [[ "$PYPI_VERSION" != "" ]]; then
-    docker build --target sloth -t brenokcc/sloth:$VERSION .
+    docker build --target sloth -t brenokcc/sloth:$CURRENT_VERSION .
     docker login -u brenokcc -p $DOCKERHUB_PASSWORD
-    docker push brenokcc/sloth:$VERSION
+    docker push brenokcc/sloth:$CURRENT_VERSION
   fi
 fi

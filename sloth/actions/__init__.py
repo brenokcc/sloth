@@ -413,11 +413,11 @@ class Action(metaclass=ActionMetaclass):
         return user.is_superuser
 
     def check_permission(self, user):
-        return self.has_permission(user)
+        return user.is_superuser or self.has_permission(user)
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        if request:
+        if request and not request.user.is_superuser:
             checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
             has_permission = cls.has_permission(checker, request.user)
             return cls.check_permission(checker, request.user) if has_permission is None else has_permission

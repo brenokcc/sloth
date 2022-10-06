@@ -318,7 +318,7 @@ class QuerySet(models.QuerySet):
                         has_view_permission = obj.has_view_permission(self.request.user)
                     else:
                         has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
-                    if has_view_permission or obj.has_permission(self.request.user):
+                    if self.request.user.is_superuser or has_view_permission or obj.has_permission(self.request.user):
                         actions.append(view['name'])
             item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)

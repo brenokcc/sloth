@@ -205,9 +205,6 @@ class Animal(models.Model):
     def has_view_permission(self, user):
         return self.proprietario.cpf == user.username
 
-    def has_list_permission(self, user):
-        return user.is_superuser or user.roles.contains('Cliente')
-
 
 class TratamentoManager(models.Manager):
 
@@ -275,9 +272,6 @@ class Tratamento(models.Model):
 
     def has_delete_permission(self, user):
         return self.has_edit_permission(user)
-
-    def has_list_permission(self, user):
-        return user.is_superuser or user.roles.contains('Funcionário')
 
 
 class ProcedimentoManager(models.Manager):

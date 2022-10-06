@@ -140,7 +140,7 @@ def add(value, n):
 
 @register.filter
 def has_view_permission(obj, user):
-    return obj.has_view_permission(user) or obj.has_permission(user)
+    return user.is_superuser or obj.has_view_permission(user) or obj.has_permission(user)
 
 
 @register.filter

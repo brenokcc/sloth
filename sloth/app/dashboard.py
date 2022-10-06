@@ -59,7 +59,7 @@ class Dashboard(metaclass=DashboardType):
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:
-                    if cls.objects.all().has_permission(self.request.user):
+                    if self.request.user.is_superuser or cls.objects.all().has_permission(self.request.user):
                         if key in allways or self.request.path == '/app/':
                             url = cls.get_list_url('/app')
                             for item in self.data[key]:

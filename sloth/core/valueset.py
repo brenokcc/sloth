@@ -129,8 +129,8 @@ class ValueSet(dict):
     def apply_role_lookups(self, user):
         return self
 
-    def has_permission(self):
-        return self.instance.has_permission()
+    def has_permission(self, user):
+        return user.is_superuser or self.instance.has_permission(user)
 
     def has_children(self):
         if type(self.instance):

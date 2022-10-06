@@ -86,7 +86,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 raise PermissionDenied()
                             elif hasattr(obj, w):  # /base/estado/1/get_cidades/1/get_dados_gerais/
                                 instance = qs.contextualize(request).first()
-                                if instance.has_view_attr_permission(request.user, w) or instance.has_permission(request.user):
+                                if request.user.is_superuser or instance.has_view_attr_permission(request.user, w) or instance.has_permission(request.user):
                                     return instance.display(w).contextualize(request)
                                 raise PermissionDenied()
                             else:  # /base/estado/1/get_cidades/1/alterar_nome/
@@ -100,7 +100,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                         else:  # /base/estado/1/get_cidades/1/
                             qs = attr()
                             instance = qs.contextualize(request).get(pk=z)
-                            if instance.has_view_permission(request.user) or instance.has_permission(request.user):
+                            if request.user.is_superuser or instance.has_view_permission(request.user) or instance.has_permission(request.user):
                                 return instance.view().contextualize(request)
                             raise PermissionDenied()
                             # form_cls = model.action_form_cls(z)
@@ -124,7 +124,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                     return form
                                 raise PermissionDenied()
                             else:
-                                if instance.has_view_permission(request.user) or instance.has_permission(request.user):
+                                if request.user.is_superuser or instance.has_view_permission(request.user) or instance.has_permission(request.user):
                                     return instance.display('self').contextualize(request)
                                 raise PermissionDenied()
                         else:  # base/servidor/3/get_ferias/CadastrarFerias/ or base/servidor/3/InformarEndereco/
@@ -179,7 +179,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 return output
                         raise PermissionDenied()
             else:
-                if obj.has_view_permission(request.user) or obj.has_permission(request.user):
+                if request.user.is_superuser or obj.has_view_permission(request.user) or obj.has_permission(request.user):
                     return obj.view().contextualize(request)
                 raise PermissionDenied()
         elif x.lower() == 'add':  # /base/estado/add/
@@ -199,7 +199,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             if z:  # /base/cidade/potiguares/1/get_dados_gerais/
                                 obj = attr().contextualize(request).get(pk=y)
                                 if hasattr(obj, z):
-                                    if obj.has_view_attr_permission(request.user, z) or obj.has_permission(request.user):
+                                    if request.user.is_superuser or obj.has_view_attr_permission(request.user, z) or obj.has_permission(request.user):
                                         return obj.display(z).contextualize(request)
                                     raise PermissionDenied()
                                 else:  # /base/cidade/potiguares/1/corrigir_nome/
@@ -215,7 +215,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                     raise PermissionDenied()
                             else:  # /base/cidade/potiguares/1/
                                 obj = model.objects.get(pk=y)
-                                if obj.has_view_permission(request.user) or obj.has_permission(request.user):
+                                if request.user.is_superuser or obj.has_view_permission(request.user) or obj.has_permission(request.user):
                                     return obj.view().contextualize(request)
                                 raise PermissionDenied()
                         else:  # /base/cidade/potiguares/notificar_populacao/

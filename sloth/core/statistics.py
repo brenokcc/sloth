@@ -257,5 +257,5 @@ class QuerySetStatistics(object):
         return color
 
     def has_permission(self, user):
-        return self.qs.has_permission(user)
+        return user.is_superuser or self.qs.has_permission(user)
 

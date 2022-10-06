@@ -71,9 +71,6 @@ class Estado(models.Model):
             'AdicionarMunicipioEstado'
         )
 
-    def has_list_permission(self, user):
-        return user.roles.contains('Chefe')
-
 
 class MunicipioManager(models.Manager):
 

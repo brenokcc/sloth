@@ -466,7 +466,7 @@ class Action(metaclass=ActionMetaclass):
             if isinstance(field, forms.ImageField):
                 classes.append('image-input')
 
-            if isinstance(field, forms.ModelChoiceField):
+            if isinstance(field, forms.ModelChoiceField) and isinstance(field.widget, Select):
                 initial = self.initial.get(name)
                 pks = []
                 if initial:

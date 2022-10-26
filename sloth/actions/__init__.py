@@ -110,7 +110,7 @@ class Action(metaclass=ActionMetaclass):
 
         for field_name in self.fields:
             field = self.fields[field_name]
-            if hasattr(field, 'queryset') and field.queryset.metadata['lookups']:
+            if False and hasattr(field, 'queryset') and field.queryset.metadata['lookups']: # TODO
                 field.queryset = field.queryset.apply_role_lookups(self.request.user)
                 if field.queryset.count() == 1:
                     field.initial = field.queryset.first().id

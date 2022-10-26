@@ -245,7 +245,7 @@ class Action(metaclass=ActionMetaclass):
                 required = i < one_to_many_field.min
                 self.fields[key] = forms.CharField(
                     label='{} {}'.format(one_to_many_field.queryset.model.metaclass().verbose_name, i + 1),
-                    required=required, initial=(pk or 'on') if required else pk, widget=fields.CheckboxInput()
+                    required=required, initial=(pk or 'on') if required else pk, widget=forms.CheckboxInput()
                 )
                 self.fields[key].widget.attrs['class'] = 'field-controller'
                 if required:

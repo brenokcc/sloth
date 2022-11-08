@@ -44,7 +44,7 @@ class Dashboard(metaclass=DashboardType):
         return
 
     def _load(self, key, items, app=None, count=False):
-        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools'
+        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search'
         for cls in items:
             add_item = True
             if app:

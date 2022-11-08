@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 from decimal import Decimal
 from django.apps import apps
@@ -48,8 +49,12 @@ class GenericValue(object):
                 self.value = int(value)
             elif value_type == 'Decimal':
                 self.value = Decimal(value)
+            elif value_type in ('date', 'datetime'):
+                self.value = datetime.datetime.strptime(value[0:10], '%Y-%m-%d')
             elif value_type == 'float':
                 self.value = float(value)
+            elif value_type == 'bool':
+                self.value = value == 'True'
             elif value_type == 'list':
                 self.value = json.loads(value)
         return self.value

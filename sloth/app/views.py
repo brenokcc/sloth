@@ -225,7 +225,7 @@ def action(request, name):
 
 @view
 def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
-    ctx = context(request, dashboard=dashboard.Dashboards(request))
+    ctx = context(request, True)
     data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w, k=k)
     if isinstance(data, Action):
         ctx.update(form=data)

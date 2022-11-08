@@ -3,8 +3,9 @@
 import json
 from decimal import Decimal
 from django.db.models.aggregates import Count
+from sloth.exceptions import HtmlJsonReadyResponseException
 from django.template.loader import render_to_string
-
+from uuid import uuid1
 from sloth.utils import pretty, colors
 
 
@@ -26,7 +27,7 @@ class QuerySetStatistics(object):
         self._values_dict = None
         self.cursor = 0
         self.request = None
-        self.metadata = dict(attr=None, source=None, template='', verbose_name=None)
+        self.metadata = dict(uuid='123456', attr=None, source=None, template='', verbose_name=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
@@ -42,6 +43,8 @@ class QuerySetStatistics(object):
         if self.qs.request is None:
             self.qs.contextualize(request)
         self.qs = self.qs.apply_role_lookups(request.user) if request else self.qs
+        if request and self.metadata['uuid'] == request.GET.get('uuid'):
+            self.process_request(request)
         return self
 
     def _calc(self):
@@ -172,19 +175,35 @@ class QuerySetStatistics(object):
                     data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
                 if data:
                     series['default'] = data
-
+        if self.request and path is None:
+            prefix = self.request.path.split('/')[1]
+            path = self.request.path.replace('/{}'.format(prefix), '')
         if wrap:
             return dict(
                 type='statistics',
+                uuid=self.metadata['uuid'],
                 name=verbose_name,
                 key=None,
                 path=path,
                 series=series,
                 template=self.metadata['template'],
-                normalized=self.normalize(series)
+                normalized=self.normalize(series),
+                # filters=self.qs.get_filters(verbose)
             )
         else:
             return series['default'] if 'default' in series else series
+
+    def process_request(self, request):
+        for item in self.qs.get_filters().values():
+            value = request.GET.get(item['key'])
+            if value:
+                if item['type'] in ('date', 'datetime'):
+                    value = datetime.datetime.strptime(value, '%d/%m/%Y')
+                if item['type'] == 'boolean':
+                    value = bool(int(value)) if value.isdigit() else value == 'true'
+                self.qs = self.qs.filter(**{item['key']: value})
+        raise HtmlJsonReadyResponseException(self.html())
+
 
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)

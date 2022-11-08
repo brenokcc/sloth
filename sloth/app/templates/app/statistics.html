@@ -1,4 +1,5 @@
 {% load tags %}
+<div id="statistics-{{ data.uuid }}">
 {% if uuid is None or request.GET.uuid is None %}
     <div class="card">
         <div class="card-body">
@@ -15,7 +16,43 @@
 {% if data.template %}
     {% include data.template with data=data %}
 {% else %}
-
+{% if 0 %}
+<div class="search-and-filters">
+    <form method="get" id="form-{{ data.uuid }}" action="/app{{ data.path }}">
+        <input type="hidden" name="uuid" value="{{ data.uuid }}">
+        <div class="filters" id="filters-{{ data.uuid }}">
+            {% for name, metadata in data.filters.items %}
+                {% include "app/queryset/filter.html" %}
+            {% endfor %}
+        </div>
+        <div class="filter">
+            <button type="button" class="btn btn-primary filter-button" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');reload{{ data.uuid }}(false)">
+                <div class="spinner-border spinner-border-sm d-none" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <i class="bi bi-funnel"></i>
+                Filtrar
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    function reload{{ data.uuid }}(attaches, subset){
+        $(document.body).addClass('page-loading');
+        var data = $('#form-{{ data.uuid }}').serialize();
+        $.ajax({
+            url:'/app{{ data.path }}',
+            data:data,
+            success:function( html ) {
+                $(document.body).removeClass('page-loading');
+                $('#statistics-{{ data.uuid }}').find('i').removeClass('d-none');
+                $('#statistics-{{ data.uuid }}').find('.spinner-border').addClass('d-none');
+                $('#statistics-{{ data.uuid }}').find('table').html($(html).find('table').html());
+            }
+        });
+    }
+</script>
+{% endif %}
 <table class="table" style="overflow-x:auto">
     {% if data.series.default %}
         <thead>
@@ -64,3 +101,4 @@
         </div>
     </div>
 {% endif %}
+</div>

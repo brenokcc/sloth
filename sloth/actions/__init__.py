@@ -349,6 +349,8 @@ class Action(metaclass=ActionMetaclass):
                     value=self.data.get(field_name)
                 )
             data.update(self.get_metadata())
+            if hasattr(self, 'get_verbose_name'):
+                data['name'] = hasattr(self, 'get_verbose_name')
             data.update(fields=form_fields, errors=self.errors)
             return data
         else:

@@ -173,7 +173,7 @@ class QuerySet(models.QuerySet):
             field = self.model.get_field(lookup)
             ordering.append(dict(id=lookup, text=field.verbose_name))
         if ordering:
-            key = 'ordenacao'
+            key = 'Ordenação' if verbose else 'ordenacao'
             filters[key] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
@@ -590,13 +590,13 @@ class QuerySet(models.QuerySet):
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            qs = self[start:end]
+            qs = self.order_by(*self.metadata['ordering'] or ['id'])[start:end]
         else:
             self.metadata['interval'] = '{} - {}'.format(0 + 1, self.metadata['limit'])
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            qs = self.filter(pk__in=self.values_list('pk', flat=True)[start:end])
+            qs = self.order_by(*self.metadata['ordering'] or ['id']).filter(pk__in=self.values_list('pk', flat=True)[start:end])
 
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']
@@ -708,7 +708,7 @@ class QuerySet(models.QuerySet):
                 qs.default_actions()
             qs = qs.page(page)
             # qs.debug()
-            return qs.order_by('id').distinct()
+            return qs.distinct()
         if isinstance(attach, ValueSet):
             attach.instance = qs
             return attach

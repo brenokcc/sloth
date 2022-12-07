@@ -189,6 +189,7 @@ class TaskManager(models.Manager):
 
 class Task(models.Model):
     STOPPED_TASKS = []
+    RUNNING_TASKS = {}
 
     user = models.ForeignKey(User, verbose_name='Usuário', on_delete=models.CASCADE)
 
@@ -196,6 +197,8 @@ class Task(models.Model):
     start = models.DateTimeField(verbose_name='Início', auto_now=True)
     end = models.DateTimeField(verbose_name='Fim', null=True)
 
+    total = models.IntegerField(verbose_name='Total', default=0)
+    partial = models.IntegerField(verbose_name='Parcial', default=0)
     progress = models.IntegerField(verbose_name='Progresso', default=0)
     message = models.CharField(verbose_name='Mensagem', null=True, max_length=255)
     stopped = models.BooleanField(verbose_name='Interrompida', default=False)
@@ -230,15 +233,17 @@ class Task(models.Model):
         return self.progress
 
     def get_info(self):
-        return self.values(
-            ('name', 'user'), ('start', 'end'), 'get_progress', 'get_message'
-        ).reload(seconds=5, condition='in_progress', max_requests=120).actions('StopTask')
+        return self.values(('name', 'user'))
+
+    @meta('Processamento')
+    def get_process(self):
+        return self.values(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=120).actions('StopTask')
 
     def in_progress(self):
         return self.end is None
 
     def view(self):
-        return self.values('get_info')
+        return self.values('get_info', 'get_process')
 
     def has_view_permission(self, user):
         return user.is_superuser or self.user == user

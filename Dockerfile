@@ -5,7 +5,7 @@ RUN pip install -q --no-cache-dir -r /requirements.txt
 
 FROM sloth-base as sloth-test
 RUN pip install -q --no-cache-dir selenium
-RUN apk add firefox-esr=91.13.0-r0
+RUN apk add firefox-esr=102.5.0-r1
 RUN wget -q https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux32.tar.gz
 RUN tar -xf geckodriver-v0.31.0-linux32.tar.gz
 RUN chmod +x geckodriver

@@ -20,21 +20,23 @@ class Task(Thread):
 
     def iterate(self, iterable):
         self.total = len(iterable)
+        TaskModel.objects.filter(pk=self.task_id).update(total=self.total)
         previous = 0
         for obj in iterable:
             if self.task_id in TaskModel.STOPPED_TASKS:
                 break
             self.partial += 1
+            TaskModel.RUNNING_TASKS[self.task_id] = self.partial
             progress = 100 if self.total in (0, 100) else int(self.partial/self.total*100)
             if (previous == 0 and progress) or (progress - previous) > 5 or self.partial % 1000 == 0 or progress == 100:
                 previous = progress
-                TaskModel.objects.filter(pk=self.task_id).update(progress=progress)
+                TaskModel.objects.filter(pk=self.task_id).update(progress=progress, partial=self.partial)
             yield obj
 
     def finalize(self, text):
-        TaskModel.objects.filter(pk=self.task_id).update(message=text, end=datetime.datetime.now())
+        TaskModel.objects.filter(pk=self.task_id).update(message=text, end=datetime.datetime.now(), partial=self.partial)
 
     def error(self, text, exception=None):
         if exception:
             traceback.print_exc()
-        TaskModel.objects.filter(pk=self.task_id).update(error=text, end=datetime.datetime.now())
+        TaskModel.objects.filter(pk=self.task_id).update(error=text, end=datetime.datetime.now(), partial=self.partial)

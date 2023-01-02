@@ -157,4 +157,23 @@ SLOTH = {
 	},
     'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,
+    'OAUTH_LOGIN': {
+        'SUAP': {
+            'TEXT': 'Acessar com SUAP',
+            'LOGO': None,
+            'REDIRECT_URI': 'http://localhost:9000/app/login/suap/',
+            'CLIENTE_ID': '5xa5vpWQ92rYLH276a2jNP75o7GIRS8CeTjeQBW8',
+            'CLIENT_SECRET': '163d08648a8cab32e49e2b8e471dfc0a',
+            'AUTHORIZE_URL': 'https://edu-demanda-1384.suapdevs.ifrn.edu.br/o/authorize/',
+            'ACCESS_TOKEN_URL': 'https://edu-demanda-1384.suapdevs.ifrn.edu.br/o/token/',
+            'USER_DATA_URL': 'https://edu-demanda-1384.suapdevs.ifrn.edu.br/api/eu/',
+            'SCOPE': 'identificacao',
+            'USER_DATA':{
+                'USERNAME': 'matricula',
+                'EMAIL': None,
+                'FIRST_NAME': None,
+                'LAST_NAME': None
+            }
+        }
+    },
 }

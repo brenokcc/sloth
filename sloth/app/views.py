@@ -138,9 +138,11 @@ def login(request):
 
 def oauth_login(request, provider_name):
     provider = settings.SLOTH['OAUTH_LOGIN'][provider_name.upper()]
-    authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}&scope={}'.format(
-        provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI'], provider.get('SCOPE', '')
+    authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
+        provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI']
     )
+    if provider.get('SCOPE'):
+        authorize_url = '{}&scope={}'.format(authorize_url, provider.get('SCOPE'))
     if 'code' in request.GET:
         access_token_request_data = dict(
             grant_type='authorization_code', code=request.GET.get('code'), redirect_uri=provider['REDIRECT_URI'],
@@ -154,21 +156,25 @@ def oauth_login(request, provider_name):
         }
 
         if provider.get('USER_DATA_METHOD', 'GET').upper() == 'POST':
-            data = json.loads(requests.post(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers).text)
+            response = requests.post(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers)
         else:
-            data = json.loads(requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers).text)
-        user = User.objects.filter(username=data[provider['USER_DATA']['USERNAME']]).first()
-        if user is None and provider.get('USER_AUTO_CREATE'):
-            user = User.objects.create(
-                username=data[provider['USER_DATA']['USERNAME']],
-                email=data[provider['USER_DATA']['EMAIL']] if provider['USER_DATA']['EMAIL'] else '',
-                first_name=data[provider['USER_DATA']['FIRST_NAME']] if provider['USER_DATA']['FIRST_NAME'] else '',
-                last_name=data[provider['USER_DATA']['LAST_NAME']] if provider['USER_DATA']['LAST_NAME'] else ''
-            )
-        if user:
-            auth.login(request, user)
+            response = requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers)
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            user = User.objects.filter(username=data[provider['USER_DATA']['USERNAME']]).first()
+            if user is None and provider.get('USER_AUTO_CREATE'):
+                user = User.objects.create(
+                    username=data[provider['USER_DATA']['USERNAME']],
+                    email=data[provider['USER_DATA']['EMAIL']] if provider['USER_DATA']['EMAIL'] else '',
+                    first_name=data[provider['USER_DATA']['FIRST_NAME']] if provider['USER_DATA']['FIRST_NAME'] else '',
+                    last_name=data[provider['USER_DATA']['LAST_NAME']] if provider['USER_DATA']['LAST_NAME'] else ''
+                )
+            if user:
+                auth.login(request, user)
+            else:
+                messages.warning(request, 'Usuário inexistente.')
         else:
-            messages.warning(request, 'Usuário inexistente.')
+            messages.warning(request, 'Acesso não autorizado.')
         return HttpResponseRedirect('/app/')
     else:
         return HttpResponse('<html><script>document.location.href="{}";</script></html>'.format(authorize_url))

@@ -23,6 +23,8 @@ class DashboardType(type):
 class Dashboard(metaclass=DashboardType):
 
     def __init__(self, request):
+        self.redirect_url = None
+        self.redirect_message = None
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
@@ -33,6 +35,10 @@ class Dashboard(metaclass=DashboardType):
         self.enabled_apps = set()
         if self.request.user.is_authenticated:
             self.load(request)
+
+    def redirect(self, url, message=None):
+        self.redirect_url = url
+        self.redirect_message = message
 
     def header(self, logo=None, title=None, text=None, shadow=True):
         self.extra['header'] = dict(logo=logo, title=title, text=text, shadow=shadow)
@@ -191,6 +197,8 @@ class Dashboards:
         )
         for cls in DASHBOARDS:
             dashboard = cls(request)
+            if dashboard.redirect_url:
+                raise ReadyResponseException(HttpResponseRedirect(dashboard.redirect_url))
             for key in dashboard.data:
                 self.data[key].extend(dashboard.data[key])
             self.apps.update(dashboard.defined_apps)

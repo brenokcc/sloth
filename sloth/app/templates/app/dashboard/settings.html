@@ -27,6 +27,7 @@
           </li>
       {% endfor %}
       {% endif %}
+      <!--
       {% with roles=request.user.roles.all %}
         {% if roles %}
           <li><hr class="dropdown-divider"></li>
@@ -45,7 +46,7 @@
             </a>
           </li>
         {% endif %}
-      {% endwith %}
+      {% endwith %}-->
       {% if request.user.is_superuser %}
         <li><hr class="dropdown-divider"></li>
         <li>

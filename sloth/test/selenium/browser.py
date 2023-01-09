@@ -31,6 +31,7 @@ class Browser(webdriver.Firefox):
         self.slowly = slowly
         self.watched = False
         self.server_url = server_url
+        self.headless = headless
 
         if maximize:
             self.maximize_window()
@@ -206,6 +207,17 @@ class Browser(webdriver.Firefox):
                 self.execute_script("check('{}')".format(text))
             else:
                 self.execute_script("check()")
+        except WebDriverException as e:
+            self.watch(e)
+        self.wait()
+
+    def check_radio(self, text=None):
+        self.print('Checking radio"{}"'.format(text))
+        try:
+            if text:
+                self.execute_script("checkRadio('{}')".format(text))
+            else:
+                self.execute_script("checkRadio()")
         except WebDriverException as e:
             self.watch(e)
         self.wait()

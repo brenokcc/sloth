@@ -15,7 +15,7 @@ models.signals.post_save.connect(user_post_save, sender=DjangoUser)
 class UserManager(models.Manager):
     def all(self):
         return self.display(
-            'username', 'is_superuser', 'get_roles_names'
+            'username', 'get_name', 'is_superuser', 'get_roles_names'
         ).actions('LoginAsUser').verbose_name('Usuários').attach(
             'active', 'inactive'
         )
@@ -50,6 +50,9 @@ class User(DjangoUser):
 
     def get_access_info(self):
         return self.values('is_superuser',).verbose_name('Dados de Acesso')
+
+    def get_name(self):
+        return '{} {}'.format(self.first_name or '', self.last_name or '')
 
     @meta('Papéis')
     def get_roles(self):

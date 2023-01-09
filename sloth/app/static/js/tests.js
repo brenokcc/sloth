@@ -44,7 +44,7 @@ function moveMouseTo(lookup, f) {
 }
 
 function recursively(element){
-    if(element.length==0 && cursor!=document) {
+    if(element.length==0 && (cursor||document)!=document) {
         if (cursor.parentNode != null) cursor = cursor.parentNode; else cursor = document;
         return true
     }
@@ -96,14 +96,14 @@ function click(name, type, index){
     var tab = type == 'tab';
     var icon = type == 'icon';
     if(icon){
-        element = $(cursor).find('.bi-'+name+':visible').parent();
+        element = $(cursor||document).find('.bi-'+name+':visible').parent();
     }
     else if(tab){
         element = $(document).find('a.nav-link').filter(function() {return $(this).find('.nav-link-text').text().trim() == name;}).first();
     } else {
-        if (element.length == 0 && (link || button)) element = $(cursor).find("button:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
-        if (element.length == 0 && (link || button)) element = $(cursor).find("a:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
-        if (element.length == 0 && (link || button)) element = $(cursor).find("a[name='" + name + "']").first();
+        if (element.length == 0 && (link || button)) element = $(cursor||document).find("button:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
+        if (element.length == 0 && (link || button)) element = $(cursor||document).find("a:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
+        if (element.length == 0 && (link || button)) element = $(cursor||document).find("a[name='" + name + "']").first();
     }
 
     if(recursively(element)){
@@ -156,16 +156,17 @@ function lookAtPopupWindow(){
 
 function lookAt(text, only_panel){
     if(only_panel==true){
-        var element = $(cursor).find(".panel-heading:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("h1:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("h2:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("h3:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("h4:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("h5:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        var element = $(cursor||document).find(".panel-heading:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("h1:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("h2:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("h3:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("h4:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("h5:visible").filter(function() {return $(this).text().trim() === text;}).first();
     } else {
-        var element = $(cursor).find("tr:visible").filter(function() {return $(this).text().trim() === text;});
-        if (element.length == 0) element = $(cursor).find("p:visible").filter(function() {return $(this).text().trim() === text;}).first();
-        if (element.length == 0) element = $(cursor).find("div:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        var element = $(cursor||document).find("tr:visible").filter(function() {return $(this).text().trim() === text;});
+        if (element.length == 0) element = $(cursor||document).find("p:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("div:visible").filter(function() {return $(this).text().trim() === text;}).first();
+        if (element.length == 0) element = $(cursor||document).find("label:visible").filter(function() {return $(this).text().trim() === text;}).first();
     }
     if(recursively(element)){
         lookAt(text, only_panel);
@@ -182,8 +183,8 @@ function lookAtPanel(text){
 
 function enter(name, value, submit){
     if(String(value)!='null' && String(value)){
-        var element = $(cursor).find( "input[name='"+name+"'], textarea[name='"+name+"']" ).not("input[type='checkbox']").not("input[type='hidden']").first();
-        if (!element[0]) element = $(cursor).find( "label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('input, textarea').not("input[type='checkbox']").first();
+        var element = $(cursor||document).find( "input[name='"+name+"'], textarea[name='"+name+"']" ).not("input[type='checkbox']").not("input[type='hidden']").first();
+        if (!element[0]) element = $(cursor||document).find( "label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('input, textarea').not("input[type='checkbox']").first();
         $('input[name=hidden-upload-value]').remove();
         if(element.prop("type")=='file'){
             $('<input type="hidden" name="hidden-upload-value" value="'+element[0].id+':'+value+'">').appendTo(document.body);
@@ -213,9 +214,12 @@ function enter(name, value, submit){
     }
 }
 
-function check(name){
+function check(name, radio){
     lookAt(name);
-    var element = $(cursor).find('input[type=checkbox]');
+    if (radio) tipo = 'radio';
+    else tipo = 'checkbox';
+    var element = $(cursor||document).find('input[type='+tipo+']');
+    console.log(element);
     if(recursively(element)){
         return check();
     } else {
@@ -223,11 +227,15 @@ function check(name){
     }
 }
 
+function checkRadio(name){
+    return check(name, true)
+}
+
 function choose(name, value, headless){
     if(!value) return;
 
-    var element = $(cursor).find( "select[name='"+name+"']" );
-    if (!element[0]) element = $(cursor).find( "label:contains('"+name+"')" ).parent().find('select');
+    var element = $(cursor||document).find( "select[name='"+name+"']" );
+    if (!element[0]) element = $(cursor||document).find( "label:contains('"+name+"')" ).parent().find('select');
 
     if(recursively(element)){
         return choose(name, value, headless);

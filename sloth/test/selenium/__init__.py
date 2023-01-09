@@ -72,6 +72,9 @@ class SeleniumTestCase(LiveServerTestCase):
     def check(self, name=None):
         self.browser.check(name)
 
+    def check_radio(self, name=None):
+        self.browser.check_radio(name)
+
     def dont_see_error_message(self):
         self.browser.dont_see_error_message(self)
 

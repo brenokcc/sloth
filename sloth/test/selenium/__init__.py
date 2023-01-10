@@ -2,23 +2,15 @@
 import os
 import json
 import warnings
+from django.apps import apps
+from django.db import connection
 from django.conf import settings
 from django.core.management import call_command
 from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.contrib.auth.models import User
 from sloth.test.selenium.browser import Browser
-
-
-CACHE = dict(
-    SEQUENCE=0,
-    STEP=None,
-    CONTINUE=None,
-    RESUME=None,
-    RECORD=None,
-    HEADLESS=None,
-    PAUSE=False
-)
+from subprocess import DEVNULL, check_call
 
 
 class TestStaticFilesHandler(StaticFilesHandler):
@@ -127,57 +119,19 @@ class SeleniumTestCase(LiveServerTestCase):
         cls.browser.service.stop()
         # len(self._resultForDoCleanups.errors)>0
 
-    def dump(self, step):
-        file_path = '/tmp/{}.test'.format(settings.PROJECT_NAME)
-        dump_file_path = '/tmp/{}_{}.json'.format(settings.PROJECT_NAME, step)
-        data = dict(step=step)
-        open(file_path, 'w').write(json.dumps(data))
-        output = open(dump_file_path, 'w')
-        app_labels = []
-        for app in settings.INSTALLED_APPS:
-            app_label = app.split('.')[-1]
-            if app_label not in 'auth':
-                app_labels.append(app_label)
-        User.objects.update(permission_mapping=None)
-        call_command('dumpdata', *app_labels, format='json', indent=3, stdout=output, skip_checks=True, verbosity=0)
-        output.close()
+    def save(self, name='state'):
+        dbname = settings.DATABASES['default']['NAME']
+        cmd = 'pg_dump -U postgres -d {} --inserts --data-only --no-owner --file={}.sql'.format(dbname, name)
+        check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
-    def restore(self, step):
-        dump_file_path = '/tmp/{}_{}.json'.format(settings.PROJECT_NAME, step)
-        call_command('loaddata', dump_file_path)
+    def resume(self, name='state'):
+        dbname = settings.DATABASES['default']['NAME']
+        cursor = connection.cursor()
+        tables = [m._meta.db_table for c in apps.get_app_configs() for m in c.get_models()]
+        for table in tables:
+            cursor.execute('truncate table {} cascade;'.format(table))
+        cmd = 'psql -U postgres -d {} --file={}.sql'.format(dbname, name)
+        check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
-    def execute_flow(self):
-        flow = []
-
-        for attr_name in dir(self):
-            if not attr_name.startswith('_'):
-                attr = getattr(self, attr_name)
-                if hasattr(attr, '_sequence'):
-                    flow.append(attr)
-
-        if CACHE['STEP'] or CACHE['RESUME'] or CACHE['CONTINUE']:
-            execute = False
-        else:
-            execute = True
-        flow.sort(key=lambda x: x._sequence)
-        for i, testcase in enumerate(flow):
-            if execute:
-                testcase()
-            elif CACHE['RESUME']:
-                if CACHE['RESUME'] == testcase._funcname:
-                    self.restore(CACHE['RESUME'])
-                    execute = True
-            elif CACHE['STEP']:
-                if CACHE['STEP'] == testcase._funcname:
-                    if i > 0:
-                        self.restore(flow[i - 1]._funcname)
-                    testcase()
-            elif CACHE['CONTINUE']:
-                if CACHE['CONTINUE'] == testcase._funcname:
-                    if i > 0:
-                        self.restore(flow[i - 1]._funcname)
-                    testcase()
-                    execute = True
-
-        if CACHE['PAUSE'] and not CACHE['HEADLESS']:
-            input('Type enter to continue...')
+    def loaddata(self, fixture_path):
+        call_command('loaddata', '--skip-checks', fixture_path)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import sys
 import datetime
 import traceback
 from selenium import webdriver
@@ -22,7 +23,7 @@ class Browser(webdriver.Firefox):
             options.add_argument("--start-maximized")
         else:
             options.add_argument("--window-size=720x800")
-        if headless:
+        if headless and '-v' not in sys.argv:
             options.add_argument("--headless")
 
         super().__init__(options=options)

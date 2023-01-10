@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import sys
 import datetime
 import traceback
 from selenium import webdriver
@@ -22,14 +23,13 @@ class Browser(webdriver.Firefox):
             options.add_argument("--start-maximized")
         else:
             options.add_argument("--window-size=720x800")
-        if headless:
+        if headless and '-v' not in sys.argv:
             options.add_argument("--headless")
 
         super().__init__(options=options)
 
         self.verbose = verbose
         self.slowly = slowly
-        self.watched = False
         self.server_url = server_url
         self.headless = headless
 
@@ -50,12 +50,8 @@ class Browser(webdriver.Firefox):
         time.sleep(seconds)
 
     def watch(self, e):
-        if self.watched:
-            raise e
-        else:
-            traceback.print_exc()
-            self.watched = True
-            self.save_screenshot('/tmp/test.png')
+        self.save_screenshot('/tmp/test.png')
+        raise e
 
     def print(self, message):
         if self.verbose:
@@ -112,6 +108,7 @@ class Browser(webdriver.Firefox):
             headless = 'false'
             self.execute_script("choose('{}', '{}', {})".format(name, value, headless))
             self.wait(2)
+            self.execute_script("validateChooseVal('{}', '{}')".format(name, value))
         except WebDriverException as e:
             if count:
                 self.wait()
@@ -136,7 +133,7 @@ class Browser(webdriver.Firefox):
             self.print('See "{}"'.format(text))
             try:
                 assert text in self.find_element(By.TAG_NAME, 'body').text
-            except WebDriverException as e:
+            except AssertionError as e:
                 if count:
                     self.wait()
                     self.see(text, flag, count - 1)
@@ -146,7 +143,17 @@ class Browser(webdriver.Firefox):
                 self.wait(2)
         else:
             self.print('Can\'t see "{}"'.format(text))
-            assert text not in self.find_element(By.TAG_NAME, 'body').text
+            try:
+                assert text not in self.find_element(By.TAG_NAME, 'body').text
+            except AssertionError as e:
+                if count:
+                    self.wait()
+                    self.see(text, flag, count - 1)
+                else:
+                    self.watch(e)
+            if self.slowly:
+                self.wait(2)
+
 
     def see_message(self, text, count=2):
         self.print('See message {}'.format(text))
@@ -200,7 +207,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def check(self, text=None):
+    def check(self, text=None, count=2):
         self.print('Checking "{}"'.format(text))
         try:
             if text:
@@ -208,10 +215,14 @@ class Browser(webdriver.Firefox):
             else:
                 self.execute_script("check()")
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.check(text=text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
-    def check_radio(self, text=None):
+    def check_radio(self, text=None, count=2):
         self.print('Checking radio"{}"'.format(text))
         try:
             if text:
@@ -219,49 +230,73 @@ class Browser(webdriver.Firefox):
             else:
                 self.execute_script("checkRadio()")
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.check_radio(text=text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
-    def click_menu(self, *texts):
+    def click_menu(self, *texts, count=2):
         self.print('Clicking menu "{}"'.format('->'.join(texts)))
         for text in texts:
             try:
                 self.execute_script("clickMenu('{}')".format(text.strip()))
             except WebDriverException as e:
-                self.watch(e)
+                if count:
+                    self.wait()
+                    self.click_menu(*texts, count=count - 1)
+                else:
+                    self.watch(e)
         self.wait()
 
-    def click_link(self, text):
+    def click_link(self, text, count=2):
         self.print('Clicking link "{}"'.format(text))
         try:
             self.execute_script("clickLink('{}')".format(text))
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.click_link(text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
-    def click_button(self, text):
+    def click_button(self, text, count=2):
         self.print('Clicking button "{}"'.format(text))
         try:
             self.execute_script("clickButton('{}')".format(text))
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.click_button(text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
         self.dont_see_error_message()
 
-    def click_tab(self, text):
+    def click_tab(self, text, count=2):
         self.print('Clicking tab "{}"'.format(text))
         try:
             self.execute_script("clickTab('{}')".format(text))
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.click_tab(text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
-    def click_icon(self, name):
+    def click_icon(self, name, count=2):
         self.print('Clicking icon "{}"'.format(name))
         try:
             self.execute_script("clickIcon('{}')".format(name))
         except WebDriverException as e:
-            self.watch(e)
+            if count:
+                self.wait()
+                self.click_icon(name, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
     def logout(self):

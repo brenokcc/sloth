@@ -34,6 +34,7 @@ class SeleniumTestCase(LiveServerTestCase):
         super().setUpClass()
         cls.browser = Browser(cls.live_server_url)
         cls.browser.slowly = False
+        cls.browser.open('/')
         for app_label in settings.INSTALLED_APPS:
             app_module = __import__(app_label)
             app_dir = os.path.dirname(app_module.__file__)
@@ -44,7 +45,6 @@ class SeleniumTestCase(LiveServerTestCase):
     def create_superuser(self, username, password):
         if not User.objects.filter(username=username).exists():
             User.objects.create_superuser(username, None, password)
-        self.wait(1)
 
     def wait(self, seconds=1):
         self.browser.wait(seconds)
@@ -116,6 +116,7 @@ class SeleniumTestCase(LiveServerTestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         cls.browser.close()
+        cls.browser.quit()
         cls.browser.service.stop()
         # len(self._resultForDoCleanups.errors)>0
 

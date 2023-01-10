@@ -108,7 +108,7 @@ function click(name, type, index){
 
     if(recursively(element)){
         return click(name, type);
-    } else {
+    } else if(element.length>0){
         if (window['display_fake_mouse']) {
             function afterScrool() {
                 function afterMoveMouse(){
@@ -117,16 +117,17 @@ function click(name, type, index){
                 }
                 moveMouseTo(element[index], afterMoveMouse);
             }
-            scroolToElement(element, afterScrool);
+            return scroolToElement(element, afterScrool);
         } else {
             function afterScrool() {
                 $("#fake-cursor").hide();
                 $(element[index]).trigger('mouseover');
                 element[index].click();
             }
-            scroolToElement(element, afterScrool);
+            return scroolToElement(element, afterScrool);
         }
     }
+    throw Error('Not found.')
 }
 
 function clickMenu(name){
@@ -152,6 +153,7 @@ function clickIcon(name, index){
 
 function lookAtPopupWindow(){
     cursor = $('#modal')[0]
+    return cursor;
 }
 
 function lookAt(text, only_panel){
@@ -170,11 +172,11 @@ function lookAt(text, only_panel){
     }
     if(recursively(element)){
         lookAt(text, only_panel);
-    }
-    else{
-        console.log(element[0]);
+    } else if(element.length>0){
         cursor = element[0];
+        return element[0];
     }
+    throw Error('Not found.')
 }
 
 function lookAtPanel(text){
@@ -193,7 +195,7 @@ function enter(name, value, submit){
 
         if(recursively(element)){
             return enter(name, value, submit);
-        } else {
+        } else if(element.length>0) {
             function afterScrool() {
                 element.focus();
                 if (window['display_fake_mouse']) {
@@ -208,9 +210,9 @@ function enter(name, value, submit){
                 element.focus();
                 if (submit) typeReturn(element);
             }
-            scroolToElement(element, afterScrool);
-            return element;
+            return scroolToElement(element, afterScrool);
         }
+        throw Error('Not found.')
     }
 }
 
@@ -219,27 +221,41 @@ function check(name, radio){
     if (radio) tipo = 'radio';
     else tipo = 'checkbox';
     var element = $(cursor||document).find('input[type='+tipo+']');
-    console.log(element);
     if(recursively(element)){
-        return check();
-    } else {
+        return check(name, radio);
+    } else if(element.length>0){
         element.trigger('click');
+        return element;
     }
+    throw Error('Not found.')
 }
 
 function checkRadio(name){
     return check(name, true)
 }
 
+function validateChooseVal(name, value){
+    var element = $(cursor||document).find( "select[name='"+name+"']" );
+    if (!element[0]) element = $(cursor||document).find( "label:contains('"+name+"')" ).parent().find('select');
+    if(recursively(element)){
+        return choose(name, value, headless);
+    } else {
+        if(element.find("option:contains(" + value + ")").length>0){
+            return true
+        }
+    }
+    throw Error('Not found.')
+}
+
 function choose(name, value, headless){
     if(!value) return;
 
     var element = $(cursor||document).find( "select[name='"+name+"']" );
-    if (!element[0]) element = $(cursor||document).find( "label:contains('"+name+"')" ).parent().find('select');
+    if (!element[0]) element = $(cursor||document).find("label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('select');
 
     if(recursively(element)){
         return choose(name, value, headless);
-    } else {
+    } else if(element.length>0) {
         if(headless){
             $(element).val(element.find("option:contains(" + value + ")").val());
         } else {
@@ -257,12 +273,14 @@ function choose(name, value, headless){
         }
         return element.parent()[0]
     }
+    throw Error('Not found.')
 }
 
 function seeMessage(text){
     var message = $('.alert-success').first();
     if(message.text().trim().indexOf(text)>0){
         message.click();
+        return message;
     } else {
         throw Error('Message not found.')
     }

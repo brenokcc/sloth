@@ -596,7 +596,7 @@ class QuerySet(models.QuerySet):
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
             self.metadata['interval'] = '{} - {}'.format(start + 1, end)
-            qs = self.order_by(*self.metadata['ordering'] or ['id']).filter(pk__in=self.values_list('pk', flat=True)[start:end])
+            qs = self.filter(pk__in=self.values_list('pk', flat=True).order_by(*self.metadata['ordering'] or ['id'])[start:end])
 
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']

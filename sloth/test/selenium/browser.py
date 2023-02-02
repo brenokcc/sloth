@@ -74,7 +74,7 @@ class Browser(webdriver.Firefox):
         if not self.current_url or not self.current_url.endswith('/app/'):
             self.open('/app/')
 
-    def enter(self, name, value, submit=False, count=2):
+    def enter(self, name, value, submit=False, count=4):
 
         if callable(value):
             value = value()
@@ -102,7 +102,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def choose(self, name, value, count=2):
+    def choose(self, name, value, count=4):
         self.print('{} "{}" for "{}"'.format('Choosing', value, name))
         try:
             headless = 'false'
@@ -128,7 +128,7 @@ class Browser(webdriver.Firefox):
                 exception_message = 'The following messages were found on the page: {}'.format(';'.join(messages))
                 raise testcase.failureException(exception_message)
 
-    def see(self, text, flag=True, count=2):
+    def see(self, text, flag=True, count=4):
         if flag:
             self.print('See "{}"'.format(text))
             try:
@@ -155,7 +155,7 @@ class Browser(webdriver.Firefox):
                 self.wait(2)
 
 
-    def see_message(self, text, count=2):
+    def see_message(self, text, count=4):
         self.print('See message {}'.format(text))
         try:
             self.execute_script("seeMessage('{}')".format(text))
@@ -168,7 +168,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def look_at_popup_window(self, count=2):
+    def look_at_popup_window(self, count=4):
         self.print('Looking at popup window')
         try:
             self.execute_script("lookAtPopupWindow()")
@@ -181,7 +181,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def look_at(self, text, count=2):
+    def look_at(self, text, count=4):
         self.print('Loking at "{}"'.format(text))
         try:
             self.execute_script("lookAt('{}')".format(text))
@@ -194,7 +194,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def look_at_panel(self, text, count=2):
+    def look_at_panel(self, text, count=4):
         self.print('Looking at panel "{}"'.format(text))
         try:
             self.execute_script("lookAtPanel('{}')".format(text))
@@ -207,7 +207,7 @@ class Browser(webdriver.Firefox):
         if self.slowly:
             self.wait(2)
 
-    def check(self, text=None, count=2):
+    def check(self, text=None, count=4):
         self.print('Checking "{}"'.format(text))
         try:
             if text:
@@ -222,7 +222,7 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def check_radio(self, text=None, count=2):
+    def check_radio(self, text=None, count=4):
         self.print('Checking radio"{}"'.format(text))
         try:
             if text:
@@ -237,7 +237,7 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def click_menu(self, *texts, count=2):
+    def click_menu(self, *texts, count=4):
         self.print('Clicking menu "{}"'.format('->'.join(texts)))
         for text in texts:
             try:
@@ -250,7 +250,7 @@ class Browser(webdriver.Firefox):
                     self.watch(e)
         self.wait()
 
-    def click_link(self, text, count=2):
+    def click_link(self, text, count=4):
         self.print('Clicking link "{}"'.format(text))
         try:
             self.execute_script("clickLink('{}')".format(text))
@@ -262,7 +262,7 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def click_button(self, text, count=2):
+    def click_button(self, text, count=4):
         self.print('Clicking button "{}"'.format(text))
         try:
             self.execute_script("clickButton('{}')".format(text))
@@ -275,7 +275,7 @@ class Browser(webdriver.Firefox):
         self.wait()
         self.dont_see_error_message()
 
-    def click_tab(self, text, count=2):
+    def click_tab(self, text, count=4):
         self.print('Clicking tab "{}"'.format(text))
         try:
             self.execute_script("clickTab('{}')".format(text))
@@ -287,7 +287,7 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def click_icon(self, name, count=2):
+    def click_icon(self, name, count=4):
         self.print('Clicking icon "{}"'.format(name))
         try:
             self.execute_script("clickIcon('{}')".format(name))

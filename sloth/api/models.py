@@ -187,7 +187,27 @@ class Application(AbstractApplication):
 
 class TaskManager(models.Manager):
     def all(self):
-        return self.display('id', 'user', 'name', 'start', 'end', 'get_progress')
+        return self.display(
+            'id', 'user', 'name', 'start', 'end', 'get_progress'
+        ).attach(
+            'running', 'finished', 'unfinished', 'stopped'
+        ).global_actions('ManageTaskExecution')
+
+    @meta('Em Execução')
+    def running(self):
+        return self.all().filter(end__isnull=True, stopped=False).ignore('end')
+
+    @meta('Concluídas com Sucesso')
+    def finished(self):
+        return self.all().filter(end__isnull=False, stopped=False, error__isnull=True).ignore('end')
+
+    @meta('Concluídas com Erro')
+    def unfinished(self):
+        return self.all().filter(end__isnull=False, stopped=False, error__isnull=False)
+
+    @meta('Interrompidas pelo Usuário')
+    def stopped(self):
+        return self.all().filter(end__isnull=False, stopped=True, error__isnull=False)
 
 
 class Task(models.Model):

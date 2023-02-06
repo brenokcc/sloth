@@ -2,6 +2,7 @@ import os
 import onetimepass
 import base64
 
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 from sloth import actions, meta
@@ -226,3 +227,24 @@ class Deactivate2FAuthentication(actions.Action):
     def submit(self):
         self.request.user.authcode_set.update(active=False)
         return self.redirect('..', 'Desativação realizada com sucesso.')
+
+
+class ManageTaskExecution(actions.Action):
+    deactivate = actions.BooleanField(label='Desativar', required=False)
+
+    class Meta:
+        modal = True
+        style = 'danger'
+        verbose_name = 'Ativar/Desativar Tarefas Assíncronas'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial['deactivate'] = bool(cache.get('is_tasks_deactivated'))
+
+    def has_permission(self, user):
+        return request.is_superuser and not cache.get('is_tasks_deactivated')
+
+    def submit(self):
+        deactivate = self.cleaned_data['deactivate']
+        cache.set('is_tasks_deactivated', deactivate)
+        return self.redirect('..', 'Ação realizada com sucesso.')

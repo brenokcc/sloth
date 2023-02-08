@@ -150,7 +150,6 @@ class ModelMixin(object):
 
     def sync_roles(self, role_tuples):
         from django.contrib.auth.models import User
-        user_id = None
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
         for username, email, scope_name, scope_type, scope_key, scope_value in role_tuples2:
@@ -176,11 +175,9 @@ class ModelMixin(object):
         deleted_role_tuples = role_tuples - role_tuples2
         # print('DELETED: ', deleted_role_tuples)
         for username, email, scope_name, scope_type, scope_key, scope_value in deleted_role_tuples:
-            if user_id is None:
-                user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
             scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
             role.objects.filter(
-                user_id=user_id, name=scope_name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+                user__username=username, name=scope_name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
             ).delete()
 
     @classmethod

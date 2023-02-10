@@ -83,7 +83,7 @@ class StopTask(actions.Action):
 
     def submit(self):
         self.instance.stop()
-        type(self.instance).STOPPED_TASKS.append(self.instance.id)
+        cache.set('task_{}_stopped'.format(self.instance.id), True)
         self.redirect(message='Ação realizada com sucesso')
 
     def has_permission(self, user):

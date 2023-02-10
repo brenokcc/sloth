@@ -211,8 +211,6 @@ class TaskManager(models.Manager):
 
 
 class Task(models.Model):
-    STOPPED_TASKS = []
-    RUNNING_TASKS = {}
 
     user = models.ForeignKey(User, verbose_name='Usuário', on_delete=models.CASCADE)
 
@@ -260,7 +258,7 @@ class Task(models.Model):
 
     @meta('Processamento')
     def get_process(self):
-        return self.values(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=120).actions('StopTask')
+        return self.values(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=360).actions('StopTask')
 
     def in_progress(self):
         return self.end is None

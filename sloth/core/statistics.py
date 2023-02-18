@@ -27,7 +27,7 @@ class QuerySetStatistics(object):
         self._values_dict = None
         self.cursor = 0
         self.request = None
-        self.metadata = dict(uuid='123456', attr=None, source=None, template='', verbose_name=None)
+        self.metadata = dict(uuid='123456', attr=None, source=None, template='', verbose_name=None, chart=None)
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
@@ -187,7 +187,8 @@ class QuerySetStatistics(object):
                 path=path,
                 series=series,
                 template=self.metadata['template'],
-                normalized=self.normalize(series),
+                chart=self.metadata['chart'],
+                # normalized=self.normalize(series),
                 # filters=self.qs.get_filters(verbose)
             )
         else:
@@ -252,8 +253,9 @@ class QuerySetStatistics(object):
                     ))
         return data
 
-    def chart(self, name):
-        self.metadata['template'] = 'app/charts/{}.html'.format(name)
+    def chart(self, name='bar'):
+        self.metadata['template'] = 'app/charts.html'.format(name)
+        self.metadata['chart'] = name
         return self
 
     def pie_chart(self):

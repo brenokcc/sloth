@@ -254,7 +254,7 @@ class QuerySetStatistics(object):
         return data
 
     def chart(self, name='bar'):
-        self.metadata['template'] = 'app/charts.html'.format(name)
+        self.metadata['template'] = 'app/charts.html'
         self.metadata['chart'] = name
         return self
 

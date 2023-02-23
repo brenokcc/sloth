@@ -1,311 +1,524 @@
+<script src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js'></script>
+<script src='/static/js/echarts-wordcloud.js'></script>
+<script>
+	let x = [];
+	let y = [];
+    let originalData = {{ data|safe }}
+	let data = [];
+	let color = [];
+	{% for x, serie in data.series.items %}
+		x.push('{{ x }}');
+		{% for y, value, color in serie %}
+			{% if forloop.parentloop.first %}
+				y.push('{{ y }}');
+				data[{{ forloop.counter0 }}] = [];
+				color.push('{{ color }}');
+			{% endif %}
+			data[{{ forloop.counter0 }}].push({{ value }})
+		{% endfor %}
+	{% endfor %}
+</script>
+<style>
+	div{display: inline-block;}
+</style>
+<div>{{ data }}</div>
+<div>{{ data.series }}</div>
 
+<div id="main1" style="width: 600px;height:400px;"></div>
+<div id="main2" style="width: 600px;height:400px;"></div>
+<div id="main3" style="width: 600px;height:400px;"></div>
+<div id="main4" style="width: 600px;height:400px;"></div>
+<div id="main5" style="width: 600px;height:400px;"></div>
+<div id="main6" style="width: 600px;height:400px;"></div>
+<div id="main7" style="width: 600px;height:400px;"></div>
+<div id="main8" style="width: 600px;height:400px;"></div>
+<div id="main9" style="width: 600px;height:400px;"></div>
+<div id="main10" style="width: 600px;height:400px;"></div>
+<div id="main11" style="width: 600px;height:400px;"></div>
+<div id="main12" style="width: 600px;height:400px;"></div>
+<div id="main13" style="width: 600px;height:400px;"></div>
+<div id="main14" style="width: 600px;height:400px;"></div>
 
-	 <script src='https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js'></script>
-	 <script src='/static/js/echarts-wordcloud.js'></script>
-	 <script>
-		 var x = [];
-		 var y = [];
-		 var data = [];
-		 {% for x, serie in data.series.items %}
-		 	x.push('{{ x }}');
-		 	var row = []
-		 	{% for y, value, color in serie %}
-		 		y.push('{{ y }}');
-		 		row.push({{ value }});
-		 	{% endfor %}
-		 	data[{{ forloop.counter0 }}] = row;
-		 {% endfor %}
-     </script>
-	 <style>
-		 div{display: inline-block;}
-     </style>
+<script>
+    let series;
+    let option;
 
-		 <div id="main1" style="width: 600px;height:400px;"></div>
-		 <div id="main2" style="width: 600px;height:400px;"></div>
-		 <div id="main3" style="width: 600px;height:400px;"></div>
-		 <div id="main4" style="width: 600px;height:400px;"></div>
-		 <div id="main5" style="width: 600px;height:400px;"></div>
-		 <div id="main6" style="width: 600px;height:400px;"></div>
-		 <div id="main7" style="width: 600px;height:400px;"></div>
-		 <div id="main8" style="width: 600px;height:400px;"></div>
-		 <div id="main9" style="width: 600px;height:400px;"></div>
-		 <div id="main10" style="width: 600px;height:400px;"></div>
-		 <div id="main11" style="width: 600px;height:400px;"></div>
-		 <div id="main12" style="width: 600px;height:400px;"></div>
-		 <div id="main13" style="width: 600px;height:400px;"></div>
-		 <div id="main14" style="width: 600px;height:400px;"></div>
+    // Line
+    series = [];
+    for (let i = 0; i < y.length; i++) series.push({
+        name: y[i],
+        data: data[i],
+        type: 'line',
+        label: {show: true},
+        emphasis: {focus: 'series'}
+    });
+    option = {
+        title: {text: 'Line'},
+        tooltip: {trigger: 'axis'},
+        legend: {data: y},
+        toolbox: {feature: {saveAsImage: {}}},
+        xAxis: {type: 'category', data: x},
+        yAxis: {type: 'value'},
+        series: series,
+        color: color,
+    };
+    echarts.init(document.getElementById('main1')).setOption(option);
 
- <script>
-	 // Stack Bar
-	 var series = [];
-	 for(var i=0; i<y.length; i++) series.push({name: y[i], type: 'bar', stack: 'total', label: { show: true }, emphasis: {focus: 'series' },data: data[i]});
-	 var option = {title: {text: 'Stacked Bar'}, tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }}, legend: {}, xAxis: { type: 'value' }, yAxis: { type: 'category', data: x }, series: series};
-	 echarts.init(document.getElementById('main1')).setOption(option);
-	 // Stack Line
-	 var series = [];
-	 for(var i=0; i<y.length; i++) series.push({name: y[i], type: 'line', stack: 'total', label: { show: true }, emphasis: {focus: 'series' },data: data[i]});
-	 option = {title: {text: 'Stacked Line'}, tooltip: {trigger: 'axis'}, legend: {data: y }, toolbox: { feature: { saveAsImage: {} } }, xAxis: {type: 'category', boundaryGap: false, data: x }, yAxis: {type: 'value'}, series: series};
-	 echarts.init(document.getElementById('main4')).setOption(option);
-	 // Line
-	 option = {title: {text: 'Line'}, xAxis: {type: 'category',data: x}, yAxis: {type: 'value'}, series: [{data: data[0], type: 'line'}]};
-	 echarts.init(document.getElementById('main2')).setOption(option);
-	 // Area
-	 option = {title: {text: 'Area'}, xAxis: {type: 'category',data: x}, yAxis: {type: 'value'}, series: [{data: data[0], type: 'line', areaStyle: {}}]};
-	 echarts.init(document.getElementById('main3')).setOption(option);
-	 // StackArea
-	 var series = [];
-	 for(var i=0; i<y.length; i++) series.push({name: y[i], type: 'line', stack: 'total', areaStyle: {}, label: { show: true }, emphasis: {focus: 'series' },data: data[i]});
-	 option = {title: {text: 'Stacked Line'}, tooltip: {trigger: 'axis'}, legend: {data: y }, toolbox: { feature: { saveAsImage: {} } }, xAxis: {type: 'category', boundaryGap: false, data: x }, yAxis: {type: 'value'}, series: series};
-	 echarts.init(document.getElementById('main5')).setOption(option);
-	 // Bar
-	 option = {title: {text: 'Stacked Bar'}, tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }}, legend: {}, xAxis: {type: 'category',data: x},yAxis: {type: 'value'},series: [{data: data[0],type: 'bar'}]};
-	 echarts.init(document.getElementById('main6')).setOption(option);
-	 // Radial
-	 option = {title: [{ text: 'Radial Bar' } ], polar: { radius: [30, '80%'] }, radiusAxis: { max: 500 }, angleAxis: { type: 'category', data: x, startAngle: 75}, tooltip: {}, series: {type: 'bar', data: data[0],coordinateSystem: 'polar',label: {show: true,position: 'middle',formatter: '{b} {c}'} },animation: true};
-	 echarts.init(document.getElementById('main7')).setOption(option);
-	 // Horizontal Bars
-	 var series = [];
-	 for(var i=0; i<y.length; i++) series.push({name: y[i], type: 'bar', label: { show: true }, emphasis: {focus: 'series' },data: data[i]});
-	 option = {title: { text: 'Horizontal Bars' }, tooltip: {trigger: 'axis', axisPointer: {type: 'shadow' }},legend: {}, grid: {left: '3%',right: '4%',bottom: '3%',containLabel: true},xAxis: {type: 'value',boundaryGap: [0, 0.01]},yAxis: {type: 'category',data: x},series: series};
-	 echarts.init(document.getElementById('main8')).setOption(option);
-  	 // Vertical Bars
-  	 var series = [];
-  	 for(var i=0; i<y.length; i++) series.push({name: y[i], type: 'bar', label: { show: true }, emphasis: {focus: 'series' },data: data[i]});
-  	 option = {title: { text: 'Vertical Bars' }, tooltip: {trigger: 'axis', axisPointer: {type: 'shadow' }},legend: {}, grid: {left: '3%',right: '4%',bottom: '3%',containLabel: true},yAxis: {type: 'value',boundaryGap: [0, 0.01]},xAxis: {type: 'category',data: x},series: series};
-  	 echarts.init(document.getElementById('main9')).setOption(option);
-  	 // Pie
-	 var values = [];
-	 for(var i=0; i<x.length; i++) values.push({ value: data[0][i], name: x[i]}); 
-  	 var serie = {name: '',type: 'pie',radius: '50%',data: values,emphasis: {itemStyle: {shadowBlur: 10,shadowOffsetX: 0,shadowColor: 'rgba(0, 0, 0, 0.5)'}}};
-     var series = [serie];
-	 option = {title: {text: 'Pie', subtext: '', left: 'center' }, tooltip: { trigger: 'item' }, legend: { orient: 'vertical', left: 'left' }, series: series};
-  	 echarts.init(document.getElementById('main10')).setOption(option);
-  	 // Donut
-	 var values = [];
-	 for(var i=0; i<x.length; i++) values.push({ value: data[0][i], name: x[i]}); 
-  	 var serie = {name: '',type: 'pie',radius: ['40%', '70%'],data: values,emphasis: {itemStyle: {shadowBlur: 10,shadowOffsetX: 0,shadowColor: 'rgba(0, 0, 0, 0.5)'}}};
-     var series = [serie];
-	 option = {title: {text: 'Donut', subtext: '', left: 'center' }, tooltip: { trigger: 'item' }, legend: { orient: 'vertical', left: 'left' }, series: series};
-  	 echarts.init(document.getElementById('main11')).setOption(option);
+    // Stack Line
+    series = [];
+    for (let i = 0; i < y.length; i++) series.push({
+        name: y[i],
+        type: 'line',
+        stack: 'total',
+        data: data[i],
+        label: {show: true},
+        emphasis: {focus: 'series'}
+    });
+    option = {
+        title: {text: 'Stacked Line'},
+        tooltip: {trigger: 'axis'},
+        legend: {data: y},
+        toolbox: {feature: {saveAsImage: {}}},
+        xAxis: {type: 'category', boundaryGap: false, data: x},
+        yAxis: {type: 'value'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main2')).setOption(option);
 
-	 // Calendar
-	 const graphData = [['2023-02-01', 260], ['2023-02-04', 200], ['2023-02-09', 279], ['2023-02-13', 847], ['2023-02-18', 241], ['2023-02-23', 411], ['2023-02-27', 985]
-	 ];
-	 const links = graphData.map(function (item, idx) {
-	   return {
-	     source: idx,
-	     target: idx + 1
-	   };
-	 });
-	 links.pop();
-	 option = {
-	   tooltip: {
-	     position: 'top'
-	   },
-	   visualMap: [
-	     {
-	       min: 0,
-	       max: 1000,
-	       calculable: true,
-	       seriesIndex: [0],
-	       orient: 'horizontal',
-	       left: 0,
-	       top: 300
-	     }
-	   ],
-	   calendar: [
-	     {
-	       orient: 'vertical',
-	       yearLabel: {
-	         margin: 40
-	       },
-	       monthLabel: {
-	         margin: 20
-	       },
-	       dayLabel: {
-	             firstDay: 1,
-	         },
-	       cellSize: 40,
-	       top: 70,
-	       range: '2023-02'
-	     }
-	   ],
-	   series: [
-	     {
-	       type: 'effectScatter',
-	       coordinateSystem: 'calendar',
-	       calendarIndex: 0,
-	       symbolSize: function (val) {
-	         return val[1] / 40;
-	       },
-	       data: graphData,
-	       label: {
-	             show: true,
-	             formatter: function (params) {
-	                 var d = echarts.number.parseDate(params.value[0]);
-	                 return d.getDate();
-	             },
-	             color: '#DDD'
-	         }
-	     }
-	   ]
-	 };
-	 echarts.init(document.getElementById('main12')).setOption(option);
-	 // Words
+	// Area
+    series = [];
+    for (let i = 0; i < y.length; i++){
+        series.push({
+            name: y[i],
+            type: 'line',
+            areaStyle: {},
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Area'},
+        xAxis: {type: 'category', data: x},
+        yAxis: {type: 'value'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main3')).setOption(option);
 
-	 var chart = echarts.init(document.getElementById('main13'));
+	// StackArea
+    series = [];
+    for (let i = 0; i < y.length; i++){
+        series.push({
+            name: y[i],
+            type: 'line',
+            stack: 'total',
+            areaStyle: {},
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Stacked Area'},
+        tooltip: {trigger: 'axis'},
+        legend: {data: y},
+        toolbox: {feature: {saveAsImage: {}}},
+        xAxis: {type: 'category', boundaryGap: false, data: x},
+        yAxis: {type: 'value'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main4')).setOption(option);
 
-	             var option = {
-	                 tooltip: {},
-	          title : {
-	           text: 'Red - Already Over - Lyrics',
-	         },
-	         toolbox: {
-	           feature: {
-	             saveAsImage: {}
-	           }
-	         },
-	                 series: [ {
-	                     type: 'wordCloud',
-	                     gridSize: 3,
-	                     sizeRange: [15, 55],
-	                     rotationRange: [-45, 45],
-	                     shape: 'pentagon',
-	                     width: 600,
-	                     height: 400,
-	                     textStyle: {
-	                         normal: {
-	                             color: function () {
-	                                 return 'rgb(' + [
-	                                     Math.round(Math.random() * 160),
-	                                     Math.round(Math.random() * 160),
-	                                     Math.round(Math.random() * 160)
-	                                 ].join(',') + ')';
-	                             }
-	                         },
-	                         emphasis: {
-	                             shadowBlur: 10,
-	                             shadowColor: '#333'
-	                         }
-	                     },
-	                     data: [
-	                         {
-	                             name: 'Already Over',
-	                             value: 10000,
-	                             textStyle: {
-	                                 normal: {
-	                                     color: 'black'
-	                                 },
-	                                 emphasis: {
-	                                     color: 'blue'
-	                                 }
-	                             }
-	                         },
-	                         {
-	                             name: 'now',
-	                             value: 4055
-	                         },
-	                         {
-	                             name: 'know',
-	                             value: 2467
-	                         },
-	                         {
-	                             name: 'reaching',
-	                             value: 2244
-	                         },
-	                         {
-	                             name: 'nothing',
-	                             value: 1898
-	                         },
-	                         {
-	                             name: 'letting',
-	                             value: 1484
-	                         },
-	                         {
-	                             name: 'fall',
-	                             value: 1112
-	                         },
-	                         {
-	                             name: 'give',
-	                             value: 965
-	                         },
-	                         {
-	                             name: 'loving',
-	                             value: 847
-	                         },
-	                         {
-	                             name: 'go',
-	                             value: 582
-	                         },
-	                         {
-	                             name: 'left',
-	                             value: 555
-	                         },
-	                         {
-	                             name: 'lose',
-	                             value: 550
-	                         },
-	                         {
-	                             name: 'everything',
-	                             value: 462
-	                         },
-	                         {
-	                             name: 'never',
-	                             value: 366
-	                         },
-	                         {
-	                             name: 'breaking',
-	                             value: 360
-	                         },
-	                         {
-	                             name: 'slowly',
-	                             value: 282
-	                         },
-	                         {
-	                             name: 'all',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'here',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'skin',
-	                             value: 9973
-	                         },
-	                         {
-	                             name: 'you',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'resist',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'again',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'suffocating',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'defense',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'cost',
-	                             value: 273
-	                         },
-	                         {
-	                             name: 'fading',
-	                             value: 265
-	                         }
-	                     ]
-	                 } ]
-	             };
+	// Vertical Bars
+    series = [];
+    for (let i = 0; i < y.length; i++) {
+        series.push({
+            name: y[i],
+            type: 'bar',
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Vertical Bars'},
+        tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}},
+        legend: {},
+        grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
+        yAxis: {type: 'value', boundaryGap: [0, 0.01]},
+        xAxis: {type: 'category', data: x},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main5')).setOption(option);
 
-	             chart.setOption(option);
+	// Stacked Vertical Bars
+    series = [];
+    for (let i = 0; i < y.length; i++) {
+        series.push({
+            name: y[i],
+            type: 'bar',
+            stack: 'total',
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Stacked Vertical Bars'},
+        tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}},
+        legend: {},
+        xAxis: {type: 'category', data: x},
+        yAxis: {type: 'value'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main6')).setOption(option);
 
+	// Horizontal Bars
+    series = [];
+    for (let i = 0; i < y.length; i++) {
+        series.push({
+            name: y[i],
+            type: 'bar',
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Horizontal Bars'},
+        tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}},
+        legend: {},
+        grid: {left: '3%', right: '4%', bottom: '3%', containLabel: true},
+        xAxis: {type: 'value', boundaryGap: [0, 0.01]},
+        yAxis: {type: 'category', data: x},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main7')).setOption(option);
+
+	// Stacked Horizontal Bar
+    series = [];
+    for (let i = 0; i < y.length; i++) {
+        series.push({
+            name: y[i],
+            type: 'bar',
+            stack: 'total',
+            label: {show: true},
+            emphasis: {focus: 'series'},
+            data: data[i]
+        });
+    }
+    option = {
+        title: {text: 'Stacked Horizontal Bar'},
+        tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}},
+        legend: {},
+        xAxis: {type: 'value'},
+        yAxis: {type: 'category', data: x},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main8')).setOption(option);
+
+    let values;
+    // Pie
+    let values_pie = [];
+    for (let i = 0; i < y.length; i++) {
+        let total = 0;
+        for (let j = 0; j < x.length; j++) {
+            total += data[i][j];
+        }
+        values_pie.push({value: total, name: y[i]});
+    }
+    serie = {
+        name: '',
+        type: 'pie',
+        radius: '50%',
+        data: values_pie,
+        emphasis: {itemStyle: {shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)'}}
+    };
+    series = [serie];
+    option = {
+        title: {text: 'Pie', subtext: '', left: 'center'},
+        tooltip: {trigger: 'item'},
+        legend: {orient: 'vertical', left: 'left'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main9')).setOption(option);
+
+	// Donut
+    let values_donut = [];
+    for (let i = 0; i < y.length; i++) {
+        let total = 0;
+        for (let j = 0; j < x.length; j++) {
+            total += data[i][j];
+        }
+        values_donut.push({value: total, name: y[i]});
+    }
+    serie = {
+        name: '',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        data: values_donut,
+        emphasis: {itemStyle: {shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)'}}
+    };
+    series = [serie];
+    option = {
+        title: {text: 'Donut', subtext: '', left: 'center'},
+        tooltip: {trigger: 'item'},
+        legend: {orient: 'vertical', left: 'left'},
+        series: series,
+        color: color
+    };
+    echarts.init(document.getElementById('main10')).setOption(option);
+
+	// Radial
+    let values_radial = [];
+    for (let i = 0; i < y.length; i++) {
+        let total = 0;
+        for (let j = 0; j < x.length; j++) {
+            total += data[i][j];
+        }
+        values_radial.push({value: total, name: y[i]});
+    }
+    option = {
+        title: [{text: 'Radial Bar'}],
+        polar: {radius: [30, '80%']},
+        radiusAxis: { },
+        angleAxis: {type: 'category', data: y, startAngle: 75},
+        tooltip: {},
+        series: {
+            type: 'bar',
+            data: values_radial,
+            coordinateSystem: 'polar',
+            label: {show: true, position: 'middle', formatter: '{b} {c}'}
+        },
+        animation: true,
+        color: color
+    };
+    echarts.init(document.getElementById('main11')).setOption(option);
+
+	// Calendar
+	const graphData = [['2023-02-01', 260], ['2023-02-04', 200], ['2023-02-09', 279], ['2023-02-13', 847], ['2023-02-18', 241], ['2023-02-23', 411], ['2023-02-27', 985]];
+	const links = graphData.map(function (item, idx) {
+		return {
+			source: idx,
+			target: idx + 1
+		};
+	});
+	links.pop();
+	option = {
+		tooltip: {
+			position: 'top'
+		},
+		visualMap: [
+			{
+				min: 0,
+				max: 1000,
+				calculable: true,
+				seriesIndex: [0],
+				orient: 'horizontal',
+				left: 0,
+				top: 300
+			}
+		],
+		calendar: [
+			{
+				orient: 'vertical',
+				yearLabel: {
+					margin: 40
+				},
+				monthLabel: {
+					margin: 20
+				},
+				dayLabel: {
+					firstDay: 1,
+				},
+				cellSize: 40,
+				top: 70,
+				range: '2023-02'
+			}
+		],
+		series: [
+			{
+				type: 'effectScatter',
+				coordinateSystem: 'calendar',
+				calendarIndex: 0,
+				symbolSize: function (val) {
+					return val[1] / 40;
+				},
+				data: graphData,
+				label: {
+					show: true,
+					formatter: function (params) {
+						let d = echarts.number.parseDate(params.value[0]);
+						return d.getDate();
+					},
+					color: '#DDD'
+				}
+			}
+		], color: color
+	};
+	echarts.init(document.getElementById('main12')).setOption(option);
+
+	// Words
+	let chart = echarts.init(document.getElementById('main13'));
+	option = {
+		tooltip: {},
+		title : {
+			text: 'Red - Already Over - Lyrics',
+		},
+		toolbox: {
+			feature: {
+				saveAsImage: {}
+			}
+		},
+		series: [
+			{
+				type: 'wordCloud',
+				gridSize: 3,
+				sizeRange: [15, 55],
+				rotationRange: [-45, 45],
+				shape: 'pentagon',
+				width: 600,
+				height: 400,
+				textStyle: {
+					normal: {
+						color: function () {
+							return 'rgb(' + [
+								Math.round(Math.random() * 160),
+								Math.round(Math.random() * 160),
+								Math.round(Math.random() * 160)
+							].join(',') + ')';
+						}
+					},
+					emphasis: {
+						shadowBlur: 10,
+						shadowColor: '#333'
+					}
+				},
+				data: [
+					{
+						name: 'Already Over',
+						value: 10000,
+						textStyle: {
+							normal: {
+								color: 'black'
+							},
+							emphasis: {
+								color: 'blue'
+							}
+						}
+					},
+					{
+						name: 'now',
+						value: 4055
+					},
+					{
+						name: 'know',
+						value: 2467
+					},
+					{
+						name: 'reaching',
+						value: 2244
+					},
+					{
+						name: 'nothing',
+						value: 1898
+					},
+					{
+						name: 'letting',
+						value: 1484
+					},
+					{
+						name: 'fall',
+						value: 1112
+					},
+					{
+						name: 'give',
+						value: 965
+					},
+					{
+						name: 'loving',
+						value: 847
+					},
+					{
+						name: 'go',
+						value: 582
+					},
+					{
+						name: 'left',
+						value: 555
+					},
+					{
+						name: 'lose',
+						value: 550
+					},
+					{
+						name: 'everything',
+						value: 462
+					},
+					{
+						name: 'never',
+						value: 366
+					},
+					{
+						name: 'breaking',
+						value: 360
+					},
+					{
+						name: 'slowly',
+						value: 282
+					},
+					{
+						name: 'all',
+						value: 273
+					},
+					{
+						name: 'here',
+						value: 273
+					},
+					{
+						name: 'skin',
+						value: 9973
+					},
+					{
+						name: 'you',
+						value: 273
+					},
+					{
+						name: 'resist',
+						value: 273
+					},
+					{
+						name: 'again',
+						value: 273
+					},
+					{
+						name: 'suffocating',
+						value: 273
+					},
+					{
+						name: 'defense',
+						value: 273
+					},
+					{
+						name: 'cost',
+						value: 273
+					},
+					{
+						name: 'fading',
+						value: 265
+					}
+				]
+			}
+		], color: color
+	};
+	chart.setOption(option);
 </script>
 

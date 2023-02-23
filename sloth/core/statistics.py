@@ -253,10 +253,34 @@ class QuerySetStatistics(object):
                     ))
         return data
 
-    def chart(self, name='bar'):
+    def chart(self, name='line'):
         self.metadata['template'] = 'app/charts.html'
         self.metadata['chart'] = name
         return self
+
+    def line_chart(self):
+        return self.chart('line')
+
+    def stacked_line_chart(self):
+        return self.chart('stacked_line')
+
+    def area_chart(self):
+        return self.chart('area')
+
+    def stacked_area_chart(self):
+        return self.chart('stacked_area')
+
+    def bar_chart(self):
+        return self.chart('vertical_bar')
+
+    def stacked_bar_chart(self):
+        return self.chart('stacked_vertical_bar')
+
+    def horizontal_bar_chart(self):
+        return self.chart('horizontal_bar')
+
+    def stacked_horizontal_bar_chart(self):
+        return self.chart('stacked_horizontal_bar')
 
     def pie_chart(self):
         return self.chart('pie')
@@ -264,11 +288,8 @@ class QuerySetStatistics(object):
     def donut_chart(self):
         return self.chart('donut')
 
-    def bar_chart(self):
-        return self.chart('bar')
-
-    def column_chart(self):
-        return self.chart('column')
+    def radial_chart(self):
+        return self.chart('radial')
 
     def nex_color(self):
         color = colors()[self.cursor]

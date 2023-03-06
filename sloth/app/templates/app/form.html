@@ -14,10 +14,16 @@
 </script>
 {% else %}
 <div class="action-wrapper" id="{{ self.get_metadata.key }}-wrapper">
+    {% if self.can_be_closed or self.can_be_reloaded %}
     <div class="float-end">
-        <i class="bi bi-arrow-clockwise" style="cursor:pointer" onclick="reload{{ self.get_metadata.key }}()"></i>
-        <i class="bi bi-x" style="cursor:pointer" onclick="close{{ self.get_metadata.key }}()"></i>
+        {% if self.can_be_closed %}
+            <i class="bi bi-arrow-clockwise" style="cursor:pointer" onclick="reload{{ self.get_metadata.key }}()"></i>
+        {% endif %}
+        {% if self.can_be_closed %}
+            <i class="bi bi-x" style="cursor:pointer" onclick="close{{ self.get_metadata.key }}()"></i>
+        {% endif %}
     </div>
+    {% endif %}
 {% if self.get_metadata.name %}
     {% if self.should_display_buttons %}
         <h2>

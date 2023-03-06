@@ -84,6 +84,8 @@ class Action(metaclass=ActionMetaclass):
         self.show_form = True
         self.fade_out_time = 0
         self.auto_reload_time = 0
+        self.can_be_closed = False
+        self.can_be_reloaded = False
         self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
         self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
@@ -156,6 +158,12 @@ class Action(metaclass=ActionMetaclass):
                 label='', initial='on', required=False, help_text=help_text,
                 widget=forms.TextInput(attrs={'style': 'display:none'})
             )
+
+    def closable(self, flag=True):
+        self.can_be_closed = flag
+
+    def reloadable(self, flag=True):
+        self.can_be_reloaded = flag
 
     def info(self, text):
         self.content['info'].append(text)

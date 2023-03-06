@@ -1,5 +1,5 @@
 {% load tags %}
-{% if not request.GET.modal %}
+{% if request.user.is_authenticated and not request.GET.modal %}
     {% if dashboard.extra.header.shadow %}
       <style>
         .navbar {box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);}

@@ -6,7 +6,10 @@ import math
 import operator
 from functools import reduce
 from uuid import uuid1
-
+import zlib
+import pickle
+import base64
+from django.core import signing
 from django.conf import settings
 from django.contrib import messages
 from django.db import models
@@ -14,7 +17,7 @@ from django.db.models import Q
 from django.db.models.aggregates import Sum, Count
 from django.template.loader import render_to_string
 from django.utils.text import slugify
-
+from django.apps import apps
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
 from sloth.exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
@@ -117,9 +120,9 @@ class QuerySet(models.QuerySet):
     def get_display(self, verbose=False):
         display = {}
         for lookup in self.get_list_display():
-            verbose_name, sort, template, metadata = self.model.get_attr_metadata(lookup)
+            verbose_name, sort, _, _ = self.model.get_attr_metadata(lookup)
             display[pretty(verbose_name) if verbose else lookup] = dict(
-                key=lookup, name=pretty(verbose_name), sort=sort, template=template, metadata=metadata
+                key=lookup, name=pretty(verbose_name), sort=sort#, template=template, metadata=metadata
             )
         return display
 
@@ -412,7 +415,7 @@ class QuerySet(models.QuerySet):
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
                     collapsed=self.metadata['collapsed'], compact=self.metadata['compact'],
-                    is_admin=self.metadata['is_admin']
+                    is_admin=self.metadata['is_admin'], state=self.dumps()
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
@@ -642,7 +645,7 @@ class QuerySet(models.QuerySet):
             self.request = request
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
-                    self.choices(request)
+                    self.process_request(request).choices(request)
                 )
             if 'export' in request.GET:
                 export = request.GET['export']
@@ -660,10 +663,11 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(self.get_attach())
             if self.metadata['uuid'] == request.GET.get('uuid'):
                 component = self.process_request(request).apply_role_lookups(request.user)
-                if 'uuid' in request.GET:
+                if request.path.startswith('/app/'):
                     raise HtmlJsonReadyResponseException(component.html())
                 else:
-                    raise JsonReadyResponseException(component.serialize(verbose=False))
+                    meta = request.path.startswith('/meta/')
+                    raise JsonReadyResponseException(component.serialize(wrap=meta, verbose=meta))
             return self.apply_role_lookups(request.user)
         return self
 
@@ -698,7 +702,8 @@ class QuerySet(models.QuerySet):
                         value = datetime.datetime.strptime(value, '%d/%m/%Y')
                     if item['type'] == 'boolean':
                         value = bool(int(value)) if value.isdigit() else value == 'true'
-                    qs = qs.filter(**{item['key']: value})
+                    if item['key'] != request.GET.get('choices'):
+                        qs = qs.filter(**{item['key']: value})
         if 'q' in request.GET:
             qs = qs.search(q=request.GET['q'])
         if 'page' in request.GET:
@@ -759,3 +764,21 @@ class QuerySet(models.QuerySet):
 
     def normalize_email(self, email):
         return email
+
+    def dumps(self):
+        request = self.metadata.pop('request', None)
+        state = dict(app=self.model.metaclass().app_label, model=self.model.metaclass().model_name, query=self.query, metadata=self.metadata)
+        s = signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
+        if request:
+            self.metadata[request] = request
+        return s
+
+    @staticmethod
+    def loads(s):
+        state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
+        model = apps.get_model(state['app'], state['model'])
+        query = state['query']
+        queryset = model.objects.none()
+        queryset.query = query
+        queryset.metadata = state['metadata']
+        return queryset

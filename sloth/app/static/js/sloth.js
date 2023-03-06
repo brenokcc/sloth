@@ -170,11 +170,13 @@ jQuery.fn.extend({
                 });
             }
             $(document).request(form.action, method, data, function(html){
-                if($('#modal').is(':visible')){
-                    $('#modal').find('.modal-body').html(html).initialize();
-                } else {
-                    $('main').html(html).initialize();
-                }
+                console.log($(html).find('.action-wrapper'));
+                $(form).closest('.action-wrapper').html(html).initialize();
+//                if($('#modal').is(':visible')){
+//                    $('#modal').find('.modal-body').html(html).initialize();
+//                } else {
+//                    $('main').html(html).initialize();
+//                }
                 $(form).find('.btn-submit').removeClass('disabled').find('.spinner-border').addClass('d-none');
             });
             return false;

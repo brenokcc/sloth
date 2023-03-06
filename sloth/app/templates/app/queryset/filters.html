@@ -15,11 +15,11 @@
     }
 {% endif %}
 </style>
-{% if data.metadata.pagination.total %}
-    {% if data.metadata.search or data.metadata.filters %}
+
         <div class="search-and-filters">
-            <form method="get" id="form-{{ data.uuid }}" action="/app{{ data.path }}">
+            <form method="get" id="form-{{ data.uuid }}" action="/app/queryset/">
                 <input type="hidden" name="uuid" value="{{ data.uuid }}">
+                <input type="hidden" name="state" value="{{ data.metadata.state }}">
                 <input type="hidden" name="is_admin" value="{% if data.metadata.is_admin %}1{% endif %}">
                 <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
                 <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
@@ -50,5 +50,3 @@
                 {% endif %}
             </form>
         </div>
-    {% endif %}
-{% endif %}

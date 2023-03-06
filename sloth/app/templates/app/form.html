@@ -1,26 +1,47 @@
 {% load tags %}
-
+{% if self.asynchronous %}
+<div id="{{ self.get_metadata.key }}-async-wrapper">
+    <div class="d-flex justify-content-center">
+      <div class="spinner-border spinner-border-sm" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+</div>
+<script>
+    $.get('/app/action/{{ self.get_metadata.key }}/?synchronous=1',function(html){
+        $("#{{ self.get_metadata.key }}-async-wrapper").html(html);
+    });
+</script>
+{% else %}
+<div class="action-wrapper" id="{{ self.get_metadata.key }}-wrapper">
+    <div class="float-end">
+        <i class="bi bi-arrow-clockwise" style="cursor:pointer" onclick="reload{{ self.get_metadata.key }}()"></i>
+        <i class="bi bi-x" style="cursor:pointer" onclick="close{{ self.get_metadata.key }}()"></i>
+    </div>
 {% if self.get_metadata.name %}
-<h2>
-    {{ self.get_metadata.icon|icontag }}
-    {{ self.get_verbose_name|default:self.get_metadata.name }}
-</h2>
-
-{% with instructions=self.get_instructions %}
-    {% if instructions %}
-        <div class="alert alert-primary" role="alert">
-            <strong>Atenção</strong>: {{ instructions|safe }}
-        </div>
+    {% if self.should_display_buttons %}
+        <h2>
+            {{ self.get_metadata.icon|icontag }}
+            {{ self.get_verbose_name|default:self.get_metadata.name }}
+        </h2>
     {% endif %}
-{% endwith %}
+{% endif %}
+
+{% for text in self.content.info %}
+    <div class="alert alert-primary" role="alert">{{ text|safe }}</div>
+{% endfor %}
+
+{% for text in self.content.alert %}
+    <div class="alert alert-warning" role="alert">{{ text|safe }}</div>
+{% endfor %}
 
 <div class="form-display">
-{{ self.display.html }}
+{% for item in self.content.center %}{{ item }}{% endfor %}
 </div>
 
-{% endif %}
-<form id="{{ self.get_metadata.key|slugify }}" action="{{ self.request.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
-    <input type="hidden" name="{{ self.get_metadata.key }}">
+{% if self.show_form %}
+<form id="{{ self.get_metadata.key|slugify }}" action="/app/action/{{ self.get_metadata.key }}/" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
+    <input type="hidden" name="{{ self.get_metadata.key }}" value="{{ self.dumps }}">
     {% if self.get_metadata.method == "post" %}
         {% csrf_token %}
     {% endif %}
@@ -83,6 +104,7 @@
         </fieldset>
     </div>
     {% endfor %}
+    {% if self.should_display_buttons %}
     <div class="form-submit">
         <button type="button" class="btn btn-light" onclick="$(document).back(true);">
             Cancelar
@@ -94,6 +116,7 @@
             {{ self.get_metadata.submit }}
         </button>
     </div>
+    {% endif %}
 </form>
 
 <script>
@@ -107,7 +130,7 @@ $( document ).ready(function() {
     $('#{{ self.get_metadata.key|slugify }}').dynamic('{{ field_name }}', {{ self.on_change_data|safe }});
 {% endfor %}
 </script>
-
+{% endif %}
 <div class="clearfix"></div>
 <div class="action-ouput">
     {% if self.output_data %}
@@ -115,3 +138,30 @@ $( document ).ready(function() {
     {% endif %}
 </div>
 <div class="clearfix"></div>
+<div class="form-display">
+{% for item in self.content.bottom %}{{ item }}{% endfor %}
+</div>
+<div class="clearfix"></div>
+
+<script>
+    function reload{{ self.get_metadata.key }}(){
+        $.get('/app/action/{{ self.get_metadata.key }}/?synchronous=1',function(html){
+            $("#{{ self.get_metadata.key }}-wrapper").closest('.action-wrapper').html(html);
+        });
+    }
+    function close{{ self.get_metadata.key }}(){
+        $("#{{ self.get_metadata.key }}-wrapper").closest('.action-wrapper').html('');
+    }
+    function fade{{ self.get_metadata.key }}(milliseconds){
+        $("#{{ self.get_metadata.key }}-wrapper").closest('.action-wrapper').fadeOut(milliseconds);
+    }
+    {% if self.fade_out_time %}
+        fade{{ self.get_metadata.key }}({{ self.fade_out_time|stringformat:'s' }});
+    {% endif %}
+    {% if self.auto_reload_time %}
+        setTimeout(reload{{ self.get_metadata.key }}, {{ self.auto_reload_time|stringformat:'s' }});
+    {% endif %}
+</script>
+
+</div>
+{% endif %}

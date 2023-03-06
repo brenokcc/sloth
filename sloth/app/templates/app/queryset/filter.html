@@ -21,7 +21,7 @@
           placeholder: 'Selecione uma opção',
           {% if metadata.choices is None %}
           ajax: {
-            url: "/app{{ data.path }}?choices={{ metadata.key }}",
+            url: function () {return "/app/queryset/?"+$('#form-{{ data.uuid }}').serialize()+'&choices={{ metadata.key }}';},
             dataType: 'json',
             delay: 250,
             minimumInputLength: 3,

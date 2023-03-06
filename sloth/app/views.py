@@ -16,6 +16,7 @@ from .templatetags.tags import is_ajax
 from ..api.models import PushNotification, AuthCode
 from ..api.actions import Login
 from ..core import views
+from ..core.queryset import QuerySet
 from ..utils.icons import bootstrap, materialicons, fontawesome
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import dashboard
@@ -186,6 +187,11 @@ def logout(request):
     return HttpResponseRedirect('/')
 
 
+@view
+def queryset(request):
+    QuerySet.loads(request.GET['state']).contextualize(request)
+
+
 @csrf_exempt
 def push_subscription(request):
     PushNotification.objects.get_or_create(user=request.user, subscription=request.POST.get('subscription'))
@@ -222,7 +228,7 @@ def roles(request):
 
 
 @view
-def action(request, name):
+def action(request, name, parameters=None):
     form = views.action(request, name)
     if form.response:
         return HttpResponse(form.html())

@@ -178,7 +178,7 @@ class Animal(models.Model):
         return 'success', 'Saudável'
 
     def get_dados_gerais(self):
-        return self.values(('nome', 'tipo'), 'descricao', 'get_situacao').image('foto')
+        return self.values(('nome', 'tipo'), 'descricao').image('foto')
 
     @meta('Proprietário')
     def get_proprietario(self):
@@ -197,7 +197,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca')
+        return self.values('get_situacao', 'get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca').actions('FazerAlgumaCoisa2')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')

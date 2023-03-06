@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import math
 import re
+import zlib
+import pickle
+import base64
+from django.core import signing
 import traceback
 from decimal import Decimal
 from copy import deepcopy
@@ -8,6 +12,7 @@ from functools import lru_cache
 from django.contrib import auth
 from django.contrib import messages
 from django.conf import settings
+from django.apps import apps
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -15,6 +20,7 @@ from django.utils.text import slugify
 from . import inputs
 from django import forms
 from django.forms.models import ModelFormMetaclass, ModelMultipleChoiceField
+
 from ..exceptions import JsonReadyResponseException, ReadyResponseException
 from ..utils import to_api_params, to_camel_case, to_snake_case
 from django.forms.fields import *
@@ -22,6 +28,7 @@ from django.forms.widgets import *
 from .fields import *
 from django.core.exceptions import ValidationError
 from ..utils.formatter import format_value
+from ..core.queryset import QuerySet
 
 ACTIONS = {}
 
@@ -74,8 +81,11 @@ class Action(metaclass=ActionMetaclass):
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', ())
         self.metaclass = getattr(self, 'Meta')
-        self.output_data = None
-        self.on_change_data = {'show': [], 'hide': [], 'set': [], 'show_fieldset': [], 'hide_fieldset': []}
+        self.show_form = True
+        self.fade_out_time = 0
+        self.auto_reload_time = 0
+        self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
+        self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
         if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
@@ -105,8 +115,11 @@ class Action(metaclass=ActionMetaclass):
                 kwargs['files'] = self.request.FILES or None
             else:
                 kwargs['data'] = None
+        if kwargs['data'] and form_name in kwargs['data']:
+            self.loads(kwargs['data'][form_name])
 
         super().__init__(*args, **kwargs)
+        self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
 
         for field_name in self.fields:
             field = self.fields[field_name]
@@ -143,6 +156,45 @@ class Action(metaclass=ActionMetaclass):
                 label='', initial='on', required=False, help_text=help_text,
                 widget=forms.TextInput(attrs={'style': 'display:none'})
             )
+
+    def info(self, text):
+        self.content['info'].append(text)
+
+    def alert(self, text):
+        self.content['alert'].append(text)
+
+    def parameters(self, index):
+        values = None
+        for token in self.request.path.split('/'):
+            if values is not None:
+                values.append((token))
+            if token.lower() == type(self).__name__.lower():
+                values = []
+        return values[index] if values and len(values)>index else None
+
+    def clear(self):
+        self.show_form = False
+        for k, v in self.content.items():
+            if k != 'bottom':
+                v.clear()
+
+    def auto_reload(self, milleseconds=5000):
+        self.auto_reload_time = milleseconds
+
+    def fade_out(self, milleseconds=2000):
+        self.fade_out_time = milleseconds
+
+    def view(self):
+        return None
+
+    def append(self, item, position='center'):
+        if hasattr(item, 'contextualize'):
+            item.contextualize(self.request)
+        self.content[position].append(item.html())
+
+    def has_attr_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        return  attr is None or attr(user)
 
     def requires_confirmation(self):
         return getattr(self.metaclass, 'confirmation', False)
@@ -544,6 +596,15 @@ class Action(metaclass=ActionMetaclass):
             self.on_change_data['set'].append(dict(name=k, value=value, text=text))
 
     def is_valid(self):
+        from ..core.valueset import ValueSet
+        if self.asynchronous:
+            return False
+        valueset = self.view()
+        if type(valueset) == dict:
+            template = '{}.html'.format(type(self).__name__)
+            self.content['center'].append(render_to_string([template], valueset, request=self.request))
+        elif type(valueset) == ValueSet:
+            self.content['center'].append(valueset.contextualize(self.request).html())
         for field in self.fields.values():
             if isinstance(field, forms.DecimalField):
                 field.clean = lambda value: value.replace('.', '').replace(',','.')
@@ -621,9 +682,12 @@ class Action(metaclass=ActionMetaclass):
 
     def process(self):
         try:
+            from ..core.valueset import ValueSet
             response = self.submit()
             if isinstance(response, HttpResponse):
                 raise ReadyResponseException(response)
+            if isinstance(response, ValueSet):
+                self.content['bottom'].append(response.contextualize(self.request).html())
         except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):
                 message = 'Corrija os erros indicados no formulário'
@@ -637,15 +701,6 @@ class Action(metaclass=ActionMetaclass):
                 message = 'Ocorreu um erro no servidor: {}'.format(e)
                 messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, message)
-
-    def display(self):
-        return None
-
-    def output(self, data, template=None):
-        if template:
-            self.output_data = render_to_string(template, data, request=self.request)
-        else:
-            self.output_data = data
 
     @classmethod
     def get_attr_metadata(cls, lookup):
@@ -662,3 +717,36 @@ class Action(metaclass=ActionMetaclass):
     def values(self, *names):
         from sloth.core.base import ValueSet
         return ValueSet(self, names)
+
+    @classmethod
+    @lru_cache
+    def action_form_cls(cls, action):
+        return ACTIONS.get(action)
+
+    def should_display_buttons(self):
+        return self.fields or self.submit.__func__ != Action.submit
+
+    def dumps(self):
+        state = dict(instantiator=None, instance=None, instances=None)
+        if self.instantiator:
+            state['instantiator'] = '{}.{}'.format(
+                self.instantiator.metaclass().app_label,
+                self.instantiator.metaclass().model_name,
+            ), self.instantiator.id
+        if self.instance:
+            state['instance'] = '{}.{}'.format(
+                self.instance.metaclass().app_label,
+                self.instance.metaclass().model_name,
+            ), self.instance.id
+        if 0 and self.instances:
+            state['instances'] = self.instances.dumps()
+        return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
+
+    def loads(self, s):
+        state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
+        if state['instantiator']:
+            self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
+        if state['instance']:
+            self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
+        if state['instances']:
+            state['instances'] = QuerySet.loads(state['instances'])

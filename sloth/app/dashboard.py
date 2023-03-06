@@ -1,3 +1,4 @@
+import inspect
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
@@ -7,7 +8,7 @@ from sloth.app.templatetags.tags import mobile
 from sloth.exceptions import ReadyResponseException
 from sloth.utils import pretty
 from.actions import ExecuteQuery, ExecuteScript
-
+from ..actions import Action
 
 DASHBOARDS = []
 
@@ -35,6 +36,11 @@ class Dashboard(metaclass=DashboardType):
         self.enabled_apps = set()
         if self.request.user.is_authenticated:
             self.load(request)
+        if self.request.path == '/app/':
+            self.index(request)
+
+    def index(self, request):
+        pass
 
     def redirect(self, url, message=None):
         self.redirect_url = url
@@ -154,7 +160,14 @@ class Dashboard(metaclass=DashboardType):
         self._load('settings', items, app=app)
 
     def append(self, data, aside=False, grid=1):
-        if self.request.path == '/app/':
+        if inspect.isclass(data) and issubclass(data, Action):
+            action = data(request=self.request)
+            action.is_valid()
+            if aside:
+                self.data['right'].append(action.html())
+            else:
+                self.data['center'].append((grid, action.html()))
+        elif self.request.path == '/app/':
             if aside and hasattr(data, 'compact'):
                 data.compact()
             if self.request.path == '/app/':

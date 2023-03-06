@@ -1,5 +1,6 @@
 from sloth.app.dashboard import Dashboard
 from .models import Animal, Cliente, Doenca, Tratamento
+from .actions import ExibirDataHora, FazerAlgumaCoisa
 
 class PetshopDashboard(Dashboard):
 
@@ -11,6 +12,10 @@ class PetshopDashboard(Dashboard):
         self.navigation(Animal, Cliente)
         self.floating(Animal, Cliente)
         self.settings(Animal, Cliente)
+
+    def index(self, request):
+        self.append(FazerAlgumaCoisa)
+        self.append(ExibirDataHora, aside=True)
         self.append(Animal.objects.all().ignore('foto').accordion())
         self.append(Doenca.objects.contagiosas())
         self.append(Doenca.objects.get_total_por_contagiosiade().verbose_name('Doenças por Contagiosidade'), aside=True)

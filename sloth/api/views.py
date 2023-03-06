@@ -27,7 +27,9 @@ def endpoint(func):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
                 verbose = request.path.startswith('/meta')
-                return ApiResponse(data.serialize(wrap=wrap, verbose=verbose), safe=False)
+                serialized = data.serialize(wrap=wrap, verbose=verbose)
+                # serialize = dict(type='view', data=dict(Header={}, Breadcrumps=[], Menu=[], Main=dict(Left=[], Top=[], Center=[serialized], Bottom=[])), Footer={})
+                return ApiResponse(serialize, safe=False)
             else:
                 return ApiResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403

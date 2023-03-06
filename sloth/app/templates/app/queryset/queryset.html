@@ -54,8 +54,7 @@
             $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).addClass('selected')
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
-                url:'/app{{ data.path }}',
-                data:data,
+                url:'/app/queryset/?'+data,
                 success:function( html ) {
                     var remote = $(html);
                     $('#queryset-data-{{ data.uuid }}').html(
@@ -74,7 +73,7 @@
             if(attaches){
                 $.ajax({
                     dataType: 'json',
-                    url: '/app{{ data.path }}?attaches=',
+                    url: "/app/queryset/?attaches=&"+data,
                     success:function( totals ) {
                         for (const [key, value] of Object.entries(totals)) {
                             if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);

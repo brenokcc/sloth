@@ -5,7 +5,7 @@ import pprint
 
 from django.db.models import Model
 from django.template.loader import render_to_string
-
+from sloth.actions import Action
 from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
 from sloth.utils import getattrr, serialize, pretty
@@ -84,7 +84,8 @@ class ValueSet(dict):
         return self
 
     def image(self, image):
-        self.metadata['image'] = image
+        image_attr = getattr(self.instance, image)
+        self.metadata['image'] = image_attr() if callable(image_attr) else image_attr
         return self
 
     def title(self, title):
@@ -158,6 +159,8 @@ class ValueSet(dict):
         return {}
 
     def get_path(self, attr_name):
+        if isinstance(self.instance, Action):
+            return None
         if isinstance(self.instance, QuerySet):
             metaclass = self.instance.model.metaclass()
             return '/{}/{}/{}/'.format(metaclass.app_label,metaclass.model_name, attr_name)
@@ -212,13 +215,13 @@ class ValueSet(dict):
                         verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
                         qs = qs.contextualize(self.request)
                         if wrap:
-                            if self.metadata['primitive']:
+                            if self.metadata['primitive'] and deep>0:
                                 data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
                             else:
                                 data = qs.serialize(path=path, wrap=wrap, verbose=verbose, lazy=lazy)
                             data.update(name=verbose_name if verbose else attr_name, key=attr_name)
                         else:
-                            if self.metadata['primitive']:  # one-to-many or many-to-many
+                            if self.metadata['primitive'] and deep>0:  # one-to-many or many-to-many
                                 data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
                             else:
                                 data = qs.to_list(detail=False)
@@ -247,8 +250,7 @@ class ValueSet(dict):
                                     data['actions'].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:
-                                image_attr = getattr(self.instance, valueset.metadata['image'])
-                                image = image_attr() if callable(image_attr) else image_attr
+                                image = valueset.metadata['image']
                                 if image:
                                     image = str(image)
                                     if not image.startswith('/') and not image.startswith('http'):
@@ -267,7 +269,7 @@ class ValueSet(dict):
                             metadata = getattr(attr, '__metadata__', None)
                             if template:
                                 template = 'renderers/{}.html'.format(template)
-                            data = dict(value=data, width=width, template=template, metadata=metadata, type='primitive', path=path)
+                            data = dict(value=data, width=width, template=template, metadata=metadata, type='primitive')
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data

@@ -170,7 +170,6 @@ jQuery.fn.extend({
                 });
             }
             $(document).request(form.action, method, data, function(html){
-                console.log($(html).find('.action-wrapper'));
                 $(form).closest('.action-wrapper').html(html).initialize();
 //                if($('#modal').is(':visible')){
 //                    $('#modal').find('.modal-body').html(html).initialize();

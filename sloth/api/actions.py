@@ -4,6 +4,7 @@ import base64
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.http import HttpResponseRedirect
 
 from sloth import actions, meta
 from django.contrib import auth
@@ -89,6 +90,7 @@ class StopTask(actions.Action):
     def has_permission(self, user):
         return self.instance.in_progress() and (user.is_superuser or self.instance.user == user)
 
+
 class Login(actions.Action):
     username = actions.CharField(label='Login')
     password = actions.CharField(label='Senha', widget=actions.PasswordInput())
@@ -135,6 +137,10 @@ class Login(actions.Action):
     def submit(self):
         if self.user:
             auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
+            return HttpResponseRedirect('/app/')
+
+    def has_permission(self, user):
+        return True
 
 
 class ChangePassword(actions.Action):

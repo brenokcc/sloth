@@ -13,7 +13,7 @@ from django.contrib import auth
 from django.contrib import messages
 from django.conf import settings
 from django.apps import apps
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
@@ -72,6 +72,9 @@ class ActionMetaclass(ModelFormMetaclass):
         ACTIONS[name.lower()] = cls
         ACTIONS[to_snake_case(name)] = cls
         return cls
+
+    def __init__(cls, name, bases, attrs):
+        return super().__init__(name, bases, attrs)
 
 
 class Action(metaclass=ActionMetaclass):
@@ -658,6 +661,8 @@ class Action(metaclass=ActionMetaclass):
         if message and self.request.path.startswith('/app/'):
             messages.add_message(self.request, messages.SUCCESS, message)
             self.response.update(message=message, style=style)
+        if not self.get_metadata()['ajax']:
+            raise ReadyResponseException(HttpResponseRedirect(url))
 
     def run(self, *tasks, message=None):
         for task in tasks:
@@ -752,9 +757,13 @@ class Action(metaclass=ActionMetaclass):
 
     def loads(self, s):
         state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
-        if state['instantiator']:
+        if state['instantiator'] and state['instantiator'][1]:
             self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
-        if state['instance']:
+        if state['instance'] and state['instance'][1]:
             self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
         if state['instances']:
             state['instances'] = QuerySet.loads(state['instances'])
+
+    def get_full_path(self):
+        # return '/app/action/{}/'.get(self.get_metadata().get(key))
+        return self.request.get_full_path()

@@ -2,7 +2,7 @@ import json
 import time
 import datetime
 from sloth import actions, meta
-from .models import Tratamento, Procedimento, TipoProcedimento
+from .models import Tratamento, Procedimento, TipoProcedimento, Animal
 
 class ExibirDataHora(actions.Action):
 
@@ -30,6 +30,7 @@ class FazerAlgumaCoisa(actions.Action):
         # self.redirect('/app/petshop/animal/', 'Muito bom!')
         # return self.values('get_tipos_procedimentos')
 
+
 class FazerAlgumaCoisa2(actions.Action):
     data = actions.DateField(label='Data', required=False)
     class Meta:
@@ -38,6 +39,7 @@ class FazerAlgumaCoisa2(actions.Action):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.instantiator = Animal.objects.first()
         self.info('Isso é uma informação!')
 
     def get_dados_gerais(self):

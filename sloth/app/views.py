@@ -246,3 +246,15 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
     else:
         ctx.update(data=data)
     return render(request, ['app/default.html'], ctx)
+
+@view
+def dispatcher2(request, path):
+    ctx = context(request, True)
+    data = views.dispatcher2(request, path)
+    if isinstance(data, Action):
+        ctx.update(form=data)
+        if data.response:
+            return HttpResponse(data.html())
+    else:
+        ctx.update(data=data)
+    return render(request, ['app/default.html'], ctx)

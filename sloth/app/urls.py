@@ -16,6 +16,7 @@ urlpatterns = [
     path('app/queryset/', views.queryset),
     path('app/push_subscription/', views.push_subscription),
     path('app/action/<str:name>/', views.action),
+    re_path(r'^app2/(?P<path>.*)/$', views.dispatcher2),
     re_path(r'^app/action/(?P<name>\w+)/(?P<parameters>.*)/$', views.action),
     path('app/<str:app_label>/<str:model_name>/', views.dispatcher),
     path('app/<str:app_label>/<str:model_name>/<str:x>/', views.dispatcher),

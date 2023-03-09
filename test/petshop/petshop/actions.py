@@ -13,7 +13,7 @@ class ExibirDataHora(actions.Action):
     def view(self):
         time.sleep(2)
         # self.fade_out()
-        self.auto_reload()
+        # self.auto_reload()
         return dict(data_hora=datetime.datetime.now())
 
 
@@ -39,6 +39,7 @@ class FazerAlgumaCoisa2(actions.Action):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        print(self.instantiator, self.instance, self.instances, 9999)
         self.instantiator = Animal.objects.first()
         self.info('Isso é uma informação!')
 
@@ -81,6 +82,19 @@ class ExcluirTratamento(actions.Action):
         super().submit()
 
 
+class ExcluirTratamentos(actions.Action):
+
+    class Meta:
+        style = 'danger'
+        confirmation = True
+        has_permission = 'Funcionário',
+
+    def submit(self):
+        for instance in self.instances:
+            instance.delete()
+        super().submit()
+
+
 class RegistrarProcedimento(actions.Action):
 
     class Meta:
@@ -88,6 +102,9 @@ class RegistrarProcedimento(actions.Action):
         related_field = 'tratamento'
         has_permission = 'Funcionário',
         reload = True
+        fieldsets = {
+            '': (('tipo', 'data_hora'), 'observacao')
+        }
 
     def has_permission(self, user):
         return self.instantiator.eficaz is None

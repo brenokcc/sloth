@@ -68,7 +68,7 @@
             var ids = $('#queryset-{{ uuid }}').find('.action-checkbox:checked').map(function(){
               return $(this).val();
             }).get().filter(function (id) { return id!='on' }).join('-');
-            this.href = $(this).data('url').replace('{id}', ids);
+            this.href = $(this).data('url').replace('{id}', '0-'+ids);
         }
         if($(this).hasClass('model')){
             this.href = $(this).data('url');

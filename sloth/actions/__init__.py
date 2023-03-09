@@ -82,7 +82,7 @@ class Action(metaclass=ActionMetaclass):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
-        self.instances = kwargs.pop('instances', ())
+        self.instances = kwargs.pop('instances', None)
         self.metaclass = getattr(self, 'Meta')
         self.show_form = True
         self.fade_out_time = 0
@@ -92,18 +92,29 @@ class Action(metaclass=ActionMetaclass):
         self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
         self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
+        if self.instances is not None and self.instances.count() == 1:
+            kwargs.update(instance=self.instances.first())
+            self.instances = None
+
         if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
-            if self.instances:
-                kwargs.update(instance=self.instances[0])
         else:
             self.instance = kwargs.pop('instance', None)
-            if self.instance is None:
-                if self.instances:
-                    self.instance = self.instances[0]
-            else:
-                if self.instances == ():
-                    self.instances = self.instance,
+
+        # if forms.ModelForm in self.__class__.__bases__:
+        #     self.instance = kwargs.get('instance', None)
+        #     if self.instances:
+        #         kwargs.update(instance=self.instances[0])
+        # else:
+        #     self.instance = kwargs.pop('instance', None)
+        #     if self.instance is None:
+        #         if self.instances:
+        #             self.instance = self.instances[0]
+        #     else:
+        #         if self.instances == ():
+        #             self.instances = self.instance,
+        # if 'instances' in self.request.GET:
+        #     self.instances = QuerySet.loads(self.request.GET['instances'])
 
         form_name = type(self).__name__
         if 'data' not in kwargs:
@@ -125,6 +136,12 @@ class Action(metaclass=ActionMetaclass):
 
         super().__init__(*args, **kwargs)
         self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
+
+        related_field_name = getattr(self.metaclass, 'related_field', None)
+        if related_field_name:
+            setattr(self.instance, related_field_name, self.instantiator)
+            if related_field_name in self.fields:
+                del self.fields[related_field_name]
 
         for field_name in self.fields:
             field = self.fields[field_name]
@@ -450,9 +467,9 @@ class Action(metaclass=ActionMetaclass):
         if path:
             if inline or batch:
                 target = 'queryset' if batch else 'instance'
-                path = '{}{{id}}/{}/'.format(path, form_name)
+                path = '{}{{id}}/{}/'.format(path, to_snake_case(form_name))
             else:
-                path = '{}{}/'.format(path, form_name)
+                path = '{}{}/'.format(path, to_snake_case(form_name))
         metadata = dict(
             type='form', key=form_name, name=name, submit=submit, target=target,
             method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal
@@ -543,8 +560,8 @@ class Action(metaclass=ActionMetaclass):
                     pks = [pk for pk in self.data.getlist(name) if pk]
                 if getattr(field, 'picker', None) is None:
                     field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
-                field.widget.attrs['data-choices-url'] = '{}?action_choices={}'.format(
-                    self.request.path, name
+                field.widget.attrs['data-choices-url'] = '{}{}action_choices={}'.format(
+                    self.get_full_path(), '&' if '?' in self.get_full_path() else '?', name
                 )
 
             if getattr(field.widget, 'mask', None):
@@ -751,8 +768,9 @@ class Action(metaclass=ActionMetaclass):
                 self.instance.metaclass().app_label,
                 self.instance.metaclass().model_name,
             ), self.instance.id
-        if 0 and self.instances:
+        if self.instances:
             state['instances'] = self.instances.dumps()
+        from pprint import pprint;pprint(state)
         return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
 
     def loads(self, s):
@@ -762,8 +780,10 @@ class Action(metaclass=ActionMetaclass):
         if state['instance'] and state['instance'][1]:
             self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
         if state['instances']:
-            state['instances'] = QuerySet.loads(state['instances'])
+            self.instances = QuerySet.loads(state['instances'])
 
     def get_full_path(self):
-        # return '/app/action/{}/'.get(self.get_metadata().get(key))
-        return self.request.get_full_path()
+        tokens = self.request.path.split()
+        if len(tokens) > 1 and tokens[1] in settings.INSTALLED_APPS:
+            return self.request.get_full_path()
+        return '/app/action/{}/'.format(self.get_metadata().get('key'))

@@ -2,6 +2,7 @@
 import locale
 import datetime
 import unicodedata
+from django import template
 from django.template import Library
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
@@ -269,3 +270,27 @@ def action_link(action_name):
     return mark_safe('<a href="/app/action/{}/" class="{}">{}</a>'.format(
         to_snake_case(action_name), 'popup' if metadata['modal'] else '', metadata['name']
     ))
+
+def action_cls(request, action_name):
+    cls = ACTIONS[action_name]
+    form = cls()
+
+
+@register.tag
+def action(parser,token):
+    _, action_name, instantiator = token.split_contents()
+    return ActionNode(action_name, instantiator)
+
+class ActionNode(template.Node):
+    def __init__(self, action_name, instantiator):
+        self.request = template.Variable('request')
+        self.action_name = template.Variable(action_name)
+        self.instantiator = template.Variable(instantiator)
+    def render(self, context):
+        request = self.request.resolve(context)
+        action_name = self.action_name.resolve(context)
+        instantiator = self.instantiator.resolve(context)
+        cls = ACTIONS[action_name]
+        form = cls(request=request, instantiator=instantiator)
+        form.is_valid()
+        return form.html()

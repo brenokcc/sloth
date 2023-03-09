@@ -53,7 +53,7 @@ class ValueSet(dict):
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
             attach=[], append=[], image=image, template=None, primitive=False, verbose_name=None,
-            title=None, subtitle=None, status=None, icon=None, only={}, refresh={},
+            title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -71,8 +71,11 @@ class ValueSet(dict):
         self.metadata['only'][name].extend(roles)
         return self
 
-    def actions(self, *names):
-        self.metadata['actions'] = list(names)
+    def actions(self, *names, inline=False):
+        if inline:
+            self.metadata['inline_actions'] = list(names)
+        else:
+            self.metadata['actions'] = list(names)
         return self
 
     def append(self, *names):
@@ -159,13 +162,13 @@ class ValueSet(dict):
         return {}
 
     def get_path(self, attr_name):
-        if isinstance(self.instance, Action):
-            return None
+        if isinstance(self.instance, Model):
+            metaclass = self.instance.metaclass()
+            return '/{}/{}/{}/{}/'.format(metaclass.app_label, metaclass.model_name, self.instance.pk, attr_name)
         if isinstance(self.instance, QuerySet):
             metaclass = self.instance.model.metaclass()
             return '/{}/{}/{}/'.format(metaclass.app_label,metaclass.model_name, attr_name)
-        metaclass = self.instance.metaclass()
-        return '/{}/{}/{}/{}/'.format(metaclass.app_label, metaclass.model_name,self.instance.pk, attr_name)
+        return '/{}/'.format(attr_name)
 
     def get_api_schema(self, recursive=False):
         schema = dict()
@@ -242,12 +245,13 @@ class ValueSet(dict):
                             continue
                         refresh = valueset.refresh_data()
                         data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name if verbose else attr_name,
-                            key=key, refresh=refresh, actions=[], data=valueset, path=path) if wrap else valueset
+                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path, instance=valueset.instance) if wrap else valueset
                         if wrap:
-                            for form_name in valueset.metadata['actions']:
-                                form_cls = self.instance.action_form_cls(form_name)
-                                if form_cls.check_fake_permission(self.request, self.instance, self.instance):
-                                    data['actions'].append(form_cls.get_metadata(path))
+                            for action_type in ('actions', 'inline_actions'):
+                                for form_name in valueset.metadata[action_type]:
+                                    form_cls = self.instance.action_form_cls(form_name)
+                                    if form_cls.check_fake_permission(self.request, self.instance, self.instance):
+                                        data[action_type].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:
                                 image = valueset.metadata['image']
@@ -310,17 +314,19 @@ class ValueSet(dict):
                         verbose_name, ordering, template, metadata = str(self.instance), None, None, {}
                     output[key] = dict(value=value, template=template, metadata=metadata)
 
-            output.update(icon=icon, data=self, actions=[], attach=[], append={})
-            for form_name in self.metadata['actions']:
-                form_cls = self.instance.action_form_cls(form_name)
-                if self.request is None or form_cls.check_fake_permission(
-                        request=self.request, instance=self.instance, instantiator=self.instance,
-                ):
-                    path = '/{}/{}/{}/'.format(
-                        self.instance.metaclass().app_label,
-                        self.instance.metaclass().model_name, self.instance.pk
-                    )
-                    output['actions'].append(form_cls.get_metadata(path))
+            output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
+            for action_type in ('actions', 'inline_actions'):
+                for form_name in self.metadata[action_type]:
+                    print(action_type, form_name)
+                    form_cls = self.instance.action_form_cls(form_name)
+                    if self.request is None or form_cls.check_fake_permission(
+                            request=self.request, instance=self.instance, instantiator=self.instance,
+                    ):
+                        path = '/{}/{}/{}/'.format(
+                            self.instance.metaclass().app_label,
+                            self.instance.metaclass().model_name, self.instance.pk
+                        )
+                        output[action_type].append(form_cls.get_metadata(path))
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 path = '/{}/{}/{}/{}/'.format(

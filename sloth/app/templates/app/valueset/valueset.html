@@ -39,8 +39,10 @@
                   {% endif %}
             </div>
         </div>
-
         <div class="clearfix"></div>
+        {% for action in data.inline_actions %}
+            {% action action.key data.instance %}
+        {% endfor %}
 
         <div class="valueset-attaches">
             {% if data.attach %}

@@ -37,7 +37,7 @@ class QuerySet(models.QuerySet):
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[],
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
-            global_actions=[], batch_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
+            global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
         )
 
     def _clone(self):
@@ -429,7 +429,7 @@ class QuerySet(models.QuerySet):
                     )
                 if self.metadata['subset']:
                     path = '{}{}/'.format(path, self.metadata['subset'])
-                data['actions'].update(model=[], instance=[], queryset=[])
+                data['actions'].update(model=[], instance=[], queryset=[], inline=[])
 
                 for view in self.metadata['view']:
                     if view['name'] == 'self':
@@ -445,7 +445,7 @@ class QuerySet(models.QuerySet):
                             modal=view['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
                         )
                     )
-                for action_type in ('global_actions', 'actions', 'batch_actions'):
+                for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
                     for form_name in self.metadata[action_type]:
                         form_cls = self.model.action_form_cls(form_name)
                         if action_type == 'actions' or self.request is None or form_cls.check_fake_permission(
@@ -454,6 +454,10 @@ class QuerySet(models.QuerySet):
                             action = form_cls.get_metadata(
                                 path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                             )
+                            if action_type == 'global_actions':
+                                action['path'] = '{}?instances={}'.format(action['path'], self.dumps(add_metadata=False))
+                            if action_type == 'inline_actions':
+                                action['target'] = 'inline'
                             data['actions'][action['target']].append(action)
 
                 template = self.metadata['template']
@@ -551,7 +555,7 @@ class QuerySet(models.QuerySet):
         self.metadata['compact'] = flag
         return self
 
-    def attr(self, name):
+    def attr(self, name, source=False):
         self.metadata['attr'] = name
         self.metadata['uuid'] = name
         if self.metadata['verbose_name'] is None:
@@ -578,6 +582,10 @@ class QuerySet(models.QuerySet):
 
     def batch_actions(self, *names):
         self.metadata['batch_actions'] = list(names)
+        return self
+
+    def inline_actions(self, *names):
+        self.metadata['inline_actions'] = list(names)
         return self
 
     def default_actions(self):
@@ -765,12 +773,14 @@ class QuerySet(models.QuerySet):
     def normalize_email(self, email):
         return email
 
-    def dumps(self):
+    def dumps(self, add_metadata=True):
         request = self.metadata.pop('request', None)
-        state = dict(app=self.model.metaclass().app_label, model=self.model.metaclass().model_name, query=self.query, metadata=self.metadata)
+        state = dict(app=self.model.metaclass().app_label, model=self.model.metaclass().model_name, query=self.query)
+        if add_metadata:
+            state.update(metadata=self.metadata)
         s = signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
         if request:
-            self.metadata[request] = request
+            self.metadata['request'] = request
         return s
 
     @staticmethod
@@ -782,3 +792,11 @@ class QuerySet(models.QuerySet):
         queryset.query = query
         queryset.metadata = state['metadata']
         return queryset
+
+    @classmethod
+    def action_form_cls(cls, action):
+        from sloth.actions import ACTIONS
+        if action.lower() == 'add':
+            return cls.add_form_cls()
+        else:
+            return ACTIONS.get(action)

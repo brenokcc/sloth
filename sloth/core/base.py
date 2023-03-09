@@ -465,3 +465,12 @@ class ModelMixin(object):
     @classmethod
     def metaclass(cls):
         return getattr(cls, '_meta')
+
+    def contextualize(self, request):
+        return self.view().contextualize(request)
+
+    def attr(self, name, source=False):
+        valueset = self.values(name).attr(name)
+        if source:
+            valueset = valueset.source(name)
+        return valueset

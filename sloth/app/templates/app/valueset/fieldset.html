@@ -19,6 +19,9 @@
               {% endif %}
           </div>
           <div class="card-text fieldset-data toogle-data" id="{{ data.name|slugify }}">
+              {% for action in data.inline_actions %}
+                {% action action.key data.instance %}
+              {% endfor %}
               <table width="100%">
                   <tr>
                     {% if data.image %}

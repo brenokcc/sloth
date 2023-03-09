@@ -41,7 +41,7 @@ def is_authenticated(request):
 
 def action(request, name):
     form_cls = ACTIONS[name]
-    form = form_cls(request=request, instances=(), instantiator=None)
+    form = form_cls(request=request)
     if form.check_permission(request.user):
         if form.is_valid():
             form.process()
@@ -91,6 +91,7 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                                 raise PermissionDenied()
                             else:  # /base/estado/1/get_cidades/1/alterar_nome/
                                 form_cls = model.action_form_cls(w)
+                                print(99999)
                                 form = form_cls(request=request, instances=qs, instantiator=obj)
                                 if form.check_permission(request.user):
                                     if form.is_valid():
@@ -103,14 +104,6 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                             if request.user.is_superuser or instance.has_view_permission(request.user) or instance.has_permission(request.user):
                                 return instance.view().contextualize(request)
                             raise PermissionDenied()
-                            # form_cls = model.action_form_cls(z)
-                            # instances = attr().filter(pk__in=z.split('-'))
-                            # form = form_cls(request=request, instantiator=obj, instances=instances)
-                            # if form.check_permission(request.user):
-                            #     if form.is_valid():
-                            #         form.process()
-                            #     return form
-                            # raise PermissionDenied()
                     else:
                         if w:  # /base/estado/1/get_cidades/sem_prefeito/1/
                             qs = getattr(attr(), z)()
@@ -261,3 +254,36 @@ def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k
                 obj = obj.default_actions().collapsed(False).is_admin()
             return obj
         raise PermissionDenied()
+
+
+def dispatcher2(request, path):
+    obj = None
+    tokens = path.split('/')
+    token = tokens.pop(0)
+    if token == 'dashboard':
+        from petshop.dashboard import PetshopDashboard
+        obj = PetshopDashboard(request) if tokens else PetshopDashboard(request).view()
+    elif token in settings.INSTALLED_APPS:
+        app_label = token
+        model_name = tokens.pop(0)
+        obj = apps.get_model(app_label, model_name).objects if tokens else apps.get_model(app_label, model_name).objects.all()
+    else:
+        raise PermissionDenied()
+    for token in tokens:
+        if token.isdigit():
+            obj = obj.get(pk=token)
+        elif '-' in token:
+            obj = obj.filter(pk__in=token.split('-'))
+        elif token in ACTIONS:
+            form_cls = obj.action_form_cls(token)
+            form = form_cls(request=request)
+            if form.check_permission(request.user):
+                if form.is_valid():
+                    result = form.process()
+                    if result is not None:
+                        return result
+                return form
+        else:
+            #obj = obj.attr(token, source=not is_ajax(request))
+            obj = getattr(obj, token)()
+    return obj.contextualize(request)

@@ -28,6 +28,8 @@ class QuerySet(models.QuerySet):
 
     def __init__(self, *args, **kwargs):
         self.request = None
+        self.metadata = None
+        self.instantiator = None
         super().__init__(*args, **kwargs)
         self.reset()
 
@@ -43,6 +45,7 @@ class QuerySet(models.QuerySet):
     def _clone(self):
         clone = super()._clone()
         clone.request = self.request
+        self.instantiator = self.instantiator
         clone.metadata = dict(self.metadata)
         return clone
 
@@ -392,24 +395,12 @@ class QuerySet(models.QuerySet):
                 pages=pages
             )
             data = dict(
-                uuid=self.metadata['uuid'], type='queryset',
+                uuid=self.metadata['uuid'], type='queryset', path=path,
                 name=verbose_name, key=None, icon=icon, count=n_pages,
-                actions={}, metadata={}, data=values
+                actions={}, metadata={}, data=values, instantiator=self.instantiator
             )
             if attach:
                 data.update(attach=attach)
-
-            # path where queryset is instantiated
-            if self.request:
-                prefix = self.request.path.split('/')[1]
-                if self.metadata['attr']:
-                    # if it is a relationship of an object. Ex: /base/servidor/3/get_ferias/
-                    path = self.request.path.replace('/{}'.format(prefix), '')
-                if path is None:
-                    if self.request:
-                        data.update(path=self.request.get_full_path().replace('/{}'.format(prefix), ''))
-                else:
-                    data.update(path=path)
 
             if not lazy:
                 data['metadata'].update(
@@ -421,14 +412,6 @@ class QuerySet(models.QuerySet):
                     data['metadata']['calendar'] = calendar
                 if self.metadata['totalizer']:
                     data['metadata'].update(total=self.sum(self.metadata['totalizer']))
-
-                # path where actions will be executed
-                if path is None:
-                    path = '/{}/{}/'.format(
-                        self.model.metaclass().app_label, self.model.metaclass().model_name
-                    )
-                if self.metadata['subset']:
-                    path = '{}{}/'.format(path, self.metadata['subset'])
                 data['actions'].update(model=[], instance=[], queryset=[], inline=[])
 
                 for view in self.metadata['view']:
@@ -454,8 +437,6 @@ class QuerySet(models.QuerySet):
                             action = form_cls.get_metadata(
                                 path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                             )
-                            if action_type == 'global_actions':
-                                action['path'] = '{}?instances={}'.format(action['path'], self.dumps(add_metadata=False))
                             if action_type == 'inline_actions':
                                 action['target'] = 'inline'
                             data['actions'][action['target']].append(action)
@@ -474,7 +455,7 @@ class QuerySet(models.QuerySet):
 
     # metadata functions
 
-    def is_admin(self):
+    def admin(self):
         self.metadata['is_admin'] = True
         return self
 
@@ -623,7 +604,7 @@ class QuerySet(models.QuerySet):
     # rendering function
 
     def html(self, path=None):
-        serialized = self.serialize(path=path, wrap=True, verbose=True)
+        serialized = self.serialize(path=path or self.request.path, wrap=True, verbose=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
@@ -717,8 +698,8 @@ class QuerySet(models.QuerySet):
         if 'page' in request.GET:
             page = int(request.GET['page'] or 1)
         if isinstance(attach, QuerySet):
-            if request.GET.get('is_admin') and qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
-                qs.default_actions()
+            # if request.GET.get('is_admin') and qs.metadata['attr'] is None and request.GET.get('subset') == 'all':
+            #     qs.default_actions()
             qs = qs.page(page)
             # qs.debug()
             return qs.distinct()
@@ -793,10 +774,8 @@ class QuerySet(models.QuerySet):
         queryset.metadata = state['metadata']
         return queryset
 
-    @classmethod
-    def action_form_cls(cls, action):
-        from sloth.actions import ACTIONS
-        if action.lower() == 'add':
-            return cls.add_form_cls()
-        else:
-            return ACTIONS.get(action)
+    def action_form_cls(self, action):
+        return self.model.action_form_cls(action)
+
+    def get_full_path(self):
+        pass

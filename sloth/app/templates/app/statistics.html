@@ -18,7 +18,7 @@
 {% else %}
 {% if 0 %}
 <div class="search-and-filters">
-    <form method="get" id="form-{{ data.uuid }}" action="/app{{ data.path }}">
+    <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
         <input type="hidden" name="uuid" value="{{ data.uuid }}">
         <div class="filters" id="filters-{{ data.uuid }}">
             {% for name, metadata in data.filters.items %}
@@ -41,7 +41,7 @@
         $(document.body).addClass('page-loading');
         var data = $('#form-{{ data.uuid }}').serialize();
         $.ajax({
-            url:'/app{{ data.path }}',
+            url:'{{ data.path }}',
             data:data,
             success:function( html ) {
                 $(document.body).removeClass('page-loading');

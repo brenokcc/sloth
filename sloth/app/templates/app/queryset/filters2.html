@@ -16,7 +16,7 @@
 {% if data.metadata.pagination.total %}
     {% if data.metadata.search or data.metadata.filters %}
         <div class="search-and-filters">
-            <form method="get" id="form-{{ data.uuid }}" action="/app{{ data.path }}">
+            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
                 <input type="hidden" name="uuid" value="{{ data.uuid }}">
                 <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
                 <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
@@ -65,7 +65,7 @@
                                       placeholder: 'Selecione uma opção',
                                       {% if metadata.choices is None %}
                                       ajax: {
-                                        url: "/app{{ data.path }}?choices={{ metadata.key }}",
+                                        url: "{{ data.path }}?choices={{ metadata.key }}",
                                         dataType: 'json',
                                         delay: 250,
                                         minimumInputLength: 3,

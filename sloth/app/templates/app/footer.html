@@ -10,16 +10,16 @@
         font-size: 75%;
     }
 </style>
-{% if dashboard.extra.footer.title %}
+{% if dashboard.data.footer.title %}
     <footer>
         <div class="footer-title">
-            {{ dashboard.extra.footer.title }}
+            {{ dashboard.data.footer.title }}
         </div>
-        {% if dashboard.extra.footer.text %}
+        {% if dashboard.data.footer.text %}
             <div class="footer-text">
-                <div>{{ dashboard.extra.footer.text }}</div>
-                {% if dashboard.extra.footer.version %}
-                    <div>Versão {{ dashboard.extra.footer.version|stringformat:'s' }}</div>
+                <div>{{ dashboard.data.footer.text }}</div>
+                {% if dashboard.data.footer.version %}
+                    <div>Versão {{ dashboard.data.footer.version|stringformat:'s' }}</div>
                 {% endif %}
             </div>
         {% endif %}

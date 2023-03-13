@@ -47,13 +47,15 @@ def is_fieldset_group(item):
 
 
 class ValueSet(dict):
-    def __init__(self, instance, names, image=None):
+    def __init__(self, instance, names):
+        self.path = None
         self.request = None
         self.instance = instance
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append=[], image=image, template=None, primitive=False, verbose_name=None,
+            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
+            cards=[], shortcuts=[]
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -124,6 +126,7 @@ class ValueSet(dict):
         return self
 
     def contextualize(self, request):
+        self.path = request.path
         self.request = request
         return self
 
@@ -160,15 +163,6 @@ class ValueSet(dict):
             else:
                 return dict(seconds=refresh['seconds'], retry=refresh['retry'])
         return {}
-
-    def get_path(self, attr_name):
-        if isinstance(self.instance, Model):
-            metaclass = self.instance.metaclass()
-            return '/{}/{}/{}/{}/'.format(metaclass.app_label, metaclass.model_name, self.instance.pk, attr_name)
-        if isinstance(self.instance, QuerySet):
-            metaclass = self.instance.model.metaclass()
-            return '/{}/{}/{}/'.format(metaclass.app_label,metaclass.model_name, attr_name)
-        return '/{}/'.format(attr_name)
 
     def get_api_schema(self, recursive=False):
         schema = dict()
@@ -211,10 +205,12 @@ class ValueSet(dict):
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
-                    path = self.get_path(attr_name)
+                    path = '{}{}/'.format(self.path, attr_name)
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
+                        qs.instantiator = self.instance
                         qs.metadata['uuid'] = attr_name
+                        qs.metadata['path'] = path
                         verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
                         qs = qs.contextualize(self.request)
                         if wrap:
@@ -277,7 +273,7 @@ class ValueSet(dict):
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
-        else:
+        elif isinstance(self.instance, Model):
             self['id'] = self.instance.id
             self[self.metadata['model'].__name__.lower()] = str(self.instance)
 
@@ -303,7 +299,7 @@ class ValueSet(dict):
                 name = ''
                 icon = None
             output = dict(
-                uuid=uuid1().hex, type='object', name=name
+                uuid=uuid1().hex, type='object', name=name, instance=self.instance,
             )
             for key in ('title', 'subtitle', 'status'):
                 if self.metadata[key]:
@@ -317,25 +313,15 @@ class ValueSet(dict):
             output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
             for action_type in ('actions', 'inline_actions'):
                 for form_name in self.metadata[action_type]:
-                    print(action_type, form_name)
                     form_cls = self.instance.action_form_cls(form_name)
                     if self.request is None or form_cls.check_fake_permission(
                             request=self.request, instance=self.instance, instantiator=self.instance,
                     ):
-                        path = '/{}/{}/{}/'.format(
-                            self.instance.metaclass().app_label,
-                            self.instance.metaclass().model_name, self.instance.pk
-                        )
-                        output[action_type].append(form_cls.get_metadata(path))
+                        output[action_type].append(form_cls.get_metadata(self.path))
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
-                path = '/{}/{}/{}/{}/'.format(
-                    self.instance.metaclass().app_label,
-                    self.instance.metaclass().model_name,
-                    self.instance.pk, attr_name
-                )
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    output['attach'].append(dict(name=name, path=path))
+                    output['attach'].append(dict(name=name, path=self.path))
             for attr_name in self.metadata['append']:
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     output['append'].update(

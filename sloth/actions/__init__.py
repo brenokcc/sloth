@@ -73,17 +73,16 @@ class ActionMetaclass(ModelFormMetaclass):
         ACTIONS[to_snake_case(name)] = cls
         return cls
 
-    def __init__(cls, name, bases, attrs):
-        return super().__init__(name, bases, attrs)
-
 
 class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
+        self.inline = kwargs.pop('inline', False)
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', None)
         self.metaclass = getattr(self, 'Meta')
+
         self.show_form = True
         self.fade_out_time = 0
         self.auto_reload_time = 0
@@ -92,14 +91,12 @@ class Action(metaclass=ActionMetaclass):
         self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
         self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
-        if self.instances is not None and self.instances.count() == 1:
-            kwargs.update(instance=self.instances.first())
-            self.instances = None
-
         if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
         else:
             self.instance = kwargs.pop('instance', None)
+
+        # print(dict(actions=type(self), instantiator=self.instantiator, instance=self.instance, instances=self.instances))
 
         # if forms.ModelForm in self.__class__.__bases__:
         #     self.instance = kwargs.get('instance', None)
@@ -131,8 +128,8 @@ class Action(metaclass=ActionMetaclass):
                 kwargs['files'] = self.request.FILES or None
             else:
                 kwargs['data'] = None
-        if kwargs['data'] and form_name in kwargs['data']:
-            self.loads(kwargs['data'][form_name])
+        # if kwargs['data'] and form_name in kwargs['data']:
+        #     self.loads(kwargs['data'][form_name])
 
         super().__init__(*args, **kwargs)
         self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
@@ -222,7 +219,7 @@ class Action(metaclass=ActionMetaclass):
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return  attr is None or attr(user)
+        return attr is None or attr(user)
 
     def requires_confirmation(self):
         return getattr(self.metaclass, 'confirmation', False)
@@ -756,34 +753,40 @@ class Action(metaclass=ActionMetaclass):
     def should_display_buttons(self):
         return self.fields or self.submit.__func__ != Action.submit
 
-    def dumps(self):
-        state = dict(instantiator=None, instance=None, instances=None)
-        if self.instantiator:
-            state['instantiator'] = '{}.{}'.format(
-                self.instantiator.metaclass().app_label,
-                self.instantiator.metaclass().model_name,
-            ), self.instantiator.id
-        if self.instance:
-            state['instance'] = '{}.{}'.format(
-                self.instance.metaclass().app_label,
-                self.instance.metaclass().model_name,
-            ), self.instance.id
-        if self.instances:
-            state['instances'] = self.instances.dumps()
-        from pprint import pprint;pprint(state)
-        return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
-
-    def loads(self, s):
-        state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
-        if state['instantiator'] and state['instantiator'][1]:
-            self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
-        if state['instance'] and state['instance'][1]:
-            self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
-        if state['instances']:
-            self.instances = QuerySet.loads(state['instances'])
+    # def dumps(self):
+    #     state = dict(instantiator=None, instance=None, instances=None)
+    #     if self.instantiator:
+    #         state['instantiator'] = '{}.{}'.format(
+    #             self.instantiator.metaclass().app_label,
+    #             self.instantiator.metaclass().model_name,
+    #         ), self.instantiator.id
+    #     if self.instance:
+    #         state['instance'] = '{}.{}'.format(
+    #             self.instance.metaclass().app_label,
+    #             self.instance.metaclass().model_name,
+    #         ), self.instance.id
+    #     if self.instances:
+    #         state['instances'] = self.instances.dumps()
+    #     from pprint import pprint;pprint(state)
+    #     return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
+    #
+    # def loads(self, s):
+    #     state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
+    #     if state['instantiator'] and state['instantiator'][1]:
+    #         self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
+    #     if state['instance'] and state['instance'][1]:
+    #         self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
+    #     if state['instances']:
+    #         self.instances = QuerySet.loads(state['instances'])
 
     def get_full_path(self):
-        tokens = self.request.path.split()
-        if len(tokens) > 1 and tokens[1] in settings.INSTALLED_APPS:
-            return self.request.get_full_path()
-        return '/app/action/{}/'.format(self.get_metadata().get('key'))
+        print(type(self), self.inline)
+        if self.inline:
+            if self.inline is True:
+                return '{}{}/'.format(self.request.path, to_snake_case(type(self).__name__))
+            return '{}{}/{}/'.format(self.request.path, self.inline, to_snake_case(type(self).__name__))
+        return self.request.get_full_path()
+        # tokens = self.request.path.split()
+        # if len(tokens) > 1 and tokens[1] in settings.INSTALLED_APPS:
+        #     return self.request.get_full_path()
+        # return '/app/action/{}/'.format(self.get_metadata().get('key'))

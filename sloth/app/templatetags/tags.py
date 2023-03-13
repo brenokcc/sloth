@@ -278,19 +278,23 @@ def action_cls(request, action_name):
 
 @register.tag
 def action(parser,token):
-    _, action_name, instantiator = token.split_contents()
-    return ActionNode(action_name, instantiator)
+    _, action_name, instantiator, fieldset_name = token.split_contents()
+    return ActionNode(action_name, instantiator, fieldset_name)
+
 
 class ActionNode(template.Node):
-    def __init__(self, action_name, instantiator):
+    def __init__(self, action_name, instantiator, fieldset_name=None):
         self.request = template.Variable('request')
         self.action_name = template.Variable(action_name)
         self.instantiator = template.Variable(instantiator)
+        self.fieldset_name = template.Variable(fieldset_name)
+
     def render(self, context):
         request = self.request.resolve(context)
         action_name = self.action_name.resolve(context)
         instantiator = self.instantiator.resolve(context)
+        fieldset_name = self.fieldset_name.resolve(context)
         cls = ACTIONS[action_name]
-        form = cls(request=request, instantiator=instantiator)
+        form = cls(request=request, instantiator=instantiator, inline=fieldset_name)
         form.is_valid()
         return form.html()

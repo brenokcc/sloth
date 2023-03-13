@@ -26,7 +26,7 @@
         $(document.body).addClass('page-loading');
         $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
         $.ajax({
-            url:'/app'+path,
+            url:path,
             data:{},
             success:function( html ) {
                 $('#fieldset-group-{{ item.uuid }}-tab').html(html).initialize();

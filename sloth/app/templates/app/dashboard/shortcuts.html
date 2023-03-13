@@ -1,5 +1,5 @@
 {% load tags %}
-{% if data.shortcuts %}
+{% if shortcuts %}
 <style>
 .shortcut-wrapper {
     display: flex;
@@ -22,7 +22,7 @@
 </style>
 
 <div class="shortcut-wrapper">
-{% for item in data.shortcuts %}
+{% for item in shortcuts %}
     <a href="{{ item.url }}" class="shortcut-link">
         <div>
           {{ item.icon|icontag }}

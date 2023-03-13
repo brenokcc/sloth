@@ -40,8 +40,13 @@
             </div>
         </div>
         <div class="clearfix"></div>
+
+        {% include "app/dashboard/shortcuts.html" with shortcuts=data.instance.data.shortcuts %}
+        {% include "app/dashboard/cards.html" with cards=data.instance.data.cards %}
+
+        <div class="clearfix"></div>
         {% for action in data.inline_actions %}
-            {% action action.key data.instance %}
+            {% action action.key data.instance True %}
         {% endfor %}
 
         <div class="valueset-attaches">
@@ -49,7 +54,7 @@
             <ul class="nav justify-content-center">
                 {% for item in data.attach %}
                   <li class="nav-item">
-                    <a class="nav-link" href="/app{{ item.path }}">{{ item.name }}</a>
+                    <a class="nav-link" href="{{ item.path }}">{{ item.name }}</a>
                   </li>
                 {% endfor %}
             </ul>

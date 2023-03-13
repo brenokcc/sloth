@@ -251,7 +251,7 @@ class Tratamento(models.Model):
         return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.actions('RegistrarProcedimento', inline=True)
 
     def get_procedimentos(self):
-        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit').totalizer('tipo__valor').timeline()
+        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline()
 
     @meta('Procedimentos por Tipo')
     def get_procedimentos_por_tipo(self):

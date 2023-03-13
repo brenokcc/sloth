@@ -5,8 +5,8 @@
     {% with grouped_actions=actions|group_by_icon %}
         {% for action in grouped_actions.with_icon %}
             {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}
-            <a href="/app{{ action.path }}"
-               data-url="/app{{ action.path }}"
+            <a href="{{ action.path }}"
+               data-url="{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                title="{{ action.submit }}"
@@ -27,8 +27,8 @@
                         {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}
                         <li>
                             <a class="dropdown-item action-button {{ target }} {% if action.modal %}popup{% endif %}"
-                               href="/app{{ action.path }}"
-                               data-url="/app{{ action.path }}"
+                               href="{{ action.path }}"
+                               data-url="{{ action.path }}"
                                data-id="{{ id }}"
                                data-uuid="{{ uuid }}"
                                title="{{ action.submit }}">
@@ -46,8 +46,8 @@
     {% else %}
         {% for action in actions %}
             {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}
-            <a href="/app{{ action.path }}"
-               data-url="/app{{ action.path }}"
+            <a href="{{ action.path }}"
+               data-url="{{ action.path }}"
                data-id="{{ id }}"
                data-uuid="{{ uuid }}"
                title="{{ action.submit }}"

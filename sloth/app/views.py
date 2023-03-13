@@ -21,6 +21,8 @@ from ..utils.icons import bootstrap, materialicons, fontawesome
 from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
 from . import dashboard
 
+DASHBOARD_URL = '/app/dashboard/'
+
 
 def view(func):
     def decorate(request, *args, **kwargs):
@@ -58,10 +60,10 @@ def context(request, add_dashboard=False, **kwargs):
         kwargs.update(dashboard=dashboard.Dashboards(request))
     kwargs.update(settings=settings)
     if request.user.is_authenticated:
-        if request.path.startswith('/app/') and not is_ajax(request):
+        if request.path.startswith(DASHBOARD_URL) and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []
-            if request.path == '/app/':
+            if request.path == DASHBOARD_URL:
                 request.session['stack'].clear()
                 request.session['stack'].append(request.path)
             elif request.path in request.session['stack']:
@@ -122,15 +124,15 @@ def favicon(request):
 @view
 def login(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect('/app/')
+        return HttpResponseRedirect(DASHBOARD_URL)
     form = Login(request=request)
     if form.is_valid():
         form.submit()
         if request.user.is_superuser or settings.SLOTH['ROLES']['ALLOW_MULTIPLE']:
-            return HttpResponseRedirect('/app/')
+            return HttpResponseRedirect(DASHBOARD_URL)
         else:
             if request.user.roles.filter(active=True).count() == 1:
-                return HttpResponseRedirect('/app/')
+                return HttpResponseRedirect(DASHBOARD_URL)
             else:
                 request.user.roles.update(active=False)
                 return HttpResponseRedirect('/app/roles/')
@@ -176,7 +178,7 @@ def oauth_login(request, provider_name):
                 messages.warning(request, 'Usuário inexistente.')
         else:
             messages.warning(request, 'Acesso não autorizado.')
-        return HttpResponseRedirect('/app/')
+        return HttpResponseRedirect(DASHBOARD_URL)
     else:
         return HttpResponse('<html><script>document.location.href="{}";</script></html>'.format(authorize_url))
 
@@ -199,7 +201,9 @@ def push_subscription(request):
 
 
 def index(request):
-    return HttpResponseRedirect('/app/')
+    if request.user.is_authenticated:
+        return HttpResponseRedirect('/app/dashboard/')
+    return HttpResponseRedirect('/app/login/')
 
 
 @view
@@ -223,38 +227,19 @@ def roles(request):
         else:
             message = 'Perfis "{}" ativos com sucesso'.format(', '.join(names))
         messages.success(request, message)
-        return HttpResponseRedirect('/app/')
+        return HttpResponseRedirect(DASHBOARD_URL)
     return render(request, ['app/views/roles.html'], context(request))
 
 
 @view
-def action(request, name, parameters=None):
-    form = views.action(request, name)
-    if form.response:
-        return HttpResponse(form.html())
-    return render(request, ['app/default.html'], context(request, True, form=form))
-
-
-@view
-def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
+def dispatcher(request, path):
     ctx = context(request, True)
-    data = views.dispatcher(request, app_label, model_name, x=None if x == 'all' else x, y=y, z=z, w=w, k=k)
+    data = views.dispatcher(request, path)
     if isinstance(data, Action):
         ctx.update(form=data)
         if data.response:
             return HttpResponse(data.html())
     else:
-        ctx.update(data=data)
-    return render(request, ['app/default.html'], ctx)
-
-@view
-def dispatcher2(request, path):
-    ctx = context(request, True)
-    data = views.dispatcher2(request, path)
-    if isinstance(data, Action):
-        ctx.update(form=data)
-        if data.response:
-            return HttpResponse(data.html())
-    else:
+        print(ctx['dashboard'].data['cards'])
         ctx.update(data=data)
     return render(request, ['app/default.html'], ctx)

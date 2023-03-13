@@ -20,7 +20,7 @@
           </div>
           <div class="card-text fieldset-data toogle-data" id="{{ data.name|slugify }}">
               {% for action in data.inline_actions %}
-                {% action action.key data.instance %}
+                {% action action.key data.instance True %}
               {% endfor %}
               <table width="100%">
                   <tr>

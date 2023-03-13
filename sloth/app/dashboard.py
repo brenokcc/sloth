@@ -1,14 +1,13 @@
 import inspect
-from django.conf import settings
+from django.apps import apps
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-
 from sloth.app.templatetags.tags import mobile
 from sloth.exceptions import ReadyResponseException
 from sloth.utils import pretty
 from.actions import ExecuteQuery, ExecuteScript
-from ..actions import Action
+from ..actions import Action, ACTIONS
 
 DASHBOARDS = []
 
@@ -29,28 +28,31 @@ class Dashboard(metaclass=DashboardType):
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
         )
-        self.extra = {}
         self.defined_apps = {}
         self.enabled_apps = set()
         if self.request.user.is_authenticated:
             self.load(request)
-        if self.request.path == '/app/':
-            self.index(request)
+        if self.request.path == '/app/dashboard/':
+            valueset = self.view()
+            if valueset:
+                self.append(valueset)
+                for data in valueset.get('append'):
+                    self.append(data, aside=True)
 
-    def index(self, request):
-        pass
+    def view(self):
+        return None
 
     def redirect(self, url, message=None):
         self.redirect_url = url
         self.redirect_message = message
 
     def header(self, logo=None, title=None, text=None, shadow=True):
-        self.extra['header'] = dict(logo=logo, title=title, text=text, shadow=shadow)
+        self.data['header'].update(logo=logo, title=title, text=text, shadow=shadow)
 
     def footer(self, title=None, text=None, version=None):
-        self.extra['footer'] = dict(title=title, text=text, version=version)
+        self.data['footer'].update(title=title, text=text, version=version)
 
     def to_item(self, model, count=True):
         return
@@ -58,6 +60,8 @@ class Dashboard(metaclass=DashboardType):
     def _load(self, key, items, app=None, count=False):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search'
         for cls in items:
+            if isinstance(cls, str):
+                cls = self.get_model(cls)
             add_item = True
             if app:
                 self.enabled_apps.add(app)
@@ -72,7 +76,7 @@ class Dashboard(metaclass=DashboardType):
                         ))
                 else:
                     if self.request.user.is_superuser or cls.objects.all().has_permission(self.request.user):
-                        if key in allways or self.request.path == '/app/':
+                        if key in allways or self.request.path == '/app/dashboard/':
                             url = cls.get_list_url('/app')
                             for item in self.data[key]:
                                 add_item = add_item and not item['url'] == url
@@ -167,10 +171,10 @@ class Dashboard(metaclass=DashboardType):
                 self.data['right'].append(action.html())
             else:
                 self.data['center'].append((grid, action.html()))
-        elif self.request.path == '/app/':
+        elif self.request.path == '/app/dashboard/':
             if aside and hasattr(data, 'compact'):
                 data.compact()
-            if self.request.path == '/app/':
+            if self.request.path == '/app/dashboard/':
                 html = str(data.contextualize(self.request))
                 if aside:
                     self.data['right'].append(html)
@@ -178,7 +182,7 @@ class Dashboard(metaclass=DashboardType):
                     self.data['center'].append((grid, html))
 
     def extend(self, template, aside=False, grid=1, **data):
-        if self.request.path == '/app/':
+        if self.request.path == '/app/dashboard/':
             html = mark_safe(render_to_string(template, data, request=self.request))
             if aside:
                 self.data['right'].append(html)
@@ -187,6 +191,44 @@ class Dashboard(metaclass=DashboardType):
 
     def load(self, request):
         pass
+
+    def attr(self, name, source=False):
+        valueset = self.values(name).attr(name)
+        if source:
+            valueset = valueset.source(name)
+        return valueset
+
+    def values(self, *names):
+        from sloth.core.base import ValueSet
+        return ValueSet(self, names)
+
+    def has_attr_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        return attr is None or attr(user)
+
+    def objects(self, model_name):
+        return self.get_model(model_name).objects
+
+    def get_model(self, model_name):
+        if '.' not in model_name:
+            model_name = '{}.{}'.format(self.__module__.split('.')[-2], model_name)
+        return apps.get_model(model_name)
+
+    @classmethod
+    def get_attr_metadata(cls, lookup):
+        attr = getattr(cls, lookup)
+        template = getattr(attr, '__template__', None)
+        metadata = getattr(attr, '__metadata__', None)
+        if template:
+            if not template.endswith('.html'):
+                template = '{}.html'.format(template)
+            if not template.startswith('.html'):
+                template = 'renderers/{}'.format(template)
+        return getattr(attr, '__verbose_name__', lookup), False, template, metadata
+
+    @classmethod
+    def action_form_cls(cls, action):
+        return ACTIONS.get(action)
 
 
 class AppDashboard(Dashboard):
@@ -197,32 +239,27 @@ class AppDashboard(Dashboard):
 class Dashboards:
 
     def __init__(self, request):
-
+        self.apps = {}
+        self.dashboards = []
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[]
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
         )
-        self.extra = dict(header={}, footer={})
-        self.apps = {}
         self.data['navigation'].append(
-            dict(url='/app/', label='Principal', icon='house', app=None)
+            dict(url='/app/dashboard/', label='Principal', icon='house', app=None)
         )
         for cls in DASHBOARDS:
             dashboard = cls(request)
             if dashboard.redirect_url:
                 raise ReadyResponseException(HttpResponseRedirect(dashboard.redirect_url))
-            for key in dashboard.data:
-                self.data[key].extend(dashboard.data[key])
+            for k, v in dashboard.data.items():
+                self.data[k].update(v) if k in ['header', 'footer'] else self.data[k].extend(v)
             self.apps.update(dashboard.defined_apps)
-            if dashboard.extra:
-                self.extra.update(dashboard.extra)
+            for name in dashboard.enabled_apps:
+                self.apps[name]['enabled'] = True
+            self.dashboards.append(dashboard)
 
-        if self.request.user.is_superuser:
-            self.superuser_search(self.data['search'])
-
-        for name in dashboard.enabled_apps:
-            self.apps[name]['enabled'] = True
         if 'toggle-application' in request.GET:
             for name in self.apps:
                 if name == request.GET['toggle-application']:
@@ -234,9 +271,17 @@ class Dashboards:
                         request.session['app_icon'] = self.apps[name]['icon']
                     request.session.save()
                     break
-            raise ReadyResponseException(HttpResponseRedirect('/app/'))
+            raise ReadyResponseException(HttpResponseRedirect('/app/dashboard/'))
 
-    def superuser_search(self, items):
+        if self.request.user.is_superuser:
+            self.superuser()
+
+    def main(self):
+        for dashboard in self.dashboards:
+            if dashboard.view.__func__ != Dashboard.view:
+                return dashboard
+
+    def superuser(self):
         from django.apps import apps
         from .. import PROXIED_MODELS
         for model in apps.get_models():
@@ -247,15 +292,8 @@ class Dashboards:
                 icon = getattr(model.metaclass(), 'icon', None)
                 url = '/app/{}/{}/'.format(app_label, model_name)
                 add_item = True
-                for item in items:
+                for item in self.data['search']:
                     add_item = add_item and not item['url'] == url
                 if add_item:
                     item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[], app=None)
-                    items.append(item)
-        return items
-
-    def __str__(self):
-        return mark_safe(render_to_string('app/dashboard/dashboards.html', dict(data=self.data), request=self.request))
-
-
-
+                    self.data['search'].append(item)

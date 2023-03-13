@@ -1,6 +1,6 @@
 {% load tags %}
 {% if request.user.is_authenticated and not request.GET.modal %}
-    {% if dashboard.extra.header.shadow %}
+    {% if dashboard.data.header.shadow %}
       <style>
         .navbar {box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);}
       </style>
@@ -8,15 +8,15 @@
     <nav class="navbar navbar-expand">
       <div class="container-fluid">
         <a class="navbar-brand" href="/app/">
-          {% if dashboard.extra.header.logo %}
-            <img height="30" src="{{ dashboard.extra.header.logo }}" style="border-radius:3px;">
+          {% if dashboard.data.header.logo %}
+            <img height="30" src="{{ dashboard.data.header.logo }}" style="border-radius:3px;">
           {% endif %}
-          {% if dashboard.extra.header.title %}
-            <span>{{ dashboard.extra.header.title }}</span>
+          {% if dashboard.data.header.title %}
+            <span>{{ dashboard.data.header.title }}</span>
           {% endif %}
         </a>
-        {% if dashboard.extra.header.text and not request|mobile %}
-          {{ dashboard.extra.header.text }}
+        {% if dashboard.data.header.text and not request|mobile %}
+          {{ dashboard.data.header.text }}
         {% endif %}
 
         <div class="collapse navbar-collapse">

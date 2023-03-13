@@ -54,7 +54,7 @@
             $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).addClass('selected')
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
-                url:'/app/queryset/?'+data,
+                url:'{{ data.path }}?'+data,
                 success:function( html ) {
                     var remote = $(html);
                     $('#queryset-data-{{ data.uuid }}').html(
@@ -73,7 +73,7 @@
             if(attaches){
                 $.ajax({
                     dataType: 'json',
-                    url: "/app/queryset/?attaches=&"+data,
+                    url: "{{ data.path }}?attaches=&"+data,
                     success:function( totals ) {
                         for (const [key, value] of Object.entries(totals)) {
                             if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
@@ -108,7 +108,7 @@
     </script>
 
     {% for action in data.actions.inline %}
-        {% action action.key None %}
+        {% action action.key data.instantiator data.uuid %}
     {% endfor %}
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
@@ -125,9 +125,9 @@
     </div>
     <div class="float-end">
         <div class="mt-3 mb-3">
-            <!--<a href="/app{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
-            <!--<a href="/app{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
-            <!--<a href="/app{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
+            <!--<a href="{{ data.path }}?export=csv"><i class="bi bi-download"></i></a>-->
+            <!--<a href="{{ data.path }}?export=xls"><i class="bi bi-file-excel"></i></a>-->
+            <!--<a href="{{ data.path }}?export=pdf"><i class="bi bi-file-earmark-pdf"></i></a>-->
             {% if data.metadata.search or data.metadata.filters %}
             <a href="javascript:"><i class="bi bi-funnel" onclick="slideSearchAndFilters{{ data.uuid }}()"></i></a>
             {% endif %}

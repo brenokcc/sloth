@@ -181,8 +181,11 @@ class ModelMixin(object):
             ).delete()
 
     @classmethod
-    def get_list_url(cls, prefix=''):
-        return '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+    def get_list_url(cls, prefix='', subset='all'):
+        url = '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+        if subset != 'all':
+            url = '{}{}/'.format(url, subset)
+        return url
 
     @classmethod
     def add_form_cls(cls):

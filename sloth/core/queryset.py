@@ -540,8 +540,26 @@ class QuerySet(models.QuerySet):
         self.metadata['attr'] = name
         self.metadata['uuid'] = name
         if self.metadata['verbose_name'] is None:
-            self.metadata['verbose_name'] = pretty(name)
-        return self
+            self.metadata['verbose_name'] = self.get_attr_metadata(name)[0]
+        if source:
+            self.metadata['is_admin'] = True
+            self.metadata['collapsed'] = False
+            self.metadata['verbose_name'] = '{} {}'.format(
+                self.model.metaclass().verbose_name, self.get_attr_metadata(name)[0]
+            )
+        return getattr(self, name)()
+
+    @classmethod
+    def get_attr_metadata(cls, lookup):
+        attr = getattr(cls, lookup)
+        template = getattr(attr, '__template__', None)
+        metadata = getattr(attr, '__metadata__', None)
+        if template:
+            if not template.endswith('.html'):
+                template = '{}.html'.format(template)
+            if not template.startswith('.html'):
+                template = 'renderers/{}'.format(template)
+        return getattr(attr, '__verbose_name__', pretty(lookup)), False, template, metadata
 
     def source(self, name):
         self.metadata['source'] = name

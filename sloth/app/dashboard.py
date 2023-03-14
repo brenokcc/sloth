@@ -60,31 +60,40 @@ class Dashboard(metaclass=DashboardType):
     def _load(self, key, items, app=None, count=False):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search'
         for cls in items:
-            if isinstance(cls, str):
-                cls = self.get_model(cls)
+            if '.' in cls:
+                tokens = cls.split('.')
+                cls = apps.get_model(*tokens[0:2])
+                subset = 'all' if len(tokens) == 2 else tokens[-1]
+            else:
+                subset = None
+                cls = ACTIONS[cls]
             add_item = True
             if app:
                 self.enabled_apps.add(app)
                 add_item = self.request.session.get('app_name') == app
             if add_item:
-                if hasattr(cls, 'check_fake_permission'):
+                if subset is None:
                     if cls.check_fake_permission(request=self.request):
                         metadata = cls.get_metadata()
                         self.data[key].append(dict(
-                            url='/app/action/{}/'.format(metadata['key']), modal=metadata['modal'],
+                            url='/app/dashboard/{}/'.format(metadata['key']), modal=metadata['modal'],
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:
-                    if self.request.user.is_superuser or cls.objects.all().has_permission(self.request.user):
+                    qs = getattr(cls.objects, subset)()
+                    if self.request.user.is_superuser or qs.has_permission(self.request.user):
                         if key in allways or self.request.path == '/app/dashboard/':
-                            url = cls.get_list_url('/app')
+                            label = cls.metaclass().verbose_name_plural
+                            if subset and subset != 'all':
+                                label = '{} {}'.format(label, qs.get_attr_metadata(subset)[0])
+                            url = cls.get_list_url('/app', subset)
                             for item in self.data[key]:
                                 add_item = add_item and not item['url'] == url
                             if add_item:
                                 self.data[key].append(
                                     dict(
                                         url=url,
-                                        label=cls.metaclass().verbose_name_plural,
+                                        label=label,
                                         count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
                                         icon=getattr(cls.metaclass(), 'icon', None),
                                         app=app
@@ -206,13 +215,9 @@ class Dashboard(metaclass=DashboardType):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
-    def objects(self, model_name):
-        return self.get_model(model_name).objects
-
-    def get_model(self, model_name):
-        if '.' not in model_name:
-            model_name = '{}.{}'.format(self.__module__.split('.')[-2], model_name)
-        return apps.get_model(model_name)
+    @staticmethod
+    def objects(model_name):
+        return apps.get_model(model_name).objects
 
     @classmethod
     def get_attr_metadata(cls, lookup):
@@ -233,7 +238,7 @@ class Dashboard(metaclass=DashboardType):
 
 class AppDashboard(Dashboard):
     def load(self, request):
-        self.tools(ExecuteQuery, ExecuteScript)
+        self.tools('ExecuteQuery', 'ExecuteScript')
 
 
 class Dashboards:

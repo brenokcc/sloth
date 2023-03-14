@@ -4,6 +4,7 @@ import datetime
 from sloth import actions, meta
 from .models import Tratamento, Procedimento, TipoProcedimento, Animal
 
+
 class ExibirDataHora(actions.Action):
 
     class Meta:
@@ -33,7 +34,9 @@ class FazerAlgumaCoisa(actions.Action):
 
 class FazerAlgumaCoisa2(actions.Action):
     data = actions.DateField(label='Data', required=False)
+
     class Meta:
+        method = 'get'
         verbose_name = 'Fazer Alguma Coisa'
         modal = True
 

@@ -7,7 +7,6 @@ class TesteIntegracao(SeleniumTestCase):
         self.login('admin', '123')
         self.click_menu('Doenças')
         self.click_button('Cadastrar')
-        breakpoint()
         self.enter('Descrição', 'Raiva')
         self.check('Contagiosa')
         self.click_button('Cadastrar')

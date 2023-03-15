@@ -1,6 +1,11 @@
 {% load tags %}
+
 <div class="valueset row clearfix">
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
+
+        {% include "app/dashboard/shortcuts.html" with shortcuts=data.instance.data.shortcuts %}
+        {% include "app/dashboard/cards.html" with cards=data.instance.data.cards %}
+
         <div class="valueset-header">
             <div class="valueset-title">
                 {% if data.title %}
@@ -39,10 +44,6 @@
                   {% endif %}
             </div>
         </div>
-        <div class="clearfix"></div>
-
-        {% include "app/dashboard/shortcuts.html" with shortcuts=data.instance.data.shortcuts %}
-        {% include "app/dashboard/cards.html" with cards=data.instance.data.cards %}
 
         <div class="clearfix"></div>
         {% for action in data.inline_actions %}

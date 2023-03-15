@@ -29,6 +29,7 @@ from .fields import *
 from django.core.exceptions import ValidationError
 from ..utils.formatter import format_value
 from ..core.queryset import QuerySet
+from ..utils.http import FileResponse
 
 ACTIONS = {}
 
@@ -84,8 +85,6 @@ class Action(metaclass=ActionMetaclass):
         self.metaclass = getattr(self, 'Meta')
 
         self.show_form = True
-        self.fade_out_time = 0
-        self.auto_reload_time = 0
         self.can_be_closed = False
         self.can_be_reloaded = False
         self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
@@ -197,17 +196,17 @@ class Action(metaclass=ActionMetaclass):
                 values = []
         return values[index] if values and len(values)>index else None
 
+    def objects(self, model_name):
+        return apps.get_model(model_name).objects.contextualize(self.request)
+
     def clear(self):
         self.show_form = False
         for k, v in self.content.items():
             if k != 'bottom':
                 v.clear()
 
-    def auto_reload(self, milleseconds=5000):
-        self.auto_reload_time = milleseconds
-
-    def fade_out(self, milleseconds=2000):
-        self.fade_out_time = milleseconds
+    def download(self, file_path):
+        raise ReadyResponseException(FileResponse(file_path))
 
     def view(self):
         return None
@@ -457,9 +456,10 @@ class Action(metaclass=ActionMetaclass):
             modal = getattr(metaclass, 'modal', True)
             style = getattr(metaclass, 'style', 'primary')
             method = getattr(metaclass, 'method', 'post')
+            auto_reload = getattr(metaclass, 'auto_reload', None)
         else:
-            target, name, submit, icon, ajax, modal, style, method = (
-                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get'
+            target, name, submit, icon, ajax, modal, style, method, auto_reload = (
+                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
             )
         if path:
             if inline or batch:
@@ -469,7 +469,7 @@ class Action(metaclass=ActionMetaclass):
                 path = '{}{}/'.format(path, to_snake_case(form_name))
         metadata = dict(
             type='form', key=form_name, name=name, submit=submit, target=target,
-            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal
+            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal, auto_reload=auto_reload
         )
         return metadata
 
@@ -506,22 +506,25 @@ class Action(metaclass=ActionMetaclass):
         return self.html()
 
     def html(self):
+        print(self.response, 888)
         if self.response:
-            if 'html' in self.response:
-                return self.response['html']
-            else:
-                js = '<script>{}</script>'
-                if self.response['url'] == '.':
-                    display_messages = True
-                    js = js.format('$(document).reload();')
-                elif self.response['url'] == '..':
-                    display_messages = 'modal' in self.request.GET
-                    js = js.format('$(document).back();')
+            js = '<script>{}</script>'
+            display_messages = True
+            if self.response.get('dispose'):
+                js = js.format('fade{}({});'.format(self.get_metadata().get('key'), self.response.get('dispose')))
+            elif self.response.get('url') == '.':
+                if 'modal' in self.request.GET:
+                    js = js.format('$(document).popup("{}");'.format(self.request.path))
                 else:
-                    display_messages = False
-                    js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-                html = render_to_string('app/messages.html', request=self.request) if display_messages else ''
-                return '<!---->{}{}<!---->'.format(js, html)
+                    js = js.format('$(document).reload("#{}-wrapper");'.format(self.get_metadata().get('key')))
+            elif self.response.get('url') == '..':
+                display_messages = 'modal' in self.request.GET
+                js = js.format('$(document).back();')
+            elif self.response.get('url'):
+                display_messages = False
+                js = js.format('$(document).redirect("{}");'.format(self.response['url']))
+            html = render_to_string('app/messages.html', request=self.request) if display_messages else ''
+            return '<!---->{}{}<!---->'.format(js, html)
 
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
@@ -664,17 +667,22 @@ class Action(metaclass=ActionMetaclass):
             q=q, items=items
         )
 
-    def redirect(self, url=None, message=None, style='success'):
+    def dispose(self, milleseconds=2000):
+        self.response.update(dispose=milleseconds)
+
+    def reload(self):
+        return self.redirect('.')
+
+    def message(self, text, style='success', milleseconds=60000):
+        if self.request.path.startswith('/app/'):
+            messages.add_message(self.request, messages.SUCCESS, text)
+        else:
+            self.response.update(message=dict(text=text, style=style, milleseconds=milleseconds))
+
+    def redirect(self, url=None):
         if url is None:
-            url = '..' if self.fields or self.is_modal() else '.'
-            # if url == '..' and not self.get_refresh():
-            #     url = '.'
+            url = '..' if getattr(self, 'fields', None) or self.is_modal() else '.'
         self.response.update(type='redirect', url=url)
-        if message is None:
-            message = getattr(self.metaclass, 'message', None)
-        if message and self.request.path.startswith('/app/'):
-            messages.add_message(self.request, messages.SUCCESS, message)
-            self.response.update(message=message, style=style)
         if not self.get_metadata()['ajax']:
             raise ReadyResponseException(HttpResponseRedirect(url))
 
@@ -688,15 +696,6 @@ class Action(metaclass=ActionMetaclass):
         else:
             self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
 
-    def display(self, data, template='app/default.html'):
-        if isinstance(data, dict):
-            ctx = data
-        else:
-            ctx = dict(form=self, data=data.contextualize(self.request).html())
-        self.response.update(
-            html=render_to_string([template], ctx, request=self.request)
-        )
-
     def submit(self):
         if self.instances:
             for instance in self.instances:
@@ -705,7 +704,7 @@ class Action(metaclass=ActionMetaclass):
                 self.save()
         else:
             self.save()
-        self.redirect(message='Ação realizada com sucesso.')
+        self.back('Ação realizada com sucesso.')
 
     def process(self):
         try:
@@ -780,7 +779,6 @@ class Action(metaclass=ActionMetaclass):
     #         self.instances = QuerySet.loads(state['instances'])
 
     def get_full_path(self):
-        print(type(self), self.inline)
         if self.inline:
             if self.inline is True:
                 return '{}{}/'.format(self.request.path, to_snake_case(type(self).__name__))

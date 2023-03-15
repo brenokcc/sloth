@@ -314,6 +314,10 @@ textarea{
     border-color: #ced4da;
 }
 
+.valueset .action-wrapper h2{
+    font-size: 1.25rem;
+}
+
 .valueset-title{
         display: inline-block;
 }

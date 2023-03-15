@@ -49,6 +49,7 @@ jQuery.fn.extend({
                     else if (contentType.indexOf('zip') >= 0) a.download = 'Download.zip';
                     else if (contentType.indexOf('json') >= 0) a.download = 'Download.json';
                     else if (contentType.indexOf('csv') >= 0) a.download = 'Download.csv';
+                    else if (contentType.indexOf('png') >= 0) a.download = 'Download.png';
                     document.body.appendChild(a);
                     a.click();
                     $(document).back();
@@ -82,8 +83,15 @@ jQuery.fn.extend({
             document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });
     },
-    reload: function(){
-        document.location.reload();
+    reload: function(id){
+        if(id){
+            var url = $(id).data('url');
+            $(this).request(url, 'GET', {}, function(html){
+                $(id).html($(html).find(id).html()).initialize();
+            });
+        } else {
+            document.location.reload();
+        }
     },
     redirect: function(url){
         $('#modal').modal('hide');

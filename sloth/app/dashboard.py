@@ -57,7 +57,7 @@ class Dashboard(metaclass=DashboardType):
     def to_item(self, model, count=True):
         return
 
-    def _load(self, key, items, app=None, count=False):
+    def _load(self, key, items, modal=False, count=False, app=None):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search'
         for cls in items:
             if '.' in cls:
@@ -76,7 +76,7 @@ class Dashboard(metaclass=DashboardType):
                     if cls.check_fake_permission(request=self.request):
                         metadata = cls.get_metadata()
                         self.data[key].append(dict(
-                            url='/app/dashboard/{}/'.format(metadata['key']), modal=metadata['modal'],
+                            url='/app/dashboard/{}/'.format(metadata['key']), modal=metadata['modal'] and modal,
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:
@@ -92,8 +92,7 @@ class Dashboard(metaclass=DashboardType):
                             if add_item:
                                 self.data[key].append(
                                     dict(
-                                        url=url,
-                                        label=label,
+                                        url=url, label=label, modal=modal,
                                         count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
                                         icon=getattr(cls.metaclass(), 'icon', None),
                                         app=app
@@ -120,8 +119,8 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._load('menu', items, app=app)
 
-    def links(self, *items, app=None):
-        self._load('links', items, app=app)
+    def links(self, *items, modal=False, app=None):
+        self._load('links', items, modal=modal, app=app)
 
     def add_link(self, url, label, app=None):
         self._item(self, 'links', url, label, app=app)

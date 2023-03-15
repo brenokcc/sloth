@@ -1,4 +1,5 @@
 {% load tags %}
+<div>
 {% if self.asynchronous %}
 <div id="{{ self.get_metadata.key }}-async-wrapper">
     <div class="d-flex justify-content-center">
@@ -8,12 +9,12 @@
     </div>
 </div>
 <script>
-    $.get('{{ self.get_full_path }}?synchronous=1',function(html){
+    $.get('{{ self.get_full_path }}', {'synchronous': 1},function(html){
         $("#{{ self.get_metadata.key }}-async-wrapper").html(html);
     });
 </script>
 {% else %}
-<div class="action-wrapper" id="{{ self.get_metadata.key }}-wrapper">
+<div class="action-wrapper" id="{{ self.get_metadata.key }}-wrapper" data-url="{{ self.get_full_path }}">
     {% if self.can_be_closed or self.can_be_reloaded %}
     <div class="float-end">
         {% if self.can_be_closed %}
@@ -161,13 +162,11 @@ $( document ).ready(function() {
     function fade{{ self.get_metadata.key }}(milliseconds){
         $("#{{ self.get_metadata.key }}-wrapper").closest('.action-wrapper').fadeOut(milliseconds);
     }
-    {% if self.fade_out_time %}
-        fade{{ self.get_metadata.key }}({{ self.fade_out_time|stringformat:'s' }});
-    {% endif %}
-    {% if self.auto_reload_time %}
-        setTimeout(reload{{ self.get_metadata.key }}, {{ self.auto_reload_time|stringformat:'s' }});
+    {% if self.get_metadata.auto_reload %}
+        setTimeout(reload{{ self.get_metadata.key }}, {{ self.get_metadata.auto_reload|stringformat:'s' }});
     {% endif %}
 </script>
 
 </div>
 {% endif %}
+</div>

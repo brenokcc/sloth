@@ -103,11 +103,13 @@ class CsvResponse(HttpResponse):
 class FileResponse(HttpResponse):
 
     def __init__(self, file_path):
-        extension = file_path.split('.')[-1]
+        file_name = file_path.split('/')[-1]
+        extension = file_name.split('.')[-1].lower()
         content_type = CONTENT_TYPES[extension]
         with open(file_path, 'r+b') as file:
             content = file.read()
         super().__init__(content=content, content_type=content_type)
+        self['Content-Disposition'] = 'attachment; filename={}'.format(file_name)
 
 
 class HtmlToPdfResponse(HttpResponse):

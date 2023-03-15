@@ -2,7 +2,7 @@ import json
 import time
 import datetime
 from sloth import actions, meta
-from .models import Tratamento, Procedimento, TipoProcedimento, Animal
+from .models import Tratamento, Procedimento, TipoProcedimento, Animal, Doenca
 
 
 class ExibirDataHora(actions.Action):
@@ -10,11 +10,10 @@ class ExibirDataHora(actions.Action):
     class Meta:
         verbose_name = 'Exibir Data/Hora'
         asynchronous = True
+        # auto_reload = 5000
 
     def view(self):
         time.sleep(2)
-        # self.fade_out()
-        # self.auto_reload()
         return dict(data_hora=datetime.datetime.now())
 
 
@@ -22,14 +21,31 @@ class FazerAlgumaCoisa(actions.Action):
     data = actions.DateField(label='Data', required=False)
 
     class Meta:
+        method = 'get'
         verbose_name = 'Fazer Alguma Coisa'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.info('Ação realizada com sucesso')
+
+    def view(self):
+        return self.values('get_tipos_procedimentos')
 
     def submit(self):
         # self.clear()
-        self.info('Ação realizada com sucesso')
-        self.fade_out()
-        # self.redirect('/app/petshop/animal/', 'Muito bom!')
-        # return self.values('get_tipos_procedimentos')
+        # self.message('Ótimo! :)')
+        # self.redirect()
+        # self.dispose()
+        # self.redirect('/app/petshop/animal/')
+        # self.reload()
+        # return self.values('get_doencas')
+        self.download('media/animais/a.png')
+
+    def get_tipos_procedimentos(self):
+        return self.objects('petshop.tipoprocedimento').all()
+
+    def get_doencas(self):
+        return self.objects('petshop.doenca').all()
 
 
 class FazerAlgumaCoisa2(actions.Action):
@@ -42,7 +58,6 @@ class FazerAlgumaCoisa2(actions.Action):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        print(self.instantiator, self.instance, self.instances, 9999)
         self.instantiator = Animal.objects.first()
         self.info('Isso é uma informação!')
 

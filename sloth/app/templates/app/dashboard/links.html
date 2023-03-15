@@ -22,7 +22,7 @@
     </div>
     <div class="app-links-wrapper">
     {% for item in data.links %}
-        <a href="{{ item.url }}" class="shortcut-link">
+        <a href="{{ item.url }}" class="shortcut-link {% if item.modal %}popup{% endif %}">
             {{ item.label }}
         </a>
     {% endfor %}

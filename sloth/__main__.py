@@ -20,11 +20,16 @@ ACTIONS_FILE_CONTENT = '''from sloth import actions
 DASHBOARD_FILE_CONTENT = '''from sloth.app.dashboard import Dashboard
 from .models import *
 
+
 class AppDashboard(Dashboard):
-    
-    def load(self, request):
+
+    def __init__(self, request):
+        super().__init__(request)
         self.header(logo='/static/images/logo.png', title=None, text='Take your time!', shadow=False)
         self.footer(title='© 2022 Sloth', text='Todos os direitos reservados', version='1.0.0')
+
+    def view(self):
+        return self.values()
 
 '''
 

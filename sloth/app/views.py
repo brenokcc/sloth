@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import requests
-import os
-import base64
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib import auth, messages
@@ -240,6 +238,5 @@ def dispatcher(request, path):
         if data.response:
             return HttpResponse(data.html())
     else:
-        print(ctx['dashboard'].data['cards'])
         ctx.update(data=data)
     return render(request, ['app/default.html'], ctx)

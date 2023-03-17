@@ -39,7 +39,8 @@ class QuerySet(models.QuerySet):
             display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[],
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
-            global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False, verbose_name=None,
+            global_actions=[], batch_actions=[], inline_actions=[], lookups=[], wrapped=True, collapsed=True, compact=False,
+            verbose_name=None, username_lookups=[]
         )
 
     def _clone(self):
@@ -54,9 +55,13 @@ class QuerySet(models.QuerySet):
             self.metadata['lookups'].append((name, scopes))
         return self
 
+    def username_lookup(self, name):
+        self.metadata['username_lookups'].append(name)
+        return self
+
     def has_permission(self, user):
         if user.is_authenticated:
-            return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
+            return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups'])) or self.metadata['username_lookups']
         return False
 
     def has_attr_permission(self, user, name):
@@ -74,7 +79,7 @@ class QuerySet(models.QuerySet):
             for field_name, role_names in self.metadata['only'].items():
                 if not self.request.user.roles.contains(*role_names):
                     self.ignore(field_name)
-        if self.metadata['lookups']:
+        if self.metadata['lookups'] or self.metadata['username_lookups']:
             lookups = []
             for name, scopes in self.metadata['lookups']:
                 if scopes:
@@ -84,6 +89,8 @@ class QuerySet(models.QuerySet):
                 else:
                     if user.roles.contains(name):
                         return self
+            for lookup in self.metadata['username_lookups']:
+                lookups.append(Q(**{lookup: user.username}))
             if lookups:
                 return self.filter(reduce(operator.__or__, lookups))
             return self.none()
@@ -405,8 +412,8 @@ class QuerySet(models.QuerySet):
             if not lazy:
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    collapsed=self.metadata['collapsed'], compact=self.metadata['compact'],
-                    is_admin=self.metadata['is_admin'], state=self.dumps()
+                    wrapped=self.metadata['wrapped'], collapsed=self.metadata['collapsed'],
+                    compact=self.metadata['compact'], is_admin=self.metadata['is_admin']# , state=self.dumps()
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
@@ -517,14 +524,12 @@ class QuerySet(models.QuerySet):
         self.metadata['ignore'].extend(names)
         return self
 
-    def only(self, *names, role=None, roles=()):
-        if role or roles:
-            for name in names:
+    def only(self, *names, **kwargs):
+        if kwargs:
+            for name, role in kwargs.items():
                 if name not in self.metadata['only']:
                     self.metadata['only'][name] = []
-                if role:
-                    self.metadata['only'][name].append(role)
-                self.metadata['only'][name].extend(roles)
+                self.metadata['only'][name].append(role)
             return self
         return super().only(*names)
 
@@ -543,6 +548,7 @@ class QuerySet(models.QuerySet):
             self.metadata['verbose_name'] = self.get_attr_metadata(name)[0]
         if source:
             self.metadata['is_admin'] = True
+            self.metadata['wrapped'] = False
             self.metadata['collapsed'] = False
             self.metadata['verbose_name'] = '{} {}'.format(
                 self.model.metaclass().verbose_name, self.get_attr_metadata(name)[0]

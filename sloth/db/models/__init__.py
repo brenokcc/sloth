@@ -176,15 +176,15 @@ class TextField(TextField):
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
         self.picker = kwargs.pop('picker', None)
-        self.auto_user = kwargs.pop('auto_user', False)
+        self.username_lookup = kwargs.pop('username_lookup', None)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
         if self.picker:
             field.picker = self.picker
-        if self.auto_user:
-            field.auto_user = self.auto_user
+        if self.username_lookup:
+            field.username_lookup = self.username_lookup
         return field
 
 
@@ -195,14 +195,21 @@ class CurrentUserField(ForeignKey):
 
 
 class ManyToManyField(ManyToManyField):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, to, **kwargs):
+        if hasattr(to, 'model'):
+            self.queryset = to
+            to = to.model
+        else:
+            self.queryset = None
         self.picker = kwargs.pop('picker', None)
-        super().__init__(*args, **kwargs)
+        super().__init__(to, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
         if self.picker:
             field.picker = self.picker
+        if self.queryset:
+            field.queryset = self.queryset
         return field
 
 

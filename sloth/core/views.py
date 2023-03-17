@@ -59,22 +59,27 @@ def dispatcher(request, path):
     if token == 'dashboard':
         dashboard = Dashboards(request).main()
         obj = dashboard if tokens else dashboard.view()
-    elif token in settings.INSTALLED_APPS:
-        app_label = token
-        model_name = tokens.pop(0)
+        if not request.user.is_authenticated:
+            raise PermissionDenied()
+    elif token in settings.INSTALLED_APPS or token == 'api':
+        app_label, model_name = token, tokens.pop(0)
         if tokens:
             obj = apps.get_model(app_label, model_name).objects.get_queryset()
+            if tokens[0].isdigit() or '-' in tokens[0]:
+                obj = obj.all()
         else:
             obj = apps.get_model(app_label, model_name).objects.all().default_actions().collapsed(False).admin()
+            if not obj.has_permission(request.user):
+                raise PermissionDenied()
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
         if token.isdigit():
-            obj = obj.get(pk=token)
+            obj = obj.contextualize(request).apply_role_lookups(request.user).get(pk=token)
             instance = obj
             instances = None
         elif '-' in token:
-            obj = obj.filter(pk__in=token.split('-'))
+            obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
             instances = obj
         elif token in ACTIONS:

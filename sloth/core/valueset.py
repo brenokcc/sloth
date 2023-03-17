@@ -65,12 +65,11 @@ class ValueSet(dict):
                 self.metadata['names'][attr_name] = 100
         super().__init__()
 
-    def only(self, name, role=None, roles=()):
-        if name not in self.metadata['only']:
-            self.metadata['only'][name] = []
-        if role:
+    def only(self, **names):
+        for name, role in names.items():
+            if name not in self.metadata['only']:
+                self.metadata['only'][name] = []
             self.metadata['only'][name].append(role)
-        self.metadata['only'][name].extend(roles)
         return self
 
     def actions(self, *names, inline=False):

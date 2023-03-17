@@ -141,20 +141,15 @@ class Action(metaclass=ActionMetaclass):
 
         for field_name in self.fields:
             field = self.fields[field_name]
-            if False and hasattr(field, 'queryset') and field.queryset.metadata['lookups']: # TODO
-                field.queryset = field.queryset.apply_role_lookups(self.request.user)
-                if field.queryset.count() == 1:
-                    field.initial = field.queryset.first().id
-                    field.widget = forms.HiddenInput()
-            if hasattr(field, 'queryset') and getattr(field, 'auto_user', False) and not self.request.user.is_superuser:
-                scope_type = '{}.{}'.format(
-                    field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
-                )
-                pks = self.request.user.roles.filter(scope_type=scope_type).values_list('scope_value', flat=True)
-                field.queryset = field.queryset.model.objects.filter(pk__in=pks)
-                if len(pks) == 1:
-                    field.initial = pks.first()
-                    field.widget = forms.HiddenInput()
+            if hasattr(field, 'queryset'):
+                if not self.request.user.is_superuser and getattr(field, 'username_lookup', None):
+                    pks = list(field.queryset.filter(**{field.username_lookup: self.request.user}).values_list('pk', flat=True)[0:2])
+                    if len(pks) == 1:
+                        field.queryset = field.queryset.model.objects.filter(pk=pks[0])
+                        field.initial = pks[0]
+                        field.widget = forms.HiddenInput()
+                else:
+                    field.queryset = field.queryset.contextualize(self.request).apply_role_lookups(self.request.user)
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
                 if isinstance(field, forms.ModelMultipleChoiceField):
@@ -533,11 +528,13 @@ class Action(metaclass=ActionMetaclass):
             elif isinstance(field.widget, forms.widgets.Input):
                 classes.append('form-control')
 
-            if isinstance(field, forms.DateTimeField):
-                classes.append('date-time-input')
-
             if isinstance(field, forms.DateField):
+                field.widget.input_type = 'date'
                 classes.append('date-input')
+
+            if isinstance(field, forms.DateTimeField):
+                field.widget.input_type = 'datetime-local'
+                classes.append('date-time-input')
 
             if isinstance(field, forms.DecimalField):
                 field.widget.input_type = 'text'
@@ -704,7 +701,8 @@ class Action(metaclass=ActionMetaclass):
                 self.save()
         else:
             self.save()
-        self.back('Ação realizada com sucesso.')
+        self.message('Ação realizada com sucesso.')
+        self.redirect()
 
     def process(self):
         try:

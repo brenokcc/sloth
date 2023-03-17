@@ -1,22 +1,22 @@
 {% load tags %}
 <style>
-{% if not data.metadata.is_admin  %}
-    .search-and-filters .filters{
+{% if data.metadata.collapsed  %}
+    #search-and-filters-{{ data.uuid }}.search-and-filters .filters{
         display: none;
     }
 {% endif %}
 {% if compact or request.GET.compact or request|mobile %}
-    .search-and-filters .filter {
+    #search-and-filters-{{ data.uuid }}.search-and-filters .filter {
         width: 100% !important;
     }
 {% else %}
-    .search-and-filters .filter {
+    #search-and-filters-{{ data.uuid }}.search-and-filters .filter {
         width: 250px !important;
     }
 {% endif %}
 </style>
 
-        <div class="search-and-filters">
+        <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}">
             <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}">
                 <input type="hidden" name="uuid" value="{{ data.uuid }}">
                 <input type="hidden" name="is_admin" value="{% if data.metadata.is_admin %}1{% endif %}">

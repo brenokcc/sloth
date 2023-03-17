@@ -19,6 +19,7 @@ from sloth.core.validation import validate_model
 
 PROXIED_MODELS = []
 
+
 class RoleLookup:
     def __init__(self, instance):
         self.instance = instance
@@ -48,6 +49,7 @@ class RoleLookup:
                     else:
                         return True
         return False
+
 
 def meta(verbose_name=None, renderer=None, **metadata):
     def decorate(func):

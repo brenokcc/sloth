@@ -6,7 +6,7 @@
 {% endif %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.name %}
-    {% if data.metadata.collapsed or compact %}
+    {% if data.metadata.wrapped or compact %}
         <div class="queryset-title" style="cursor:pointer" onclick="$(this).parent().find('.toogle-data').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
             <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
         </div>

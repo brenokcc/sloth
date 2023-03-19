@@ -4,6 +4,7 @@ import re
 import zlib
 import pickle
 import base64
+import datetime
 from django.core import signing
 import traceback
 from decimal import Decimal
@@ -75,6 +76,30 @@ class ActionMetaclass(ModelFormMetaclass):
         return cls
 
 
+class RegionalDateWidget(DateInput):
+    input_type = 'date'
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if isinstance(value, datetime.date):
+            value = value.isoformat()
+        attrs = attrs or {}
+        attrs.update({'autocomplete': 'off'})
+        html = super().render(name, value, attrs)
+        return mark_safe(html)
+
+
+class RegionalDateTimeWidget(DateTimeInput):
+    input_type = 'datetime-local'
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if isinstance(value, datetime.datetime):
+            value = value.isoformat().split('.')[0]
+        attrs = attrs or {}
+        attrs.update({'step': '1'})
+        html = super().render(name, value, attrs)
+        return mark_safe(html)
+
+
 class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
@@ -112,13 +137,14 @@ class Action(metaclass=ActionMetaclass):
         # if 'instances' in self.request.GET:
         #     self.instances = QuerySet.loads(self.request.GET['instances'])
 
-        for k in self.request.GET:
-            if k.startswith('post__'):
-                if 'data' not in kwargs:
-                    kwargs['data'] = {}
-                kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
-
         form_name = type(self).__name__
+        if 'post__{}'.format(form_name) in self.request.GET:
+            for k in self.request.GET:
+                if k.startswith('post__'):
+                    if 'data' not in kwargs:
+                        kwargs['data'] = {}
+                    kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
+
         if 'data' not in kwargs:
             if form_name in self.request.GET or form_name in self.request.POST or self.request.path.startswith('/api/'):
                 # if self.base_fields or self.requires_confirmation():
@@ -534,11 +560,11 @@ class Action(metaclass=ActionMetaclass):
                 classes.append('form-control')
 
             if isinstance(field, forms.DateField):
-                field.widget.input_type = 'date'
+                field.widget = RegionalDateWidget()
                 classes.append('date-input')
 
             if isinstance(field, forms.DateTimeField):
-                field.widget.input_type = 'datetime-local'
+                field.widget = RegionalDateTimeWidget()
                 classes.append('date-time-input')
 
             if isinstance(field, forms.DecimalField):
@@ -795,3 +821,6 @@ class Action(metaclass=ActionMetaclass):
         # if len(tokens) > 1 and tokens[1] in settings.INSTALLED_APPS:
         #     return self.request.get_full_path()
         # return '/app/action/{}/'.format(self.get_metadata().get('key'))
+
+    def contextualize(self, request):
+        return self

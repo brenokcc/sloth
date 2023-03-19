@@ -90,8 +90,13 @@ def dispatcher(request, path):
                 if form.is_valid():
                     result = form.process()
                     if result is not None:
-                        return result
-                return form
+                        obj = result
+                    else:
+                        obj = form
+                else:
+                    obj = form
+            else:
+                raise PermissionDenied()
         else:
             if i == len(tokens) - 1:
                 obj = obj.attr(token, source=not is_ajax(request))

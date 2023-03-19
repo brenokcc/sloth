@@ -62,16 +62,16 @@
 <script>
     $('#{{ target }}-{{ uuid }}-{{id}}').find('.action-button').on('mouseenter', function(){
         if($(this).hasClass('instance')){
-            this.href = $(this).data('url').replace('{id}', $(this).data('id'));
+            this.href = $(this).data('url').replace('{id}', $(this).data('id'))+'{{ request|post_querystring }}';
         }
         if($(this).hasClass('queryset')){
             var ids = $('#queryset-{{ uuid }}').find('.action-checkbox:checked').map(function(){
               return $(this).val();
             }).get().filter(function (id) { return id!='on' }).join('-');
-            this.href = $(this).data('url').replace('{id}', '0-'+ids);
+            this.href = $(this).data('url').replace('{id}', '0-'+ids)+'{{ request|post_querystring }}';
         }
         if($(this).hasClass('model')){
-            this.href = $(this).data('url');
+            this.href = $(this).data('url')+'{{ request|post_querystring }}';
         }
     });
 </script>

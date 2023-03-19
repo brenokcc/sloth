@@ -23,10 +23,10 @@ class PetshopDashboard(Dashboard):
         return self.objects('petshop.tratamento').all().batch_actions('ExcluirTratamentos')
 
     def get_caes(self):
-        return self.objects('petshop.animal').filter(tipo=1).ignore('foto').verbose_name('Cães').accordion().global_actions('FazerAlgumaCoisa2')
+        return self.objects('petshop.animal').filter(tipo=1).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa2')
 
     def get_gatos(self):
-        return self.objects('petshop.animal').filter(tipo=2).ignore('foto').verbose_name('Cães').accordion().global_actions('FazerAlgumaCoisa2')
+        return self.objects('petshop.animal').filter(tipo=2).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa2')
 
     def get_estatistica(self):
         return self.objects('petshop.animal').get_qtd_por_tipo().verbose_name('Animais por Tipo').bar_chart()
@@ -44,6 +44,6 @@ class PetshopDashboard(Dashboard):
         ).append(
             'get_caes', 'get_doencas'
         ).actions(
-            'FazerAlgumaCoisa2', 'exibir_data_hora', inline=True
+            'fazer_alguma_coisa2', 'exibir_data_hora', inline=True
         )
 

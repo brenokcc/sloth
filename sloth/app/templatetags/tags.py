@@ -271,9 +271,12 @@ def action_link(action_name):
         to_snake_case(action_name), 'popup' if metadata['modal'] else '', metadata['name']
     ))
 
-def action_cls(request, action_name):
-    cls = ACTIONS[action_name]
-    form = cls()
+
+@register.filter
+def post_querystring(request):
+    return mark_safe('?{}'.format(
+        '&'.join(['post__{}={}'.format(k, v) for k, v in request.POST.items() if k != 'csrfmiddlewaretoken'])
+    ))
 
 
 @register.tag

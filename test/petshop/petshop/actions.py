@@ -18,7 +18,7 @@ class ExibirDataHora(actions.Action):
 
 
 class FazerAlgumaCoisa(actions.Action):
-    data = actions.DateField(label='Data', required=False)
+    data = actions.DateField(label='Data', required=False, initial=datetime.date.today())
 
     class Meta:
         method = 'get'
@@ -49,7 +49,7 @@ class FazerAlgumaCoisa(actions.Action):
 
 
 class FazerAlgumaCoisa2(actions.Action):
-    data = actions.DateField(label='Data', required=False)
+    data = actions.DateField(label='Data', required=False, initial='2023-01-01')
 
     class Meta:
         verbose_name = 'Fazer Alguma Coisa'
@@ -67,7 +67,7 @@ class FazerAlgumaCoisa2(actions.Action):
         )
 
     def get_tipos_procedimentos(self):
-        return TipoProcedimento.objects.all().template('x')
+        return TipoProcedimento.objects.all().actions('edit')#.view(False).template('x')
 
     def view(self):
         return self.values('get_dados_gerais')

@@ -54,7 +54,8 @@
             $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).addClass('selected')
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
-                url:'{{ data.path }}?'+data,
+                url:'{{ data.path|safe }}',
+                data: data,
                 success:function( html ) {
                     var remote = $(html);
                     $('#queryset-data-{{ data.uuid }}').html(

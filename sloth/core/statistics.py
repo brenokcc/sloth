@@ -3,7 +3,7 @@
 import json
 from decimal import Decimal
 from django.db.models.aggregates import Count
-from sloth.exceptions import HtmlJsonReadyResponseException
+from sloth.exceptions import HtmlReadyResponseException
 from django.template.loader import render_to_string
 from uuid import uuid1
 from sloth.utils import pretty, colors
@@ -202,7 +202,7 @@ class QuerySetStatistics(object):
                 if item['type'] == 'boolean':
                     value = bool(int(value)) if value.isdigit() else value == 'true'
                 self.qs = self.qs.filter(**{item['key']: value})
-        raise HtmlJsonReadyResponseException(self.html())
+        raise HtmlReadyResponseException(self.html())
 
 
     def html(self):

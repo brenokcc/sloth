@@ -205,6 +205,8 @@ class ValueSet(dict):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
                     path = '{}{}/'.format(self.path, attr_name)
+                    if self.request and self.request.META.get('QUERY_STRING'):
+                        path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING'))
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
                         qs.instantiator = self.instance

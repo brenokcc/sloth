@@ -11,7 +11,7 @@ class JsonReadyResponseException(BaseException):
         super().__init__()
 
 
-class HtmlJsonReadyResponseException(BaseException):
+class HtmlReadyResponseException(BaseException):
     def __init__(self, html):
         self.html = html
         super().__init__()

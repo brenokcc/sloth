@@ -20,7 +20,7 @@ from django.utils.text import slugify
 from django.apps import apps
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
-from sloth.exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
+from sloth.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
 from sloth.utils import getattrr, serialize, pretty, to_api_params
 
 
@@ -537,6 +537,10 @@ class QuerySet(models.QuerySet):
         self.metadata['collapsed'] = flag
         return self
 
+    def template(self, name):
+        self.metadata['template'] = name if '.html' in name else '{}.html'.format(name)
+        return self
+
     def compact(self, flag=True):
         self.metadata['compact'] = flag
         return self
@@ -677,7 +681,7 @@ class QuerySet(models.QuerySet):
             if self.metadata['uuid'] == request.GET.get('uuid'):
                 component = self.process_request(request).apply_role_lookups(request.user)
                 if request.path.startswith('/app/'):
-                    raise HtmlJsonReadyResponseException(component.html())
+                    raise HtmlReadyResponseException(component.html())
                 else:
                     meta = request.path.startswith('/meta/')
                     raise JsonReadyResponseException(component.serialize(wrap=meta, verbose=meta))

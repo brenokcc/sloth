@@ -16,7 +16,7 @@ from ..api.actions import Login
 from ..core import views
 from ..core.queryset import QuerySet
 from ..utils.icons import bootstrap, materialicons, fontawesome
-from ..exceptions import JsonReadyResponseException, HtmlJsonReadyResponseException, ReadyResponseException
+from ..exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
 from . import dashboard
 
 DASHBOARD_URL = '/app/dashboard/'
@@ -42,7 +42,7 @@ def view(func):
             return error.response
         except JsonReadyResponseException as error:
             return JsonResponse(error.data)
-        except HtmlJsonReadyResponseException as error:
+        except HtmlReadyResponseException as error:
             app_messages = render_to_string('app/messages.html', request=request)
             return HttpResponse(app_messages + error.html)
         except PermissionDenied:

@@ -57,14 +57,7 @@
     </script>
     {% endif %}
     {% if metadata.type == "date" or metadata.type == "datetime" %}
-    <input type="text" name="{{ metadata.key }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
+    <input type="date" name="{{ metadata.key }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
            placeholder="Informe um data" style="padding-left:10px">
-    <script>
-            $(function() {
-                $('.{{ metadata.key }}-{{ data.uuid }}').datepicker($.datepicker.regional['pt-BR']);
-                $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "dateFormat", 'dd/mm/yy');
-                $('.{{ metadata.key }}-{{ data.uuid }}').datepicker( "option", "width", '');
-            });
-    </script>
     {% endif %}
 </div>

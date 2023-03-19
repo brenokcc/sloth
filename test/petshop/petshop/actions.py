@@ -52,7 +52,6 @@ class FazerAlgumaCoisa2(actions.Action):
     data = actions.DateField(label='Data', required=False)
 
     class Meta:
-        method = 'get'
         verbose_name = 'Fazer Alguma Coisa'
         modal = True
 
@@ -68,13 +67,13 @@ class FazerAlgumaCoisa2(actions.Action):
         )
 
     def get_tipos_procedimentos(self):
-        return TipoProcedimento.objects.all()
+        return TipoProcedimento.objects.all().template('x')
 
     def view(self):
         return self.values('get_dados_gerais')
 
     def submit(self):
-        self.clear()
+        # self.clear()
         return self.values('get_tipos_procedimentos')
         # self.redirect('..', message='Ação realizada com sucesso!')
 

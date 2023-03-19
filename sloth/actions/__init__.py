@@ -21,7 +21,7 @@ from . import inputs
 from django import forms
 from django.forms.models import ModelFormMetaclass, ModelMultipleChoiceField
 
-from ..exceptions import JsonReadyResponseException, ReadyResponseException
+from ..exceptions import JsonReadyResponseException, ReadyResponseException, HtmlReadyResponseException
 from ..utils import to_api_params, to_camel_case, to_snake_case
 from django.forms.fields import *
 from django.forms.widgets import *
@@ -111,6 +111,12 @@ class Action(metaclass=ActionMetaclass):
         #             self.instances = self.instance,
         # if 'instances' in self.request.GET:
         #     self.instances = QuerySet.loads(self.request.GET['instances'])
+
+        for k in self.request.GET:
+            if k.startswith('post__'):
+                if 'data' not in kwargs:
+                    kwargs['data'] = {}
+                kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
 
         form_name = type(self).__name__
         if 'data' not in kwargs:
@@ -501,7 +507,6 @@ class Action(metaclass=ActionMetaclass):
         return self.html()
 
     def html(self):
-        print(self.response, 888)
         if self.response:
             js = '<script>{}</script>'
             display_messages = True
@@ -719,6 +724,10 @@ class Action(metaclass=ActionMetaclass):
             self.add_error(None, e.message)
         except BaseException as e:
             if isinstance(e, ReadyResponseException):
+                raise e
+            if isinstance(e, JsonReadyResponseException):
+                raise e
+            if isinstance(e, HtmlReadyResponseException):
                 raise e
             traceback.print_exc()
             if self.request.path.startswith('/app/'):

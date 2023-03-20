@@ -274,9 +274,8 @@ def action_link(action_name):
 
 @register.filter
 def post_querystring(request):
-    return mark_safe('?{}'.format(
-        '&'.join(['post__{}={}'.format(k, v) for k, v in request.POST.items() if k != 'csrfmiddlewaretoken'])
-    ))
+    params = ['post__{}={}'.format(k, v) for k, v in request.POST.items() if k != 'csrfmiddlewaretoken']
+    return mark_safe('?{}'.format('&'.join(params))) if params else ''
 
 
 @register.tag

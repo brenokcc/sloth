@@ -59,6 +59,15 @@ class QuerySet(models.QuerySet):
         self.metadata['username_lookups'].append(name)
         return self
 
+    def grant_permission(self, *names, **scopes):
+        for name in names:
+            if name in ('User', 'Usuário') and 'username' in scopes.values():
+                for username_lookup in scopes:
+                    self.username_lookup(username_lookup)
+            else:
+                self.role_lookups(*names, **scopes)
+        return self
+
     def has_permission(self, user):
         if user.is_authenticated:
             return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups'])) or self.metadata['username_lookups']
@@ -93,7 +102,7 @@ class QuerySet(models.QuerySet):
                 lookups.append(Q(**{lookup: user.username}))
             if lookups:
                 return self.filter(reduce(operator.__or__, lookups))
-        return self.none()
+        return self.none() if self.metadata['is_admin'] else self
 
     def append(self, *names):
         from sloth.core.valueset import ValueSet
@@ -538,6 +547,9 @@ class QuerySet(models.QuerySet):
         self.metadata['collapsed'] = flag
         return self
 
+    def expand(self):
+        return self.collapsed(False)
+
     def template(self, name):
         self.metadata['template'] = name if '.html' in name else '{}.html'.format(name)
         return self
@@ -610,13 +622,13 @@ class QuerySet(models.QuerySet):
         if self.metadata['page'] != 1:
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
-            self.metadata['interval'] = '{} - {}'.format(start + 1, end)
+            self.metadata['interval'] = (start + 1, end)
             qs = self.order_by(*self.metadata['ordering'] or ['id'])[start:end]
         else:
-            self.metadata['interval'] = '{} - {}'.format(0 + 1, self.metadata['limit'])
+            self.metadata['interval'] = 0 + 1, self.metadata['limit']
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
-            self.metadata['interval'] = '{} - {}'.format(start + 1, end)
+            self.metadata['interval'] = start + 1, end
             qs = self.filter(pk__in=self.values_list('pk', flat=True).order_by(*self.metadata['ordering'] or ['id'])[start:end])
 
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:

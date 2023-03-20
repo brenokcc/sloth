@@ -66,7 +66,7 @@ def dispatcher(request, path):
         if tokens:
             obj = apps.get_model(app_label, model_name).objects.get_queryset()
             if tokens[0].isdigit() or '-' in tokens[0]:
-                obj = obj.all()
+                obj = obj.all().admin()
         else:
             obj = apps.get_model(app_label, model_name).objects.all().default_actions().collapsed(False).admin()
             if not obj.has_permission(request.user):

@@ -205,16 +205,6 @@ def index(request):
 
 
 @view
-def app(request):
-    request.COOKIES.get('width')
-    if request.user.is_authenticated:
-        return render(
-            request, [getattr(settings, 'INDEX_TEMPLATE', 'app/index.html')],
-            context(request, True)
-        )
-    return HttpResponseRedirect('/app/login/')
-
-@view
 def roles(request):
     if 'names' in request.GET:
         names = request.GET['names'].split('|')

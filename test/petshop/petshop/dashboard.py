@@ -32,7 +32,7 @@ class PetshopDashboard(Dashboard):
         return self.objects('petshop.animal').get_qtd_por_tipo().verbose_name('Animais por Tipo').bar_chart()
 
     def get_doencas(self):
-        return self.objects('petshop.doenca').contagiosas()
+        return self.objects('petshop.doenca').contagiosas().expand()
 
     def get_mais_informacoes(self):
         return self.values('get_estatistica', 'get_doencas')

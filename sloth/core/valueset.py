@@ -2,7 +2,7 @@
 import json
 from uuid import uuid1
 import pprint
-
+from functools import lru_cache
 from django.db.models import Model
 from django.template.loader import render_to_string
 from sloth.actions import Action
@@ -125,8 +125,9 @@ class ValueSet(dict):
         return self
 
     def contextualize(self, request):
-        self.path = request.path
-        self.request = request
+        if request:
+            self.path = request.path
+            self.request = request
         return self
 
     def debug(self):
@@ -134,6 +135,12 @@ class ValueSet(dict):
 
     def apply_role_lookups(self, user):
         return self
+
+    @classmethod
+    @lru_cache
+    def action_form_cls(cls, action):
+        from sloth.actions import ACTIONS
+        return ACTIONS.get(action)
 
     def has_permission(self, user):
         return user.is_superuser or self.instance.has_permission(user)
@@ -204,7 +211,9 @@ class ValueSet(dict):
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
-                    path = '{}{}/'.format(self.path, attr_name)
+                    path = self.path
+                    if self.metadata['attr'] is None:
+                        path = '{}{}/'.format(self.path, attr_name)
                     if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING'))
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
@@ -242,7 +251,10 @@ class ValueSet(dict):
                             continue
                         refresh = valueset.refresh_data()
                         data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name if verbose else attr_name,
-                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path, instance=valueset.instance) if wrap else valueset
+                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path
+                        ) if wrap else valueset
+                        if self.request and self.request.path.startswith('/app/'):
+                            data.update(instance=valueset.instance)
                         if wrap:
                             for action_type in ('actions', 'inline_actions'):
                                 for form_name in valueset.metadata[action_type]:
@@ -300,8 +312,10 @@ class ValueSet(dict):
                 name = ''
                 icon = None
             output = dict(
-                uuid=uuid1().hex, type='object', name=name, instance=self.instance,
+                uuid=uuid1().hex, type='object', name=name
             )
+            if self.request and self.request.path.startswith('/app/'):
+                output.update(instance=self.instance)
             for key in ('title', 'subtitle', 'status'):
                 if self.metadata[key]:
                     value = getattr(self.instance, self.metadata[key])

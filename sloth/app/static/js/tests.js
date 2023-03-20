@@ -277,8 +277,8 @@ function choose(name, value, headless){
 }
 
 function seeMessage(text){
-    var message = $('.alert-success').first();
-    if(message.text().trim().indexOf(text)>0){
+    var message = $('.toast').first();
+    if(message.text().trim().indexOf(text)>=0){
         message.click();
         return message;
     } else {

@@ -28,8 +28,8 @@ def endpoint(func):
                 wrap = request.path.startswith('/meta')
                 verbose = request.path.startswith('/meta')
                 serialized = data.serialize(wrap=wrap, verbose=verbose)
-                # serialize = dict(type='view', data=dict(Header={}, Breadcrumps=[], Menu=[], Main=dict(Left=[], Top=[], Center=[serialized], Bottom=[])), Footer={})
-                return ApiResponse(serialize, safe=False)
+                from pprint import pprint; pprint(serialized)
+                return ApiResponse(serialized, safe=False)
             else:
                 return ApiResponse(
                     dict(type='message', text='Usuário não autenticado', style='warning'), status=403
@@ -63,22 +63,21 @@ def index(request):
 
 @csrf_exempt
 @endpoint
-def dispatcher(request, app_label, model_name, x=None, y=None, z=None, w=None, k=None):
-    if request.method == 'GET' and x == 'all':
-        x = None
-    if request.method == 'POST' and x is None and y is None:
-        x = 'add'
-    if request.method == 'PUT' and x is not None and y is None:
+def dispatcher(request, path):
+    if request.method == 'GET':
+        pass
+    if request.method == 'POST':
+        pass
+    if request.method == 'PUT':
         request.POST = QueryDict(request.body)
-        y = 'edit'
-    if request.method == 'DELETE' and x is not None and y is None:
+    if request.method == 'DELETE':
         request.POST = QueryDict('confirmation=1')
-        y = 'delete'
-    return views.dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w, k=k)
+    return views.dispatcher(request, path)
 
 
 @csrf_exempt
-def api_model_dispatcher(request, x=None, y=None, z=None, w=None, k=None):
-    app_label = 'api'
-    model_name = request.path.split('/')[2]
-    return dispatcher(request, app_label, model_name, x=x, y=y, z=z, w=w, k=k)
+def api_model_dispatcher(request, path=None):
+    if path:
+        return dispatcher(request, 'api/{}/{}'.format(request.path.split('/')[2], path))
+    return dispatcher(request, 'api/{}'.format(request.path.split('/')[2]))
+

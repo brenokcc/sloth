@@ -61,7 +61,7 @@ def dispatcher(request, path):
         obj = dashboard if tokens else dashboard.view()
         if not request.user.is_authenticated:
             raise PermissionDenied()
-    elif token in settings.INSTALLED_APPS or token == 'api':
+    elif token in settings.INSTALLED_APPS or token in ('api', 'auth'):
         app_label, model_name = token, tokens.pop(0)
         if tokens:
             obj = apps.get_model(app_label, model_name).objects.get_queryset()
@@ -72,17 +72,20 @@ def dispatcher(request, path):
             if not obj.has_permission(request.user):
                 raise PermissionDenied()
     else:
-        raise PermissionDenied()
+        raise Exception()
     for i, token in enumerate(tokens):
         if token.isdigit():
-            obj = obj.contextualize(request).apply_role_lookups(request.user).get(pk=token)
-            instance = obj
-            instances = None
+            obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk=token).first()
+            if obj:
+                instance = obj
+                instances = None
+            else:
+                raise PermissionDenied()
         elif '-' in token:
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
             instances = obj
-        elif token in ACTIONS:
+        elif token in ACTIONS or token == 'add':
             form_cls = obj.action_form_cls(token)
             # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances))
             form = form_cls(request=request, instantiator=instantiator, instance=instance, instances=instances)
@@ -98,11 +101,13 @@ def dispatcher(request, path):
             else:
                 raise PermissionDenied()
         else:
-            if i == len(tokens) - 1:
+            if i == len(tokens) - 1:  # last
                 obj = obj.attr(token, source=not is_ajax(request))
             else:
                 instance = None
                 instances = None
                 instantiator = obj
                 obj = getattr(obj, token)()
+                if type(obj).__name__ == 'ValueSet':
+                    instance = instantiator
     return obj.contextualize(request)

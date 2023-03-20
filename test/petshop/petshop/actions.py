@@ -139,6 +139,9 @@ class FinalizarTratamento(actions.Action):
     def has_permission(self, user):
         return self.instance.procedimento_set.exists() and self.instance.eficaz is None
 
+    def view(self):
+        print(self.instantiator)
+
 
 class Batata(actions.Action):
 

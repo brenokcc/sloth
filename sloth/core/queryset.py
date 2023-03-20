@@ -93,8 +93,7 @@ class QuerySet(models.QuerySet):
                 lookups.append(Q(**{lookup: user.username}))
             if lookups:
                 return self.filter(reduce(operator.__or__, lookups))
-            return self.none()
-        return self
+        return self.none()
 
     def append(self, *names):
         from sloth.core.valueset import ValueSet
@@ -404,8 +403,10 @@ class QuerySet(models.QuerySet):
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset', path=path,
                 name=verbose_name, key=None, icon=icon, count=n_pages,
-                actions={}, metadata={}, data=values, instantiator=self.instantiator
+                actions={}, metadata={}, data=values
             )
+            if self.request and self.request.path.startswith('/app/'):
+                data.update(instantiator=self.instantiator)
             if attach:
                 data.update(attach=attach)
 
@@ -432,7 +433,7 @@ class QuerySet(models.QuerySet):
                         dict(
                             type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
                             method='get', icon=view['icon'], style='primary', ajax=False,
-                            modal=view['modal'], path='{}{{id}}/{}'.format(path, view_suffix)
+                            modal=view['modal'], path='{}{{id}}/{}'.format(path or self.request.path if self.request else '/', view_suffix)
                         )
                     )
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
@@ -708,7 +709,8 @@ class QuerySet(models.QuerySet):
             qs = attach.instance
         else:
             raise Exception()
-        qs.metadata.update(request=request)
+        if request.path.startswith('/app/'):
+            qs.metadata.update(request=request)
         for item in self.get_filters().values():
             value = request.GET.get(item['key'])
             if value:

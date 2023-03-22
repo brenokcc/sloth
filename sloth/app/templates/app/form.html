@@ -127,12 +127,6 @@
 </form>
 
 <script>
-$( document ).ready(function() {
-    window['RELOAD_AREAS'] = '{{ self.get_reload_areas }}';
-    if(window['{{ self.get_metadata.key }}'] != null){
-        window['{{ self.get_metadata.key }}']($('#{{ self.get_metadata.key|slugify }}'));
-    }
-});
 {% for field_name in self.get_on_change_fields %}
     $('#{{ self.get_metadata.key|slugify }}').dynamic('{{ field_name }}', {{ self.on_change_data|safe }});
 {% endfor %}

@@ -74,15 +74,15 @@
 
       <main>
 {% endif %}
-<!--{% include "app/dashboard/dashboards.html" with data=dashboard.data %}-->
+
 {% block content %}
 {% endblock %}
 {% include "app/messages.html" %}
 {% for url in settings.SLOTH.INCLUDE.JS %}
       <script src="{{ url }}?v={{ settings.SLOTH.VERSION }}"></script>
 {% endfor %}
-      <script src="/static/js/tests.js"></script>
 {% if not request|is_ajax %}
+        <script src="/static/js/tests.js"></script>
       </main>
     {% block footer %}
     {% include "app/footer.html" %}

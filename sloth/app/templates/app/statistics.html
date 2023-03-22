@@ -1,4 +1,5 @@
 {% load tags %}
+<div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
 <div id="statistics-{{ data.uuid }}">
 {% if uuid is None or request.GET.uuid is None %}
     <div class="card">
@@ -99,4 +100,5 @@
         </div>
     </div>
 {% endif %}
+</div>
 </div>

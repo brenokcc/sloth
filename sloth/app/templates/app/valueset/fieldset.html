@@ -1,5 +1,6 @@
 {% load tags %}
 {% if data.type == 'fieldset' %}
+    <div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
     {% if data.template %}
         {% include data.template with data=data %}
     {% else %}
@@ -63,6 +64,7 @@
           </script>
       {% endif %}
     {% endif %}
+    </div>
 {% endif %}
 
 {% if data.type == 'queryset' %}
@@ -74,6 +76,8 @@
 {% endif %}
 
 {% if data.type == 'primitive' %}
+    <div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
     {% include 'app/valueset/primitive.html' with data=data %}
+    </div>
 {% endif %}
 

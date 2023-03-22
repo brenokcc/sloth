@@ -278,6 +278,13 @@ def post_querystring(request):
     return mark_safe('?{}'.format('&'.join(params))) if params else ''
 
 
+@register.filter
+def start_querystring(path):
+    if '?' in path:
+        return mark_safe('{}&'.format(path))
+    return mark_safe('{}?'.format(path))
+
+
 @register.tag
 def action(parser,token):
     _, action_name, instantiator, fieldset_name = token.split_contents()

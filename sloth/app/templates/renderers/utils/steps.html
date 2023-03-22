@@ -59,7 +59,7 @@
 	}
 </style>
 
-{% if request|mobile or compact %}
+{% if request|mobile or compact or request.GET.compact %}
 <div class="steps-vertical">
     {% for step, date in value %}
         <div class="step">

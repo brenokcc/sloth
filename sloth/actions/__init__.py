@@ -506,12 +506,6 @@ class Action(metaclass=ActionMetaclass):
     def get_instructions(self):
         return None
 
-    def get_reload_areas(self):
-        reload = getattr(self.metaclass, 'reload', 'self')
-        if isinstance(reload, tuple):
-            return ','.join(reload)
-        return reload or ''
-
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
 
@@ -523,7 +517,7 @@ class Action(metaclass=ActionMetaclass):
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        if request and not request.user.is_superuser:
+        if request:  # and not request.user.is_superuser
             checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
             has_permission = cls.has_permission(checker, request.user)
             return cls.check_permission(checker, request.user) if has_permission is None else has_permission
@@ -545,7 +539,7 @@ class Action(metaclass=ActionMetaclass):
                     js = js.format('$(document).reload("#{}-wrapper");'.format(self.get_metadata().get('key')))
             elif self.response.get('url') == '..':
                 display_messages = 'modal' in self.request.GET
-                js = js.format('$(document).back();')
+                js = js.format('$(document).back().refresh([]);')
             elif self.response.get('url'):
                 display_messages = False
                 js = js.format('$(document).redirect("{}");'.format(self.response['url']))

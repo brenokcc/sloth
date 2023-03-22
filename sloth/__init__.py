@@ -86,6 +86,9 @@ class BaseManager(manager.BaseManager):
     def all(self):
         return self.get_queryset().all()
 
+    def view(self):
+        return self.get_queryset().view()
+
     def __call__(self, model_name):
         return apps.get_model(model_name).objects
 

@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
+from ..core.valueset import ValueSet
+from ..core.valueset import QuerySet
 from ..app.dashboard import Dashboards
 from ..actions import ACTIONS
 from ..app.templatetags.tags import is_ajax
@@ -68,7 +70,9 @@ def dispatcher(request, path):
             if tokens[0].isdigit() or '-' in tokens[0]:
                 obj = obj.all().admin()
         else:
-            obj = apps.get_model(app_label, model_name).objects.all().default_actions().collapsed(False).admin()
+            obj = apps.get_model(app_label, model_name).objects.view()
+            if isinstance(obj, QuerySet):
+                obj = obj.default_actions().collapsed(False).admin()
             if not obj.has_permission(request.user):
                 raise PermissionDenied()
     else:
@@ -101,13 +105,18 @@ def dispatcher(request, path):
             else:
                 raise PermissionDenied()
         else:
+            print(type(obj), token), 111
             if i == len(tokens) - 1:  # last
                 obj = obj.attr(token, source=not is_ajax(request))
             else:
                 instance = None
                 instances = None
-                instantiator = obj
-                obj = getattr(obj, token)()
-                if type(obj).__name__ == 'ValueSet':
+                if isinstance(obj, ValueSet):
+                    instantiator = obj.instance
+                    obj = getattr(obj.instance, token)()
+                else:
+                    instantiator = obj
+                    obj = getattr(obj, token)()
+                if isinstance(obj, ValueSet):
                     instance = instantiator
     return obj.contextualize(request)

@@ -23,10 +23,10 @@ class DoencaManager(models.Manager):
         return self.attach('contagiosas', 'nao_contagiosas')
 
     def contagiosas(self):
-        return self.filter(contagiosa=True)
+        return self.filter(contagiosa=True).filters()
 
     def nao_contagiosas(self):
-        return self.filter(contagiosa=False)
+        return self.filter(contagiosa=False).filters().inline_actions('fazer_alguma_coisa')
 
     @meta('Total de Doenças Contagiosas')
     def get_total_por_contagiosiade(self):
@@ -211,10 +211,19 @@ class Animal(models.Model):
 class TratamentoManager(models.Manager):
 
     def all(self):
-        return self.calendar('data_inicio')
+        return self.calendar('data_inicio').preview('get_procedimentos_por_tipo', modal=True)
 
-    def em_tratamento(self):
+    def em_andamento(self):
         return self.filter(data_fim__isnull=True)
+
+    def total_por_animal(self):
+        return self.count('animal').column_chart()
+
+    def total_por_doenca(self):
+        return self.count('animal').donut_chart()
+
+    def view(self):
+        return self.value_set('all').append('total_por_animal').attach('total_por_doenca')
 
 
 class Tratamento(models.Model):
@@ -251,17 +260,23 @@ class Tratamento(models.Model):
         return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.actions('RegistrarProcedimento', inline=True)
 
     def get_procedimentos(self):
-        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline()
+        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline().expand()
 
     @meta('Procedimentos por Tipo')
     def get_procedimentos_por_tipo(self):
         return self.procedimento_set.count('tipo').bar_chart()
 
     def get_eficacia(self):
-        return self.values('eficaz').actions('FinalizarTratamento')
+        return self.values('eficaz').actions('FinalizarTratamento', 'RetomarTratamento')
+
+    def get_detalhamento(self):
+        return self.value_set('get_procedimentos_por_tipo', 'get_x')
+
+    def get_x(self):
+        return self.values('get_procedimentos', 'get_etapas')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_procedimentos_por_tipo', 'get_procedimentos', 'get_eficacia').append('get_etapas')
+        return self.values('get_dados_gerais', 'get_detalhamento', 'get_eficacia')#.append('get_etapas')
 
     def has_view_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username

@@ -153,7 +153,6 @@ class QuerySetStatistics(object):
 
     def serialize(self, wrap=True, verbose=True, path=None, lazy=False):
         series = dict()
-        verbose_name = self.metadata['verbose_name']
         if not lazy:
             self._calc()
 
@@ -181,9 +180,9 @@ class QuerySetStatistics(object):
         if wrap:
             return dict(
                 type='statistics',
-                uuid=self.metadata['uuid'],
-                name=verbose_name,
-                key=None,
+                uuid=self.qs.metadata['uuid'],
+                name=self.qs.metadata['verbose_name'],
+                key=self.qs.metadata['attr'],
                 path=path,
                 series=series,
                 template=self.metadata['template'],
@@ -204,17 +203,13 @@ class QuerySetStatistics(object):
                 self.qs = self.qs.filter(**{item['key']: value})
         raise HtmlReadyResponseException(self.html())
 
-
     def html(self):
         serialized = self.serialize(wrap=True, verbose=True)
-        if self.metadata['source']:
-            if hasattr(self.metadata['source'], 'model'):
-                name = self.metadata['source'].model.metaclass().verbose_name_plural
-            else:
-                name = self.metadata['source']
+        if self.qs.metadata['is_admin']:
+            name = self.qs.model.metaclass().verbose_name_plural
             data = dict(
                 type='object', name=str(name),
-                icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
+                icon=None, data={self.qs.metadata['verbose_name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
             return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)

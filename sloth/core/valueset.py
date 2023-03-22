@@ -112,9 +112,13 @@ class ValueSet(dict):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def attr(self, name):
+    def attr(self, name, source=False):
         self.metadata['attr'] = name
-        return self
+        self.metadata['names'] = {name: 100}
+        if source:
+            return self.source(name)
+        else:
+            return self
 
     def source(self, name):
         self.metadata['source'] = name
@@ -190,20 +194,17 @@ class ValueSet(dict):
         return dict(type='object', properties=schema)
 
     def load(self, wrap=True, verbose=False, detail=False, deep=0):
-        only = []
         is_meta_api = False
         if self.request:
             is_meta_api = self.request.path.startswith('/meta/')
             if 'only' in self.request.GET:
-                only.extend(self.request.GET['only'].split(','))
+                self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',')}
                 self.request.GET._mutable = True
                 self.request.GET.pop('only')
                 self.request.GET._mutable = False
 
         if self.metadata['names']:
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
-                if only and attr_name not in only:
-                    continue
                 if self.request and not self.request.user.is_superuser:
                     if self.metadata['only'] and attr_name in self.metadata['only']:
                         if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
@@ -212,9 +213,9 @@ class ValueSet(dict):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
                     path = self.path
-                    if self.metadata['attr'] is None:
+                    if self.metadata['attr'] is None and attr_name != 'all':
                         path = '{}{}/'.format(self.path, attr_name)
-                    if self.request and self.request.META.get('QUERY_STRING'):
+                    if self.request and self.request.META.get('QUERY_STRING') and 'only' not in self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING'))
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
@@ -272,8 +273,9 @@ class ValueSet(dict):
                             if valueset.metadata['template']:
                                 data.update(template='{}.html'.format(valueset.metadata['template']))
                     else:
+                        path = '{}{}/'.format(self.path, attr_name)
                         data = value
-                        verbose_name = None
+                        verbose_name = pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                         self.metadata['primitive'] = True
                         if not wrap or is_meta_api:
                             data = serialize(data)
@@ -282,7 +284,7 @@ class ValueSet(dict):
                             metadata = getattr(attr, '__metadata__', None)
                             if template:
                                 template = 'renderers/{}.html'.format(template)
-                            data = dict(value=data, width=width, template=template, metadata=metadata, type='primitive')
+                            data = dict(key=attr_name, name=verbose_name, value=data, width=width, template=template, metadata=metadata, type='primitive', path=path)
                     if verbose:
                         attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
@@ -336,11 +338,11 @@ class ValueSet(dict):
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    output['attach'].append(dict(name=name, path=self.path))
+                    output['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
             for attr_name in self.metadata['append']:
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     output['append'].update(
-                        self.instance.values(attr_name).contextualize(
+                        self.instance.value_set(attr_name).contextualize(
                             self.request
                         ).load(wrap=wrap, verbose=verbose)
                     )
@@ -361,7 +363,7 @@ class ValueSet(dict):
                 data['icon'] = serialized['icon']
             if data['type']=='fieldset':
                 if is_ajax and not is_modal:
-                    data['name'] = None
+                    if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/valueset/fieldset.html'
                 else:
                     template_name, data = 'app/valueset/valueset.html', serialized
@@ -374,13 +376,13 @@ class ValueSet(dict):
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset/valueset.html', serialized
                 else:
-                    data['name'] = None
+                    if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/queryset/queryset.html'
             elif data['type']=='statistics':
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset/valueset.html', serialized
                 else:
-                    data['name'] = None
+                    if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/statistics.html'
             elif data['type'] == 'primitive':
                 template_name = 'app/valueset/primitive.html'

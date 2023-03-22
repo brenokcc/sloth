@@ -9,6 +9,7 @@ from uuid import uuid1
 import zlib
 import pickle
 import base64
+from pprint import pprint
 from django.core import signing
 from django.conf import settings
 from django.contrib import messages
@@ -36,7 +37,7 @@ class QuerySet(models.QuerySet):
     def reset(self):
         limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
-            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=[],
+            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=None,
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], wrapped=True, collapsed=True, compact=False,
@@ -79,7 +80,7 @@ class QuerySet(models.QuerySet):
         qs = self.model.objects.all()
         if name == 'all' or name in qs.metadata['attach']:
             return qs.has_permission(user)
-        return getattr(self, name)().has_permission(user)
+        return getattr(self._clone(), name)().has_permission(user)
 
     def apply_role_lookups(self, user):
         if user.is_superuser:
@@ -108,6 +109,10 @@ class QuerySet(models.QuerySet):
         from sloth.core.valueset import ValueSet
         return ValueSet(self, names)
 
+    def value_set(self, *names):
+        from sloth.core.valueset import ValueSet
+        return ValueSet(self, names)
+
     def get_list_display(self, add_id=False):
         if self.metadata['display']:
             list_display = self.metadata['display']
@@ -129,7 +134,7 @@ class QuerySet(models.QuerySet):
 
     def get_search(self, verbose=False):
         search = {}
-        if self.metadata['search'] is not None:
+        if self.metadata['search'] is None:
             for lookup in self.metadata['search'] or self.model.default_search_fields():
                 verbose_name = self.model.get_attr_metadata(lookup)[0]
                 search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
@@ -229,15 +234,16 @@ class QuerySet(models.QuerySet):
                     verbose_name = attr.__verbose_name__
                 else:
                     verbose_name = attach.metadata['verbose_name'] or pretty(name)
+                active = name == self.request.GET.get('subset', 'all')
                 if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'
                     attaches[verbose_name if verbose else name] = dict(
-                        name=verbose_name, key=name, count=attach.count(), active=i == 0
+                        name=verbose_name, key=name, count=attach.count(), active=active
                     )
                 else:
                     attaches[verbose_name if verbose else name] = dict(
-                        name=verbose_name, key=name, active=i == 0
+                        name=verbose_name, key=name, active=active
                     )
         return attaches
 
@@ -411,7 +417,7 @@ class QuerySet(models.QuerySet):
             )
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset', path=path,
-                name=verbose_name, key=None, icon=icon, count=n_pages,
+                name=verbose_name, key=self.metadata['uuid'], icon=icon, count=n_pages,
                 actions={}, metadata={}, data=values
             )
             if self.request and self.request.path.startswith('/app/'):
@@ -464,6 +470,7 @@ class QuerySet(models.QuerySet):
                 if template:
                     template = template if template.endswith('.html') else '{}.html'.format(template)
                     data.update(template=template)
+            #pprint(data)
             return data
         return self.to_list(detail=False)
 
@@ -485,7 +492,7 @@ class QuerySet(models.QuerySet):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def view(self, *names, modal=False, icon=None):
+    def preview(self, *names, modal=False, icon=None):
         for name in names:
             if name:
                 self.metadata['view'].append(dict(name=name, modal=modal, icon=icon))
@@ -493,17 +500,21 @@ class QuerySet(models.QuerySet):
                 self.metadata['view'].clear()
         return self
 
+    def view(self):
+        return self.all()
+
     def display(self, *names):
         self.metadata['display'] = list(names)
         return self
 
     def search(self, *names, q=None):
-        if q:
+        if q is not None:
             lookups = []
             for search_field in self.metadata['search'] or self.model.default_search_fields():
                 lookups.append(Q(**{'{}__icontains'.format(search_field): q}))
             return self.filter(reduce(operator.__or__, lookups))
-        self.metadata['search'] = list(names) if names else None
+        else:
+            self.metadata['search'] = list(names) if names else []
         return self
 
     def filters(self, *names):
@@ -511,7 +522,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def dynamic_filters(self, *names):
-        self.metadata['dfilters'] = list(names)
+        self.metadata['dfilters'] = list(names) if names else None
         return self
 
     def ordering(self, *names):
@@ -567,10 +578,11 @@ class QuerySet(models.QuerySet):
             self.metadata['is_admin'] = True
             self.metadata['wrapped'] = False
             self.metadata['collapsed'] = False
-            self.metadata['verbose_name'] = '{} {}'.format(
-                self.model.metaclass().verbose_name, self.get_attr_metadata(name)[0]
-            )
-        return getattr(self, name)()
+            # self.metadata['verbose_name'] = '{} - {}'.format(
+            #     self.model.metaclass().verbose_name_plural, self.get_attr_metadata(name)[0]
+            # )
+            self.metadata['verbose_name'] = self.get_attr_metadata(name)[0]
+        return getattr(self._clone(), name)()
 
     @classmethod
     def get_attr_metadata(cls, lookup):
@@ -671,8 +683,8 @@ class QuerySet(models.QuerySet):
     # request functions
 
     def contextualize(self, request):
-        if request:
-            self.request = request
+        self.request = request
+        if request and self.metadata['uuid'] == request.GET.get('uuid'):
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)
@@ -691,13 +703,13 @@ class QuerySet(models.QuerySet):
                     )
             if 'attaches' in request.GET:
                 raise JsonReadyResponseException(self.get_attach())
-            if self.metadata['uuid'] == request.GET.get('uuid'):
-                component = self.process_request(request).apply_role_lookups(request.user)
-                if request.path.startswith('/app/'):
-                    raise HtmlReadyResponseException(component.html())
-                else:
-                    meta = request.path.startswith('/meta/')
-                    raise JsonReadyResponseException(component.serialize(wrap=meta, verbose=meta))
+
+            component = self.process_request(request).apply_role_lookups(request.user)
+            if request.path.startswith('/app/'):
+                raise HtmlReadyResponseException(component.html())
+            else:
+                meta = request.path.startswith('/meta/')
+                raise JsonReadyResponseException(component.serialize(wrap=meta, verbose=meta))
             return self.apply_role_lookups(request.user)
         return self
 
@@ -710,7 +722,7 @@ class QuerySet(models.QuerySet):
             attach = self
         else:
             self.metadata['subset'] = attr_name
-            attach = getattr(self, attr_name)()
+            attach = getattr(self._clone(), attr_name)()
         if isinstance(attach, QuerySet):
             qs = attach
             if self.metadata['ignore']:

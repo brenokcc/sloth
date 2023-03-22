@@ -123,8 +123,13 @@ class RegistrarProcedimento(actions.Action):
             '': (('tipo', 'data_hora'), 'observacao')
         }
 
+    def submit(self):
+        self.save()
+        self.message('Ação realizada com sucesso.')
+        self.redirect('.')
+
     def has_permission(self, user):
-        return self.instantiator.eficaz is None
+        return self.instantiator.data_fim is None
 
 
 class FinalizarTratamento(actions.Action):
@@ -137,10 +142,23 @@ class FinalizarTratamento(actions.Action):
         reload = True
 
     def has_permission(self, user):
-        return self.instance.procedimento_set.exists() and self.instance.eficaz is None
+        return self.instance.procedimento_set.exists() and self.instance.data_fim is None
 
-    def view(self):
-        print(self.instantiator)
+class RetomarTratamento(actions.Action):
+
+    class Meta:
+        verbose_name = 'Retomar Tratamento'
+        style = 'warning'
+
+    def has_permission(self, user):
+        return self.instance.data_fim
+
+    def submit(self):
+        self.instance.eficaz = None
+        self.instance.data_fim = None
+        self.instance.save()
+        self.message('Tratamento reiniciado com sucesso')
+        self.redirect()
 
 
 class Batata(actions.Action):

@@ -1,5 +1,5 @@
 {% load tags %}
-
+<div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
 {% if not data.metadata.is_admin  %}
 <div class="card">
         <div class="card-body">
@@ -40,11 +40,31 @@
     </div>
     {% endif %}
 
+    {% for action in data.actions.inline %}
+        {% action action.key data.instantiator data.uuid %}
+    {% endfor %}
+
     {% include "app/queryset/filters.html" %}
     <div class="clearfix"></div>
 
     <script>
         function reload{{ data.uuid }}(attaches, subset){
+            console.log([attaches, subset]);
+            $(document.body).addClass('page-loading');
+            if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
+            else $('#subset-{{ data.uuid }}').val(subset);
+            $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
+            var data = $('#form-{{ data.uuid }}').serialize();
+            $.ajax({
+                url:'{{ data.path|safe }}',
+                data: data,
+                success:function( html ) {
+                    $('#{{ data.key }}').html(html);
+                    $(document.body).removeClass('page-loading');
+                }
+            });
+        }
+        function _reload{{ data.uuid }}(attaches, subset){
             $(document.body).addClass('page-loading');
             if(attaches==null) attaches = true;
             if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
@@ -107,10 +127,6 @@
             }
         }
     </script>
-
-    {% for action in data.actions.inline %}
-        {% action action.key data.instantiator data.uuid %}
-    {% endfor %}
 
     <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 
@@ -192,4 +208,4 @@
     </div>
 {% endif %}
 
-
+</div>

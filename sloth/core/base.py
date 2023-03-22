@@ -96,6 +96,9 @@ class ModelMixin(object):
     def values(self, *names):
         return ValueSet(self, names)
 
+    def value_set(self, *names):
+        return ValueSet(self, names)
+
     def view(self):
         names = [field.name for field in self.metaclass().fields]
         return self.values(*names)

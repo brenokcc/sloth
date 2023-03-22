@@ -83,12 +83,29 @@ jQuery.fn.extend({
             document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });
     },
+    reloadAreas(areas){
+        if(areas.length){
+            $('.fieldset.reloadable').map(function(i, item){
+                if(areas.indexOf(item.id)>=0){
+                    $.get($(item).data('path'), function(html){
+                        if($(item).find('.bi-chevron-right').length){
+                            html=html.replace('bi-chevron-down', 'bi-chevron-right');
+                            console.log(html);
+                        }
+                        $(item).html(html).initialize();
+                    })
+                }
+            });
+        } else {
+            var url = document.location.pathname;
+            if($(document).getCookie('current_tab')) url += '?tab='+$(document).getCookie('current_tab');
+            $(document).open(url);
+        }
+        return this;
+    },
     reload: function(id){
         if(id){
-            var url = $(id).data('url');
-            $(this).request(url, 'GET', {}, function(html){
-                $(id).html($(html).find(id).html()).initialize();
-            });
+            $(this).request($(id).data('url'), 'GET', {}, function(html){$(id).html($(html).find(id).html()).initialize();});
         } else {
             document.location.reload();
         }
@@ -109,21 +126,14 @@ jQuery.fn.extend({
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
             if(canceled==null){
-                if(window['QUERYSET_RELOADER']){ // action in the scope of a queryset
-                    window['QUERYSET_RELOADER']();
-                    if(window['RELOAD_AREAS']){
-                        // trigger refresh only if specific areas was defined
-                        if(window['RELOAD_AREAS']!='self') $(this).refresh(window['RELOAD_AREAS']);
-                    }
-                } else { // action in the scope of fieldset or object itself
-                    if(window['RELOAD_AREAS']) $(this).refresh(window['RELOAD_AREAS']);
-                }
+                if(window['QUERYSET_RELOADER']) window['QUERYSET_RELOADER']();
             }
         } else {
             //$(document).open(document.referrer);
             //window.history.pushState("string", "Title", document.referrer);
             document.location.href = document.referrer;
         }
+        return this;
     },
     responsive: function(){
         $(this).find('.responsive-container > div').each(function (index) {
@@ -266,32 +276,27 @@ jQuery.fn.extend({
         });
         return this;
     },
+    areas: function(){
+        return $('.fieldset.reloadable').map(function(i, item){return item.id}).get()
+    },
     refresh: function(areas){
-        if(areas=='self' || areas=='True'){
-            var url = document.location.pathname;
-            if($(document).getCookie('current_tab')){
-                url += '?tab='+$(document).getCookie('current_tab');
-            }
-            $(document).open(url);
-        } else {
-            var areas = areas.split(',');
-            var url = '?only='+areas.join(',');
-            $.get({url:url, success:function(html){
-             $('.valueset-header').html($(html).find('.valueset-header'));
-             areas.forEach(function(attrName){
-              var remote = $(html).find('#'+attrName);
-              var local = $('#'+attrName);
-              var arrow = local.find('fieldset-title').find('i');
-              if(arrow.hasClass('bi-chevron-down')){
-                arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
-              } else {
-                arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
-              }
-              remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
-              local.html(remote.html()).initialize();
-             });
-           }});
-        }
+        if(areas.length==0) areas = $(this).areas();
+        var url = '?only='+areas.join(',');
+        $.get({url:url, success:function(html){
+         $('.valueset-header').html($(html).find('.valueset-header'));
+         areas.forEach(function(attrName){
+          var remote = $(html).find('#'+attrName);
+          var local = $('#'+attrName);
+          var arrow = local.find('fieldset-title').find('i');
+          if(arrow.hasClass('bi-chevron-down')){
+            arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
+          } else {
+            arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
+          }
+          remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
+          local.html(remote.html()).initialize();
+         });
+        }});
     },
     dynamic: function(name, initial){
         var form = $(this);
@@ -340,7 +345,7 @@ jQuery.fn.extend({
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');
-    window['QUERYSET_RELOADER'] = window['RELOAD_AREAS'] = null;
+    window['QUERYSET_RELOADER'] = null;
     $(document).setCookie('current_tab', '');
 });
 $( window ).resize(function() {

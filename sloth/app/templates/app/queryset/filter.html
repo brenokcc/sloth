@@ -1,3 +1,4 @@
+{% load tags %}
 <div class="filter {% if metadata.hidden %}d-none{% endif %}">
     <label>{{ name|truncatechars:25 }}</label>
     {% if metadata.type == "choices" %}
@@ -21,7 +22,7 @@
           placeholder: 'Selecione uma opção',
           {% if metadata.choices is None %}
           ajax: {
-            url: function () {return "{{ data.path }}?"+$('#form-{{ data.uuid }}').serialize()+'&choices={{ metadata.key }}';},
+            url: function () {return "{{ data.path|start_querystring }}"+$('#form-{{ data.uuid }}').serialize()+'&choices={{ metadata.key }}';},
             dataType: 'json',
             delay: 250,
             minimumInputLength: 3,

@@ -105,7 +105,6 @@ def dispatcher(request, path):
             else:
                 raise PermissionDenied()
         else:
-            print(type(obj), token), 111
             if i == len(tokens) - 1:  # last
                 obj = obj.attr(token, source=not is_ajax(request))
             else:

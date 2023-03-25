@@ -1,6 +1,6 @@
 {% load tags %}
 <div class="filter {% if metadata.hidden %}d-none{% endif %}">
-    <label>{{ name|truncatechars:25 }}</label>
+    <label>{{ metadata.name|truncatechars:25 }}</label>
     {% if metadata.type == "choices" %}
     <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
         {% if metadata.choices %}
@@ -10,10 +10,11 @@
             {% endfor %}
         {% else %}
             {% if metadata.value %}
-                <option selected value="{{ value }}">{{ metadata.value }}</option>
+                <option selected value="{{ metadata.value.1 }}">{{ metadata.value.0 }}</option>
             {% endif %}
         {% endif %}
     </select>
+    <input type="hidden" id="{{ metadata.key }}0" name="{{ metadata.key }}0" value="{{ metadata.value.0 }}"></input>
     <script>
        $('.{{ metadata.key }}-{{ data.uuid }}').select2({
         width: 'resolve',
@@ -41,11 +42,14 @@
           }
           {% endif %}
        });
+       $('.{{ metadata.key }}-{{ data.uuid }}').on("select2:select", function(e) {
+        $('#{{ metadata.key }}0').val($(this).find('option:selected').text().trim());
+    });
     </script>
     {% endif %}
     {% if metadata.type == "boolean" %}
     <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
-        <option></option>
+        <option selected></option>
         <option {% if metadata.value == True %}selected{% endif %} value="1">Sim</option>
         <option {% if metadata.value == False %}selected{% endif %} value="0">Não</option>
     </select>
@@ -58,7 +62,7 @@
     </script>
     {% endif %}
     {% if metadata.type == "date" or metadata.type == "datetime" %}
-    <input type="date" name="{{ metadata.key }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
+    <input type="date" name="{{ metadata.key }}" value="{{ metadata.value }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
            placeholder="Informe um data" style="padding-left:10px">
     {% endif %}
 </div>

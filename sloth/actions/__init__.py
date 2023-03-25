@@ -103,7 +103,7 @@ class RegionalDateTimeWidget(DateTimeInput):
 class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
-        self.inline = kwargs.pop('inline', False)
+        self.path = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
         self.instances = kwargs.pop('instances', None)
@@ -436,7 +436,7 @@ class Action(metaclass=ActionMetaclass):
         if hasattr(self.instance, 'post_save'):
             self.instance.post_save()
 
-    def serialize(self, wrap=False, verbose=False):
+    def serialize(self, wrap=False):
         if self.response:
             return self.response
         if wrap:
@@ -489,11 +489,14 @@ class Action(metaclass=ActionMetaclass):
                 'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
             )
         if path:
+            path, *params = path.split('?')
             if inline or batch:
                 target = 'queryset' if batch else 'instance'
                 path = '{}{{id}}/{}/'.format(path, to_snake_case(form_name))
             else:
                 path = '{}{}/'.format(path, to_snake_case(form_name))
+            if params:
+                path = '{}?{}'.format(path, params[0])
         metadata = dict(
             type='form', key=form_name, name=name, submit=submit, target=target,
             method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal, auto_reload=auto_reload
@@ -536,7 +539,7 @@ class Action(metaclass=ActionMetaclass):
                 if 'modal' in self.request.GET:
                     js = js.format('$(document).popup("{}");'.format(self.request.path))
                 else:
-                    js = js.format('$(document).reload("#{}-wrapper");'.format(self.get_metadata().get('key')))
+                    js = js.format('$(document).refresh([]);'.format(self.get_metadata().get('key')))
             elif self.response.get('url') == '..':
                 display_messages = 'modal' in self.request.GET
                 js = js.format('$(document).back().refresh([]);')
@@ -806,15 +809,7 @@ class Action(metaclass=ActionMetaclass):
     #         self.instances = QuerySet.loads(state['instances'])
 
     def get_full_path(self):
-        if self.inline:
-            if self.inline is True:
-                return '{}{}/'.format(self.request.path, to_snake_case(type(self).__name__))
-            return '{}{}/{}/'.format(self.request.path, self.inline, to_snake_case(type(self).__name__))
-        return self.request.get_full_path()
-        # tokens = self.request.path.split()
-        # if len(tokens) > 1 and tokens[1] in settings.INSTALLED_APPS:
-        #     return self.request.get_full_path()
-        # return '/app/action/{}/'.format(self.get_metadata().get('key'))
+        return self.path or self.request.get_full_path()
 
     def contextualize(self, request):
         return self

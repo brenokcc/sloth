@@ -361,3 +361,7 @@ textarea{
     top: 2px;
 	font-size: 16px;
 }
+
+.reloadable-fieldset, .reloadable-queryset{
+    margin-bottom: 10px;
+}

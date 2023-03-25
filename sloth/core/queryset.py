@@ -132,27 +132,27 @@ class QuerySet(models.QuerySet):
             list_filter = self.model.default_filter_fields()
         return [name for name in list_filter if name not in self.metadata['ignore']]
 
-    def get_search(self, verbose=False):
+    def get_search(self):
         search = {}
         if self.metadata['search'] is None:
             for lookup in self.metadata['search'] or self.model.default_search_fields():
                 verbose_name = self.model.get_attr_metadata(lookup)[0]
-                search[verbose_name if verbose else lookup] = dict(key=lookup, name=verbose_name)
+                search[lookup] = dict(key=lookup, name=verbose_name)
         return search
 
-    def get_display(self, verbose=False):
+    def get_display(self):
         display = {}
         for lookup in self.get_list_display():
             verbose_name, sort, _, _ = self.model.get_attr_metadata(lookup)
-            display[pretty(verbose_name) if verbose else lookup] = dict(
+            display[lookup] = dict(
                 key=lookup, name=pretty(verbose_name), sort=sort#, template=template, metadata=metadata
             )
         return display
 
     def filter_form_cls(self):
-        return self.get_filters(verbose=False, as_form=True)
+        return self.get_filters(as_form=True)
 
-    def get_filters(self, verbose=False, as_form=False):
+    def get_filters(self, as_form=False):
         from sloth import actions
         filters = {}
         list_filter = self.get_list_filters()
@@ -174,32 +174,37 @@ class QuerySet(models.QuerySet):
                 if not qs:
                     continue
 
-            key = pretty(str(field.verbose_name)) if verbose else lookup
+            key = lookup
             name = pretty(str(field.verbose_name))
             if filter_type in ('datetime', 'date'):
                 for sublookup, symbol in dict(gte='>', lte='<').items():
-                    k = '{} {}'.format(symbol, key) if verbose else '{}__{}'.format(key, sublookup)
+                    k = '{}__{}'.format(key, sublookup)
                     n = '{} {}'.format(symbol, name)
                     hidden = lookup == self.metadata['calendar']
                     formfield = field.formfield(label=n, required=False)
-                    filters[k] = dict(key='{}__{}'.format(
-                        lookup, sublookup), name=n, type=filter_type, choices=None, hidden=hidden
+                    fkey = '{}__{}'.format(lookup, sublookup)
+                    filters[k] = dict(key=fkey, name=n, type=filter_type, choices=None, hidden=hidden, value=self.request.GET.get(fkey) if self.request else None
                     )
-                    if as_form:
-                        filters[k].update(formfield=formfield)
+            elif filter_type == 'choices':
+                value = None
+                if self.request and self.request.GET.get(lookup):
+                    value = [self.request.GET.get(f'{lookup}0'), self.request.GET.get(lookup)]
+                filters[key] = dict(key=lookup, name=name, type=filter_type, choices=None, hidden=False, value=value)
             else:
                 filters[key] = dict(
-                    key=lookup, name=name, type=filter_type, choices=None, hidden=False
+                    key=lookup, name=name, type=filter_type, choices=None, hidden=False, value=self.request.GET.get(lookup) if self.request else None
                 )
-                if as_form:
-                    filters[key].update(formfield=formfield)
+            if as_form:
+                filters[key].update(formfield=formfield)
+            if filter_type == 'boolean':
+                filters[key]['value'] = int(filters[key]['value']) if filters[key]['value'] else None
 
         ordering = []
         for lookup in self.metadata['ordering']:
             field = self.model.get_field(lookup)
             ordering.append(dict(id=lookup, text=field.verbose_name))
         if ordering:
-            key = 'Ordenação' if verbose else 'ordenacao'
+            key = 'ordenacao'
             filters[key] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering
             )
@@ -222,7 +227,9 @@ class QuerySet(models.QuerySet):
 
         return filters
 
-    def get_attach(self, verbose=False):
+    def get_attach(self):
+        if isinstance(self.metadata['attach'], dict):
+            return self.metadata['attach']
         attaches = {}
         if self.metadata['attach'] and not self.query.is_sliced:
             for i, name in enumerate(['all'] + self.metadata['attach']):
@@ -234,17 +241,18 @@ class QuerySet(models.QuerySet):
                     verbose_name = attr.__verbose_name__
                 else:
                     verbose_name = attach.metadata['verbose_name'] or pretty(name)
-                active = name == self.request.GET.get('subset', 'all')
+                active = name == self.request and self.request.GET.get('subset', 'all') or 'all'
                 if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'
-                    attaches[verbose_name if verbose else name] = dict(
+                    attaches[name] = dict(
                         name=verbose_name, key=name, count=attach.count(), active=active
                     )
                 else:
-                    attaches[verbose_name if verbose else name] = dict(
+                    attaches[name] = dict(
                         name=verbose_name, key=name, active=active
                     )
+        self.metadata['attach'] = attaches
         return attaches
 
     # choices function
@@ -334,10 +342,10 @@ class QuerySet(models.QuerySet):
 
     # serialization function
 
-    def to_list(self, wrap=False, verbose=False, detail=True):
+    def to_list(self, wrap=False, detail=True):
         data = []
         for obj in self:
-            add_id = not wrap and not verbose
+            add_id = not wrap
             actions = self.get_obj_actions(obj)
             if self.request:
                 for view in self.metadata['view']:
@@ -347,7 +355,7 @@ class QuerySet(models.QuerySet):
                         has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
                     if self.request.user.is_superuser or has_view_permission or obj.has_permission(self.request.user):
                         actions.append(view['name'])
-            item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, verbose=verbose, detail=detail)
+            item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -361,7 +369,7 @@ class QuerySet(models.QuerySet):
                     header.append(getattr(attr, 'verbose_name', attr_name))
                 data.append(header)
             row = []
-            values = obj.values(*self.get_list_display()).load(wrap=False, verbose=False, detail=False).values()
+            values = obj.values(*self.get_list_display()).load(wrap=False, detail=False).values()
             for value in values:
                 if value is None:
                     value = ''
@@ -383,7 +391,8 @@ class QuerySet(models.QuerySet):
                 actions.append(form_cls.__name__)
         return actions
 
-    def serialize(self, path=None, wrap=False, verbose=True, lazy=False):
+    def serialize(self, path=None, wrap=False, lazy=False):
+
         if wrap:
             if self.metadata['verbose_name']:
                 verbose_name = self.metadata['verbose_name']
@@ -397,21 +406,22 @@ class QuerySet(models.QuerySet):
                 if not qs and lookup not in self.metadata['ignore']:
                     self.metadata['ignore'].append(lookup)
 
+            total = self.count()
             icon = getattr(self.model.metaclass(), 'icon', None)
-            search = self.get_search(verbose)
-            display = self.get_display(verbose)
-            filters = self.get_filters(verbose)
-            attach = self.get_attach(verbose) if self.metadata['attr'] is None else {}
+            search = self.get_search()
+            display = self.get_display()
+            filters = self.get_filters()
+            attach = self.get_attach() if self.metadata['attr'] is None else {}
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
-            values = {} if lazy else self.paginate().to_list(wrap=wrap, verbose=verbose, detail=True)
+            values = {} if lazy else self.paginate().to_list(wrap=wrap, detail=True)
             pages = []
-            n_pages = ((self.count()-1) // self.metadata['limit']) + 1
+            n_pages = ((total-1) // self.metadata['limit']) + 1
             for page in range(0, n_pages):
                 if page < 4 or (page > self.metadata['page'] - 3 and page < self.metadata['page'] + 1) or page > n_pages - 5:
                     pages.append(page + 1)
             pagination = dict(
                 interval=self.metadata['interval'],
-                total=self.metadata['total'],
+                total=total,
                 page=self.metadata['page'],
                 pages=pages
             )
@@ -426,9 +436,11 @@ class QuerySet(models.QuerySet):
                 data.update(attach=attach)
 
             if not lazy:
+                collapsed =  bool(self.request and self.request.GET.get('collapsed', self.metadata['collapsed']) or 0)
+                subset =  self.request and self.request.GET.get('subset', 'all') or 'all'
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    wrapped=self.metadata['wrapped'], collapsed=self.metadata['collapsed'],
+                    wrapped=self.metadata['wrapped'], collapsed=collapsed, subset=subset,
                     compact=self.metadata['compact'], is_admin=self.metadata['is_admin']# , state=self.dumps()
                 )
                 if calendar:
@@ -448,7 +460,7 @@ class QuerySet(models.QuerySet):
                         dict(
                             type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
                             method='get', icon=view['icon'], style='primary', ajax=False,
-                            modal=view['modal'], path='{}{{id}}/{}'.format(path or self.request.path if self.request else '/', view_suffix)
+                            modal=view['modal'], path='{}{{id}}/{}'.format((path or '').split('?')[0], view_suffix)
                         )
                     )
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
@@ -457,6 +469,9 @@ class QuerySet(models.QuerySet):
                         if action_type == 'actions' or self.request is None or form_cls.check_fake_permission(
                                 request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
                         ):
+                            action_path = path
+                            if self.request and self.request.GET.get('subset'):
+                                action_path = '{}{}/'.format(path, self.request.GET.get('subset'))
                             action = form_cls.get_metadata(
                                 path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
                             )
@@ -475,7 +490,7 @@ class QuerySet(models.QuerySet):
         return self.to_list(detail=False)
 
     def debug(self):
-        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+        print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
 
     # metadata functions
 
@@ -657,7 +672,7 @@ class QuerySet(models.QuerySet):
     # rendering function
 
     def html(self, path=None):
-        serialized = self.serialize(path=path or self.request.path, wrap=True, verbose=True)
+        serialized = self.serialize(path=path or self.request.path, wrap=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
                 name = self.metadata['source'].model.metaclass().verbose_name_plural
@@ -709,11 +724,12 @@ class QuerySet(models.QuerySet):
                 raise HtmlReadyResponseException(component.html())
             else:
                 meta = request.path.startswith('/meta/')
-                raise JsonReadyResponseException(component.serialize(wrap=meta, verbose=meta))
+                raise JsonReadyResponseException(component.serialize(wrap=meta))
             return self.apply_role_lookups(request.user)
         return self
 
     def process_request(self, request):
+        self.get_attach()
         from sloth.core.valueset import ValueSet
         page = 1
         attr_name = request.GET.get('subset', 'all')
@@ -735,14 +751,14 @@ class QuerySet(models.QuerySet):
             raise Exception()
         if request.path.startswith('/app/'):
             qs.metadata.update(request=request)
-        for item in self.get_filters().values():
+        for item in qs.get_filters().values():
             value = request.GET.get(item['key'])
             if value:
                 if item['key'] == 'ordering':
                     qs = qs.order_by(value)
                 else:
                     if item['type'] in ('date', 'datetime'):
-                        value = datetime.datetime.strptime(value, '%d/%m/%Y')
+                        value = datetime.datetime.strptime(value, '%d/%m/%Y' if '/' in value else '%Y-%m-%d')
                     if item['type'] == 'boolean':
                         value = bool(int(value)) if value.isdigit() else value == 'true'
                     if item['key'] != request.GET.get('choices'):
@@ -771,7 +787,6 @@ class QuerySet(models.QuerySet):
             statistcs = QuerySetStatistics(self, x, y=y)
             return statistcs.contextualize(self.request)
         total = super().count()
-        self.metadata['total'] = total
         return total
 
     def sum(self, z, x=None, y=None):

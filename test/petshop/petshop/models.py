@@ -66,6 +66,12 @@ class TipoProcedimento(models.Model):
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Administrador')
 
+    def get_dados_gerais(self):
+        return self.values('descricao', ('cor', 'valor'))
+
+    def view(self):
+        return self.values('get_dados_gerais')
+
 
 class TipoAnimal(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
@@ -211,7 +217,7 @@ class Animal(models.Model):
 class TratamentoManager(models.Manager):
 
     def all(self):
-        return self.calendar('data_inicio').preview('get_procedimentos_por_tipo', modal=True)
+        return self.calendar('data_inicio').preview('get_procedimentos_por_tipo', modal=True).verbose_name('todos')
 
     def em_andamento(self):
         return self.filter(data_fim__isnull=True)
@@ -222,7 +228,7 @@ class TratamentoManager(models.Manager):
     def total_por_doenca(self):
         return self.count('animal').donut_chart()
 
-    def view(self):
+    def xx(self):
         return self.value_set('all').append('total_por_animal').attach('total_por_doenca')
 
 
@@ -270,7 +276,7 @@ class Tratamento(models.Model):
         return self.values('eficaz').actions('FinalizarTratamento', 'RetomarTratamento')
 
     def get_detalhamento(self):
-        return self.value_set('get_procedimentos_por_tipo', 'get_x')
+        return self.values('get_procedimentos_por_tipo', 'get_x')
 
     def get_x(self):
         return self.values('get_procedimentos', 'get_etapas')
@@ -316,4 +322,4 @@ class Procedimento(models.Model):
         return 'Tratamento {}'.format(self.id)
 
     def has_edit_permission(self, user):
-        return user.is_superuser or user.roles.contains('Funcionário') and self.tratamento and self.tratamento.eficaz is None
+        return user.roles.contains('Funcionário') and self.tratamento and self.tratamento.data_fim is None

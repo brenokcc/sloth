@@ -38,8 +38,8 @@ class FazerAlgumaCoisa(actions.Action):
         # self.dispose()
         # self.redirect('/app/petshop/animal/')
         # self.reload()
-        # return self.values('get_doencas')
-        self.download('media/animais/a.png')
+        return self.values('get_doencas')
+        # self.download('media/animais/a.png')
 
     def get_tipos_procedimentos(self):
         return self.objects('petshop.tipoprocedimento').all()
@@ -67,7 +67,7 @@ class FazerAlgumaCoisa2(actions.Action):
         )
 
     def get_tipos_procedimentos(self):
-        return TipoProcedimento.objects.all().actions('edit')#.view(False).template('x')
+        return TipoProcedimento.objects.all().actions('edit').preview('get_dados_gerais')#.template('x')
 
     def view(self):
         return self.values('get_dados_gerais')

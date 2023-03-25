@@ -26,8 +26,7 @@ def endpoint(func):
             if views.is_authenticated(request):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
-                verbose = request.path.startswith('/meta')
-                serialized = data.serialize(wrap=wrap, verbose=verbose)
+                serialized = data.serialize(wrap=wrap)
                 from pprint import pprint; pprint(serialized)
                 return ApiResponse(serialized, safe=False)
             else:

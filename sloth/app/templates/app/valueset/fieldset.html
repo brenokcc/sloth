@@ -1,6 +1,6 @@
 {% load tags %}
 {% if data.type == 'fieldset' %}
-    <div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
+    <div class="reloadable-fieldset" id="{{ data.key }}" data-path="{{ data.path }}">
     {% if data.template %}
         {% include data.template with data=data %}
     {% else %}
@@ -21,7 +21,7 @@
           </div>
           <div class="card-text fieldset-data toogle-data" id="{{ data.name|slugify }}">
               {% for action in data.inline_actions %}
-                {% action action.key data.instance True %}
+                {% action action.key data.instance action.path %}
               {% endfor %}
               <table width="100%">
                   <tr>
@@ -33,10 +33,10 @@
                   {% if request|mobile %}
                   </tr><tr>
                   {% endif %}
-                    <td>
+                    <td style="vertical-align:top">
                       <div class="responsive-container">
-                          {% for k, v in data.data.items %}
-                                {% include 'app/valueset/field.html' with k=k v=v %}
+                          {% for v in data.data.values %}
+                                {% include 'app/valueset/field.html' with v=v %}
                           {% endfor %}
                       </div>
                     </td>
@@ -76,7 +76,7 @@
 {% endif %}
 
 {% if data.type == 'primitive' %}
-    <div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
+    <div class="reloadable-fieldset" id="{{ data.key }}" data-path="{{ data.path }}">
     {% include 'app/valueset/primitive.html' with data=data %}
     </div>
 {% endif %}

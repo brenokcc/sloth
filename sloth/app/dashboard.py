@@ -210,6 +210,9 @@ class Dashboard(metaclass=DashboardType):
         from sloth.core.base import ValueSet
         return ValueSet(self, names)
 
+    def value_set(self, *names):
+        return self.values(*names)
+
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)

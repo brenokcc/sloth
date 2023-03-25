@@ -8,14 +8,14 @@
       {% endif %}
 </div>
 <ul class="nav nav-tabs fieldset-tabs" id="fieldset-group-{{ item.uuid }}">
-  {% for name, fieldset in item.data.items %}
+  {% for fieldset in item.data.values %}
       <li class="nav-item">
-          <a class="nav-link {{ name|slugify }} {% if forloop.first %}active{% endif %}" aria-current="page"
-             href="javascript:" onclick="reloadFieldsetGroup{{ item.uuid }}('{{ name|slugify }}', '{{ fieldset.path }}')">
+          <a class="nav-link {{ fieldset.key}} {% if forloop.first %}active{% endif %}" aria-current="page"
+             href="javascript:" onclick="reloadFieldsetGroup{{ item.uuid }}('{{ fieldset.key }}', '{{ fieldset.path }}')">
               <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
               </div>
-              <span class="nav-link-text">{{ name }}</span>
+              <span class="nav-link-text">{{ fieldset.name }}</span>
           </a>
       </li>
   {% endfor %}
@@ -42,7 +42,7 @@
 {% for name, item in item.data.items %}
     {% if forloop.first %}
         {% if item.type == 'fieldset-list' %}
-            {% for name, fieldset in item.data.items %}
+            {% for fieldset in item.data.values %}
                 {% include 'app/valueset/fieldset.html' with data=fieldset %}
             {% endfor %}
         {% else %}

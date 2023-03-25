@@ -149,9 +149,9 @@ class QuerySetStatistics(object):
         return self
 
     def debug(self):
-        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+        print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
 
-    def serialize(self, wrap=True, verbose=True, path=None, lazy=False):
+    def serialize(self, wrap=True, path=None, lazy=False):
         series = dict()
         if not lazy:
             self._calc()
@@ -187,7 +187,6 @@ class QuerySetStatistics(object):
                 series=series,
                 template=self.metadata['template'],
                 normalized=self.normalize(series),
-                # filters=self.qs.get_filters(verbose)
             )
         else:
             return series['default'] if 'default' in series else series
@@ -204,7 +203,7 @@ class QuerySetStatistics(object):
         raise HtmlReadyResponseException(self.html())
 
     def html(self):
-        serialized = self.serialize(wrap=True, verbose=True)
+        serialized = self.serialize(wrap=True)
         if self.qs.metadata['is_admin']:
             name = self.qs.model.metaclass().verbose_name_plural
             data = dict(

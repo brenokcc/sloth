@@ -1,5 +1,5 @@
 {% load tags %}
-<div class="fieldset reloadable" id="{{ data.key }}" data-path="{{ data.path }}">
+<div class="reloadable-queryset" id="{{ data.key }}" data-path="{{ data.path }}">
 {% if not data.metadata.is_admin  %}
 <div class="card">
         <div class="card-body">
@@ -27,7 +27,7 @@
         <ul class="nav nav-pills nav-fill">
             {% for subset in data.attach.values %}
           <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">
-            <a class="nav-link" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}(false, '{{ subset.key }}')">
+            <a class="nav-link" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
                 <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
@@ -41,68 +41,27 @@
     {% endif %}
 
     {% for action in data.actions.inline %}
-        {% action action.key data.instantiator data.uuid %}
+        {% action action.key data.instantiator action.path %}
     {% endfor %}
 
     {% include "app/queryset/filters.html" %}
     <div class="clearfix"></div>
 
     <script>
-        function reload{{ data.uuid }}(attaches, subset){
-            console.log([attaches, subset]);
+        function reload{{ data.uuid }}(subset){
             $(document.body).addClass('page-loading');
             if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
-            else $('#subset-{{ data.uuid }}').val(subset);
+            $('#subset-{{ data.uuid }}').val(subset);
             $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
                 url:'{{ data.path|safe }}',
                 data: data,
                 success:function( html ) {
-                    $('#{{ data.key }}').html(html);
+                    $('#{{ data.key }}').html($(html).html()).initialize();
                     $(document.body).removeClass('page-loading');
                 }
             });
-        }
-        function _reload{{ data.uuid }}(attaches, subset){
-            $(document.body).addClass('page-loading');
-            if(attaches==null) attaches = true;
-            if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
-            else $('#subset-{{ data.uuid }}').val(subset);
-            $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
-            $('#tabs-container-{{ data.uuid }}').find('.nav-item').removeClass('selected')
-            $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).addClass('selected')
-            var data = $('#form-{{ data.uuid }}').serialize();
-            $.ajax({
-                url:'{{ data.path|safe }}',
-                data: data,
-                success:function( html ) {
-                    var remote = $(html);
-                    $('#queryset-data-{{ data.uuid }}').html(
-                        remote.find('#queryset-data-{{ data.uuid }},.valueset-fieldsets,.fieldset-data').html()
-                    ).initialize();
-                    $('#queryset-global-actions-{{ data.uuid }}').html(
-                        remote.find('#queryset-global-actions-{{ data.uuid }}').html()
-                    ).initialize();
-                    $(document.body).removeClass('page-loading');
-                    $('#queryset-{{ data.uuid }}').find('.spinner-border').addClass('d-none');
-                    $('#queryset-{{ data.uuid }}').find('i').removeClass('d-none');
-                    $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').addClass('d-none');
-                }
-            });
-            {% if data.attach %}
-            if(attaches){
-                $.ajax({
-                    dataType: 'json',
-                    url: "{{ data.path }}?attaches=&"+data,
-                    success:function( totals ) {
-                        for (const [key, value] of Object.entries(totals)) {
-                            if(value.count!=null) $('#tabs-container-{{ data.uuid }}').find('.total-'+key).html(value.count);
-                        }
-                    }
-                });
-            }
-            {% endif %}
         }
         function toggleActions{{ data.uuid }}(input){
             if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
@@ -122,8 +81,10 @@
             if(a) $(a).find('i:last-child').toggleClass('bi-chevron-up').toggleClass('bi-chevron-down');
             if($('#filters-{{ data.uuid }}').css('display') == 'none'){
                 $('#filters-{{ data.uuid }}').slideDown();
+                $('#collapsed-{{ data.uuid }}').val("");
             } else {
                 $('#filters-{{ data.uuid }}').slideUp();
+                $('#collapsed-{{ data.uuid }}').val(1);
             }
         }
     </script>
@@ -151,7 +112,7 @@
             {% if data.metadata.search or data.metadata.filters %}
             <a href="javascript:"><i class="bi bi-funnel" onclick="slideSearchAndFilters{{ data.uuid }}()"></i></a>
             {% endif %}
-            <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}(false);"></i></a>
+            <a href="javascript:"><i class="bi bi-arrow-clockwise" onclick="reload{{ data.uuid }}();"></i></a>
         </div>
     </div>
 </div>
@@ -186,7 +147,7 @@
         </li>
        {% endif %}
         <li class="page-item {% if page == data.metadata.pagination.page %}active{% endif %}">
-            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}(false);document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
+            <a class="page-link" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val({{ page|stringformat:'s' }});reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();">
                 {{ page }}
             </a>
         </li>

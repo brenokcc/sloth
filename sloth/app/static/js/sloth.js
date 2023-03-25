@@ -69,7 +69,6 @@ jQuery.fn.extend({
     },
     popup: function(url, method, data){
         $('.alert-dismissible').hide();
-        window['QUERYSET_RELOADER'] = window['reload'+$(this).data('uuid')];
         if(url.indexOf('?')>0) url = url+='&modal=1'
         else url+='?modal=1'
         $(this).request(url, method || 'GET', data || {}, function(html){
@@ -84,9 +83,9 @@ jQuery.fn.extend({
         });
     },
     reloadAreas(areas){
-        if(areas.length){
-            $('.fieldset.reloadable').map(function(i, item){
-                if(areas.indexOf(item.id)>=0){
+        if(areas!=null){
+            $('.reloadable-fieldset').map(function(i, item){
+                if(areas.indexOf(item.id)>=0 || areas.length==0){
                     $.get($(item).data('path'), function(html){
                         if($(item).find('.bi-chevron-right').length){
                             html=html.replace('bi-chevron-down', 'bi-chevron-right');
@@ -95,6 +94,9 @@ jQuery.fn.extend({
                         $(item).html(html).initialize();
                     })
                 }
+            });
+            $('.reloadable-queryset').map(function(i, item){
+                window['reload'+this.id]();
             });
         } else {
             var url = document.location.pathname;
@@ -125,9 +127,6 @@ jQuery.fn.extend({
     back: function(canceled){
         if($('#modal').is(':visible')){
             $('#modal').modal('hide');
-            if(canceled==null){
-                if(window['QUERYSET_RELOADER']) window['QUERYSET_RELOADER']();
-            }
         } else {
             //$(document).open(document.referrer);
             //window.history.pushState("string", "Title", document.referrer);
@@ -277,7 +276,7 @@ jQuery.fn.extend({
         return this;
     },
     areas: function(){
-        return $('.fieldset.reloadable').map(function(i, item){return item.id}).get()
+        return $('.reloadable-fieldset').map(function(i, item){return item.id}).get()
     },
     refresh: function(areas){
         if(areas.length==0) areas = $(this).areas();
@@ -297,6 +296,8 @@ jQuery.fn.extend({
           local.html(remote.html()).initialize();
          });
         }});
+        // reload all querysets
+        $('.reloadable-queryset').map(function(i, item){window['reload'+this.id]();});
     },
     dynamic: function(name, initial){
         var form = $(this);
@@ -345,7 +346,6 @@ jQuery.fn.extend({
 $( document ).ready(function() {
     $(document).initialize();
     $('body').css('visibility', 'visible');
-    window['QUERYSET_RELOADER'] = null;
     $(document).setCookie('current_tab', '');
 });
 $( window ).resize(function() {

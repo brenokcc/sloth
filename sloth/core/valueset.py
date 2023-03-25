@@ -135,7 +135,7 @@ class ValueSet(dict):
         return self
 
     def debug(self):
-        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+        print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
 
     def apply_role_lookups(self, user):
         return self
@@ -193,12 +193,12 @@ class ValueSet(dict):
             return schema
         return dict(type='object', properties=schema)
 
-    def load(self, wrap=True, verbose=False, detail=False, deep=0):
+    def load(self, wrap=True, detail=False, deep=0):
         is_meta_api = False
         if self.request:
             is_meta_api = self.request.path.startswith('/meta/')
             if 'only' in self.request.GET:
-                self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',')}
+                self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',') if hasattr(self.instance, k)}
                 self.request.GET._mutable = True
                 self.request.GET.pop('only')
                 self.request.GET._mutable = False
@@ -228,8 +228,8 @@ class ValueSet(dict):
                             if self.metadata['primitive'] and deep>0:
                                 data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
                             else:
-                                data = qs.serialize(path=path, wrap=wrap, verbose=verbose, lazy=lazy)
-                            data.update(name=verbose_name if verbose else attr_name, key=attr_name)
+                                data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
+                            data.update(name=verbose_name, key=attr_name)
                         else:
                             if self.metadata['primitive'] and deep>0:  # one-to-many or many-to-many
                                 data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
@@ -240,18 +240,18 @@ class ValueSet(dict):
                         verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'] or pretty(attr_name))
                         statistics.contextualize(self.request)
                         data = statistics.serialize(path=path, wrap=wrap, lazy=lazy)
-                        data.update(name=verbose_name if verbose else attr_name, key=attr_name) if wrap else None
+                        data.update(name=verbose_name, key=attr_name) if wrap else None
                     elif isinstance(value, ValueSet):
                         valueset = value
                         verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'] or pretty(attr_name))
                         valueset.contextualize(self.request)
                         key = attr_name
                         inner_deep = 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1
-                        valueset.load(wrap=wrap, verbose=verbose, detail=wrap and verbose or detail, deep=inner_deep)
+                        valueset.load(wrap=wrap, detail=wrap or detail, deep=inner_deep)
                         if not valueset:
                             continue
                         refresh = valueset.refresh_data()
-                        data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name if verbose else attr_name,
+                        data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name,
                             key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
@@ -279,14 +279,14 @@ class ValueSet(dict):
                         self.metadata['primitive'] = True
                         if not wrap or is_meta_api:
                             data = serialize(data)
-                        if wrap and verbose or detail:
+                        if wrap or detail:
                             template = getattr(attr, '__template__', None)
                             metadata = getattr(attr, '__metadata__', None)
                             if template:
                                 template = 'renderers/{}.html'.format(template)
                             data = dict(key=attr_name, name=verbose_name, value=data, width=width, template=template, metadata=metadata, type='primitive', path=path)
-                    if verbose:
-                        attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
+                    # if verbose:
+                    #     attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
         elif isinstance(self.instance, Model):
             self['id'] = self.instance.id
@@ -299,8 +299,8 @@ class ValueSet(dict):
             return self.html()
         return json.dumps(self, indent=4, ensure_ascii=False)
 
-    def serialize(self, wrap=False, verbose=False):
-        self.load(wrap=wrap, verbose=verbose, detail=wrap and verbose)
+    def serialize(self, wrap=False):
+        self.load(wrap=wrap, detail=wrap)
         if wrap:
             check_fieldsets_type(self)
             # print(json.dumps(data, indent=4, ensure_ascii=False))
@@ -344,7 +344,7 @@ class ValueSet(dict):
                     output['append'].update(
                         self.instance.value_set(attr_name).contextualize(
                             self.request
-                        ).load(wrap=wrap, verbose=verbose)
+                        ).load(wrap=wrap)
                     )
             return output
         else:
@@ -353,7 +353,7 @@ class ValueSet(dict):
             return self
 
     def html(self):
-        serialized = self.serialize(wrap=True, verbose=True)
+        serialized = self.serialize(wrap=True)
         if self.metadata['attr']:
             is_ajax = self.request.headers.get('x-requested-with') == 'XMLHttpRequest'
             is_modal = 'modal' in self.request.GET

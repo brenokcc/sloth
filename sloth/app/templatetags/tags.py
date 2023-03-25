@@ -275,7 +275,7 @@ def action_link(action_name):
 @register.filter
 def post_querystring(request):
     params = ['post__{}={}'.format(k, v) for k, v in request.POST.items() if k != 'csrfmiddlewaretoken']
-    return mark_safe('?{}'.format('&'.join(params))) if params else ''
+    return mark_safe('{}'.format('&'.join(params))) if params else ''
 
 
 @register.filter
@@ -292,18 +292,18 @@ def action(parser,token):
 
 
 class ActionNode(template.Node):
-    def __init__(self, action_name, instantiator, fieldset_name=None):
+    def __init__(self, action_name, instantiator, path=None):
         self.request = template.Variable('request')
         self.action_name = template.Variable(action_name)
         self.instantiator = template.Variable(instantiator)
-        self.fieldset_name = template.Variable(fieldset_name)
+        self.path = template.Variable(path)
 
     def render(self, context):
         request = self.request.resolve(context)
         action_name = self.action_name.resolve(context)
         instantiator = self.instantiator.resolve(context)
-        fieldset_name = self.fieldset_name.resolve(context)
         cls = ACTIONS[action_name]
-        form = cls(request=request, instantiator=instantiator, inline=fieldset_name)
+        form = cls(request=request, instantiator=instantiator)
+        form.path = self.path.resolve(context)
         form.is_valid()
         return form.html()

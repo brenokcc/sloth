@@ -108,8 +108,8 @@ class ModelMixin(object):
             return self.view()
         return self.values(name)
 
-    def serialize(self, wrap=True, verbose=True):
-        return self.view().serialize(wrap=wrap, verbose=verbose)
+    def serialize(self, wrap=True):
+        return self.view().serialize(wrap=wrap)
 
     def get_select_display(self):
         select_fields = getattr(type(self).metaclass(), 'select_fields', None)
@@ -261,8 +261,10 @@ class ModelMixin(object):
                 submit_label = 'Excluir'
                 confirmation = True
 
-            def save(self):
+            def submit(self):
                 self.instance.delete()
+                self.message('Exclusão realizada com sucesso.')
+                self.redirect('..')
 
             def has_permission(self, user):
                 return user.is_superuser or self.instance.has_delete_permission(user) or self.instance.has_permission(user)

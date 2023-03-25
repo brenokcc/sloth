@@ -60,18 +60,25 @@
     {% endif %}
 </div>
 <script>
+    function actionURL(url){
+        var extra = '{{ request|post_querystring }}';
+        if(extra){
+            if(url.indexOf('?')>0) return url + '&' + extra;
+            else return url + '?' + extra;
+        } else { return url;}
+    }
     $('#{{ target }}-{{ uuid }}-{{id}}').find('.action-button').on('mouseenter', function(){
         if($(this).hasClass('instance')){
-            this.href = $(this).data('url').replace('{id}', $(this).data('id'))+'{{ request|post_querystring }}';
+            this.href = actionURL($(this).data('url').replace('{id}', $(this).data('id')));
         }
         if($(this).hasClass('queryset')){
             var ids = $('#queryset-{{ uuid }}').find('.action-checkbox:checked').map(function(){
               return $(this).val();
             }).get().filter(function (id) { return id!='on' }).join('-');
-            this.href = $(this).data('url').replace('{id}', '0-'+ids)+'{{ request|post_querystring }}';
+            this.href = actionURL($(this).data('url').replace('{id}', '0-'+ids));
         }
         if($(this).hasClass('model')){
-            this.href = $(this).data('url')+'{{ request|post_querystring }}';
+            this.href = actionURL($(this).data('url'));
         }
     });
 </script>

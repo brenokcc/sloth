@@ -47,7 +47,7 @@
 
         <div class="clearfix"></div>
         {% for action in data.inline_actions %}
-            {% action action.key data.instance True %}
+            {% action action.key data.instance action.path %}
         {% endfor %}
 
         <div class="valueset-attaches">
@@ -80,11 +80,11 @@
                 {% include 'app/valueset/fieldset.html' with data=item %}
             {% endif %}
             {% if item.type == 'primitive' %}
-                <div class="fieldset reloadable" id="{{ item.key }}" data-path="{{ item.path }}">
+                <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}">
                 {% if item.template %}
                     {% include item.template with value=item.value metadata=item.metadata %}
                 {% else %}
-                    {% include 'app/valueset/field.html' with k=name v=item %}
+                    {% include 'app/valueset/field.html' with v=item %}
                 {% endif %}
                 </div>
             {% endif %}
@@ -94,7 +94,7 @@
     {% if data.append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
         {% for name, item in data.append.items %}
-            <div class="fieldset reloadable" id="{{ item.key }}" data-path="{{ item.path }}?compact=1">
+            <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}?compact=1">
                 {% include 'app/valueset/fieldset.html' with data=item compact=True %}
             </div>
         {% endfor %}

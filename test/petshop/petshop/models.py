@@ -67,10 +67,10 @@ class TipoProcedimento(models.Model):
         return user.is_superuser or user.roles.contains('Administrador')
 
     def get_dados_gerais(self):
-        return self.values('descricao', ('cor', 'valor'))
+        return self.value_set('descricao', ('cor', 'valor'))
 
     def view(self):
-        return self.values('get_dados_gerais')
+        return self.value_set('get_dados_gerais')
 
 
 class TipoAnimal(models.Model):
@@ -125,7 +125,7 @@ class Cliente(models.Model):
         return user.is_superuser or user.roles.contains('Funcionário')
 
     def get_dados_gerais(self):
-        return self.values(('nome', 'cpf'))
+        return self.value_set(('nome', 'cpf'))
 
     def get_animais(self):
         return self.animal_set.all()
@@ -134,7 +134,7 @@ class Cliente(models.Model):
         return Procedimento.objects.filter(tratamento__animal__proprietario=self).sum('tipo__valor', 'tipo')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_animais', 'get_total_gasto_por_tipo_procedimento')
+        return self.value_set('get_dados_gerais', 'get_animais', 'get_total_gasto_por_tipo_procedimento')
 
 
 class AnimalManager(models.Manager):
@@ -184,11 +184,11 @@ class Animal(models.Model):
         return 'success', 'Saudável'
 
     def get_dados_gerais(self):
-        return self.values(('nome', 'tipo'), 'descricao').image('foto')
+        return self.value_set(('nome', 'tipo'), 'descricao').image('foto')
 
     @meta('Proprietário')
     def get_proprietario(self):
-        return self.proprietario.values(('nome', 'cpf'))
+        return self.proprietario.value_set(('nome', 'cpf'))
 
     def get_tratamentos(self):
         return self.tratamento_set.ignore(
@@ -205,7 +205,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.values('get_situacao', 'get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca').actions('fazer_alguma_coisa2')
+        return self.value_set('get_situacao', 'get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca').actions('fazer_alguma_coisa2')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')
@@ -263,7 +263,7 @@ class Tratamento(models.Model):
         return etapas
 
     def get_dados_gerais(self):
-        return self.values(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.actions('RegistrarProcedimento', inline=True)
+        return self.value_set(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.actions('RegistrarProcedimento', inline=True)
 
     def get_procedimentos(self):
         return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline().expand()
@@ -273,16 +273,16 @@ class Tratamento(models.Model):
         return self.procedimento_set.count('tipo').bar_chart()
 
     def get_eficacia(self):
-        return self.values('eficaz').actions('FinalizarTratamento', 'RetomarTratamento')
+        return self.value_set('eficaz').actions('FinalizarTratamento', 'RetomarTratamento')
 
     def get_detalhamento(self):
-        return self.values('get_procedimentos_por_tipo', 'get_x')
+        return self.value_set('get_procedimentos_por_tipo', 'get_x')
 
     def get_x(self):
-        return self.values('get_procedimentos', 'get_etapas')
+        return self.value_set('get_procedimentos', 'get_etapas')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_detalhamento', 'get_eficacia')#.append('get_etapas')
+        return self.value_set('get_dados_gerais', 'get_detalhamento', 'get_eficacia')#.append('get_etapas')
 
     def has_view_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username

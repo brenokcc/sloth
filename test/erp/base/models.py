@@ -59,10 +59,10 @@ class Estado(models.Model):
         return self.historia
 
     def get_dados_gerais(self):
-        return self.values('id', ('sigla', 'endereco'), 'get_historia')
+        return self.value_set('id', ('sigla', 'endereco'), 'get_historia')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_cidades').actions(
+        return self.value_set('get_dados_gerais', 'get_cidades').actions(
             'FazerAlgumaCoisa', 'Edit', 'InformarCidadesMetropolitanas'
         )
 
@@ -108,19 +108,19 @@ class Municipio(models.Model):
         return 27
 
     def get_dados_gerais(self):
-        return self.values('id', ('nome', 'estado'), 'get_progresso')
+        return self.value_set('id', ('nome', 'estado'), 'get_progresso')
 
     def get_dados_gerais2(self):
-        return self.values(('get_a', 'get_b', 'get_c', 'get_d'))
+        return self.value_set(('get_a', 'get_b', 'get_c', 'get_d'))
 
     def view(self):
         # return super().view()
-        # return self.values('get_dados_gerais', 'get_dados_gerais2')
-        # return self.values(('nome', 'estado'), 'get_progresso')
-        return self.values('get_dados_gerais', 'get_dados')
+        # return self.value_set('get_dados_gerais', 'get_dados_gerais2')
+        # return self.value_set(('nome', 'estado'), 'get_progresso')
+        return self.value_set('get_dados_gerais', 'get_dados')
 
     def get_dados(self):
-        return self.values('get_dados_gerais', 'get_dados_gerais2')
+        return self.value_set('get_dados_gerais', 'get_dados_gerais2')
 
     def has_edit_permission(self, user):
         return self.pk % 2 == 0
@@ -208,7 +208,7 @@ class Setor(models.Model):
         return '{}/{}'.format(self.sigla, self.uo)
 
     def view(self):
-        return self.values(('uo', 'sigla'), 'chefe', 'substitutos_eventuais')
+        return self.value_set(('uo', 'sigla'), 'chefe', 'substitutos_eventuais')
 
 
 
@@ -288,19 +288,19 @@ class Servidor(models.Model):
         return 27
 
     def get_dados_gerais(self):
-        return self.values(
+        return self.value_set(
             'nome', ('cpf', 'data_nascimento'), 'get_progresso'
         ).actions('CorrigirNomeServidor1', 'FazerAlgumaCoisa').image('get_foto')
 
     def get_endereco(self):
-        return self.endereco.values(
+        return self.endereco.value_set(
             'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
-        ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.values(
+        ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.value_set(
             'endereco'
         ).actions('InformarEndereco')
 
     def view(self):
-        return self.values(
+        return self.value_set(
             'get_dados_gerais', 'get_total_ferias_por_ano', 'get_dados_recursos_humanos', 'get_dados_ferias2'
         ).actions(
             'InformarEndereco', 'CorrigirNomeServidor1', 'Edit', 'ExecutarTarefaAssincrona'
@@ -324,7 +324,7 @@ class Servidor(models.Model):
         ).timeline().ignore('servidor')
 
     def get_dados_recursos_humanos(self):
-        return self.values('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
+        return self.value_set('get_endereco', 'get_dados_ferias', 'get_frequencias').actions('FazerAlgumaCoisa')
 
     def get_total_ferias_por_ano(self):
         return self.get_ferias().count('ano').chart('column')
@@ -334,7 +334,7 @@ class Servidor(models.Model):
 
     @meta('Dados das Férias')
     def get_dados_ferias(self):
-        return self.values('get_ferias', 'get_total_ferias_por_ano')
+        return self.value_set('get_ferias', 'get_total_ferias_por_ano')
 
     def get_dados_ferias2(self):
         return self.get_dados_ferias()
@@ -371,7 +371,7 @@ class Ferias(models.Model):
         return 'de {} a {}'.format(self.inicio, self.fim)
 
     def get_periodo2(self):
-        return self.values('inicio', 'fim')
+        return self.value_set('inicio', 'fim')
 
     def __str__(self):
         return 'Férias do ano {}'.format(self.ano)

@@ -34,7 +34,7 @@ def loaddata():
 class ModelTestCase(TestCase):
 
     def __init__(self, *args, **kwargs):
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         super().__init__(*args, **kwargs)
 
     def log(self, data, dumps=True):
@@ -46,7 +46,7 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         self.log(Municipio.objects.first().serialize(wrap=True), dumps=False)
         self.log(Municipio.objects.count('estado').serialize())
         self.log(Municipio.objects.all().serialize(wrap=True), dumps=False)
@@ -77,7 +77,7 @@ class ApiTestCase(ServerTestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         self.create_user('user', '123')
         self.create_user('admin', '123', True)
 
@@ -126,7 +126,7 @@ class ApiTestCase(ServerTestCase):
 class Oauth2TestCase(ServerTestCase):
 
     def test(self):
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         Estado.objects.create(sigla='RN')
         Estado.objects.create(sigla='PB')
         admin = self.create_user('admin', '123', True)

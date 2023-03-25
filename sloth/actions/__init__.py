@@ -770,7 +770,7 @@ class Action(metaclass=ActionMetaclass):
                 template = 'renderers/{}'.format(template)
         return getattr(attr, '__verbose_name__', lookup), False, template, metadata
 
-    def values(self, *names):
+    def value_set(self, *names):
         from sloth.core.base import ValueSet
         return ValueSet(self, names)
 

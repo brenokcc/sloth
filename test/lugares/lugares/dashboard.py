@@ -11,5 +11,5 @@ class AppDashboard(Dashboard):
         self.links('lugares.pais', 'lugares.estado', 'lugares.cidade', 'lugares.pessoa')
 
     def view(self):
-        return self.values()
+        return self.value_set()
 

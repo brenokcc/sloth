@@ -43,13 +43,13 @@ class User(DjangoUser):
         }
 
     def view(self):
-        return self.values('get_general_info', 'get_access_info', 'get_roles')
+        return self.value_set('get_general_info', 'get_access_info', 'get_roles')
 
     def get_general_info(self):
-        return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
+        return self.value_set(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
 
     def get_access_info(self):
-        return self.values('is_superuser',).verbose_name('Dados de Acesso')
+        return self.value_set('is_superuser',).verbose_name('Dados de Acesso')
 
     def get_name(self):
         return '{} {}'.format(self.first_name or '', self.last_name or '')
@@ -176,13 +176,13 @@ class Application(AbstractApplication):
         return self.accesstoken_set.all().verbose_name('Tokens de Acesso')
 
     def general_data(self):
-        return self.values('id', 'name').verbose_name('Dados Gerais')
+        return self.value_set('id', 'name').verbose_name('Dados Gerais')
 
     def access_data(self):
-        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
+        return self.value_set('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
 
     def view(self):
-        return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')
+        return self.value_set('general_data', 'access_data', 'default_scopes', 'available_scopes')
 
 
 class TaskManager(models.Manager):
@@ -254,17 +254,17 @@ class Task(models.Model):
         return self.progress
 
     def get_info(self):
-        return self.values(('name', 'user'))
+        return self.value_set(('name', 'user'))
 
     @meta('Processamento')
     def get_process(self):
-        return self.values(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=360).actions('StopTask')
+        return self.value_set(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=360).actions('StopTask')
 
     def in_progress(self):
         return self.end is None
 
     def view(self):
-        return self.values('get_info', 'get_process')
+        return self.value_set('get_info', 'get_process')
 
     def has_view_permission(self, user):
         return user.is_superuser or self.user == user

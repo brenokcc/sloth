@@ -29,7 +29,7 @@ class FazerAlgumaCoisa(actions.Action):
         self.info('Ação realizada com sucesso')
 
     def view(self):
-        return self.values('get_tipos_procedimentos')
+        return self.value_set('get_tipos_procedimentos')
 
     def submit(self):
         # self.clear()
@@ -38,7 +38,7 @@ class FazerAlgumaCoisa(actions.Action):
         # self.dispose()
         # self.redirect('/app/petshop/animal/')
         # self.reload()
-        return self.values('get_doencas')
+        return self.value_set('get_doencas')
         # self.download('media/animais/a.png')
 
     def get_tipos_procedimentos(self):
@@ -62,7 +62,7 @@ class FazerAlgumaCoisa2(actions.Action):
 
     def get_dados_gerais(self):
         # return self.instantiator.get_dados_gerais()
-        return self.instantiator.values(
+        return self.instantiator.value_set(
             ('nome', 'tipo'), 'descricao'
         )
 
@@ -70,11 +70,11 @@ class FazerAlgumaCoisa2(actions.Action):
         return TipoProcedimento.objects.all().actions('edit').preview('get_dados_gerais')#.template('x')
 
     def view(self):
-        return self.values('get_dados_gerais')
+        return self.value_set('get_dados_gerais')
 
     def submit(self):
         # self.clear()
-        return self.values('get_tipos_procedimentos')
+        return self.value_set('get_tipos_procedimentos')
         # self.redirect('..', message='Ação realizada com sucesso!')
 
 

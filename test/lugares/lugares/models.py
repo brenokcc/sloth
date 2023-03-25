@@ -128,6 +128,18 @@ class PessoaManager(models.Manager):
     def mulheres(self):
         return self.filter(sexo='F').preview('get_dados_gerais')
 
+    def get_total_por_sexo(self):
+        return self.count('sexo').donut_chart()
+
+    def get_total_casadas(self):
+        return self.count('casado').column_chart()
+
+    def get_total_por_sexo_casado(self):
+        return self.count('sexo', 'casado')
+
+    def view(self):
+        return self.value_set('homens', 'mulheres').append('get_total_por_sexo', 'get_total_casadas').attach('get_total_por_sexo_casado')
+
 
 class Pessoa(models.Model):
     cidade = models.ForeignKey(Cidade, verbose_name='Cidade')

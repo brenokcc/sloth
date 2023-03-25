@@ -43,25 +43,25 @@ class Rede(models.Model):
         return self.nome
 
     def get_dados_gerais(self):
-        return self.values('nome')
+        return self.value_set('nome')
 
     def get_dados_gerente(self):
-        return self.gerente.values('nome', 'email') if self.gerente else self.values('gerente')
+        return self.gerente.value_set('nome', 'email') if self.gerente else self.value_set('gerente')
 
     def get_lojas(self):
         return self.loja_set.global_actions('AdicionarLoja')
 
     def get_detalhamento(self):
-        return self.values('get_dados_gerente', 'get_dados_lojas')
+        return self.value_set('get_dados_gerente', 'get_dados_lojas')
 
     def get_total_loja_por_rede(self):
         return self.loja_set.count('rede')
 
     def get_dados_lojas(self):
-        return self.values('get_lojas', 'get_total_loja_por_rede')
+        return self.value_set('get_lojas', 'get_total_loja_por_rede')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_lojas', 'get_detalhamento')
+        return self.value_set('get_dados_gerais', 'get_lojas', 'get_detalhamento')
 
 
 class LojaManager(models.Manager):

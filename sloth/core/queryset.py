@@ -355,7 +355,7 @@ class QuerySet(models.QuerySet):
                         has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
                     if self.request.user.is_superuser or has_view_permission or obj.has_permission(self.request.user):
                         actions.append(view['name'])
-            item = obj.values(*self.get_list_display(add_id=add_id)).load(wrap=False, detail=detail)
+            item = obj.value_set(*self.get_list_display(add_id=add_id)).load(wrap=False, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -369,7 +369,7 @@ class QuerySet(models.QuerySet):
                     header.append(getattr(attr, 'verbose_name', attr_name))
                 data.append(header)
             row = []
-            values = obj.values(*self.get_list_display()).load(wrap=False, detail=False).values()
+            values = obj.value_set(*self.get_list_display()).load(wrap=False, detail=False).values()
             for value in values:
                 if value is None:
                     value = ''

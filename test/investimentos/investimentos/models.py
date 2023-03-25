@@ -67,11 +67,11 @@ class Categoria(models.Model):
         return self.nome
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_perguntas').append('get_quantidade_perguntas_por_tipo_resposta')
+        return self.value_set('get_dados_gerais', 'get_perguntas').append('get_quantidade_perguntas_por_tipo_resposta')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome')
+        return self.value_set('nome')
 
     @meta('Questionário')
     def get_perguntas(self):
@@ -169,11 +169,11 @@ class Instituicao(models.Model):
         return self.sigla
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_gestores', 'get_campi')
+        return self.value_set('get_dados_gerais', 'get_gestores', 'get_campi')
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('nome', 'sigla')
+        return self.value_set('nome', 'sigla')
 
     @meta('Campi')
     def get_campi(self):
@@ -330,18 +330,18 @@ class Ciclo(models.Model):
 
     @meta('Configuração Geral')
     def get_configuracao_geral(self):
-        return self.values('teto', ('inicio', 'fim'))
+        return self.value_set('teto', ('inicio', 'fim'))
 
     def has_get_configuracao_permission(self, user):
         return user.is_superuser or user.roles.contains('Administrador')
 
     @meta('Configuração')
     def get_configuracao(self):
-        return self.values('get_configuracao_geral', 'get_limites_demandas')
+        return self.value_set('get_configuracao_geral', 'get_limites_demandas')
 
     @meta('Resumo')
     def get_resumo(self):
-        return self.values('get_total_por_instituicao', 'get_questionario_final')
+        return self.value_set('get_total_por_instituicao', 'get_questionario_final')
 
     @meta('Questionário Final')
     def get_questionario_final(self):
@@ -349,10 +349,10 @@ class Ciclo(models.Model):
 
     @meta('Detalhamento')
     def get_detalhamento(self):
-        return self.values('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado', 'ExportarResultadoPorCategoria')
+        return self.value_set('get_solicitacoes', 'get_configuracao', 'get_resumo').actions('ConcluirSolicitacao', 'ExportarResultado', 'ExportarResultadoPorCategoria')
 
     def view(self):
-        return self.values('get_configuracao_geral', 'get_detalhamento')
+        return self.value_set('get_configuracao_geral', 'get_detalhamento')
 
 
 class DemandaManager(models.Manager):
@@ -412,7 +412,7 @@ class Demanda(models.Model):
 
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.values('descricao', 'valor_total', 'valor')
+        return self.value_set('descricao', 'valor_total', 'valor')
 
     @meta('Perguntas Obrigatórias')
     def get_total_perguntas(self):
@@ -424,7 +424,7 @@ class Demanda(models.Model):
 
     @meta('Questionário')
     def get_dados_questionario(self):
-        return self.values('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
+        return self.value_set('get_total_perguntas', 'get_total_respostas', 'get_progresso_questionario')
 
     @meta('Respostas do Questionário', 'progress')
     def get_progresso_questionario(self):
@@ -453,7 +453,7 @@ class Demanda(models.Model):
         ).display('pergunta', 'resposta').order_by('id').renderer('respostas_questionario.html')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_respostas_questionario')
+        return self.value_set('get_dados_gerais', 'get_respostas_questionario')
 
 
 class Questionario(models.Model):

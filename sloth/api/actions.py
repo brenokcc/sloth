@@ -198,7 +198,7 @@ class Activate2FAuthentication(actions.Action):
         return url
 
     def display(self):
-        return self.values('get_qrcode')
+        return self.value_set('get_qrcode')
 
     def get_instructions(self):
         return '''Para ativar a autenticação de dois fatores,

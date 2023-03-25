@@ -93,20 +93,12 @@ class ModelMixin(object):
 
     ### VISUALIZATION ###
 
-    def values(self, *names):
-        return ValueSet(self, names)
-
     def value_set(self, *names):
         return ValueSet(self, names)
 
     def view(self):
         names = [field.name for field in self.metaclass().fields]
-        return self.values(*names)
-
-    def display(self, name):
-        if name == 'self':
-            return self.view()
-        return self.values(name)
+        return self.value_set(*names)
 
     def serialize(self, wrap=True):
         return self.view().serialize(wrap=wrap)
@@ -478,7 +470,7 @@ class ModelMixin(object):
         return self.view().contextualize(request)
 
     def attr(self, name, source=False):
-        valueset = self.values(name).attr(name)
+        valueset = self.value_set(name).attr(name)
         if source:
             valueset = valueset.source(name)
         return valueset

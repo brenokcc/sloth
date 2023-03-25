@@ -201,17 +201,14 @@ class Dashboard(metaclass=DashboardType):
         pass
 
     def attr(self, name, source=False):
-        valueset = self.values(name).attr(name)
+        valueset = self.value_set(name).attr(name)
         if source:
             valueset = valueset.source(name)
         return valueset
 
-    def values(self, *names):
+    def value_set(self, *names):
         from sloth.core.base import ValueSet
         return ValueSet(self, names)
-
-    def value_set(self, *names):
-        return self.values(*names)
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)

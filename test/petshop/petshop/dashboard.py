@@ -17,7 +17,7 @@ class PetshopDashboard(Dashboard):
         self.settings('petshop.animal', 'petshop.cliente')
 
     def get_animal_preferido(self):
-        self.objects('petshop.animal').first().values('nome', 'tipo').image('foto')
+        self.objects('petshop.animal').first().value_set('nome', 'tipo').image('foto')
 
     def get_tratamentos(self):
         return self.objects('petshop.tratamento').all().batch_actions('ExcluirTratamentos')
@@ -35,10 +35,10 @@ class PetshopDashboard(Dashboard):
         return self.objects('petshop.doenca').contagiosas().expand()
 
     def get_mais_informacoes(self):
-        return self.values('get_estatistica', 'get_doencas')
+        return self.value_set('get_estatistica', 'get_doencas')
 
     def view(self):
-        return self.values(
+        return self.value_set(
             'get_tratamentos',  # 'get_animal_preferido',
             'get_mais_informacoes', 'get_gatos'
         ).append(

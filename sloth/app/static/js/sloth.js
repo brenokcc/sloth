@@ -273,6 +273,7 @@ jQuery.fn.extend({
         $(document).on('select2:open', () => {
             $(this).closest('.select2-search__field').focus();
         });
+        $('.fieldset-tab').map(function (i, item){var fieldsets=$(this).find('.reloadable-fieldset, .reloadable-queryset'); if(fieldsets.length == 1) fieldsets.find('.queryset-title, fieldset-title').hide();});
         return this;
     },
     areas: function(){
@@ -280,22 +281,24 @@ jQuery.fn.extend({
     },
     refresh: function(areas){
         if(areas.length==0) areas = $(this).areas();
-        var url = '?only='+areas.join(',');
-        $.get({url:url, success:function(html){
-         $('.valueset-header').html($(html).find('.valueset-header'));
-         areas.forEach(function(attrName){
-          var remote = $(html).find('#'+attrName);
-          var local = $('#'+attrName);
-          var arrow = local.find('fieldset-title').find('i');
-          if(arrow.hasClass('bi-chevron-down')){
-            arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
-          } else {
-            arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
-          }
-          remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
-          local.html(remote.html()).initialize();
-         });
-        }});
+        if(areas.length>0){
+            var url = '?only='+areas.join(',');
+            $.get({url:url, success:function(html){
+                 $('.valueset-header').html($(html).find('.valueset-header'));
+                 areas.forEach(function(attrName){
+                  var remote = $(html).find('#'+attrName);
+                  var local = $('#'+attrName);
+                  var arrow = local.find('fieldset-title').find('i');
+                  if(arrow.hasClass('bi-chevron-down')){
+                    arrow.addClass('bi-chevron-down').removeClass('bi-chevron-right');
+                  } else {
+                    arrow.removeClass('bi-chevron-down').addClass('bi-chevron-right');
+                  }
+                  remote.find('.fieldset-data').css('display', local.find('.fieldset-data').css('display'));
+                  local.html(remote.html()).initialize();
+                 });
+            }});
+        }
         // reload all querysets
         $('.reloadable-queryset').map(function(i, item){window['reload'+this.id]();});
     },

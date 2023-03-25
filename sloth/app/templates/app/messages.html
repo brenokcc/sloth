@@ -1,7 +1,7 @@
 {% if messages %}
     <script>
         if(window['toastTimeout']) clearTimeout(window['toastTimeout']);
-        window['toastTimeout'] = setTimeout(function(){$('.toast').hide();}, 5000);
+        window['toastTimeout'] = setTimeout(function(){$('.toast').hide();}, 10000);
     </script>
     {% for message in messages %}
         <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed; top:10; left:10">

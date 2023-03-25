@@ -22,8 +22,6 @@ def check_fieldsets_type(item):
 def check_fieldset_type(item):
     if is_fieldset_group(item['data']):
         first = item['data'][next(iter(item['data']))]
-        if first['type'] != 'fieldset-lit':
-            first['name'] = None
         return 'fieldset-group'
     elif is_fieldset_list(item['data']):
         return 'fieldset-list'
@@ -247,6 +245,7 @@ class ValueSet(dict):
                         valueset.contextualize(self.request)
                         key = attr_name
                         inner_deep = 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1
+                        valueset.path = path
                         valueset.load(wrap=wrap, detail=wrap or detail, deep=inner_deep)
                         if not valueset:
                             continue
@@ -363,7 +362,7 @@ class ValueSet(dict):
                 data['icon'] = serialized['icon']
             if data['type']=='fieldset':
                 if is_ajax and not is_modal:
-                    if 'tab' in self.request.GET: data['name'] = None
+                    # if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/valueset/fieldset.html'
                 else:
                     template_name, data = 'app/valueset/valueset.html', serialized
@@ -376,13 +375,13 @@ class ValueSet(dict):
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset/valueset.html', serialized
                 else:
-                    if 'tab' in self.request.GET: data['name'] = None
+                    # if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/queryset/queryset.html'
             elif data['type']=='statistics':
                 if self.metadata['source'] or is_modal:
                     template_name, data = 'app/valueset/valueset.html', serialized
                 else:
-                    if 'tab' in self.request.GET: data['name'] = None
+                    # if 'tab' in self.request.GET: data['name'] = None
                     template_name = 'app/statistics.html'
             elif data['type'] == 'primitive':
                 template_name = 'app/valueset/primitive.html'

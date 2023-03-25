@@ -37,10 +37,10 @@ class QuerySet(models.QuerySet):
     def reset(self):
         limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
-            display=[], view=[dict(name='self', modal=False, icon='search')], filters={}, dfilters={}, search=None,
+            display=[], view=[], filters={}, dfilters={}, search=None,
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
-            global_actions=[], batch_actions=[], inline_actions=[], lookups=[], wrapped=True, collapsed=True, compact=False,
+            global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
             verbose_name=None, username_lookups=[]
         )
 
@@ -440,7 +440,7 @@ class QuerySet(models.QuerySet):
                 subset =  self.request and self.request.GET.get('subset', 'all') or 'all'
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    wrapped=self.metadata['wrapped'], collapsed=collapsed, subset=subset,
+                    collapsed=collapsed, subset=subset,
                     compact=self.metadata['compact'], is_admin=self.metadata['is_admin']# , state=self.dumps()
                 )
                 if calendar:
@@ -465,6 +465,8 @@ class QuerySet(models.QuerySet):
                     )
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
                     for form_name in self.metadata[action_type]:
+                        if form_name == 'view':
+                            contine
                         form_cls = self.model.action_form_cls(form_name)
                         if action_type == 'actions' or self.request is None or form_cls.check_fake_permission(
                                 request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
@@ -507,7 +509,7 @@ class QuerySet(models.QuerySet):
         self.metadata['verbose_name'] = pretty(name)
         return self
 
-    def preview(self, *names, modal=False, icon=None):
+    def preview(self, *names, modal=True, icon=None):
         for name in names:
             if name:
                 self.metadata['view'].append(dict(name=name, modal=modal, icon=icon))
@@ -591,11 +593,7 @@ class QuerySet(models.QuerySet):
             self.metadata['verbose_name'] = self.get_attr_metadata(name)[0]
         if source:
             self.metadata['is_admin'] = True
-            self.metadata['wrapped'] = False
             self.metadata['collapsed'] = False
-            # self.metadata['verbose_name'] = '{} - {}'.format(
-            #     self.model.metaclass().verbose_name_plural, self.get_attr_metadata(name)[0]
-            # )
             self.metadata['verbose_name'] = self.get_attr_metadata(name)[0]
         return getattr(self._clone(), name)()
 
@@ -622,7 +620,11 @@ class QuerySet(models.QuerySet):
     # action functions
 
     def actions(self, *names):
-        self.metadata['actions'] = list(names)
+        for name in names:
+            if name == 'view':
+                self.metadata['view'].append(dict(name='self', modal=False, icon='search'))
+            else:
+                self.metadata['actions'].append(name)
         return self
 
     def global_actions(self, *names):
@@ -639,8 +641,8 @@ class QuerySet(models.QuerySet):
 
     def default_actions(self):
         if self.metadata['attr'] is None:
-            self.metadata['actions'].extend(('edit', 'delete'))
-            self.metadata['global_actions'].extend(('add',))
+            self.actions('view', 'edit', 'delete')
+            self.global_actions('add')
         return self
 
     # search and pagination functions

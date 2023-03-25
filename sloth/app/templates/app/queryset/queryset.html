@@ -6,15 +6,15 @@
 {% endif %}
 <div class="queryset" id="queryset-{{ data.uuid }}">
     {% if data.name %}
-    {% if data.metadata.wrapped or compact %}
-        <div class="queryset-title" style="cursor:pointer" onclick="$(this).parent().find('.toogle-data').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
-            <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
-        </div>
-    {% else %}
-        <div class="queryset-title">
-            <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
-        </div>
-    {% endif %}
+        {% if data.metadata.is_admin %}
+            <div class="queryset-title">
+                <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
+            </div>
+        {% else %}
+            <div class="queryset-title" style="cursor:pointer" onclick="$(this).parent().find('.toogle-data').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
+                <h2><i class="bi bi-chevron-down"></i> {{ data.name }}</h2>
+            </div>
+        {% endif %}
     {% endif %}
     <div id="queryset-global-actions-{{ data.uuid }}" class="queryset-action-bar">
         {% include "app/queryset/actions/global.html" %}

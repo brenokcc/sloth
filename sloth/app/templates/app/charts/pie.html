@@ -18,26 +18,16 @@
         );
       margin: auto;
       border-radius: 50%;
-     {% if compact or data.metadata.compact or request.GET.compact or request|mobile %}
-          width: 150;
-          height: 150;
-          margin-top: -62px;
-     {% else %}
-          width: 300;
-          height: 300;
-          margin-top: -125px;
-     {% endif %}
+      width: 150;
+      height: 150;
+      margin-top: -62px;
     }
     #container-{{ forloop.counter }} .pie-center{
-      {% if compact or data.metadata.compact or request.GET.compact or request|mobile %}
-          top: 50px;
-          width: 75px;
-          height: 75px;
-      {% else %}
-          top: 100px;
-          width: 150px;
-          height: 150px;
-      {% endif %}
+
+      top: 50px;
+      width: 75px;
+      height: 75px;
+
       position: relative;
       background: #FFF;
       border-radius: 50%;

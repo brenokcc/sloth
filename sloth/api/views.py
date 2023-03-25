@@ -27,7 +27,7 @@ def endpoint(func):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
                 serialized = data.serialize(wrap=wrap)
-                from pprint import pprint; pprint(serialized)
+                # from pprint import pprint; pprint(serialized)
                 return ApiResponse(serialized, safe=False)
             else:
                 return ApiResponse(

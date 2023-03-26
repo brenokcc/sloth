@@ -44,6 +44,6 @@ class PetshopDashboard(Dashboard):
         ).append(
             'get_caes', 'get_doencas'
         ).actions(
-            'fazer_alguma_coisa2', 'exibir_data_hora', inline=True
+            'fazer_alguma_coisa2', 'exibir_data_hora'
         )
 

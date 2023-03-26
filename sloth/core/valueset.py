@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from sloth.actions import Action
 from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
-from sloth.utils import getattrr, serialize, pretty
+from sloth.utils import getattrr, serialize, pretty, to_snake_case
 
 
 def check_fieldsets_type(item):
@@ -70,19 +70,20 @@ class ValueSet(dict):
             self.metadata['only'][name].append(role)
         return self
 
-    def actions(self, *names, inline=False):
-        if inline:
-            self.metadata['inline_actions'] = list(names)
-        else:
-            self.metadata['actions'] = list(names)
+    def actions(self, *names):
+        self.metadata['actions'] = [to_snake_case(name) for name in names]
+        return self
+
+    def inline_actions(self, *names):
+        self.metadata['actions'] = [to_snake_case(name) for name in names]
         return self
 
     def append(self, *names):
-        self.metadata['append'] = list(names)
+        self.metadata['append'] = [to_snake_case(name) for name in names]
         return self
 
     def attach(self, *names):
-        self.metadata['attach'] = list(names)
+        self.metadata['attach'] = [to_snake_case(name) for name in names]
         return self
 
     def image(self, image):
@@ -117,6 +118,13 @@ class ValueSet(dict):
             return self.source(name)
         else:
             return self
+
+    def get_allowed_attrs(self):
+        allowed = []
+        for key in ('actions', 'inline_actions', 'append', 'attach'):
+            allowed.extend(self.metadata[key])
+        allowed.extend([name for name in self.metadata['names'].keys() if name.startswith('get_')])
+        return allowed
 
     def source(self, name):
         self.metadata['source'] = name
@@ -208,10 +216,13 @@ class ValueSet(dict):
                     lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
                     attr, value = getattrr(self.instance, attr_name)
                     path = self.path
-                    if self.metadata['attr'] is None and attr_name != 'all':
-                        path = '{}{}/'.format(self.path, attr_name)
+                    if path and self.metadata['attr'] is None and attr_name != 'all':
+                        tokens = path.split('?')
+                        path = '{}{}/'.format(tokens[0], attr_name)
+                        if len(tokens) == 2:
+                            path = '{}?{}'.format(path, tokens[1])
                     if self.request and self.request.META.get('QUERY_STRING') and 'only' not in self.request.META.get('QUERY_STRING'):
-                        path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING'))
+                        path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
                         qs.instantiator = self.instance

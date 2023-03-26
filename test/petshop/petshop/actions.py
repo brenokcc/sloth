@@ -78,6 +78,13 @@ class FazerAlgumaCoisa2(actions.Action):
         # self.redirect('..', message='Ação realizada com sucesso!')
 
 
+class AlterarContagiosidade(actions.Action):
+
+    class Meta:
+        model = Doenca
+        fields = 'contagiosa',
+
+
 class IniciarTratamento(actions.Action):
 
     class Meta:

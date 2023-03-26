@@ -469,13 +469,16 @@ class Action(metaclass=ActionMetaclass):
                 on_change.append(field_name)
         return on_change
 
+    def get_allowed_attrs(self):
+        return []
+
     @classmethod
     @lru_cache
-    def get_metadata(cls, path=None, inline=False, batch=False):
+    def get_metadata(cls, path=None, target=None):
         form_name = cls.__name__
         metaclass = getattr(cls, 'Meta', None)
         if metaclass:
-            target = 'model'
+            target = target
             name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", form_name))
             submit = getattr(metaclass, 'submit_label', name)
             icon = getattr(metaclass, 'icon', None)
@@ -485,13 +488,12 @@ class Action(metaclass=ActionMetaclass):
             method = getattr(metaclass, 'method', 'post')
             auto_reload = getattr(metaclass, 'auto_reload', None)
         else:
-            target, name, submit, icon, ajax, modal, style, method, auto_reload = (
-                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
+            name, submit, icon, ajax, modal, style, method, auto_reload = (
+                'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
             )
         if path:
             path, *params = path.split('?')
-            if inline or batch:
-                target = 'queryset' if batch else 'instance'
+            if target in ('queryset', 'instance'):
                 path = '{}{{id}}/{}/'.format(path, to_snake_case(form_name))
             else:
                 path = '{}{}/'.format(path, to_snake_case(form_name))

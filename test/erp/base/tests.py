@@ -111,7 +111,7 @@ class ApiTestCase(ServerTestCase):
 
         self.get('/api/base/servidor/')
         self.get('/api/base/servidor/ativos/')
-        self.post('/api/base/servidor/1/inativarservidores/')
+        self.post('/api/base/servidor/0-1/inativarservidores/')
         self.get('/api/base/servidor/ativos/')
 
         self.get('/api/base/servidor/1/')

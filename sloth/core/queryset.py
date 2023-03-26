@@ -22,7 +22,7 @@ from django.apps import apps
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
 from sloth.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
-from sloth.utils import getattrr, serialize, pretty, to_api_params
+from sloth.utils import getattrr, serialize, pretty, to_api_params, to_snake_case
 
 
 class QuerySet(models.QuerySet):
@@ -81,6 +81,15 @@ class QuerySet(models.QuerySet):
         if name == 'all' or name in qs.metadata['attach']:
             return qs.has_permission(user)
         return getattr(self._clone(), name)().has_permission(user)
+
+    def get_allowed_attrs(self):
+        allowed = []
+        for key in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
+            allowed.extend(self.metadata[key])
+        allowed.extend(self.metadata['attach'])
+        for view in self.metadata['view']:
+            allowed.append('view' if view['name'] == 'self' else view['name'])
+        return allowed
 
     def apply_role_lookups(self, user):
         if user.is_superuser:
@@ -208,7 +217,6 @@ class QuerySet(models.QuerySet):
             key = 'ordering'
             if self.request and self.request.GET.get(key):
                 value = [self.request.GET.get(f'{key}0'), self.request.GET.get(key)]
-            print(key, value)
             filters[key] = dict(
                 key='ordering', name='Ordenação', type='choices', choices=ordering, value=value
             )
@@ -468,6 +476,7 @@ class QuerySet(models.QuerySet):
                         )
                     )
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
+                    target = dict(global_actions='model', actions='instance', batch_actions='queryset', inline_actions='inline')[action_type]
                     for form_name in self.metadata[action_type]:
                         if form_name == 'view':
                             contine
@@ -478,11 +487,7 @@ class QuerySet(models.QuerySet):
                             action_path = path
                             if self.request and self.request.GET.get('subset'):
                                 action_path = '{}{}/'.format(path, self.request.GET.get('subset'))
-                            action = form_cls.get_metadata(
-                                path, inline=action_type == 'actions', batch=action_type == 'batch_actions'
-                            )
-                            if action_type == 'inline_actions':
-                                action['target'] = 'inline'
+                            action = form_cls.get_metadata(path, target)
                             data['actions'][action['target']].append(action)
 
                 template = self.metadata['template']
@@ -623,24 +628,32 @@ class QuerySet(models.QuerySet):
 
     # action functions
 
-    def actions(self, *names):
+    def actions(self, *names, clear=False):
+        if clear:
+            self.metadata['actions'].clear()
         for name in names:
             if name == 'view':
                 self.metadata['view'].append(dict(name='self', modal=False, icon='search'))
             else:
-                self.metadata['actions'].append(name)
+                self.metadata['actions'].append(to_snake_case(name))
         return self
 
-    def global_actions(self, *names):
-        self.metadata['global_actions'] = list(names)
+    def global_actions(self, *names, clear=False):
+        if clear:
+            self.metadata['global_actions'].clear()
+        self.metadata['global_actions'].extend([to_snake_case(name) for name in names])
         return self
 
-    def batch_actions(self, *names):
-        self.metadata['batch_actions'] = list(names)
+    def batch_actions(self, *names, clear=False):
+        if clear:
+            self.metadata['batch_actions'].clear()
+        self.metadata['batch_actions'].extend([to_snake_case(name) for name in names])
         return self
 
-    def inline_actions(self, *names):
-        self.metadata['inline_actions'] = list(names)
+    def inline_actions(self, *names, clear=False):
+        if clear:
+            self.metadata['inline_actions'].clear()
+        self.metadata['inline_actions'].extend([to_snake_case(name) for name in names])
         return self
 
     def default_actions(self):

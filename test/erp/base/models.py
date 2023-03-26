@@ -226,7 +226,7 @@ class ServidorManager(models.Manager):
         ).actions(
             'CorrigirNomeServidor', 'FazerAlgumaCoisa', 'DefinirSetor'
         ).batch_actions(
-            'DefinirSetor'
+            'DefinirSetor', 'InativarServidores'
         ).global_actions(
             'FazerAlgumaCoisa'
         ).cards()

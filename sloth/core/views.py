@@ -53,33 +53,38 @@ def action(request, name):
 
 
 def dispatcher(request, path):
+    allowed_attrs = []
+    extra_attrs = []
     instance = None
     instances = None
     instantiator = None
     tokens = path.split('/')
     token = tokens.pop(0)
     if token == 'dashboard':
-        dashboard = Dashboards(request).main()
-        obj = dashboard if tokens else dashboard.view()
+        obj = Dashboards(request).main()
+        if tokens:
+            allowed_attrs = obj.view().get_allowed_attrs()
+        else:
+            obj = obj.view()
+            allowed_attrs = obj.get_allowed_attrs()
         if not request.user.is_authenticated:
             raise PermissionDenied()
     elif token in settings.INSTALLED_APPS or token in ('api', 'auth'):
         app_label, model_name = token, tokens.pop(0)
-        if tokens:
-            obj = apps.get_model(app_label, model_name).objects.get_queryset()
-            if tokens[0].isdigit() or '-' in tokens[0]:
-                obj = obj.all().admin()
-            instantiator = obj
-        else:
-            obj = apps.get_model(app_label, model_name).objects.view()
-            if isinstance(obj, QuerySet):
-                obj = obj.default_actions().expand().admin()
-            if not obj.has_permission(request.user):
-                raise PermissionDenied()
+        obj = apps.get_model(app_label, model_name).objects.view()
+        if isinstance(obj, QuerySet):
+            obj = obj.default_actions().expand().admin()
+        allowed_attrs = obj.get_allowed_attrs()
+        if not tokens and not obj.has_permission(request.user):
+            raise PermissionDenied()
     else:
-        raise Exception()
+        raise PermissionDenied()
     for i, token in enumerate(tokens):
+        # print(token, type(obj).__name__, allowed_attrs, extra_attrs)
+        if  token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
+            raise PermissionDenied()
         if token.isdigit():
+            extra_attrs = obj.metadata['actions'] + obj.metadata['inline_actions'] + ['view' if view['name'] == 'self' else view['name'] for view in obj.metadata['view']]
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk=token).first()
             if obj:
                 instance = obj
@@ -87,10 +92,13 @@ def dispatcher(request, path):
             else:
                 raise PermissionDenied()
         elif '-' in token:
+            extra_attrs = obj.metadata['batch_actions']
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
             instances = obj
         elif token in ACTIONS or token in ('add', 'edit', 'delete'):
+            if token in ('edit', 'delete') and instance is None and instances is None:
+                raise PermissionDenied()
             form_cls = obj.action_form_cls(token)
             # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances))
             form = form_cls(request=request, instantiator=instantiator, instance=instance, instances=instances)
@@ -119,4 +127,5 @@ def dispatcher(request, path):
                     obj = getattr(obj, token)()
                 if isinstance(obj, ValueSet):
                     instance = instantiator
+        allowed_attrs = obj.get_allowed_attrs()
     return obj.contextualize(request)

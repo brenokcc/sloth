@@ -20,13 +20,13 @@ class Administrador(models.Model):
 class DoencaManager(models.Manager):
 
     def all(self):
-        return self.attach('contagiosas', 'nao_contagiosas').limit_per_page(5).ordering('contagiosa', 'descricao', 'id')
+        return self.attach('contagiosas', 'nao_contagiosas').limit_per_page(5).ordering('contagiosa', 'descricao', 'id').batch_actions('alterar_contagiosidade')
 
     def contagiosas(self):
         return self.filter(contagiosa=True).filters()
 
     def nao_contagiosas(self):
-        return self.filter(contagiosa=False).filters().inline_actions('fazer_alguma_coisa')
+        return self.filter(contagiosa=False).filters()#.inline_actions('fazer_alguma_coisa')
 
     @meta('Total de Doenças Contagiosas')
     def get_total_por_contagiosiade(self):
@@ -103,6 +103,11 @@ class Funcionario(models.Model):
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Administrador')
 
+class ClienteManager(models.Manager):
+
+    def all(self):
+        return self.global_actions('fazer_alguma_coisa')
+
 
 @role('Cliente', 'cpf')
 class Cliente(models.Model):
@@ -110,13 +115,12 @@ class Cliente(models.Model):
     nome = models.CharField(verbose_name='None')
     cpf = models.CharField(verbose_name='CPF')
 
+    objects = ClienteManager()
+
     class Meta:
         icon = 'person-lines-fill'
         verbose_name = 'Cliente'
         verbose_name_plural = 'Clientes'
-
-    class Permission:
-        admin = 'Funcionário',
 
     def __str__(self):
         return self.nome
@@ -125,16 +129,16 @@ class Cliente(models.Model):
         return user.is_superuser or user.roles.contains('Funcionário')
 
     def get_dados_gerais(self):
-        return self.value_set(('nome', 'cpf')).actions('fazer_alguma_coisa', 'edit')
+        return self.value_set(('nome', 'cpf')).actions('fazer_alguma_coisa')
 
     def get_animais(self):
-        return self.animal_set.all()
+        return self.animal_set.all().actions('view')
 
     def get_total_gasto_por_tipo_procedimento(self):
         return Procedimento.objects.filter(tratamento__animal__proprietario=self).sum('tipo__valor', 'tipo')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_animais', 'get_total_gasto_por_tipo_procedimento')
+        return self.value_set('get_dados_gerais', 'get_animais', 'get_total_gasto_por_tipo_procedimento').actions('edit')
 
 
 class AnimalManager(models.Manager):
@@ -196,7 +200,7 @@ class Animal(models.Model):
         ).global_actions(
             'IniciarTratamento', 'Batata'
         ).actions(
-            'ExcluirTratamento'
+            'ExcluirTratamento', 'view'
         ).batch_actions(
             'ExcluirTratamentos'
         ).accordion()
@@ -263,7 +267,7 @@ class Tratamento(models.Model):
         return etapas
 
     def get_dados_gerais(self):
-        return self.value_set(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.actions('RegistrarProcedimento', inline=True)
+        return self.value_set(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.inline_actions('RegistrarProcedimento')
 
     def get_procedimentos(self):
         return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline().expand()
@@ -282,7 +286,7 @@ class Tratamento(models.Model):
         return self.value_set('get_procedimentos', 'get_etapas')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_detalhamento', 'get_eficacia')#.append('get_etapas')
+        return self.value_set('get_dados_gerais', 'get_detalhamento', 'get_eficacia').actions('edit')#.append('get_etapas')
 
     def has_view_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário') or self.animal.proprietario.cpf == user.username

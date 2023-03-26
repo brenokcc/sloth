@@ -15,8 +15,8 @@
                 {% include "app/queryset/checkbox.html" %}
             </div>
             <dl>
-            {% for k, v in row.data.items %}
-                <dt>{{ k }}</dt>
+            {% for v in row.data.values %}
+                <dt>{{ v.name }}</dt>
                 <dd>{% include 'app/valueset/value.html' %}</dd>
             {% endfor %}
             </dl>

@@ -69,10 +69,11 @@ def dispatcher(request, path):
             obj = apps.get_model(app_label, model_name).objects.get_queryset()
             if tokens[0].isdigit() or '-' in tokens[0]:
                 obj = obj.all().admin()
+            instantiator = obj
         else:
             obj = apps.get_model(app_label, model_name).objects.view()
             if isinstance(obj, QuerySet):
-                obj = obj.default_actions().collapsed(False).admin()
+                obj = obj.default_actions().expand().admin()
             if not obj.has_permission(request.user):
                 raise PermissionDenied()
     else:
@@ -89,7 +90,7 @@ def dispatcher(request, path):
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
             instances = obj
-        elif token in ACTIONS or token == 'add':
+        elif token in ACTIONS or token in ('add', 'edit', 'delete'):
             form_cls = obj.action_form_cls(token)
             # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances))
             form = form_cls(request=request, instantiator=instantiator, instance=instance, instances=instances)

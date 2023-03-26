@@ -6,7 +6,7 @@
         {% if metadata.choices %}
             <option value=""></option>
             {% for choice in metadata.choices %}
-                <option value="{{ choice.id|stringformat:'s' }}">{{ choice.text }}</option>
+                <option {% if metadata.value.1 == choice.id %}selected{% endif %} value="{{ choice.id|stringformat:'s' }}">{{ choice.text }}</option>
             {% endfor %}
         {% else %}
             {% if metadata.value %}

@@ -20,7 +20,7 @@ class Administrador(models.Model):
 class DoencaManager(models.Manager):
 
     def all(self):
-        return self.attach('contagiosas', 'nao_contagiosas')
+        return self.attach('contagiosas', 'nao_contagiosas').limit_per_page(5).ordering('contagiosa', 'descricao', 'id')
 
     def contagiosas(self):
         return self.filter(contagiosa=True).filters()
@@ -125,7 +125,7 @@ class Cliente(models.Model):
         return user.is_superuser or user.roles.contains('Funcionário')
 
     def get_dados_gerais(self):
-        return self.value_set(('nome', 'cpf'))
+        return self.value_set(('nome', 'cpf')).actions('fazer_alguma_coisa', 'edit')
 
     def get_animais(self):
         return self.animal_set.all()

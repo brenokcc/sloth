@@ -204,9 +204,13 @@ class QuerySet(models.QuerySet):
             field = self.model.get_field(lookup)
             ordering.append(dict(id=lookup, text=field.verbose_name))
         if ordering:
-            key = 'ordenacao'
+            value = None
+            key = 'ordering'
+            if self.request and self.request.GET.get(key):
+                value = [self.request.GET.get(f'{key}0'), self.request.GET.get(key)]
+            print(key, value)
             filters[key] = dict(
-                key='ordering', name='Ordenação', type='choices', choices=ordering
+                key='ordering', name='Ordenação', type='choices', choices=ordering, value=value
             )
             if as_form:
                 choices = [(o['id'], [o['text']]) for o in ordering]
@@ -241,16 +245,16 @@ class QuerySet(models.QuerySet):
                     verbose_name = attr.__verbose_name__
                 else:
                     verbose_name = attach.metadata['verbose_name'] or pretty(name)
-                active = name == self.request and self.request.GET.get('subset', 'all') or 'all'
+                active = self.request.GET.get('subset', 'all') if self.request else 'all'
                 if isinstance(attach, QuerySet):
                     if name == 'all':
                         verbose_name = 'Tudo'
                     attaches[name] = dict(
-                        name=verbose_name, key=name, count=attach.count(), active=active
+                        name=verbose_name, key=name, count=attach.count(), active=name == active
                     )
                 else:
                     attaches[name] = dict(
-                        name=verbose_name, key=name, active=active
+                        name=verbose_name, key=name, active=name == active
                     )
         self.metadata['attach'] = attaches
         return attaches
@@ -487,7 +491,7 @@ class QuerySet(models.QuerySet):
                 if template:
                     template = template if template.endswith('.html') else '{}.html'.format(template)
                     data.update(template=template)
-            #pprint(data)
+            # pprint(data)
             return data
         return self.to_list(detail=False)
 
@@ -647,19 +651,21 @@ class QuerySet(models.QuerySet):
 
     # search and pagination functions
 
+    def get_ordering(self):
+        return [(self.request.GET.get('ordering') or 'id') if self.request else 'id']
+
     def paginate(self):
         if self.metadata['page'] != 1:
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
             self.metadata['interval'] = (start + 1, end)
-            qs = self.order_by(*self.metadata['ordering'] or ['id'])[start:end]
+            qs = self.order_by(*self.get_ordering())[start:end]
         else:
             self.metadata['interval'] = 0 + 1, self.metadata['limit']
             start = (self.metadata['page'] - 1) * self.metadata['limit']
             end = start + self.metadata['limit']
             self.metadata['interval'] = start + 1, end
-            qs = self.filter(pk__in=self.values_list('pk', flat=True).order_by(*self.metadata['ordering'] or ['id'])[start:end])
-
+            qs = self.filter(pk__in=self.values_list('pk', flat=True)).order_by(*self.get_ordering())[start:end]
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']
             if selected_date:

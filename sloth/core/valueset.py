@@ -138,11 +138,8 @@ class ValueSet(dict):
     def apply_role_lookups(self, user):
         return self
 
-    @classmethod
-    @lru_cache
-    def action_form_cls(cls, action):
-        from sloth.actions import ACTIONS
-        return ACTIONS.get(action)
+    def action_form_cls(self, action):
+        return type(self.instance).action_form_cls(action)
 
     def has_permission(self, user):
         return user.is_superuser or self.instance.has_permission(user)
@@ -297,6 +294,9 @@ class ValueSet(dict):
         if self.request:
             return self.html()
         return json.dumps(self, indent=4, ensure_ascii=False)
+
+    def __repr__(self):
+        return 'Valueset <{}>'.format(self.instance)
 
     def serialize(self, wrap=False):
         self.load(wrap=wrap, detail=wrap)

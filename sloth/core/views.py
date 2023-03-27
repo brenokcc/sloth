@@ -80,8 +80,8 @@ def dispatcher(request, path):
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
-        # print(token, type(obj).__name__, allowed_attrs, extra_attrs)
         if  token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
+            print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()
         if token.isdigit():
             extra_attrs = obj.metadata['actions'] + obj.metadata['inline_actions'] + ['view' if view['name'] == 'self' else view['name'] for view in obj.metadata['view']]

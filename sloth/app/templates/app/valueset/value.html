@@ -2,7 +2,7 @@
 
 {% if v|is_valueset %}
     <dl>
-    {% for k2, v2 in v.items %}
+    {% for v2 in v.values %}
         {% if v2.metadata.icon %}
             <dt></dt>
             <dd>
@@ -14,7 +14,7 @@
             {% endif %}
             </dd>
         {% else %}
-            <dt>{{ k2 }}</dt>
+            <dt>{{ v2.name }}</dt>
             <dd>
                 {% if v2.template %}
                     {% include v2.template with value=v2.value metadata=v2.metadata %}

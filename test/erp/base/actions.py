@@ -122,9 +122,9 @@ class AtivarServidor(actions.Action):
         model = Servidor
         fields = ()
 
-    def save(self):
+    def submit(self):
         self.instance.ativo = True
-        super().save()
+        super().submit()
 
 
 class InativarServidores(actions.Action):
@@ -133,9 +133,9 @@ class InativarServidores(actions.Action):
         model = Servidor
         fields = ()
 
-    def save(self):
+    def submit(self):
         self.instance.ativo = False
-        super().save()
+        super().submit()
 
 
 class InformarEndereco(actions.Action):
@@ -180,4 +180,5 @@ class ExcluirFerias(actions.Action):
 
     def submit(self):
         self.instance.delete()
-        self.redirect(message='Férias excluídas com sucesso')
+        self.message('Férias excluídas com sucesso')
+        self.redirect()

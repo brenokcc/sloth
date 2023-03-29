@@ -83,7 +83,7 @@ class Categoria(models.Model):
 
     @meta('Perguntas por Tipo')
     def get_quantidade_perguntas_por_tipo_resposta(self):
-        return self.pergunta_set.count('tipo_resposta')
+        return self.pergunta_set.count('tipo_resposta').donut_chart()
 
 
 class OpcaoResposta(models.Model):
@@ -516,7 +516,7 @@ class Questionario(models.Model):
         verbose_name_plural = 'Questionários'
 
     def __str__(self):
-        return '{} - {}'.format(self.demanda.instituicao, self.demanda.ciclo)
+        return '{} - {}'.format(self.demanda.solicitacao.instituicao, self.demanda.solicitacao.ciclo)
 
 
 class RespostaQuestionarioManager(models.Manager):

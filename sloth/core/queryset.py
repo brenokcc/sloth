@@ -82,11 +82,14 @@ class QuerySet(models.QuerySet):
             return qs.has_permission(user)
         return getattr(self._clone(), name)().has_permission(user)
 
-    def get_allowed_attrs(self):
+    def get_allowed_attrs(self, recursive=True):
         allowed = []
         for key in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
             allowed.extend(self.metadata[key])
         allowed.extend(self.metadata['attach'])
+        if recursive:
+            for attach in self.metadata['attach']:
+                allowed.extend(getattr(self._clone(), attach)().get_allowed_attrs(recursive=False))
         for view in self.metadata['view']:
             allowed.append('view' if view['name'] == 'self' else view['name'])
         return allowed
@@ -634,26 +637,32 @@ class QuerySet(models.QuerySet):
         for name in names:
             if name == 'view':
                 self.metadata['view'].append(dict(name='self', modal=False, icon='search'))
-            else:
+            elif to_snake_case(name) not in self.metadata['actions']:
                 self.metadata['actions'].append(to_snake_case(name))
         return self
 
     def global_actions(self, *names, clear=False):
         if clear:
             self.metadata['global_actions'].clear()
-        self.metadata['global_actions'].extend([to_snake_case(name) for name in names])
+        self.metadata['global_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['global_actions']]
+        )
         return self
 
     def batch_actions(self, *names, clear=False):
         if clear:
             self.metadata['batch_actions'].clear()
-        self.metadata['batch_actions'].extend([to_snake_case(name) for name in names])
+        self.metadata['batch_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['batch_actions']]
+        )
         return self
 
     def inline_actions(self, *names, clear=False):
         if clear:
             self.metadata['inline_actions'].clear()
-        self.metadata['inline_actions'].extend([to_snake_case(name) for name in names])
+        self.metadata['inline_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['inline_actions']]
+        )
         return self
 
     def default_actions(self):

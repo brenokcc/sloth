@@ -287,6 +287,13 @@ class Action(metaclass=ActionMetaclass):
                     # remove one-to-many fields from the form
                     self.one_to_many[name] = self.fields.pop(name)
 
+        pop = []
+        for name, names in fieldsets.items():
+            if len(names) == 1 and (names[0] in self.one_to_one.keys() or names[0] in self.one_to_many.keys()):
+                pop.append(name)
+        for name in pop:
+            del fieldsets[name]
+
         # configure one-to-one fields
         for one_to_one_field_name, one_to_one_field in self.one_to_one.items():
             field_list = []
@@ -814,4 +821,7 @@ class Action(metaclass=ActionMetaclass):
         return self.path or self.request.get_full_path()
 
     def contextualize(self, request):
+        return self
+
+    def apply_role_lookups(self, user):
         return self

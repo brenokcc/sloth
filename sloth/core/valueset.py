@@ -229,7 +229,8 @@ class ValueSet(dict):
                         qs.metadata['uuid'] = attr_name
                         qs.metadata['path'] = path
                         verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
-                        qs = qs.contextualize(self.request)
+                        if self.request:
+                            qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
                         if wrap:
                             if self.metadata['primitive'] and deep>0:
                                 data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)

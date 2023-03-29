@@ -128,4 +128,4 @@ def dispatcher(request, path):
                 if isinstance(obj, ValueSet):
                     instance = instantiator
         allowed_attrs = obj.get_allowed_attrs()
-    return obj.contextualize(request)
+    return obj.contextualize(request).apply_role_lookups(request.user)

@@ -197,11 +197,19 @@ class Campus(models.Model):
         return '{}/{}'.format(self.nome, self.instituicao)
 
 
+class GestorManager(models.Manager):
+    def all(self):
+        return self.role_lookups('Administrador').global_actions('enviar_senhas').batch_actions('enviar_senhas')
+
+
 @role('Gestor', username='email', instituicao='instituicao')
 class Gestor(models.Model):
     nome = models.CharField('Nome')
     email = models.CharField('E-mail', null=True)
     instituicao = models.ForeignKey(Instituicao, verbose_name='Instituição')
+    notificado = models.BooleanField('Notificado', default=False)
+
+    objects = GestorManager()
 
     class Meta:
         verbose_name = 'Gestor '
@@ -279,19 +287,15 @@ class Ciclo(models.Model):
         hoje = datetime.date.today()
         return self.inicio <= hoje and self.fim >= hoje
 
-    def gerar_demandas(self):
-        for instituicao in self.instituicoes.all():
-            for limite in self.limites.all():
-                for i in range(1, limite.quantidade + 1):
-                    prioridade = Prioridade.objects.get_or_create(numero=i)[0]
-                    lookups = dict(ciclo=self, instituicao=instituicao, prioridade=prioridade, classificacao=limite.classificacao)
-                    if not Demanda.objects.filter(**lookups).exists():
-                        Demanda.objects.create(**lookups)
-
     def post_save(self, *args, **kwargs):
+        super().post_save(*args, **kwargs)
         if not self.instituicoes.exists():
             for instituicao in Instituicao.objects.all():
                 self.instituicoes.add(instituicao)
+
+        for instituicao in self.instituicoes.all():
+            if not Solicitacao.objects.filter(instituicao=instituicao, ciclo=self).exists():
+                Solicitacao.objects.create(instituicao=instituicao, ciclo=self)
 
     @meta('Limite de Demandas por Categoria')
     def get_limites_demandas(self):
@@ -319,18 +323,12 @@ class Ciclo(models.Model):
         return self.value_set('get_solicitantes', 'get_total_por_instituicao', 'get_demandas')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_detalhamento')
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        for instituicao in self.instituicoes.all():
-            if not self.solicitacao_set.filter(instituicao=instituicao).exists():
-                Solicitacao.objects.create(ciclo=self, instituicao=instituicao)
+        return self.value_set('get_dados_gerais', 'get_detalhamento').actions('exportar_resultado', 'exportar_resultado_por_categoria')
 
 
 class SolicitacaoManager(models.Manager):
     def all(self):
-        return self.display('ciclo', 'instituicao', 'get_total_demandas', 'get_total_solicitado', 'get_percentual_solicitado', 'is_finalizada').role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao')
+        return self.display('ciclo', 'ciclo__teto', 'instituicao', 'get_total_demandas', 'get_total_solicitado', 'get_percentual_solicitado', 'is_finalizada').role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao')
 
 
 class Solicitacao(models.Model):
@@ -351,7 +349,7 @@ class Solicitacao(models.Model):
         return self.questionariofinal_set.filter(finalizado=True).exists()
 
     def get_total_solicitado(self):
-        return self.demanda_set.sum('valor')
+        return self.demanda_set.filter(classificacao__contabilizar=True).sum('valor')
 
     @meta('Percentual solicitado', renderer='utils/progress')
     def get_percentual_solicitado(self):
@@ -398,7 +396,7 @@ class Solicitacao(models.Model):
         return self.value_set('get_demandas', 'get_resumo')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_detalhamento').actions('ExportarResultado', 'ExportarResultadoPorCategoria')
+        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_detalhamento')
 
     def has_view_permission(self, user):
         return user.roles.contains('Administrador', 'Gestor')

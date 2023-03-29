@@ -568,14 +568,14 @@ class Action(metaclass=ActionMetaclass):
             if isinstance(field, forms.DateField):
                 field.widget = RegionalDateWidget()
                 classes.append('date-input')
-                if self.initial[name] and '/' in self.initial[name]:
+                if self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
                     self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m')
 
             if isinstance(field, forms.DateTimeField):
                 field.widget = RegionalDateTimeWidget()
                 classes.append('date-time-input')
-                if self.initial[name] and '/' in self.initial[name]:
-                    self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m')
+                if self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
+                    self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m %H:%M')
 
             if isinstance(field, forms.DecimalField):
                 field.widget.input_type = 'text'

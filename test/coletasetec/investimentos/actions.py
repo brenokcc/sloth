@@ -2,12 +2,11 @@
 import os
 from datetime import datetime
 from decimal import Decimal
-
 from django.conf import settings
 from sloth import actions
 from sloth.utils.formatter import format_value
 from sloth.utils.http import XlsResponse
-
+from .mail import enviar_senha
 from .models import Campus, Demanda, Pergunta, Gestor, QuestionarioFinal, Duvida, Instituicao, Categoria, Prioridade
 
 
@@ -58,20 +57,17 @@ class AlterarPrioridade(actions.Action):
         return self.instance.solicitacao.ciclo.is_aberto() and self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
 
     def get_prioridade_queryset(self, queryset):
-        limite = self.instance.solicitacao.ciclo.get_limites_demandas().filter(classificacao=self.instance.classificacao).first()
-        return queryset.filter(
-            numero__lte=limite.quantidade if limite else 10
-        ).exclude(numero=self.instance.prioridade.numero)
+        numero = self.instantiator.demanda_set.filter(classificacao=self.instance.classificacao).order_by('prioridade__numero').values_list('prioridade__numero', flat=True).last() or 0
+        return queryset.filter(numero__lte=numero).exclude(numero=self.instance.prioridade.numero)
 
     def submit(self):
+        prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
+        demanda = self.instance.solicitacao.demanda_set.get(
+            classificacao=self.instance.classificacao, prioridade=self.instance.prioridade
+        )
         self.instance.save()
-        demandas = self.instance.solicitacao.demanda_set.filter(
-            classificacao=self.instance.classificacao, prioridade__gte=self.instance.prioridade
-        ).exclude(pk=self.instance.pk)
-
-        for demanda in demandas:
-            demanda.prioridade = Prioridade.objects.get(pk=demanda.prioridade.numero+1)
-            demanda.save()
+        demanda.prioridade = prioridade
+        demanda.save()
         self.message('Ação realizada com sucesso')
         self.redirect()
 
@@ -108,7 +104,7 @@ class AdicionarDemanda(actions.Action):
     def clean_valor(self):
         valor = Decimal(self.cleaned_data['valor'])
         total = self.instantiator.demanda_set.exclude(pk=self.instance.pk).exclude(classificacao__contabilizar=False).sum('valor')
-        if self.cleaned_data['classificacao'].contabilizar and total + valor > self.instantiator.ciclo.teto:
+        if self.cleaned_data.get('classificacao', self.instance.classificacao).contabilizar and total + valor > self.instantiator.ciclo.teto:
             raise actions.ValidationError('O valor ultrapassa o limite orçamentário')
         if valor < 176000:
             raise actions.ValidationError('O valor deve ser maior que R$ 176.000,00')
@@ -116,9 +112,10 @@ class AdicionarDemanda(actions.Action):
 
     def get_prioridade_queryset(self, queryset):
         limite = self.instantiator.ciclo.get_limites_demandas().get(classificacao=self.data['classificacao'])
+        numero = self.instantiator.demanda_set.filter(classificacao=self.data['classificacao']).order_by('prioridade__numero').values_list('prioridade__numero', flat=True).last() or 0
         return queryset.filter(
-            numero__lte=limite.quantidade
-        ).exclude(numero__in=self.instantiator.demanda_set.values_list('prioridade', flat=True))
+            numero__gt=numero, numero__lte=min(numero+1, limite.quantidade)
+        )
 
     def get_unidades_beneficiadas_queryset(self, queryset):
         return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)
@@ -137,10 +134,10 @@ class AdicionarDemanda(actions.Action):
 class AlterarDemanda(AdicionarDemanda):
     class Meta:
         model = Demanda
-        fields = 'classificacao', 'prioridade', 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
+        fields = 'descricao', 'valor_total', 'valor', 'unidades_beneficiadas'
         verbose_name = 'Alterar Dados Gerais'
         fieldsets = {
-            'Dados Gerais': (('classificacao', 'prioridade'), 'descricao', ('valor_total', 'valor'), 'unidades_beneficiadas')
+            'Dados Gerais': ('descricao', ('valor_total', 'valor'), 'unidades_beneficiadas')
         }
 
     def has_permission(self, user):
@@ -418,13 +415,13 @@ class ExportarResultado(actions.Action):
         instituicao = self.cleaned_data['instituicao']
         categoria = self.cleaned_data['categoria']
         prioridade = self.cleaned_data['prioridade']
-        qs = self.instantiator.demanda_set.all()
-        qs = qs.filter(instituicao=instituicao) if instituicao else qs
+        qs = self.instance.get_demandas()
+        qs = qs.filter(solicitacao__instituicao=instituicao) if instituicao else qs
         qs = qs.filter(classificacao=categoria) if categoria else qs
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
         demanda = None
         for demanda in qs.filter(valor__isnull=False).exclude(valor=0):
-            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
             demandas.append(l1)
             for resposta_questionario in demanda.get_respostas_questionario():
                 l2 = list(l1)
@@ -434,17 +431,22 @@ class ExportarResultado(actions.Action):
                 questionario.append(l2)
 
         if demanda is not None:
-            instituicoes = demanda.ciclo.instituicoes.all()
+            instituicoes = demanda.solicitacao.ciclo.instituicoes.all()
             if instituicao:
                 instituicoes = instituicoes.filter(pk=instituicao.pk)
             for instituicao1 in instituicoes:
-                questionario_final = demanda.ciclo.get_questionario_final().filter(instituicao=instituicao1).first()
+                questionario_final = demanda.solicitacao.questionariofinal_set.first()
                 if questionario_final:
+                    fechamento.append([instituicao1.sigla, 'Prioridade 01', questionario_final.prioridade_1.descricao if questionario_final.prioridade_1 else ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 02', questionario_final.prioridade_2.descricao if questionario_final.prioridade_2 else ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 03', questionario_final.prioridade_3.descricao if questionario_final.prioridade_3 else ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 04', questionario_final.prioridade_4.descricao if questionario_final.prioridade_4 else ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 05', questionario_final.prioridade_5.descricao if questionario_final.prioridade_5 else ''])
                     fechamento.append([instituicao1.sigla, 'A instituição possui RCO pendente de entrega para a SETEC?', questionario_final.rco_pendente or ''])
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC', questionario_final.detalhe_rco_pendente or ''])
                     fechamento.append([instituicao1.sigla, 'A instituição devolveu algum valor de TED em 2021?', questionario_final.devolucao_ted or ''])
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021', questionario_final.detalhe_devolucao_ted or ''])
-        self.http_response(XlsResponse(dados))
+        return XlsResponse(dados)
 
     def has_permission(self, user):
         return user.roles.contains('Administrador')
@@ -466,8 +468,8 @@ class ExportarResultadoPorCategoria(actions.Action):
         instituicao = self.cleaned_data['instituicao']
         categoria = self.cleaned_data['categoria']
         prioridade = self.cleaned_data['prioridade']
-        qs = self.instantiator.demanda_set.all()
-        qs = qs.filter(instituicao=instituicao) if instituicao else qs
+        qs = self.instance.get_demandas()
+        qs = qs.filter(solicitacao__instituicao=instituicao) if instituicao else qs
         qs = qs.filter(classificacao=categoria) if categoria else qs
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
         ids = qs.order_by('classificacao').values_list('classificacao', flat=True).distinct()
@@ -479,7 +481,7 @@ class ExportarResultadoPorCategoria(actions.Action):
                 cabecalho.append(pergunta.texto.upper())
             linhas.append(cabecalho)
             for demanda in qs.filter(valor__isnull=False).exclude(valor=0).filter(classificacao=classificacao):
-                linha = [demanda.descricao, demanda.classificacao.nome, demanda.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+                linha = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
                 for pergunta in perguntas:
                     resposta_questionario = demanda.get_respostas_questionario().filter(pergunta=pergunta).first()
                     if resposta_questionario:
@@ -489,7 +491,29 @@ class ExportarResultadoPorCategoria(actions.Action):
                             linha.append(resposta_questionario.resposta)
                 linhas.append(linha)
             dados.append((str(i+1), linhas))
-        self.http_response(XlsResponse(dados))
+        return XlsResponse(dados)
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class EnviarSenhas(actions.Action):
+    reenviar = actions.BooleanField(label='Re-enviar mesmo em caso de já ter sido notificado', required=False)
+
+    class Meta:
+        verbose_name = 'Enviar Senhas'
+        style = 'primary'
+
+    def submit(self):
+        qs = self.instances if self.instances else Gestor.objects.all()
+        if self.cleaned_data['reenviar']:
+            qs.update(notificado=False)
+        for gestor in qs:
+            print(gestor.email)
+            enviar_senha(gestor)
+            gestor.notificado = True
+            gestor.save()
+        self.message('E-mails enviados com sucesso.')
+        self.redirect()
     def has_permission(self, user):
         return user.roles.contains('Administrador')

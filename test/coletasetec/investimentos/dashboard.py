@@ -9,7 +9,7 @@ class AppDashboard(Dashboard):
         super().__init__(request)
         self.header(logo='/static/images/logo.png', title='COLETA SETEC', text=None, shadow=True)
         self.footer(title='© 2023 MEC', text='Todos os direitos reservados', version='1.0.0')
-        self.links('investimentos.anexo', 'investimentos.instituicao', 'investimentos.ciclo')
+        self.links('investimentos.anexo', 'investimentos.categoria', 'investimentos.instituicao', 'investimentos.gestor', 'investimentos.ciclo')
 
     def view(self):
         return self.value_set('get_anexos', 'get_minhas_solicitacoes')

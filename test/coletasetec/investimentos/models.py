@@ -639,6 +639,8 @@ class QuestionarioFinal(models.Model):
     prioridade_1 = models.ForeignKey(Demanda, verbose_name='Prioridade 1', null=True, blank=True, related_name='r1')
     prioridade_2 = models.ForeignKey(Demanda, verbose_name='Prioridade 2', null=True, blank=True, related_name='r2')
     prioridade_3 = models.ForeignKey(Demanda, verbose_name='Prioridade 3', null=True, blank=True, related_name='r3')
+    prioridade_4 = models.ForeignKey(Demanda, verbose_name='Prioridade 4', null=True, blank=True, related_name='r4')
+    prioridade_5 = models.ForeignKey(Demanda, verbose_name='Prioridade 5', null=True, blank=True, related_name='r5')
 
     finalizado = models.BooleanField(verbose_name='Finalizado', default=False)
 

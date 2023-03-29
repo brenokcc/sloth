@@ -289,26 +289,19 @@ class ConcluirSolicitacao(actions.Action):
         label='Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC',
         required=False, widget=actions.Textarea()
     )
-    devolucao_ted = actions.ChoiceField(
-        label='A instituição devolveu algum valor de TED em 2021?',
-        choices=[['', ''], ['Sim', 'Sim'], ['Não', 'Não']],
-    )
-    detalhe_devolucao_ted = actions.CharField(
-        label='Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021',
-        required=False, widget=actions.Textarea()
-    )
     prioridade_1 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 1', help_text='Dentre as demandas informadas, elenque a 1ª mais prioritária para este exercício.')
     prioridade_2 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.')
     prioridade_3 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.')
+    prioridade_4 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 4', help_text='Dentre as demandas informadas, elenque a 4ª mais prioritária para este exercício.')
+    prioridade_5 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 5', help_text='Dentre as demandas informadas, elenque a 5ª mais prioritária para este exercício.')
 
     class Meta:
         icon = 'check2-all'
         verbose_name = 'Concluir Solicitação'
         style = 'success'
         fieldsets = {
-            'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3'),
+            'Demandas Prioritárias do Exercício': ('prioridade_1', 'prioridade_2', 'prioridade_3', 'prioridade_4', 'prioridade_5'),
             'Relatório de Cumprimento do Objeto (RCO)': ('rco_pendente', 'detalhe_rco_pendente'),
-            'Transferência Eletrônica Descentralizada (TED)': ('devolucao_ted', 'detalhe_devolucao_ted'),
         }
 
     def __init__(self, *args, **kwargs):
@@ -323,11 +316,33 @@ class ConcluirSolicitacao(actions.Action):
                 detalhe_devolucao_ted=questionario_final.detalhe_devolucao_ted,
                 prioridade_1=questionario_final.prioridade_1_id,
                 prioridade_2=questionario_final.prioridade_2_id,
-                prioridade_3=questionario_final.prioridade_3_id
+                prioridade_3=questionario_final.prioridade_3_id,
+                prioridade_4=questionario_final.prioridade_4_id,
+                prioridade_5=questionario_final.prioridade_5_id,
             )
-        self.fields['prioridade_1'].queryset = self.instantiator.demanda_set.all()
-        self.fields['prioridade_2'].queryset = self.instantiator.demanda_set.all()
-        self.fields['prioridade_3'].queryset = self.instantiator.demanda_set.all()
+
+    def get_prioridade_queryset(self, queryset, n):
+        ids = []
+        for i in range(1, 6):
+            id = self.data.get('prioridade_{}'.format(i))
+            if id and i != n:
+                ids.append(id)
+        return self.instantiator.demanda_set.exclude(id__in=ids)
+
+    def get_prioridade_1_queryset(self, queryset):
+        return self.get_prioridade_queryset(queryset, 1)
+
+    def get_prioridade_2_queryset(self, queryset):
+        return self.get_prioridade_queryset(queryset, 2)
+
+    def get_prioridade_3_queryset(self, queryset):
+        return self.get_prioridade_queryset(queryset, 3)
+
+    def get_prioridade_4_queryset(self, queryset):
+        return self.get_prioridade_queryset(queryset, 4)
+
+    def get_prioridade_5_queryset(self, queryset):
+        return self.get_prioridade_queryset(queryset, 5)
 
     def has_permission(self, user):
         if user.roles.contains('Gestor') and self.instantiator.demanda_set.count() >=3 and not self.instantiator.is_finalizada():

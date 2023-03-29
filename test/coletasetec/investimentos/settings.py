@@ -145,7 +145,7 @@ SLOTH = {
 	'FAVICON': '/static/images/icon.png',
 	'VERSION': 1.0,
 	'LOGIN': {
-		'LOGO': None,
+		'LOGO': '/static/images/logo.png',
 		'TITLE': 'COLETA SETEC',
 		'TEXT': None,
 		'IMAGE': None,

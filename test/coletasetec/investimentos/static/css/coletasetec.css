@@ -12,6 +12,9 @@ body{
 .navbar-brand{
 	color: white !important;
 }
+.navbar .form-control{
+    border: 0px !important;
+}
 
 .btn-primary{
     background-color: #1a3dff !important;
@@ -83,7 +86,9 @@ body, .navbar-brand {
     padding: 10px;
     background-color: white;
 }
-
-main > section.vh-100.form-section{
-        background-color: #ffcf00;
+.image-section{
+    background: url(/static/images/governo-federal2.png) !important;
+}
+.image-section div{
+    padding: 50px !important;
 }

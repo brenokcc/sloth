@@ -87,7 +87,7 @@ body, .navbar-brand {
     background-color: white;
 }
 .image-section{
-    background: url(/static/images/governo-federal2.png) !important;
+    background: url(/static/images/governo-federal.png) !important;
 }
 .image-section div{
     padding: 50px !important;

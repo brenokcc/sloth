@@ -27,9 +27,45 @@ class AdicionarPergunta(actions.Action):
         verbose_name = 'Adicionar Pergunta'
         related_field = 'categoria'
         fieldsets = {
-            'Dados Gerais': ('ordem', 'texto', 'tipo_resposta', 'obrigatoria'),
+            'Dados Gerais': ('texto', 'tipo_resposta', 'obrigatoria'),
             'Opções de Resposta': ('opcoes',)
         }
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class EditarPergunta(actions.Action):
+    class Meta:
+        model = Pergunta
+        verbose_name = 'Editar'
+        fieldsets = {
+            'Dados Gerais': ('texto', 'tipo_resposta', 'obrigatoria'),
+            'Opções de Resposta': ('opcoes',)
+        }
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class ReordenarPergunta(actions.Action):
+    antes_de = actions.ModelChoiceField(Pergunta.objects, label='Antes De')
+    class Meta:
+        style = 'warning'
+        verbose_name = 'Reordenar'
+
+    def get_antes_de_queryset(self, queryset):
+        return queryset.filter(categoria=self.instance.categoria).exclude(pk=self.instance.pk)
+
+    def submit(self):
+        antes_de = self.cleaned_data['antes_de']
+        for i, pergunta in enumerate(self.instance.categoria.pergunta_set.filter(ordem__gte=antes_de.ordem).exclude(pk=self.instance.pk).order_by('ordem')):
+            pergunta.ordem = antes_de.ordem + i + 1
+            pergunta.save()
+        self.instance.ordem = antes_de.ordem
+        self.instance.save()
+        self.message()
+        self.redirect()
 
     def has_permission(self, user):
         return user.roles.contains('Administrador')
@@ -41,6 +77,26 @@ class AdicionarCampus(actions.Action):
         fields = 'nome',
         verbose_name = 'Adicionar Campus'
         related_field = 'instituicao'
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class EditarCampus(actions.Action):
+    class Meta:
+        model = Campus
+        fields = 'nome',
+        verbose_name = 'Editar'
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class EditarEmailGestor(actions.Action):
+    class Meta:
+        model = Gestor
+        fields = 'email',
+        verbose_name = 'Editar E-mail'
 
     def has_permission(self, user):
         return user.roles.contains('Administrador')
@@ -383,6 +439,9 @@ class ResponderDuvida(actions.Action):
         model = Duvida
         verbose_name = 'Responder Dúvida'
         fields = 'resposta',
+
+    def view(self):
+        return self.instance.value_set('pergunta')
 
     def has_permission(self, user):
         if user.roles.filter(name='Administrador').exists():

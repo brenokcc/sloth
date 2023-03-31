@@ -168,7 +168,8 @@ class ChangePassword(actions.Action):
         self.request.user.set_password(self.cleaned_data.get('password'))
         self.request.user.save()
         auth.login(self.request, self.request.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.redirect('..', message='Senha alterada com sucesso.')
+        self.message()
+        self.redirect()
 
     def has_permission(self, user):
         return user.is_authenticated

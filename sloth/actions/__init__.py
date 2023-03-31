@@ -424,7 +424,7 @@ class Action(metaclass=ActionMetaclass):
         for name in self.one_to_many:
             qs = getattr(self.instance, name)
             pks = list(qs.values_list('pk', flat=True))
-            for i in range(0, 6):
+            for i in range(0, 10):
                 key = '{}--{}'.format(name.upper(), i)
                 pk = self.data.get(key)
                 if pk:  # if checkbox is checked
@@ -568,13 +568,13 @@ class Action(metaclass=ActionMetaclass):
             if isinstance(field, forms.DateField):
                 field.widget = RegionalDateWidget()
                 classes.append('date-input')
-                if self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
+                if name in self.initial and self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
                     self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m')
 
             if isinstance(field, forms.DateTimeField):
                 field.widget = RegionalDateTimeWidget()
                 classes.append('date-time-input')
-                if self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
+                if name in self.initial and self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
                     self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m %H:%M')
 
             if isinstance(field, forms.DecimalField):
@@ -711,7 +711,7 @@ class Action(metaclass=ActionMetaclass):
     def reload(self):
         return self.redirect('.')
 
-    def message(self, text, style='success', milleseconds=60000):
+    def message(self, text='Ação realizada com sucesso.', style='success', milleseconds=60000):
         if self.request.path.startswith('/app/'):
             messages.add_message(self.request, messages.SUCCESS, text)
         else:

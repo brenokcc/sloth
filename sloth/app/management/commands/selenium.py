@@ -5,7 +5,7 @@ from sloth.test.selenium import Browser
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        b = Browser('http://127.0.0.1:8000')
+        b = Browser('https://cloud.google.com', headless=False)
         b.open('/')
         try:
             b.pdb()

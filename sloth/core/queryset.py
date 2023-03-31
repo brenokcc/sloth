@@ -674,20 +674,14 @@ class QuerySet(models.QuerySet):
     # search and pagination functions
 
     def get_ordering(self):
-        return [(self.request.GET.get('ordering') or 'id') if self.request else 'id']
+        ordering = self.request.GET.get('ordering') if self.request else None
+        if ordering:
+            return [ordering]
+        else:
+            return self.query.order_by or ['id']
 
     def paginate(self):
-        if self.metadata['page'] != 1:
-            start = (self.metadata['page'] - 1) * self.metadata['limit']
-            end = start + self.metadata['limit']
-            self.metadata['interval'] = (start + 1, end)
-            qs = self.order_by(*self.get_ordering())[start:end]
-        else:
-            self.metadata['interval'] = 0 + 1, self.metadata['limit']
-            start = (self.metadata['page'] - 1) * self.metadata['limit']
-            end = start + self.metadata['limit']
-            self.metadata['interval'] = start + 1, end
-            qs = self.filter(pk__in=self.values_list('pk', flat=True)).order_by(*self.get_ordering())[start:end]
+        qs = self
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']
             if selected_date:
@@ -697,6 +691,17 @@ class QuerySet(models.QuerySet):
                 }
                 qs = qs.filter(**lookups)
 
+        if self.metadata['page'] != 1:
+            start = (self.metadata['page'] - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
+            self.metadata['interval'] = (start + 1, end)
+            qs = qs.order_by(*self.get_ordering())[start:end]
+        else:
+            self.metadata['interval'] = 0 + 1, self.metadata['limit']
+            start = (self.metadata['page'] - 1) * self.metadata['limit']
+            end = start + self.metadata['limit']
+            self.metadata['interval'] = start + 1, end
+            qs = qs.filter(pk__in=self.values_list('pk', flat=True)).order_by(*self.get_ordering())[start:end]
         return qs
 
     # rendering function

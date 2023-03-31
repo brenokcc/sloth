@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('nome', sloth.db.models.CharField(max_length=255, verbose_name='Nome')),
-                ('contabilizar', models.BooleanField(default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.', verbose_name='Contatilizar')),
+                ('contabilizar', models.BooleanField(default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.', verbose_name='Contabilizar')),
             ],
             options={
                 'verbose_name': 'Categoria de Investimento',

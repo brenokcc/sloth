@@ -46,13 +46,13 @@ class Prioridade(models.Model):
 
 class CategoriaManager(models.Manager):
     def all(self):
-        return self.display('nome', 'cor', 'get_quantidade_perguntas')
+        return self.role_lookups('Administrador').display('nome', 'cor', 'get_quantidade_perguntas')
 
 
 class Categoria(models.Model):
     nome = models.CharField(verbose_name='Nome')
     cor = models.ColorField(verbose_name='Cor', default='#FFFFFF')
-    contabilizar = models.BooleanField('Contatilizar', default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.')
+    contabilizar = models.BooleanField('Contabilizar', default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.')
 
     objects = CategoriaManager()
 
@@ -75,7 +75,7 @@ class Categoria(models.Model):
     def get_perguntas(self):
         return self.pergunta_set.all().ignore('categoria').global_actions(
             'AdicionarPergunta'
-        ).order_by('ordem').actions('edit', 'delete').accordion()
+        ).order_by('ordem').actions('editar_pergunta', 'delete', 'reordenar_pergunta')#.accordion()
 
     @meta('Quantidade de Perguntas')
     def get_quantidade_perguntas(self):
@@ -85,6 +85,8 @@ class Categoria(models.Model):
     def get_quantidade_perguntas_por_tipo_resposta(self):
         return self.pergunta_set.count('tipo_resposta').donut_chart()
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
 
 class OpcaoResposta(models.Model):
     nome = models.CharField(verbose_name='Resposta')
@@ -141,10 +143,13 @@ class Pergunta(models.Model):
     def get_tipo_resposta(self):
         return self.get_tipo_resposta_display()
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
     def save(self, *args, **kwargs):
+        if self.ordem is None:
+            self.ordem = self.categoria.pergunta_set.count() + 1
         super().save(*args, **kwargs)
-        for ciclo in Ciclo.objects.abertos():
-            ciclo.gerar_questionarios()
 
 
 class InstituicaoManager(models.Manager):
@@ -175,11 +180,11 @@ class Instituicao(models.Model):
 
     @meta('Campi')
     def get_campi(self):
-        return self.campus_set.ignore('instituicao').global_actions('AdicionarCampus').actions('edit', 'delete')
+        return self.campus_set.ignore('instituicao').global_actions('AdicionarCampus').actions('editar_campus', 'delete')
 
     @meta('Gestores')
     def get_gestores(self):
-        return self.gestor_set.display('nome', 'email').global_actions('AdicionarGestor').actions('edit', 'delete')
+        return self.gestor_set.display('nome', 'email').global_actions('AdicionarGestor').actions('editar_email_gestor', 'delete')
 
     def has_permission(self, user):
         return user.roles.contains('Administrador')
@@ -219,10 +224,20 @@ class Gestor(models.Model):
         }
 
 
+class NotificacaoManager(models.Manager):
+    def all(self):
+        return self.role_lookups('Gestor', 'Administrador')
+
+    def ativas(self):
+        return self.filter(inicio__lte=datetime.date.today(), inicio__gte=datetime.date.today())
+
+
 class Notificacao(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
     inicio = models.DateField(verbose_name='Início da Exibição')
     fim = models.DateField(verbose_name='Fim da Exibição')
+
+    objects = NotificacaoManager()
 
     class Meta:
         icon = 'exclamation-square'
@@ -231,6 +246,9 @@ class Notificacao(models.Model):
 
     def __str__(self):
         return self.descricao
+
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
 
 
 class LimiteDemanda(models.Model):
@@ -348,6 +366,10 @@ class Solicitacao(models.Model):
     def is_finalizada(self):
         return self.questionariofinal_set.filter(finalizado=True).exists()
 
+    @meta('Demandas Permitidas por Categoria')
+    def get_qtd_demandas_permitidas(self):
+        return self.ciclo.limites.sum('quantidade', 'classificacao')
+
     def get_total_solicitado(self):
         return self.demanda_set.filter(classificacao__contabilizar=True).sum('valor')
 
@@ -396,7 +418,7 @@ class Solicitacao(models.Model):
         return self.value_set('get_demandas', 'get_resumo')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_detalhamento')
+        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_qtd_demandas_permitidas', 'get_detalhamento')
 
     def has_view_permission(self, user):
         return user.roles.contains('Administrador', 'Gestor')
@@ -653,7 +675,10 @@ class QuestionarioFinal(models.Model):
 class DuvidaManager(models.Manager):
     @meta('Dúvidas')
     def all(self):
-        return super().all().actions('ResponderDuvida').role_lookups('Gestor', instituicao='instituicao')
+        return self.role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao').actions('responder_duvida').global_actions('cadastrar_duvida')
+
+    def nao_respondidas(self):
+        return self.filter(data_resposta__isnull=True)
 
 
 class Duvida(models.Model):

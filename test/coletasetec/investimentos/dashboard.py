@@ -8,7 +8,7 @@ class AppDashboard(Dashboard):
 
     def __init__(self, request):
         super().__init__(request)
-        self.header(logo='/static/images/logo.png', title='COLETA SETEC', text=None, shadow=True)
+        self.header(logo='/static/images/logo2.png', title='COLETA SETEC', text=None, shadow=False)
         self.footer(title='© 2023 MEC', text='Todos os direitos reservados', version='1.0.0')
         self.links('investimentos.anexo', 'investimentos.categoria', 'investimentos.instituicao', 'investimentos.gestor', 'investimentos.ciclo')
         if self.request.user.roles.contains('Administrador'):

@@ -142,17 +142,17 @@ OAUTH2_PROVIDER = {
 SLOTH = {
 	'NAME': 'COLETA SETEC',
 	'ICON': None,
-	'FAVICON': '/static/images/icon.png',
+	'FAVICON': '/static/images/favicon.png',
 	'VERSION': 1.0,
 	'LOGIN': {
-		'LOGO': '/static/images/logo.png',
+		'LOGO': '/static/images/logo2.png',
 		'TITLE': 'COLETA SETEC',
 		'TEXT': None,
 		'IMAGE': None,
 		'USERNAME_MASK': None
 	},
 	'INCLUDE': {
-		'CSS': [],
+		'CSS': ['/static/css/coletasetec.css'],
 		'JS': [],
 	},
 	'ROLES':{

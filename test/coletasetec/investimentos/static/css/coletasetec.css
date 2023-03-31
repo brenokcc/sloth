@@ -1,0 +1,89 @@
+@import url('http://fonts.cdnfonts.com/css/rawline');
+body, table, main{
+    color: #444 !important;
+    font-family: Rawline, Raleway, sans-serif !important;
+}
+body{
+	background-color: #fff;
+}
+.navbar{
+	background-color: hsl(229.91deg 100% 54.51%);
+}
+.navbar-brand{
+	color: white !important;
+}
+
+.btn-primary{
+    background-color: #1a3dff !important;
+}
+
+.bg-success {
+    background-color: #01d000 !important;
+}
+
+.bg-danger {
+    background-color: #ff0100 !important;
+}
+
+.progress-bar{
+	background-color: #5978f4 !important;
+}
+.nav-link, .card-body .queryset-title h2, .action-wrapper > h2, .queryset-title > h2, .fieldset-title > h5{
+	color: #5978f4 !important;
+}
+
+.card{
+	border-radius: 0 !important;
+	border: 0px !important;
+}
+
+.card .card-body{
+    padding: 0px !important;
+}
+
+.navbar {
+    background-color: hsl(48.71deg 100% 50%) !important;
+}
+
+body, .navbar-brand {
+    color: #3c3c3c !important;
+}
+
+.alert-success, .alert-primary, .btn-primary {
+    color: white !important;
+    background-color: #5978f4 !important;
+    border-color: #5978f4 !important;
+}
+
+.btn-outline-primary{
+    border-color: #5978f4 !important;
+}
+
+.btn-outline-primary:hover{
+    border-color: #5978f4 !important;
+    background-color: #5978f4 !important;
+}
+
+.bg-primary{
+    background-color: #5978f4 !important;
+}
+
+.prioridade{
+    text-align: center;
+    font-size: 3rem;
+    color: white;
+    background-color: #5978f4;
+    border-radius: 50%;
+    width: 5rem;
+    height: 5rem;
+    padding-top: 0.3rem;
+}
+
+#Login-wrapper{
+    padding: 10px;
+    background-color: white;
+}
+
+main > section.vh-100.form-section{
+        background-color: #ffcf00;
+}

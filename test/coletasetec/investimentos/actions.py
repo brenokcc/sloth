@@ -168,10 +168,8 @@ class AdicionarDemanda(actions.Action):
 
     def get_prioridade_queryset(self, queryset):
         limite = self.instantiator.ciclo.get_limites_demandas().get(classificacao=self.data['classificacao'])
-        numero = self.instantiator.demanda_set.filter(classificacao=self.data['classificacao']).order_by('prioridade__numero').values_list('prioridade__numero', flat=True).last() or 0
-        return queryset.filter(
-            numero__gt=numero, numero__lte=min(numero+1, limite.quantidade)
-        )
+        numeros = self.instantiator.demanda_set.filter(classificacao=self.data['classificacao']).order_by('prioridade__numero').values_list('prioridade__numero', flat=True)
+        return queryset.filter(numero__lte=limite.quantidade).exclude(numero__in=numeros)
 
     def get_unidades_beneficiadas_queryset(self, queryset):
         return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)
@@ -343,10 +341,10 @@ class ConcluirSolicitacao(actions.Action):
         required=False, widget=actions.Textarea()
     )
     prioridade_1 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 1', help_text='Dentre as demandas informadas, elenque a 1ª mais prioritária para este exercício.')
-    prioridade_2 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.')
-    prioridade_3 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.')
-    prioridade_4 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 4', help_text='Dentre as demandas informadas, elenque a 4ª mais prioritária para este exercício.')
-    prioridade_5 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 5', help_text='Dentre as demandas informadas, elenque a 5ª mais prioritária para este exercício.')
+    prioridade_2 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 2', help_text='Dentre as demandas informadas, elenque a 2ª mais prioritária para este exercício.', required=False)
+    prioridade_3 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 3', help_text='Dentre as demandas informadas, elenque a 3ª mais prioritária para este exercício.', required=False)
+    prioridade_4 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 4', help_text='Dentre as demandas informadas, elenque a 4ª mais prioritária para este exercício.', required=False)
+    prioridade_5 = actions.ModelChoiceField(Demanda.objects, label='Prioridade 5', help_text='Dentre as demandas informadas, elenque a 5ª mais prioritária para este exercício.', required=False)
 
     class Meta:
         icon = 'check2-all'
@@ -360,13 +358,12 @@ class ConcluirSolicitacao(actions.Action):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initial = {}
+        self.info('ATENÇÃO: Ao concluir a solicitação, não será mais possível adicionar novas demandas. Portanto, certifique-se que todas as demandas da sua instituição foram cadastradas.')
         questionario_final = QuestionarioFinal.objects.filter(solicitacao=self.instantiator).first()
         if questionario_final:
             self.initial.update(
                 rco_pendente=questionario_final.rco_pendente,
                 detalhe_rco_pendente=questionario_final.detalhe_rco_pendente,
-                devolucao_ted=questionario_final.devolucao_ted,
-                detalhe_devolucao_ted=questionario_final.detalhe_devolucao_ted,
                 prioridade_1=questionario_final.prioridade_1_id,
                 prioridade_2=questionario_final.prioridade_2_id,
                 prioridade_3=questionario_final.prioridade_3_id,
@@ -398,20 +395,21 @@ class ConcluirSolicitacao(actions.Action):
         return self.get_prioridade_queryset(queryset, 5)
 
     def has_permission(self, user):
-        if user.roles.contains('Gestor') and self.instantiator.demanda_set.count() >=3 and not self.instantiator.is_finalizada():
-            if not Demanda.objects.filter(solicitacao=self.instantiator, finalizada=False).exists():
-                return not QuestionarioFinal.objects.filter(solicitacao=self.instantiator, finalizado=True).exists()
+        if user.roles.contains('Gestor') and self.instantiator.demanda_set.count() and not self.instantiator.demanda_set.filter(finalizada=False).exists() and not self.instantiator.is_finalizada():
+            return not QuestionarioFinal.objects.filter(solicitacao=self.instantiator, finalizado=True).exists()
         return False
 
     def submit(self):
         questionario_final = QuestionarioFinal.objects.filter(solicitacao=self.instantiator).first() or QuestionarioFinal(solicitacao=self.instantiator)
         questionario_final.rco_pendente = self.cleaned_data['rco_pendente']
         questionario_final.detalhe_rco_pendente = self.cleaned_data['detalhe_rco_pendente']
-        questionario_final.devolucao_ted = self.cleaned_data['devolucao_ted']
-        questionario_final.detalhe_devolucao_ted = self.cleaned_data['detalhe_devolucao_ted']
+        questionario_final.devolucao_ted = ''
+        questionario_final.detalhe_devolucao_ted = None
         questionario_final.prioridade_1 = self.cleaned_data['prioridade_1']
         questionario_final.prioridade_2 = self.cleaned_data['prioridade_2']
         questionario_final.prioridade_3 = self.cleaned_data['prioridade_3']
+        questionario_final.prioridade_4 = self.cleaned_data['prioridade_4']
+        questionario_final.prioridade_5 = self.cleaned_data['prioridade_5']
         questionario_final.finalizado = True
         questionario_final.save()
         self.message('Solicitação concluída com sucesso.')
@@ -420,6 +418,7 @@ class ConcluirSolicitacao(actions.Action):
 
 class CadastrarDuvida(actions.Action):
     class Meta:
+        icon = 'question'
         model = Duvida
         verbose_name = 'Tirar Dúvida'
         fields = 'pergunta',
@@ -576,3 +575,18 @@ class EnviarSenhas(actions.Action):
         self.redirect()
     def has_permission(self, user):
         return user.roles.contains('Administrador')
+
+
+class DescartarDemanda(actions.Action):
+
+    class Meta:
+        verbose_name = 'Descartar Demanda'
+        style = 'danger'
+
+    def submit(self):
+        self.instance.delete()
+        self.message()
+        self.redirect()
+
+    def has_permission(self, user):
+        return user.roles.contains('Gestor') and not self.instance.finalizada

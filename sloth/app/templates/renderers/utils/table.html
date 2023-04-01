@@ -1,0 +1,23 @@
+{% load tags %}
+<table class="table" style="overflow-x:auto">
+    <thead>
+     {% for row in value %}
+        {% if forloop.first %}
+            <tr>
+                {% for value in row %}
+                <th scope="col">{{ value }}</th>
+                {% endfor %}
+            </tr>
+        {% endif %}
+    {% endfor %}
+    </thead>
+    {% for row in value %}
+        {% if not forloop.first %}
+            <tr>
+                {% for value in row %}
+                <td scope="col">{{ value|format }}</td>
+                {% endfor %}
+            </tr>
+        {% endif %}
+    {% endfor %}
+</table>

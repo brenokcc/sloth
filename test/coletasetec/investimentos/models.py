@@ -366,10 +366,6 @@ class Solicitacao(models.Model):
     def is_finalizada(self):
         return self.questionariofinal_set.filter(finalizado=True).exists()
 
-    @meta('Demandas Permitidas por Categoria')
-    def get_qtd_demandas_permitidas(self):
-        return self.ciclo.limites.sum('quantidade', 'classificacao')
-
     def get_total_solicitado(self):
         return self.demanda_set.filter(classificacao__contabilizar=True).sum('valor')
 
@@ -380,13 +376,17 @@ class Solicitacao(models.Model):
     def get_total_demandas(self):
         return self.demanda_set.count()
 
-    @meta('Total Solicitado por Categoria')
-    def get_total_por_categoria(self):
-        return self.demanda_set.all().filter(valor__isnull=False).sum('valor', 'classificacao')
+    @meta('Resumo Geral', renderer='utils/table')
+    def get_resumo_geral(self):
+        dados = [['Categoria', 'Quantidade de Demandas Permitidas', 'Quantidade de Demandas Solicitadas', 'Valor Solicitado']]
+        for limite in self.ciclo.limites.all():
+            qs = self.demanda_set.filter(classificacao=limite.classificacao)
+            dados.append([limite.classificacao.nome, limite.quantidade, qs.count(), float(qs.sum('valor'))])
+        return dados
 
     @meta('Demandas')
     def get_demandas(self):
-        return self.demanda_set.all().filters('prioridade', 'classificacao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).global_actions('adicionar_demanda', 'concluir_solicitacao').totalizer('valor').ordering('prioridade', 'classificacao').actions('visualizar_questionario')
+        return self.demanda_set.all().filters('prioridade', 'classificacao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).global_actions('adicionar_demanda', 'concluir_solicitacao').totalizer('valor').ordering('prioridade', 'classificacao').actions('visualizar_questionario', 'descartar_demanda')
 
     @meta('Início')
     def get_inicio(self):
@@ -404,24 +404,17 @@ class Solicitacao(models.Model):
     def get_dados_gerais(self):
         return self.value_set(('get_inicio', 'get_fim'), ('get_limite_orcamentario', 'get_total_solicitado'))
 
-    @meta('Resumo')
-    def get_resumo(self):
-        return self.value_set('get_total_por_categoria', 'get_questionario_final')
 
     @meta('Questionário Final')
     def get_questionario_final(self):
         questionario_final = self.questionariofinal_set.first()
         return self.questionariofinal_set.first().value_set('rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3') if questionario_final else None
 
-    @meta('Detalhamento')
-    def get_detalhamento(self):
-        return self.value_set('get_demandas', 'get_resumo')
-
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_qtd_demandas_permitidas', 'get_detalhamento')
+        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_resumo_geral', 'get_demandas', 'get_questionario_final')
 
     def has_view_permission(self, user):
-        return user.roles.contains('Administrador', 'Gestor')
+        return user.roles.contains('Administrador') or (user.roles.contains('Gestor') and self.ciclo.is_aberto())
 
 
 class DemandaManager(models.Manager):

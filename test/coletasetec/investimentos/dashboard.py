@@ -15,7 +15,7 @@ class AppDashboard(Dashboard):
             self.links('investimentos.duvida', 'investimentos.notificacao')
 
     def view(self):
-        return self.value_set('get_notificacoes', 'get_mensagem', 'get_anexos', 'get_minhas_solicitacoes', 'get_duvidas', 'get_duvidas_nao_respondidas')
+        return self.value_set('get_notificacoes', 'get_mensagem', 'get_anexos', 'get_minhas_solicitacoes', 'get_duvidas_nao_respondidas', 'get_duvidas')
 
     def get_anexos(self):
         return self.objects('investimentos.anexo').all()

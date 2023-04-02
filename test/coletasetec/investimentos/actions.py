@@ -103,6 +103,7 @@ class EditarEmailGestor(actions.Action):
 
 
 class AlterarPrioridade(actions.Action):
+
     class Meta:
         style = 'warning'
         model = Demanda
@@ -118,14 +119,8 @@ class AlterarPrioridade(actions.Action):
 
     def submit(self):
         prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
-        demanda = self.instance.solicitacao.demanda_set.get(
-            classificacao=self.instance.classificacao, prioridade=self.instance.prioridade
-        )
-        self.instance.save()
-        demanda.prioridade = prioridade
-        demanda.save()
-        self.message('Ação realizada com sucesso')
-        self.redirect()
+        self.instance.solicitacao.demanda_set.filter(prioridade=self.instance.prioridade).update(prioridade=prioridade)
+        super().submit()
 
     def has_permission(self, user):
         return not self.instance.finalizada and user.roles.contains('Gestor')

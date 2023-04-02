@@ -10,7 +10,7 @@ class AppDashboard(Dashboard):
         super().__init__(request)
         self.header(logo=None, title='COLETA SETEC', text=None, shadow=False)
         self.footer(title='© 2023 MEC', text='Todos os direitos reservados', version='1.0.0')
-        self.links('investimentos.anexo', 'investimentos.categoria', 'investimentos.instituicao', 'investimentos.gestor', 'investimentos.ciclo')
+        self.links('investimentos.mensagem', 'investimentos.anexo', 'investimentos.categoria', 'investimentos.instituicao', 'investimentos.gestor', 'investimentos.ciclo')
         if self.request.user.roles.contains('Administrador'):
             self.links('investimentos.duvida', 'investimentos.notificacao')
 
@@ -25,7 +25,7 @@ class AppDashboard(Dashboard):
 
     @meta('Histórico de Solicitações')
     def get_minhas_solicitacoes(self):
-        return self.objects('investimentos.solicitacao').all().ignore('instituicao').actions('view').timeline()
+        return self.objects('investimentos.solicitacao').all().display('get_periodo', 'get_limite_orcamentario', 'get_limite_demandas', 'is_finalizada').actions('view').timeline()
 
     def has_get_duvidas_permission(self, user):
         return user.roles.contains('Gestor')

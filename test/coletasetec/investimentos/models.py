@@ -346,7 +346,7 @@ class Ciclo(models.Model):
 
 class SolicitacaoManager(models.Manager):
     def all(self):
-        return self.display('ciclo', 'ciclo__teto', 'instituicao', 'get_total_demandas', 'get_total_solicitado', 'get_percentual_solicitado', 'is_finalizada').role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao')
+        return self.display('ciclo', 'ciclo__teto', 'instituicao', 'get_qtd_solicitada', 'get_total_solicitado', 'get_percentual_solicitado', 'is_finalizada').role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao')
 
 
 class Solicitacao(models.Model):
@@ -369,11 +369,12 @@ class Solicitacao(models.Model):
     def get_total_solicitado(self):
         return self.demanda_set.filter(classificacao__contabilizar=True).sum('valor')
 
-    @meta('Percentual solicitado', renderer='utils/progress')
+    @meta('Percentual Solicitado do Limite Orçamentário', renderer='utils/progress')
     def get_percentual_solicitado(self):
         return int(self.get_total_solicitado()*100/self.ciclo.teto)
 
-    def get_total_demandas(self):
+    @meta('Demandas Solicitadas')
+    def get_qtd_solicitada(self):
         return self.demanda_set.count()
 
     @meta('Resumo Geral', renderer='utils/table')
@@ -388,30 +389,32 @@ class Solicitacao(models.Model):
     def get_demandas(self):
         return self.demanda_set.all().filters('prioridade', 'classificacao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).global_actions('adicionar_demanda', 'concluir_solicitacao').totalizer('valor').ordering('prioridade', 'classificacao').actions('visualizar_questionario', 'descartar_demanda')
 
-    @meta('Início')
-    def get_inicio(self):
-        return self.ciclo.inicio
-
-    @meta('Fim')
-    def get_fim(self):
-        return self.ciclo.fim
+    @meta('Período')
+    def get_periodo(self):
+        return '{} - {}'.format(self.ciclo.inicio.strftime('%d/%m/%Y'), self.ciclo.fim.strftime('%d/%m/%Y'))
 
     @meta('Limite Orçamentário')
     def get_limite_orcamentario(self):
         return self.ciclo.teto
 
+    @meta('Limite de Demandas')
+    def get_limite_demandas(self):
+        return self.ciclo.limites.sum('quantidade')
+
     @meta('Dados Gerais')
     def get_dados_gerais(self):
-        return self.value_set(('get_inicio', 'get_fim'), ('get_limite_orcamentario', 'get_total_solicitado'))
-
+        return self.value_set(('get_periodo', 'get_limite_orcamentario'), ('get_qtd_solicitada', 'get_total_solicitado'), 'get_percentual_solicitado', 'get_resumo_geral')
 
     @meta('Questionário Final')
     def get_questionario_final(self):
-        questionario_final = self.questionariofinal_set.first()
-        return self.questionariofinal_set.first().value_set('rco_pendente', 'detalhe_rco_pendente', 'devolucao_ted', 'detalhe_devolucao_ted', 'prioridade_1', 'prioridade_2', 'prioridade_3') if questionario_final else None
+        questionario_final = self.questionariofinal_set.first() or QuestionarioFinal()
+        return questionario_final.value_set('prioridade_1', 'prioridade_2', 'prioridade_3', 'prioridade_4', 'prioridade_5', 'rco_pendente', 'detalhe_rco_pendente')
+
+    def get_detalhamento(self):
+        return self.value_set('get_demandas', 'get_questionario_final')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_percentual_solicitado', 'get_resumo_geral', 'get_demandas', 'get_questionario_final')
+        return self.value_set('get_dados_gerais', 'get_detalhamento')
 
     def has_view_permission(self, user):
         return user.roles.contains('Administrador') or (user.roles.contains('Gestor') and self.ciclo.is_aberto())
@@ -590,13 +593,13 @@ class RespostaQuestionario(models.Model):
 
 class AnexoManager(models.Manager):
     def all(self):
-        return self.display('descricao', 'get_arquivo').role_lookups('Administrador')
+        return self.display('ano', 'descricao', 'get_arquivo').role_lookups('Administrador')
 
 
 class Anexo(models.Model):
     descricao = models.CharField(verbose_name='Descrição')
     arquivo = models.FileField(verbose_name='Arquivo', upload_to='anexos')
-
+    ano = models.ForeignKey(Ano, verbose_name='Ano', null=True)
     objects = AnexoManager()
 
     class Meta:
@@ -610,6 +613,14 @@ class Anexo(models.Model):
     def get_arquivo(self):
         return self.arquivo
 
+    def has_permission(self, user):
+        return user.roles.contains('Administrador')
+
+
+class MensagemManager(models.Manager):
+    def all(self):
+        return self.role_lookups('Administrador')
+
 
 class Mensagem(models.Model):
     perfil = models.CharField(verbose_name='Perfil', choices=[['Administrador', 'Administrador'], ['Gestor', 'Gestor']])
@@ -619,16 +630,24 @@ class Mensagem(models.Model):
 
     notificados = models.ManyToManyField(User, verbose_name='Notificados', blank=True)
 
+    objects = MensagemManager()
+
     class Meta:
         icon = 'chat-left-text'
         verbose_name = 'Mensagem Inicial'
         verbose_name_plural = 'Mensagens Iniciais'
+        fieldsets = {
+            'Dados Gerais': ('perfil', 'introducao', 'detalhamento')
+        }
 
     def __str__(self):
         return self.introducao
 
     def has_add_permission(self, user):
         return Mensagem.objects.count() < 2
+
+    def has_edit_permission(self, user):
+        return user.roles.contains('Administrador')
 
 
 class QuestionarioFinal(models.Model):
@@ -668,10 +687,12 @@ class QuestionarioFinal(models.Model):
 class DuvidaManager(models.Manager):
     @meta('Dúvidas')
     def all(self):
-        return self.role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao').actions('responder_duvida').global_actions('cadastrar_duvida')
+        return self.role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao').display(
+            'ano', 'instituicao', 'pergunta', 'data_pergunta', 'resposta', 'data_resposta'
+        ).actions('responder_duvida').global_actions('cadastrar_duvida')
 
     def nao_respondidas(self):
-        return self.filter(data_resposta__isnull=True)
+        return self.filter(data_resposta__isnull=True, ano__ano=datetime.date.today().year)
 
 
 class Duvida(models.Model):
@@ -680,7 +701,7 @@ class Duvida(models.Model):
     data_pergunta = models.DateTimeField(verbose_name='Data da Pergunta')
     resposta = models.TextField(verbose_name='Resposta', null=True)
     data_resposta = models.DateTimeField(verbose_name='Data da Resposta', null=True)
-
+    ano = models.ForeignKey(Ano, verbose_name='Ano', null=True)
     objects = DuvidaManager()
 
     class Meta:
@@ -692,6 +713,8 @@ class Duvida(models.Model):
         return self.pergunta
 
     def save(self, *args, **kwargs):
+        if self.ano is None:
+            self.ano = Ano.objects.get_or_create(ano=datetime.date.today().year)[0]
         if not self.pk:
             send_mail(
                 'COLETA SETEC - Dúvida',

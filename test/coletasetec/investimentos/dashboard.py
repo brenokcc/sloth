@@ -23,7 +23,7 @@ class AppDashboard(Dashboard):
     def has_get_minhas_solicitacoes_permission(self, user):
         return user.roles.contains('Gestor')
 
-    @meta('Histórico de Solicitações')
+    @meta('Ciclos de Demandas')
     def get_minhas_solicitacoes(self):
         return self.objects('investimentos.solicitacao').all().display('get_periodo', 'get_limite_orcamentario', 'get_limite_demandas', 'is_finalizada').actions('view').timeline()
 

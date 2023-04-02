@@ -331,14 +331,23 @@ class Ciclo(models.Model):
     def get_demandas(self):
         return Demanda.objects.filter(solicitacao__ciclo=self).ignore('solicitacao').all().expand().actions('visualizar_questionario')
 
-    @meta('Total Solicitado por Categoria')
+    @meta('Total Solicitado por Instituição')
     def get_total_por_instituicao(self):
         return Demanda.objects.filter(
             solicitacao__ciclo=self,
-        ).filter(valor__isnull=False).sum('valor', 'classificacao', 'solicitacao__instituicao')
+        ).filter(valor__isnull=False).sum('valor', 'solicitacao__instituicao')
+
+    @meta('Total Solicitado por Categoria')
+    def get_total_por_categoria(self):
+        return Demanda.objects.filter(
+            solicitacao__ciclo=self,
+        ).filter(valor__isnull=False).sum('valor', 'classificacao')
+
+    def get_resumo(self):
+        return self.value_set('get_total_por_instituicao', 'get_total_por_categoria')
 
     def get_detalhamento(self):
-        return self.value_set('get_solicitantes', 'get_total_por_instituicao', 'get_demandas')
+        return self.value_set('get_solicitantes', 'get_resumo', 'get_demandas')
 
     def view(self):
         return self.value_set('get_dados_gerais', 'get_detalhamento').actions('exportar_resultado', 'exportar_resultado_por_categoria')
@@ -641,7 +650,7 @@ class Mensagem(models.Model):
         }
 
     def __str__(self):
-        return self.introducao
+        return 'Mensagem para {}'.format(self.perfil)
 
     def has_add_permission(self, user):
         return Mensagem.objects.count() < 2

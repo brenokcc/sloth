@@ -58,7 +58,7 @@ def context(request, add_dashboard=False, **kwargs):
         kwargs.update(dashboard=dashboard.Dashboards(request))
     kwargs.update(settings=settings)
     if request.user.is_authenticated:
-        if request.path.startswith(DASHBOARD_URL) and not is_ajax(request):
+        if request.path.startswith('/app/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []
             if request.path == DASHBOARD_URL:

@@ -153,7 +153,7 @@ SLOTH = {
 	},
 	'INCLUDE': {
 		'CSS': ['/static/css/coletasetec.css'],
-		'JS': [],
+		'JS': ['/static/js/coletasetec.js'],
 	},
 	'ROLES':{
 		'ALLOW_MULTIPLE': True

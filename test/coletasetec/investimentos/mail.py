@@ -18,7 +18,7 @@ Senha: {senha}<br>
 
 <p>O tutorial do sistema estará disponível em https://coletasetec.ifrn.edu.br/media/tutorial/tutorial.pdf. a partir das <b>16h (horário de Brasília) do dia 03/04/2023</b>. Não deixe de acessá-lo, pois foram realizadas várias atualizações em relação à versão anterior do sistema, para aprimorar e facilitar esse processo de coleta.<p>
 
-<p>Por fim, informamos, também, que nessa mesma data e horário o Ciclo de Demandas 2023 estará disponível para preenchimento das instituições.</p>
+<p>Por fim, informamos, também, que nessa mesma data e horário o Ciclo de Demandas 2023 estará disponível para preenchimento pelas instituições.</p>
 
 <p>Bom trabalho!</p>
 
@@ -38,10 +38,14 @@ def enviar_senha(gestor):
     subject = '[SETEC] Credenciais de Acesso – Sistema de Coleta de Demandas 2023'
     html_content = MENSAGEM.format(email=gestor.email, senha=senha)
     text_content = strip_tags(html_content)
-    from_email = 'naoresponder.ifrn.edu.br'
+    from_email = 'naoresponder@ifrn.edu.br'
     to = gestor.email
-    to = 'brenokcc@yahoo.com.br'
     msg = EmailMultiAlternatives(subject, text_content, from_email, [to])
     msg.attach_alternative(html_content, "text/html")
-    msg.send()
-    print(html_content)
+    try:
+        msg.send()
+        gestor.notificado = True
+        gestor.save()
+        print(to)
+    except Exception:
+        print('ERRO: ', to)

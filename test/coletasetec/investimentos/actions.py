@@ -214,7 +214,7 @@ class DetalharDemanda(actions.Action):
         fields = []
 
     def has_permission(self, user):
-        return not self.instance.finalizada and self.instance.solicitacao.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists()
+        return not self.instance.solicitacao.is_finalizada() and self.instance.solicitacao.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -53,6 +53,10 @@ body, .navbar-brand {
     color: #3c3c3c !important;
 }
 
+.alert-light{
+    background-color: #f9f4de!important;
+}
+
 .alert-success, .alert-primary, .btn-primary {
     color: white !important;
     background-color: #5978f4 !important;

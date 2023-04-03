@@ -123,13 +123,13 @@ class Dashboard(metaclass=DashboardType):
         self._load('links', items, modal=modal, app=app)
 
     def add_link(self, url, label, app=None):
-        self._item(self, 'links', url, label, app=app)
+        self._item('links', url, label, app=app)
 
     def shortcuts(self, *items, app=None):
         self._load('shortcuts', items, app=app)
 
     def add_shortcut(self, url, label, icon, app=None):
-        self._item(self, 'shortcut', url, label, icon, app=app)
+        self._item('shortcut', url, label, icon, app=app)
 
     def actions(self, *items, app=None):
         if mobile(self.request):
@@ -139,9 +139,9 @@ class Dashboard(metaclass=DashboardType):
 
     def add_action(self, url, label, icon, app=None):
         if mobile(self.request):
-            self._item(self, 'search', url, label, icon, app=app)
+            self._item('search', url, label, icon, app=app)
         else:
-            self._item(self, 'actions', url, label, icon, app=app)
+            self._item('actions', url, label, icon, app=app)
 
     def add_app(self, label, icon, hide=False):
         url = '/app/?toggle-application={}'.format(label)

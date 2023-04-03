@@ -371,7 +371,7 @@ class Solicitacao(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.ciclo, self.instituicao)
 
-    @meta('Finalizada', renderer='badges/boolean')
+    @meta('Solicitação finalizada pela Instituição', renderer='badges/boolean')
     def is_finalizada(self):
         return self.questionariofinal_set.filter(finalizado=True).exists()
 
@@ -696,7 +696,7 @@ class QuestionarioFinal(models.Model):
 class DuvidaManager(models.Manager):
     @meta('Dúvidas')
     def all(self):
-        return self.role_lookups('Administrador').role_lookups('Gestor', instituicao='instituicao').display(
+        return self.role_lookups('Administrador').role_lookups('Gestor').display(
             'ano', 'instituicao', 'pergunta', 'data_pergunta', 'resposta', 'data_resposta'
         ).actions('responder_duvida').global_actions('cadastrar_duvida')
 

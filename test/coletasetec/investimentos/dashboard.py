@@ -13,6 +13,7 @@ class AppDashboard(Dashboard):
         self.links('investimentos.mensagem', 'investimentos.anexo', 'investimentos.categoria', 'investimentos.instituicao', 'investimentos.gestor', 'investimentos.ciclo')
         if self.request.user.roles.contains('Administrador'):
             self.links('investimentos.duvida', 'investimentos.notificacao')
+        self.add_action('/media/tutorial/tutorial.pdf', 'Tutorial', 'book-half')
 
     def view(self):
         return self.value_set('get_notificacoes', 'get_mensagem', 'get_anexos', 'get_minhas_solicitacoes', 'get_duvidas_nao_respondidas', 'get_duvidas')

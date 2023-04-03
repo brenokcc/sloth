@@ -258,7 +258,7 @@ class QuerySet(models.QuerySet):
                     verbose_name = attach.metadata['verbose_name'] or pretty(name)
                 active = self.request.GET.get('subset', 'all') if self.request else 'all'
                 if isinstance(attach, QuerySet):
-                    if name == 'all':
+                    if verbose_name.lower() == 'all':
                         verbose_name = 'Tudo'
                     attaches[name] = dict(
                         name=verbose_name, key=name, count=attach.count(), active=name == active

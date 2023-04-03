@@ -516,7 +516,7 @@ class Demanda(models.Model):
     def get_cor(self):
         return ['cb4335', 'ec7063', 'f1948a', 'f5b7b1', 'fadbd8', 'fadbd8', 'fadbd8', 'fadbd8', 'fadbd8', 'fadbd8', 'fadbd8', 'fadbd8'][self.prioridade.numero-1]
 
-    @meta('Finalizada')
+    @meta('Finalizado')
     def is_finalizada(self):
         return self.finalizada
 

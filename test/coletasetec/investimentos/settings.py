@@ -148,7 +148,7 @@ SLOTH = {
 		'LOGO': None,
 		'TITLE': 'COLETA SETEC',
 		'TEXT': None,
-		'IMAGE': '/static/images/governo-federal.png',
+		'IMAGE': None,
 		'USERNAME_MASK': None
 	},
 	'INCLUDE': {

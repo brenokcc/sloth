@@ -49,26 +49,22 @@ class EditarPergunta(actions.Action):
 
 
 class ReordenarPergunta(actions.Action):
-    antes_de = actions.ModelChoiceField(Pergunta.objects, label='Antes De')
     class Meta:
         style = 'warning'
-        verbose_name = 'Reordenar'
-
-    def get_antes_de_queryset(self, queryset):
-        return queryset.filter(categoria=self.instance.categoria).exclude(pk=self.instance.pk)
+        verbose_name = 'Mover para Cima'
 
     def submit(self):
-        antes_de = self.cleaned_data['antes_de']
-        for i, pergunta in enumerate(self.instance.categoria.pergunta_set.filter(ordem__gte=antes_de.ordem).exclude(pk=self.instance.pk).order_by('ordem')):
-            pergunta.ordem = antes_de.ordem + i + 1
-            pergunta.save()
-        self.instance.ordem = antes_de.ordem
+        ordem = self.instance.ordem
+        anterior = self.instance.categoria.pergunta_set.get(ordem=ordem-1)
+        self.instance.ordem = anterior.ordem
         self.instance.save()
+        anterior.ordem = ordem
+        anterior.save()
         self.message()
         self.redirect()
 
     def has_permission(self, user):
-        return user.roles.contains('Administrador')
+        return self.instance.ordem > 1 and user.roles.contains('Administrador')
 
 
 class AdicionarCampus(actions.Action):
@@ -108,14 +104,14 @@ class AlterarPrioridade(actions.Action):
         style = 'warning'
         model = Demanda
         fields = 'prioridade',
-        verbose_name = 'Alterar Prioridade'
+        verbose_name = 'Elevar Prioridade'
 
     def has_permission(self, user):
         return self.instance.solicitacao.ciclo.is_aberto() and self.instance.classificacao is not None and not self.instance.finalizada and self.instance.prioridade.numero > 1
 
     def get_prioridade_queryset(self, queryset):
         numero = self.instantiator.demanda_set.filter(classificacao=self.instance.classificacao).order_by('prioridade__numero').values_list('prioridade__numero', flat=True).last() or 0
-        return queryset.filter(numero__lte=numero).exclude(numero=self.instance.prioridade.numero)
+        return queryset.filter(numero__lt=numero).exclude(numero=self.instance.prioridade.numero)
 
     def submit(self):
         prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
@@ -123,7 +119,7 @@ class AlterarPrioridade(actions.Action):
         super().submit()
 
     def has_permission(self, user):
-        return not self.instance.finalizada and user.roles.contains('Gestor')
+        return self.instance.prioridade_id > 1 and not self.instance.finalizada and user.roles.contains('Gestor')
 
 
 class AdicionarDemanda(actions.Action):
@@ -163,8 +159,8 @@ class AdicionarDemanda(actions.Action):
 
     def get_prioridade_queryset(self, queryset):
         limite = self.instantiator.ciclo.get_limites_demandas().get(classificacao=self.data['classificacao'])
-        numeros = self.instantiator.demanda_set.filter(classificacao=self.data['classificacao']).order_by('prioridade__numero').values_list('prioridade__numero', flat=True)
-        return queryset.filter(numero__lte=limite.quantidade).exclude(numero__in=numeros)
+        quantidade = self.instantiator.demanda_set.filter(classificacao=self.data['classificacao']).count()
+        return queryset.filter(numero=quantidade+1) if quantidade < limite.quantidade else queryset.none()
 
     def get_unidades_beneficiadas_queryset(self, queryset):
         return queryset.role_lookups('Gestor', instituicao='instituicao').apply_role_lookups(self.request.user)

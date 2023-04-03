@@ -11,6 +11,7 @@ body{
 }
 .navbar-brand{
 	color: white !important;
+	font-weight: bold;
 }
 .navbar .form-control{
     border: 0px !important;
@@ -84,6 +85,7 @@ body, .navbar-brand {
 
 #Login-wrapper{
     padding: 10px;
+    border-radius: 10px;
     background-color: white;
 }
 .image-section{
@@ -91,4 +93,15 @@ body, .navbar-brand {
 }
 .image-section div{
     padding: 50px !important;
+}
+
+.vh-100 {
+    background-image: url(/static/images/background.png);
+    background-size: cover;
+}
+.vh-100 h1{
+    color: #3C3C3C;
+    font-size: 3rem;
+    font-weight: bold;
+    font-size: 3rem;
 }

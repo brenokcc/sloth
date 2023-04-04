@@ -85,6 +85,17 @@ class AlterarContagiosidade(actions.Action):
         fields = 'contagiosa',
 
 
+class ExibirPermissoes(actions.Action):
+
+    texto = actions.CharField(label='Texto')
+
+    def view(self):
+        self.info('Isso é uma informação.')
+
+    def submit(self):
+        return self.objects('auth.permission')
+
+
 class IniciarTratamento(actions.Action):
 
     class Meta:

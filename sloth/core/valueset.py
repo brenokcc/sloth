@@ -75,7 +75,7 @@ class ValueSet(dict):
         return self
 
     def inline_actions(self, *names):
-        self.metadata['actions'] = [to_snake_case(name) for name in names]
+        self.metadata['inline_actions'] = [to_snake_case(name) for name in names]
         return self
 
     def append(self, *names):

@@ -567,8 +567,9 @@ class QuerySet(models.QuerySet):
         return self
 
     def attach(self, *names):
-        self.metadata['attach'] = list(names)
-        return self
+        qs = self._clone()
+        qs.metadata['attach'] = list(names)
+        return qs
 
     def ignore(self, *names):
         self.metadata['ignore'].extend(names)

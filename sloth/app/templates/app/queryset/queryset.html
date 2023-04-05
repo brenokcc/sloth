@@ -4,7 +4,7 @@
 <div class="card">
         <div class="card-body">
 {% endif %}
-<div class="queryset" id="queryset-{{ data.uuid }}">
+<div class="queryset {% if data.metadata.is_admin %}admin-queryset{% endif %}" id="queryset-{{ data.uuid }}">
     {% if data.name %}
         {% if data.metadata.is_admin %}
             <div class="queryset-title">
@@ -79,11 +79,11 @@
         }
         function slideSearchAndFilters{{ data.uuid }}(a){
             if(a) $(a).find('i:last-child').toggleClass('bi-chevron-up').toggleClass('bi-chevron-down');
-            if($('#filters-{{ data.uuid }}').css('display') == 'none'){
-                $('#filters-{{ data.uuid }}').slideDown();
+            if($('#form-{{ data.uuid }}').css('display') == 'none'){
+                $('#form-{{ data.uuid }}').slideDown();
                 $('#collapsed-{{ data.uuid }}').val("");
             } else {
-                $('#filters-{{ data.uuid }}').slideUp();
+                $('#form-{{ data.uuid }}').slideUp();
                 $('#collapsed-{{ data.uuid }}').val(1);
             }
         }

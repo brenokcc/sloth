@@ -467,7 +467,7 @@ class Action(metaclass=ActionMetaclass):
                 on_change.append(field_name)
         return on_change
 
-    def get_allowed_attrs(self):
+    def get_allowed_attrs(self, recursive=True):
         return []
 
     @classmethod
@@ -681,11 +681,7 @@ class Action(metaclass=ActionMetaclass):
                 value = False
             getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
-        is_valid = super().is_valid()
-        if is_valid:
-            for name in self.fields:
-                setattr(self, name, self.cleaned_data.get(name, None))
-        return is_valid
+        return super().is_valid()
 
     def choices(self, field_name, q=None):
         field = self.fields[field_name]

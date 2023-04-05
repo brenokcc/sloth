@@ -49,7 +49,7 @@ class FazerAlgumaCoisa(actions.Action):
 
 
 class FazerAlgumaCoisa2(actions.Action):
-    data = actions.DateField(label='Data', required=False, initial='2023-01-01')
+    x = actions.DateField(label='Data', required=False, initial='2023-01-01')
 
     class Meta:
         verbose_name = 'Fazer Alguma Coisa'
@@ -58,7 +58,6 @@ class FazerAlgumaCoisa2(actions.Action):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.instantiator = Animal.objects.first()
-        self.info('Isso é uma informação!')
 
     def get_dados_gerais(self):
         # return self.instantiator.get_dados_gerais()
@@ -70,12 +69,15 @@ class FazerAlgumaCoisa2(actions.Action):
         return TipoProcedimento.objects.all().actions('edit').preview('get_dados_gerais')#.template('x')
 
     def view(self):
+        self.info('Isso é uma informação!')
+        self.alert('Isso é um alerta!')
         return self.value_set('get_dados_gerais')
 
     def submit(self):
         # self.clear()
         return self.value_set('get_tipos_procedimentos')
-        # self.redirect('..', message='Ação realizada com sucesso!')
+        # self.message()
+        # self.redirect()
 
 
 class AlterarContagiosidade(actions.Action):
@@ -93,7 +95,7 @@ class ExibirPermissoes(actions.Action):
         self.info('Isso é uma informação.')
 
     def submit(self):
-        return self.objects('auth.permission')
+        return self.objects('auth.permission').actions('edit')
 
 
 class IniciarTratamento(actions.Action):

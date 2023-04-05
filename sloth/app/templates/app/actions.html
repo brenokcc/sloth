@@ -1,6 +1,6 @@
 {% load tags %}
 {% if actions %}
-<div class="action-container" id="{{ target }}-{{ uuid }}-{{id}}">
+<div class="action-container {{ target }}" id="{{ target }}-{{ uuid }}-{{id}}">
     {% if compact or request|mobile or request|tablet %}
     {% with grouped_actions=actions|group_by_icon %}
         {% for action in grouped_actions.with_icon %}

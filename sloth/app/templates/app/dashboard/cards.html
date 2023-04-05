@@ -12,7 +12,6 @@
         justify-content: center;
         margin-bottom: 10px;
         height: 120px;
-        border: 0.0625rem solid rgba(231,234,243,.7);
         transition: .3s;
     }
     .single_quick_activity i{
@@ -23,7 +22,7 @@
     }
 </style>
 
-<div class="row">
+<div class="row cards-wrapper">
     {% for item in cards %}
         <div class="col-sm-12 col-md-6 col-lg-4" style="padding:3px">
             <a href="{{ item.url }}" style="text-decoration:none">

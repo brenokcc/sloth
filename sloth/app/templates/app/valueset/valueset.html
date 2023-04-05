@@ -47,7 +47,9 @@
 
         <div class="clearfix"></div>
         {% for action in data.inline_actions %}
-            {% action action.key data.instance action.path %}
+            <div class="fieldset-inline-action">
+                {% action action.key data.instance action.path %}
+            </div>
         {% endfor %}
 
         <div class="valueset-attaches">
@@ -61,7 +63,9 @@
             </ul>
             {% endif %}
         </div>
-
+        {% if data.template %}
+            {% include data.template with data=data.data %}
+        {% else %}
         <div class="valueset-fieldsets">
         {% for name, item in data.data.items %}
             {% if item.type == 'fieldset-group' %}
@@ -90,6 +94,7 @@
             {% endif %}
         {% endfor %}
         </div>
+        {% endif %}
     </div>
     {% if data.append %}
     <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">

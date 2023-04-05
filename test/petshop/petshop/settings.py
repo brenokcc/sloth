@@ -158,7 +158,7 @@ SLOTH = {
 	},
 	'INCLUDE': {
 		'CSS': [
-            # '/static/themes/endless.css'
+            '/static/css/style2.css'
         ],
 		'JS': [],
 	},

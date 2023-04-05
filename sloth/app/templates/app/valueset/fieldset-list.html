@@ -7,6 +7,9 @@
           {% include "app/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
       {% endif %}
 </div>
+{% if item.template %}
+    {% include item.template with data=item.data %}
+{% else %}
 <ul class="nav nav-tabs fieldset-tabs" id="fieldset-list-{{ item.uuid }}">
   {% for fieldset in item.data.values %}
       <li class="nav-item">
@@ -45,4 +48,5 @@
     {% endif %}
 {% endfor %}
 </div>
+{% endif %}
 </div>

@@ -14,7 +14,9 @@
     });
 </script>
 {% else %}
-<div class="action-wrapper" id="{{ self.get_metadata.key }}-wrapper" data-url="{{ self.get_full_path }}">
+
+<div class="action-wrapper {% if request.GET.modal %}popup{% endif %}" id="{{ self.get_metadata.key }}-wrapper" data-url="{{ self.get_full_path }}">
+
     {% if self.can_be_closed or self.can_be_reloaded %}
     <div class="float-end">
         {% if self.can_be_closed %}
@@ -162,5 +164,6 @@
 </script>
 
 </div>
+
 {% endif %}
 </div>

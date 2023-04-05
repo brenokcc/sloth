@@ -107,6 +107,9 @@ class ValueSet(dict):
         self.metadata['template'] = name
         return self
 
+    def split(self, n=2):
+        return self.renderer('app/valueset/{}-column'.format(n))
+
     def verbose_name(self, name):
         self.metadata['verbose_name'] = pretty(name)
         return self
@@ -119,7 +122,7 @@ class ValueSet(dict):
         else:
             return self
 
-    def get_allowed_attrs(self):
+    def get_allowed_attrs(self, recursive=True):
         allowed = []
         for key in ('actions', 'inline_actions', 'append', 'attach'):
             allowed.extend(self.metadata[key])
@@ -213,7 +216,7 @@ class ValueSet(dict):
                         if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
                             continue
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    lazy = wrap and (deep > 1 or (deep > 0 and i > 0))
+                    lazy = wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None
                     attr, value = getattrr(self.instance, attr_name)
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':

@@ -4,7 +4,7 @@ body main{
 .dashboard .card{
     border: 0;
 }
-.action-container{
+.action-container:not(.queryset){
     text-align: right;
 }
 .btn{
@@ -89,17 +89,12 @@ body main{
     border: 0px;
     margin-bottom: 30px;
 }
-.fieldset-side-panel .card-body {
-    padding: 0px;
-}
+
 .fieldset-side-panel .action-checkbox{
     font-size: 22px;
     margin: 5px;
 }
-.card-body{
-    padding-top: 10px;
-    padding-bottom: 3px;
-}
+
 .card-body .queryset-title h2{
     font-size: 1.25rem;
 }
@@ -249,6 +244,7 @@ main > .row > .col{
     z-index: 1;
     max-height: 300px;
     overflow-y: scroll;
+    border-bottom: solid 1px #ced4da;
 }
 .search-results a{
     text-decoration: none;

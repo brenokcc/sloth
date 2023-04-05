@@ -27,20 +27,24 @@
 }
 body{
     background-color: #FCFCFC;
-    font-family: Eina02-Regular !important;
+    font-family: Eina02-Regular;
 }
+
+.modal-content{
+    background-color: #FCFCFC;
+    border: 0;
+}
+
 h1, h2, h3, h4, h5, .navbar-brand{
     font-family: Eina02-Bold !important;
 }
-th, label, .shortcut-link, .fieldset-field-label, .nav-link.active{
+th, label, .fieldset-field-label, .nav-link.active{
     font-family: Eina02-SemiBold !important;
     color: inherit !important;
 }
 
 .card{
     border: 0 !important;
-    box-shadow: 0px 16px 32px 0px #001E3C0A !important;
-    border-radius: 8px !important;
 }
 
 .nav-link, h1, h2, h3, h4, h5{
@@ -52,20 +56,24 @@ th, label, .shortcut-link, .fieldset-field-label, .nav-link.active{
     box-shadow: 0px -1px 0px 0px #001E3C1A inset;
 }
 
-.queryset-data{
-	background-color: white;
-	box-shadow: 0px 16px 32px 0px #001E3C0A;
-	border-radius: 8px;
-	padding-left: 20px;
-	padding-right: 20px;
+.fieldset-inline-action .action-wrapper fieldset{
+    box-shadow: none;
+    padding: 0;
 }
 
-.admin-queryset .queryset-data, .admin-queryset .search-and-filters form{
+.admin-queryset .queryset-data, .admin-queryset .search-and-filters form,
+.fieldset-inline-action, .action-wrapper fieldset, .cards-wrapper,
+.shortcut-wrapper, .fieldset-list, .fieldset-group{
 	background-color: white;
 	box-shadow: 0px 16px 32px 0px #001E3C0A;
 	border-radius: 8px;
 	padding: 20px;
-	margin-bottom: 20px;
+}
+.search-and-filters form, .action-wrapper, .cards-wrapper, .shortcut-wrapper, .fieldset-list, .fieldset-inline-action{
+    margin-bottom: 20px;
+}
+.fieldset-side-panel .card, .reloadable-fieldset > .card, .reloadable-queryset > .card{
+    box-shadow: 0px 16px 32px 0px #001E3C0A;
 }
 
 .progress{

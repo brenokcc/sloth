@@ -1,3 +1,4 @@
+from sloth import meta
 from sloth.app.dashboard import Dashboard
 
 
@@ -17,7 +18,8 @@ class PetshopDashboard(Dashboard):
         self.settings('petshop.animal', 'petshop.cliente')
 
     def get_animal_preferido(self):
-        self.objects('petshop.animal').first().value_set('nome', 'tipo').image('foto')
+        animal = self.objects('petshop.animal').first()
+        return animal.value_set('nome', 'tipo').image('foto') if animal else None
 
     def get_tratamentos(self):
         return self.objects('petshop.tratamento').all().batch_actions('ExcluirTratamentos')
@@ -39,11 +41,21 @@ class PetshopDashboard(Dashboard):
 
     def view(self):
         return self.value_set(
-            'get_tratamentos',  # 'get_animal_preferido',
-            'get_mais_informacoes', 'get_gatos'
+            'get_tratamentos', 'get_animal_preferido',
+            'get_mais_informacoes', 'get_gatos', 'get_estatisticas_basicas'
         ).append(
             'get_caes', 'get_doencas'
         ).actions(
             'fazer_alguma_coisa2', 'exibir_data_hora'
         ).inline_actions('exibir_permissoes')
+
+    def get_total_animais_por_tipo(self):
+        return self.objects('petshop.animal').get_qtd_por_tipo()
+
+    def get_total_doencas_por_contagiosidade(self):
+        return self.objects('petshop.doenca').get_total_por_contagiosiade()
+
+    @meta('Estatísticas Básicas')
+    def get_estatisticas_basicas(self):
+        return self.value_set('get_total_animais_por_tipo', 'get_total_doencas_por_contagiosidade').split()
 

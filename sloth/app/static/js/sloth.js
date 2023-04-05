@@ -161,7 +161,7 @@ jQuery.fn.extend({
         document.cookie = name+"="+value;
     },
     initialize: function () {
-        $(this).find('.popup').on('click', function(e){
+        $(this).find('a.popup').on('click', function(e){
             $(this).popup(this.href);
             e.preventDefault();
             return false;
@@ -187,12 +187,7 @@ jQuery.fn.extend({
                 });
             }
             $(document).request(form.action, method, data, function(html){
-                $(form).closest('.action-wrapper').html(html).initialize();
-//                if($('#modal').is(':visible')){
-//                    $('#modal').find('.modal-body').html(html).initialize();
-//                } else {
-//                    $('main').html(html).initialize();
-//                }
+                $(form).closest('.action-wrapper').html($(html).find('.action-wrapper').html()).initialize();
                 $(form).find('.btn-submit').removeClass('disabled').find('.spinner-border').addClass('d-none');
             });
             return false;

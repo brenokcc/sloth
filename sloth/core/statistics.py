@@ -47,6 +47,9 @@ class QuerySetStatistics(object):
             self.process_request(request)
         return self
 
+    def get_allowed_attrs(self, recursive=True):
+        return self.qs.get_allowed_attrs(recursive=recursive)
+
     def _calc(self):
         if self._values_dict is None:
             self.calc()

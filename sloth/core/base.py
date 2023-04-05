@@ -356,7 +356,7 @@ class ModelMixin(object):
                 param_format = 'int32'
         return dict(type=param_type, format=param_format)
 
-    def get_allowed_attrs(self):
+    def get_allowed_attrs(self, recursive=True):
         return self.view().get_allowed_attrs()
 
     @classmethod

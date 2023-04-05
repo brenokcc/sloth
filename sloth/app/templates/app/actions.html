@@ -63,6 +63,7 @@
     function actionURL(url){
         var extra = '{{ request|post_querystring }}';
         if(extra){
+            console.log(extra);
             if(url.indexOf('?')>0) return url + '&' + extra;
             else return url + '?' + extra;
         } else { return url;}

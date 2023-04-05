@@ -47,6 +47,10 @@ class PermissionChecker:
         pass
 
 
+class ActionDefaultMetaClass:
+    modal = True
+
+
 class ActionMetaclass(ModelFormMetaclass):
     def __new__(mcs, name, bases, attrs):
         if 'Meta' in attrs:
@@ -67,8 +71,9 @@ class ActionMetaclass(ModelFormMetaclass):
                     setattr(attrs['Meta'], 'fields', form_fields)
                 else:
                     setattr(attrs['Meta'], 'exclude', ())
-        elif name != 'Action':
-            raise NotImplementedError('class {} must have a Meta class.'.format(name))
+        else:
+            bases += forms.Form,
+            attrs['Meta'] = ActionDefaultMetaClass
         cls = super().__new__(mcs, name, bases, attrs)
         ACTIONS[name] = cls
         ACTIONS[name.lower()] = cls
@@ -120,25 +125,8 @@ class Action(metaclass=ActionMetaclass):
         else:
             self.instance = kwargs.pop('instance', None)
 
-        # print(dict(actions=type(self), instantiator=self.instantiator, instance=self.instance, instances=self.instances))
-
-        # if forms.ModelForm in self.__class__.__bases__:
-        #     self.instance = kwargs.get('instance', None)
-        #     if self.instances:
-        #         kwargs.update(instance=self.instances[0])
-        # else:
-        #     self.instance = kwargs.pop('instance', None)
-        #     if self.instance is None:
-        #         if self.instances:
-        #             self.instance = self.instances[0]
-        #     else:
-        #         if self.instances == ():
-        #             self.instances = self.instance,
-        # if 'instances' in self.request.GET:
-        #     self.instances = QuerySet.loads(self.request.GET['instances'])
-
         form_name = type(self).__name__
-        if 'post__{}'.format(form_name) in self.request.GET:
+        if self.has_url_posted_data():
             for k in self.request.GET:
                 if k.startswith('post__'):
                     if 'data' not in kwargs:
@@ -159,10 +147,10 @@ class Action(metaclass=ActionMetaclass):
                 kwargs['files'] = self.request.FILES or None
             else:
                 kwargs['data'] = None
-        # if kwargs['data'] and form_name in kwargs['data']:
-        #     self.loads(kwargs['data'][form_name])
 
         super().__init__(*args, **kwargs)
+        for name in self.fields:
+            setattr(self, name, self.initial.get(name, None))
         self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
 
         related_field_name = getattr(self.metaclass, 'related_field', None)
@@ -201,6 +189,9 @@ class Action(metaclass=ActionMetaclass):
                 label='', initial='on', required=False, help_text=help_text,
                 widget=forms.TextInput(attrs={'style': 'display:none'})
             )
+
+    def has_url_posted_data(self):
+        return 'post__{}'.format(type(self).__name__) in self.request.GET
 
     def closable(self, flag=True):
         self.can_be_closed = flag
@@ -665,12 +656,12 @@ class Action(metaclass=ActionMetaclass):
         from ..core.valueset import ValueSet
         if self.asynchronous:
             return False
-        valueset = self.view()
-        if type(valueset) == dict:
+        view = self.view()
+        if type(view) == dict:
             template = '{}.html'.format(type(self).__name__)
-            self.content['center'].append(render_to_string([template], valueset, request=self.request))
-        elif type(valueset) == ValueSet:
-            self.content['center'].append(valueset.contextualize(self.request).html())
+            self.content['center'].append(render_to_string([template], view, request=self.request))
+        elif isinstance(view, ValueSet) or isinstance(view, QuerySet):
+            self.content['center'].append(view.contextualize(self.request).html())
         for field in self.fields.values():
             if isinstance(field, forms.DecimalField):
                 field.clean = lambda value: value.replace('.', '').replace(',','.')
@@ -690,7 +681,11 @@ class Action(metaclass=ActionMetaclass):
                 value = False
             getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
-        return super().is_valid()
+        is_valid = super().is_valid()
+        if is_valid:
+            for name in self.fields:
+                setattr(self, name, self.cleaned_data.get(name, None))
+        return is_valid
 
     def choices(self, field_name, q=None):
         field = self.fields[field_name]
@@ -751,8 +746,9 @@ class Action(metaclass=ActionMetaclass):
             response = self.submit()
             if isinstance(response, HttpResponse):
                 raise ReadyResponseException(response)
-            if isinstance(response, ValueSet):
+            if isinstance(response, ValueSet) or isinstance(response, QuerySet):
                 self.content['bottom'].append(response.contextualize(self.request).html())
+            return response
         except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):
                 message = 'Corrija os erros indicados no formulário'

@@ -25,11 +25,11 @@
                 <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
                 <input type="hidden" name="subset" value="{{ data.metadata.subset }}" id="subset-{{ data.uuid }}">
                 <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
-                {% for k, v in request.POST.items %}
+                <!--{% for k, v in request.POST.items %}
                     {% if k != 'csrfmiddlewaretoken' %}
                         <input type="hidden" name="post__{{ k }}" value="{{ v }}">
                     {% endif %}
-                {% endfor %}
+                {% endfor %}-->
                 {% if data.metadata.search or data.metadata.filters %}
                     <div class="filters" id="filters-{{ data.uuid }}">
                         {% if data.metadata.search %}

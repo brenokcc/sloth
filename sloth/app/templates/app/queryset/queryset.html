@@ -46,7 +46,6 @@
 
     {% include "app/queryset/filters.html" %}
     <div class="clearfix"></div>
-
     <script>
         function reload{{ data.uuid }}(subset){
             $(document.body).addClass('page-loading');
@@ -55,7 +54,7 @@
             $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
             var data = $('#form-{{ data.uuid }}').serialize();
             $.ajax({
-                url:'{{ data.path|safe }}',
+                url:'{{ data.path|safe }}?{{ request|post_querystring }}',
                 data: data,
                 success:function( html ) {
                     $('#{{ data.key }}').html($(html).html()).initialize();

@@ -81,7 +81,7 @@ def dispatcher(request, path):
         raise PermissionDenied()
     for i, token in enumerate(tokens):
         allowed_attrs.append('ChangePassword')
-        if  token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
+        if  not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()
         if token.isdigit():
@@ -106,7 +106,7 @@ def dispatcher(request, path):
             if form.check_permission(request.user):
                 if form.is_valid():
                     result = form.process()
-                    if result is not None:
+                    if result is not None and form.has_url_posted_data():
                         obj = result
                     else:
                         obj = form

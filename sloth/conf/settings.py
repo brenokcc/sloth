@@ -40,7 +40,7 @@ SLOTH = {
         'APP': {
             'TEXT': 'Acessar com APP',
             'LOGO': None,
-            'REDIRECT_URI': 'http://localhost:8000/app/login/APP/',
+            'REDIRECT_URI': 'http://localhost:8000/app/login/',
             'CLIENTE_ID': None,
             'CLIENT_SECRET': None,
             'AUTHORIZE_URL': None,
@@ -56,6 +56,7 @@ SLOTH = {
         }
     },
 	'2FA': False,
+	'WEB_PUSH_NOTIFICATION': False,
 	'LIST_PER_PAGE': 20,
 	'DEFAULT_PASSWORD': lambda user=None: '123',
 	'FORCE_PASSWORD_DEFINITION': False,

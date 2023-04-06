@@ -7,4 +7,4 @@ class ApiDashboard(Dashboard):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.settings('ChangePassword', 'Activate2FAuthentication', 'Deactivate2FAuthentication')
+        self.tools('ExecuteQuery', 'ExecuteScript')

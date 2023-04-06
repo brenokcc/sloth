@@ -67,8 +67,7 @@ def dispatcher(request, path):
         else:
             obj = obj.view()
             allowed_attrs = obj.get_allowed_attrs()
-        if not request.user.is_authenticated:
-            raise PermissionDenied()
+            if not request.user.is_authenticated: raise PermissionDenied()
     elif token in settings.INSTALLED_APPS or token in ('api', 'auth'):
         app_label, model_name = token, tokens.pop(0)
         obj = apps.get_model(app_label, model_name).objects.view()
@@ -80,7 +79,7 @@ def dispatcher(request, path):
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
-        allowed_attrs.append('ChangePassword')
+        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe'))
         if  not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()

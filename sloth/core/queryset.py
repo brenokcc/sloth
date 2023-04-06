@@ -403,7 +403,7 @@ class QuerySet(models.QuerySet):
             if self.request is None or form_cls.check_fake_permission(
                     request=self.request, instance=obj
             ):
-                actions.append(form_cls.__name__)
+                actions.append(form_cls.get_api_name())
         return actions
 
     def serialize(self, path=None, wrap=False, lazy=False):

@@ -6,7 +6,6 @@ from django.utils.safestring import mark_safe
 from sloth.app.templatetags.tags import mobile
 from sloth.exceptions import ReadyResponseException
 from sloth.utils import pretty
-from.actions import ExecuteQuery, ExecuteScript
 from ..actions import Action, ACTIONS
 
 DASHBOARDS = []
@@ -168,8 +167,8 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._item('navigation', url, label, icon, app=app)
 
-    def settings(self, *items, app=None):
-        self._load('settings', items, app=app)
+    def settings(self, *items, modal=False, app=None):
+        self._load('settings', items, modal=modal, app=app)
 
     def append(self, data, aside=False, grid=1):
         if inspect.isclass(data) and issubclass(data, Action):
@@ -233,11 +232,6 @@ class Dashboard(metaclass=DashboardType):
     @classmethod
     def action_form_cls(cls, action):
         return ACTIONS.get(action)
-
-
-class AppDashboard(Dashboard):
-    def load(self, request):
-        self.tools('ExecuteQuery', 'ExecuteScript')
 
 
 class Dashboards:

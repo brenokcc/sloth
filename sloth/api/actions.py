@@ -1,15 +1,20 @@
 import os
+import json
 import onetimepass
 import base64
-
+import requests
+import io
+import subprocess
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
-
+from django.contrib.auth.models import User
+from django.core.management import call_command
 from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings
-from .models import AuthCode
+from .models import AuthCode, PushNotification
+from ..utils.icons import bootstrap, materialicons, fontawesome
 
 
 class DeleteUserRole(actions.Action):
@@ -97,7 +102,7 @@ class Login(actions.Action):
     auth_code = actions.CharField(label='Código', widget=actions.PasswordInput(), required=False)
 
     class Meta:
-        verbose_name = None
+        verbose_name = settings.SLOTH['LOGIN']['TITLE']
         ajax = False
         submit_label = 'Acessar'
         fieldsets = {
@@ -109,13 +114,60 @@ class Login(actions.Action):
         super().__init__(*args, **kwargs)
         if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
             self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
-        self.hide('auth_code')
+        self.show('auth_code') if self.requires_2fa() else self.hide('auth_code')
+
+    def view(self):
+        if 'o' in self.request.GET:
+            provider = settings.SLOTH['OAUTH_LOGIN'][self.request.GET['o'].upper()]
+            authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
+                provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI']
+            )
+            if provider.get('SCOPE'):
+                authorize_url = '{}&scope={}'.format(authorize_url, provider.get('SCOPE'))
+            self.request.session['o'] = self.request.GET['o']
+            self.request.session.save()
+            self.redirect(authorize_url)
+        elif 'code' in self.request.GET:
+            provider = settings.SLOTH['OAUTH_LOGIN'][self.request.session['o'].upper()]
+            access_token_request_data = dict(
+                grant_type='authorization_code', code=self.request.GET.get('code'), redirect_uri=provider['REDIRECT_URI'],
+                client_id=provider['CLIENTE_ID'], client_secret=provider['CLIENT_SECRET']
+            )
+            data = json.loads(
+                requests.post(provider['ACCESS_TOKEN_URL'], data=access_token_request_data, verify=False).text
+            )
+            headers = {
+                'Authorization': 'Bearer {}'.format(data.get('access_token')), 'x-api-key': provider['CLIENT_SECRET']
+            }
+
+            if provider.get('USER_DATA_METHOD', 'GET').upper() == 'POST':
+                response = requests.post(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers)
+            else:
+                response = requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers)
+            if response.status_code == 200:
+                data = json.loads(response.text)
+                username = data[provider['USER_DATA']['USERNAME']]
+                user = User.objects.filter(username=username).first()
+                if user is None and provider.get('USER_AUTO_CREATE'):
+                    user = User.objects.create(
+                        username=username,
+                        email=data[provider['USER_DATA']['EMAIL']] if provider['USER_DATA']['EMAIL'] else '',
+                        first_name=data[provider['USER_DATA']['FIRST_NAME']] if provider['USER_DATA']['FIRST_NAME'] else '',
+                        last_name=data[provider['USER_DATA']['LAST_NAME']] if provider['USER_DATA']['LAST_NAME'] else ''
+                    )
+                if user:
+                    auth.login(self.request, user)
+                    self.redirect('/app/dashboard/')
+                else:
+                    self.alert('Usuário "{}" inexistente.'.format(username))
+            else:
+                self.info('Acesso não autorizado.')
+
+    def requires_2fa(self, username=None):
+        return AuthCode.objects.filter(user__username=self.data.get('username', username), active=True).exists()
 
     def on_username_change(self, username):
-        if settings.SLOTH.get('2FA', False) and AuthCode.objects.filter(user__username=username, active=True).exists():
-            self.show('auth_code')
-        else:
-            self.hide('auth_code')
+        self.show('auth_code') if self.requires_2fa() else self.hide('auth_code')
 
     def clean(self):
         if self.cleaned_data:
@@ -128,16 +180,16 @@ class Login(actions.Action):
                 )
                 if self.user is None:
                     raise actions.ValidationError('Login e senha não conferem.')
-            if self.user and self.user.authcode_set.filter(active=True).exists():
+            if self.user and self.requires_2fa():
                 user_auth_code = self.user.authcode_set.values_list('secret', flat=True).first()
-                if settings.SLOTH.get('2FA', False) and not onetimepass.valid_totp(auth_code, user_auth_code):
+                if not onetimepass.valid_totp(auth_code, user_auth_code):
                     raise actions.ValidationError('Código de autenticação inválido.')
         return self.cleaned_data
 
     def submit(self):
         if self.user:
             auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
-            return HttpResponseRedirect('/app/')
+            self.redirect('/app/dashboard/')
 
     def has_permission(self, user):
         return True
@@ -175,6 +227,17 @@ class ChangePassword(actions.Action):
         return user.is_authenticated
 
 
+class Logout(actions.Action):
+    class Meta:
+        verbose_name = 'Sair'
+        ajax = False
+
+    def view(self):
+        self.request.session.clear()
+        auth.logout(self.request)
+        self.redirect('/')
+
+
 class Activate2FAuthentication(actions.Action):
     code = actions.CharField(label='Código')
 
@@ -182,11 +245,7 @@ class Activate2FAuthentication(actions.Action):
         modal = True
         verbose_name = 'Ativar Autentição 2FA'
 
-    def has_permission(self, user):
-        return settings.SLOTH.get('2FA', False) \
-               and not self.request.user.authcode_set.filter(active=True).exists()
-
-    @meta('QrCode', renderer='qrcode')
+    @meta('QrCode', renderer='utils/qrcode')
     def get_qrcode(self):
         auth_code = self.request.user.authcode_set.first()
         if auth_code is None:
@@ -198,14 +257,12 @@ class Activate2FAuthentication(actions.Action):
         )
         return url
 
-    def display(self):
-        return self.value_set('get_qrcode')
-
-    def get_instructions(self):
-        return '''Para ativar a autenticação de dois fatores,
+    def view(self):
+        self.info('''Para ativar a autenticação de dois fatores,
         baixe o aplicativo (Google Authenticator, Duo Mobile, etc)
         e escaneio o QrCode exibido na tela. Em seguida, digite o
-        número gerado pelo aplicativo para validar a configuração'''
+        número gerado pelo aplicativo para validar a configuração''')
+        return self.value_set('get_qrcode')
 
     def clean_code(self):
         code = self.cleaned_data['code']
@@ -217,7 +274,11 @@ class Activate2FAuthentication(actions.Action):
 
     def submit(self):
         self.request.user.authcode_set.update(active=True)
-        return self.redirect('..', 'Ativação realizada com sucesso.')
+        self.message()
+        return self.redirect()
+
+    def has_permission(self, user):
+        return self.request.user.is_authenticated and not self.request.user.authcode_set.filter(active=True).exists()
 
 
 class Deactivate2FAuthentication(actions.Action):
@@ -228,12 +289,41 @@ class Deactivate2FAuthentication(actions.Action):
         verbose_name = 'Desativar Autentição 2FA'
 
     def has_permission(self, user):
-        return settings.SLOTH.get('2FA', False) \
-               and self.request.user.authcode_set.filter(active=True).exists()
+        return self.request.user.is_authenticated and self.request.user.authcode_set.filter(active=True).exists()
 
     def submit(self):
         self.request.user.authcode_set.update(active=False)
-        return self.redirect('..', 'Desativação realizada com sucesso.')
+        self.message()
+        self.redirect()
+
+
+class NotificationSubscribe(actions.Action):
+
+    class Meta:
+        verbose_name = 'Subscrever para Notificações'
+
+    def has_permission(self, user):
+        return True
+
+    def view(self):
+        subscription = self.request.POST['subscription']
+        if PushNotification.objects.filter(user=self.request.user).exists():
+            PushNotification.objects.filter(user=self.request.user).update(subscription=subscription)
+        else:
+            PushNotification.objects.create(user=self.request.user, subscription=subscription)
+        print(subscription)
+
+
+class Icons(actions.Action):
+
+    def view(self):
+        libraries = {}
+        libraries['Bootstrap'] = bootstrap.ICONS
+        if 'materialicons' in settings.SLOTH.get('ICONS', ()):
+            libraries['Material Icons'] = materialicons.ICONS
+        if 'fontawesome' in settings.SLOTH.get('ICONS', ()):
+            libraries['Font Awesome'] = fontawesome.ICONS
+        return dict(settings=settings, libraries=libraries)
 
 
 class ManageTaskExecution(actions.Action):
@@ -255,3 +345,45 @@ class ManageTaskExecution(actions.Action):
         deactivate = self.cleaned_data['deactivate']
         cache.set('is_tasks_deactivated', deactivate)
         return self.redirect('..', 'Ação realizada com sucesso.')
+
+
+class ExecuteQuery(actions.Action):
+    query = actions.TextField()
+
+    class Meta:
+        icon = 'chat-left-dots'
+        verbose_name = 'Executar SQL'
+        modal = False
+        style = 'primary'
+
+    def submit(self):
+        query = self.cleaned_data['query']
+        with io.StringIO() as output:
+            call_command('query', query, stdout=output, stderr=output)
+            return dict(output=output.getvalue())
+
+    def has_permission(self, user):
+        return user.is_superuser and user.roles.contains('Remote Developer')
+
+
+class ExecuteScript(actions.Action):
+    script = actions.TextField()
+
+    class Meta:
+        icon = 'cast'
+        verbose_name = 'Executar Script'
+        modal = False
+        style = 'primary'
+
+    def submit(self):
+        script = self.cleaned_data['script']
+        p = subprocess.Popen(
+            ['python', 'manage.py', 'shell', '-c', script],
+            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = p.communicate()
+        output = '{}{}'.format(stdout.decode(), stderr.decode())
+        return dict(output=output)
+
+    def has_permission(self, user):
+        return user.is_superuser and user.roles.contains('Remote Developer')

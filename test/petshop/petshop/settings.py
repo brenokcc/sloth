@@ -152,7 +152,7 @@ SLOTH = {
     'VERSION': 1.0,
 	'LOGIN': {
 		'LOGO': '/static/images/logo.jpeg',
-		'TITLE': None,
+		'TITLE': 'PETSHOP',
 		'TEXT': None,
 		'IMAGE': None,
 	},
@@ -170,5 +170,25 @@ SLOTH = {
     'SSL': (
         '/etc/letsencrypt/live/aplicativo.space/fullchain.pem',
         '/etc/letsencrypt/live/aplicativo.space/privkey.pem'
-    )
+    ),
+    'OAUTH_LOGIN': {
+        'SUAP': {
+            'TEXT': 'Acessar com SUAP',
+            'LOGO': None,
+            'REDIRECT_URI': 'http://localhost:8000/app/dashboard/login/',
+            'CLIENTE_ID': 'MCoAZganzBlWwNiMAIWKAB7vRXfH4PwupDpwVvxr',
+            'CLIENT_SECRET': 'oPisqUbxLrvyRDr0UuRptQdwdHpj1ZNwXXA04soScpTSQu8hz6eCOcjExfdBQjaWXPVFMYIFrVFnlCKCgtQGGDAsGvbG5QDyfYqOD20W1jeAEtONLQ6j5s4VdprWV002',
+            'AUTHORIZE_URL': 'https://multiprovas.suapdevs.ifrn.edu.br/o/authorize/',
+            'ACCESS_TOKEN_URL': 'https://multiprovas.suapdevs.ifrn.edu.br/o/token/',
+            'USER_DATA_URL': 'https://multiprovas.suapdevs.ifrn.edu.br/api/eu/',
+            'SCOPE': 'identificacao email',
+            'USER_DATA':{
+                'USERNAME': 'identificacao',
+                'EMAIL': None,
+                'FIRST_NAME': None,
+                'LAST_NAME': None
+            }
+        }
+    },
+    'WEB_PUSH_NOTIFICATION': False
 }

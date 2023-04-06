@@ -63,7 +63,7 @@
     {% block extrahead %} {% endblock %}
 
   </head>
-  <body>
+  <body id="{{ request.path|url_slug }}">
 
     {% block header %}
       {% include "app/dashboard/header.html" %}
@@ -89,6 +89,7 @@
     {% endblock %}
     {% include "app/modal.html" %}
     {% include "app/dashboard/bottom.html" %}
+    {% include "app/dashboard/wpn.html" %}
   </body>
 </html>
 {% endif %}

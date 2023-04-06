@@ -6,15 +6,6 @@
       <i class="bi bi-tools"></i>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarToolsDropdown">
-      {% if request.user.is_superuser %}
-        <li>
-          <a target="_blank" class="dropdown-item" href="/app/icons/">
-            <i class="bi bi-palette"></i>
-            Ícones
-          </a>
-        </li>
-        <li><hr class="dropdown-divider"></li>
-      {% endif %}
       {% for item in dashboard.data.tools %}
       <li>
         <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">

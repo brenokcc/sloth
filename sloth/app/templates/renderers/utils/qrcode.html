@@ -1,8 +1,11 @@
 {% load tags %}
-<div>
+<style>
+    .qr-code img{margin:auto}
+</style>
+<div class="qr-code">
 <div id="qrcode{{ value|slugify }}"></div>
 <script src="/static/js/qrcode.min.js"></script>
 <script type="text/javascript">
-new QRCode(document.getElementById("qrcode{{ value|slugify }}"), "{{ value|unaccented }}");
+new QRCode(document.getElementById("qrcode{{ value|slugify }}"), "{{ value|unaccented|safe }}");
 </script>
 </div>

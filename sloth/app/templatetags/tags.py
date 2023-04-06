@@ -273,6 +273,11 @@ def action_link(action_name):
 
 
 @register.filter
+def url_slug(url):
+    return url[1:-1].replace('/', '__')
+
+
+@register.filter
 def post_querystring(request):
     params = ['post__{}={}'.format(k, v) for k, v in request.POST.items() if k!='csrfmiddlewaretoken']
     params.extend(['{}={}'.format(k, v) for k, v in request.GET.items() if k.startswith('post__') and k not in params])

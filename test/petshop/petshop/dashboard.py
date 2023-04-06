@@ -6,6 +6,7 @@ class PetshopDashboard(Dashboard):
 
     def __init__(self, request):
         super().__init__(request)
+        self.settings('ChangePassword', 'Activate2FAuthentication', 'Deactivate2FAuthentication', 'Icons', modal=True)
         self.header(title='Petshop', shadow=True)
         self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')

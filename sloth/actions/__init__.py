@@ -44,7 +44,7 @@ class PermissionChecker:
         self.metaclass = metaclass
 
     def has_permission(self, user):
-        pass
+        return user
 
 
 class ActionDefaultMetaClass:
@@ -125,7 +125,6 @@ class Action(metaclass=ActionMetaclass):
         else:
             self.instance = kwargs.pop('instance', None)
 
-        form_name = type(self).__name__
         if self.has_url_posted_data():
             for k in self.request.GET:
                 if k.startswith('post__'):
@@ -134,7 +133,7 @@ class Action(metaclass=ActionMetaclass):
                     kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
 
         if 'data' not in kwargs:
-            if form_name in self.request.GET or form_name in self.request.POST or self.request.path.startswith('/api/'):
+            if self.get_api_name() in self.request.GET or self.get_api_name() in self.request.POST or self.request.path.startswith('/api/'):
                 # if self.base_fields or self.requires_confirmation():
                 if self.request.method == 'GET' or self.requires_confirmation():
                     if self.get_method() == 'get':
@@ -191,7 +190,7 @@ class Action(metaclass=ActionMetaclass):
             )
 
     def has_url_posted_data(self):
-        return 'post__{}'.format(type(self).__name__) in self.request.GET
+        return 'post__{}'.format(self.get_api_name()) in self.request.GET
 
     def closable(self, flag=True):
         self.can_be_closed = flag
@@ -210,7 +209,7 @@ class Action(metaclass=ActionMetaclass):
         for token in self.request.path.split('/'):
             if values is not None:
                 values.append((token))
-            if token.lower() == type(self).__name__.lower():
+            if token.lower() == self.get_api_name():
                 values = []
         return values[index] if values and len(values)>index else None
 
@@ -471,13 +470,16 @@ class Action(metaclass=ActionMetaclass):
         return []
 
     @classmethod
+    def get_api_name(cls):
+        return to_snake_case(cls.__name__)
+
+    @classmethod
     @lru_cache
     def get_metadata(cls, path=None, target=None):
-        form_name = cls.__name__
         metaclass = getattr(cls, 'Meta', None)
         if metaclass:
             target = target
-            name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", form_name))
+            name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", cls.__name__))
             submit = getattr(metaclass, 'submit_label', name)
             icon = getattr(metaclass, 'icon', None)
             ajax = getattr(metaclass, 'ajax', True)
@@ -492,13 +494,13 @@ class Action(metaclass=ActionMetaclass):
         if path:
             path, *params = path.split('?')
             if target in ('queryset', 'instance'):
-                path = '{}{{id}}/{}/'.format(path, to_snake_case(form_name))
+                path = '{}{{id}}/{}/'.format(path, cls.get_api_name())
             else:
-                path = '{}{}/'.format(path, to_snake_case(form_name))
+                path = '{}{}/'.format(path, cls.get_api_name())
             if params:
                 path = '{}?{}'.format(path, params[0])
         metadata = dict(
-            type='form', key=form_name, name=name, submit=submit, target=target,
+            type='form', key=cls.get_api_name(), name=name, submit=submit, target=target,
             method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal, auto_reload=auto_reload
         )
         return metadata
@@ -658,7 +660,7 @@ class Action(metaclass=ActionMetaclass):
             return False
         view = self.view()
         if type(view) == dict:
-            template = '{}.html'.format(type(self).__name__)
+            template = '{}.html'.format(self.get_api_name())
             self.content['center'].append(render_to_string([template], view, request=self.request))
         elif isinstance(view, ValueSet) or isinstance(view, QuerySet):
             self.content['center'].append(view.contextualize(self.request).html())
@@ -742,8 +744,11 @@ class Action(metaclass=ActionMetaclass):
             response = self.submit()
             if isinstance(response, HttpResponse):
                 raise ReadyResponseException(response)
-            if isinstance(response, ValueSet) or isinstance(response, QuerySet):
+            elif isinstance(response, ValueSet) or isinstance(response, QuerySet):
                 self.content['bottom'].append(response.contextualize(self.request).html())
+            elif type(response) == dict:
+                template = '{}.html'.format(self.get_api_name())
+                self.content['bottom'].append(render_to_string([template], response, request=self.request))
             return response
         except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):

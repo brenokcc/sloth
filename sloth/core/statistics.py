@@ -3,9 +3,8 @@
 import json
 from decimal import Decimal
 from django.db.models.aggregates import Count
-from sloth.exceptions import HtmlReadyResponseException
+from sloth.api.exceptions import HtmlReadyResponseException
 from django.template.loader import render_to_string
-from uuid import uuid1
 from sloth.utils import pretty, colors
 
 
@@ -214,9 +213,9 @@ class QuerySetStatistics(object):
                 icon=None, data={self.qs.metadata['verbose_name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)
+            return render_to_string('valueset/valueset.html', dict(data=data), request=self.request)
         else:
-            return render_to_string('app/statistics.html', dict(data=serialized), request=self.request)
+            return render_to_string('queryset/statistics.html', dict(data=serialized), request=self.request)
 
     def __str__(self):
         return self.html() if self.request else super().__str__()
@@ -250,7 +249,7 @@ class QuerySetStatistics(object):
         return data
 
     def chart(self, name):
-        self.metadata['template'] = 'app/charts/{}.html'.format(name)
+        self.metadata['template'] = 'charts/{}.html'.format(name)
         return self
 
     def pie_chart(self):

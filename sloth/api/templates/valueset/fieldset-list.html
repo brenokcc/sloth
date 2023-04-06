@@ -1,0 +1,52 @@
+<div class="fieldset-list">
+<div class="fieldset-title">
+    <h5>{{ item.name }}</h5>
+</div>
+<div class="fieldset-action-bar" style="margin-right:18px">
+      {% if item.actions %}
+          {% include "dashboard/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
+      {% endif %}
+</div>
+{% if item.template %}
+    {% include item.template with data=item.data %}
+{% else %}
+<ul class="nav nav-tabs fieldset-tabs" id="fieldset-list-{{ item.uuid }}">
+  {% for fieldset in item.data.values %}
+      <li class="nav-item">
+          <a class="nav-link {{ fieldset.key }} {% if forloop.first %}active{% endif %}" aria-current="page"
+             href="javascript:" onclick="reloadFieldsetList{{ item.uuid }}('{{ fieldset.key }}', '{{ fieldset.path }}')">
+              <div class="spinner-border spinner-border-sm d-none" role="status">
+                  <span class="visually-hidden">Loading...</span>
+              </div>
+              <span class="nav-link-text">{{ fieldset.name }}</span>
+          </a>
+      </li>
+  {% endfor %}
+</ul>
+<script>
+    function reloadFieldsetList{{ item.uuid }}(tab, path){
+        // $(document).setCookie('current_tab', tab);
+        $(document.body).addClass('page-loading');
+        $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
+        $.ajax({
+            url:path,
+            data:{tab:1},
+            success:function( html ) {
+                $('#fieldset-list-{{ item.uuid }}-tab').html(html).initialize();
+                $('#fieldset-list-{{ item.uuid }}').find('.nav-link').removeClass('active');
+                $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
+                $(document.body).removeClass('page-loading');
+                $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').addClass('d-none');
+            }
+        });
+    }
+ </script>
+<div class="fieldset-tab" id="fieldset-list-{{ item.uuid }}-tab">
+{% for item in item.data.values %}
+    {% if forloop.first %}
+        {% include 'valueset/fieldset.html' with data=item %}
+    {% endif %}
+{% endfor %}
+</div>
+{% endif %}
+</div>

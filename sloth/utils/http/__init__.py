@@ -6,7 +6,7 @@ import tempfile
 import datetime
 from tempfile import mktemp
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 
 
@@ -69,6 +69,14 @@ CONTENT_TYPES = {
 }
 
 
+class ApiResponse(JsonResponse):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["Access-Control-Allow-Origin"] = "*"
+        self["Access-Control-Allow-Headers"] = "*"
+        self["X-Frame-Options"] = "SAMEORIGIN"
+
+
 class XlsResponse(HttpResponse):
     def __init__(self, data):
         wb = xlwt.Workbook(encoding='iso8859-1')
@@ -129,7 +137,7 @@ class HtmlToPdfResponse(HttpResponse):
 
 
 class PdfReportResponse(HtmlToPdfResponse):
-    def __init__(self, request, data, landscape=False, template='app/report.html'):
+    def __init__(self, request, data, landscape=False, template='dashboard/report.html'):
         data.update(
             today=datetime.date.today(), settings=settings
         )

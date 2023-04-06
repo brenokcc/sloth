@@ -1,35 +1,29 @@
 # -*- coding: utf-8 -*-
+import datetime
 import math
 import re
-import zlib
-import pickle
-import base64
-import datetime
-from django.core import signing
 import traceback
-from decimal import Decimal
 from copy import deepcopy
+from decimal import Decimal
 from functools import lru_cache
-from django.contrib import auth
-from django.contrib import messages
-from django.conf import settings
+
 from django.apps import apps
+from django.contrib import messages
+from django.forms.models import ModelFormMetaclass
+from django.forms.widgets import *
+from django.forms.fields import *
+from .fields import *
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from . import inputs
-from django import forms
-from django.forms.models import ModelFormMetaclass, ModelMultipleChoiceField
 
-from ..exceptions import JsonReadyResponseException, ReadyResponseException, HtmlReadyResponseException
-from ..utils import to_api_params, to_camel_case, to_snake_case
-from django.forms.fields import *
-from django.forms.widgets import *
+from . import inputs
 from .fields import *
-from django.core.exceptions import ValidationError
-from ..utils.formatter import format_value
 from ..core.queryset import QuerySet
+from sloth.api.exceptions import JsonReadyResponseException, ReadyResponseException, HtmlReadyResponseException
+from ..utils import to_api_params, to_snake_case
+from ..utils.formatter import format_value
 from ..utils.http import FileResponse
 
 ACTIONS = {}
@@ -548,7 +542,7 @@ class Action(metaclass=ActionMetaclass):
             elif self.response.get('url'):
                 display_messages = False
                 js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-            html = render_to_string('app/messages.html', request=self.request) if display_messages else ''
+            html = render_to_string('dashboard/messages.html', request=self.request) if display_messages else ''
             return '<!---->{}{}<!---->'.format(js, html)
 
         for name, field in self.fields.items():
@@ -609,7 +603,7 @@ class Action(metaclass=ActionMetaclass):
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(
-                ['app/form.html'], dict(
+                ['dashboard/form.html'], dict(
                     self=self, fieldsets=self.fieldsets
                 ),
                 request=self.request
@@ -660,7 +654,7 @@ class Action(metaclass=ActionMetaclass):
             return False
         view = self.view()
         if type(view) == dict:
-            template = '{}.html'.format(self.get_api_name())
+            template = 'actions/{}.html'.format(self.get_api_name())
             self.content['center'].append(render_to_string([template], view, request=self.request))
         elif isinstance(view, ValueSet) or isinstance(view, QuerySet):
             self.content['center'].append(view.contextualize(self.request).html())
@@ -747,7 +741,7 @@ class Action(metaclass=ActionMetaclass):
             elif isinstance(response, ValueSet) or isinstance(response, QuerySet):
                 self.content['bottom'].append(response.contextualize(self.request).html())
             elif type(response) == dict:
-                template = '{}.html'.format(self.get_api_name())
+                template = 'actions/{}.html'.format(self.get_api_name())
                 self.content['bottom'].append(render_to_string([template], response, request=self.request))
             return response
         except forms.ValidationError as e:

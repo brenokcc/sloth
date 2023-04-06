@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'petshop',
     'oauth2_provider',
     'sloth.api',
-    'sloth.app',
+    
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

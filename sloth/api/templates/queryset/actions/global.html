@@ -1,0 +1,3 @@
+{% if data.actions.model %}
+    {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.actions.model  %}
+{% endif %}

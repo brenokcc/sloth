@@ -1,6 +1,7 @@
 from django.forms import widgets
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+
 from sloth.utils import colors
 
 
@@ -30,7 +31,7 @@ class ColorInput(widgets.TextInput):
 
 
 class PickInputMixin():
-    def __init__(self, queryset, template_name='app/inputs/picker.html', multiple=False, grouper=None, *args, **kwargs):
+    def __init__(self, queryset, template_name='inputs/picker.html', multiple=False, grouper=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queryset = queryset
         self.template_name = template_name
@@ -80,5 +81,5 @@ class QrCodeInput(widgets.TextInput):
 
     def render(self, name, value, attrs=None, **kwargs):
         widget = super().render(name, value, attrs=attrs, **kwargs)
-        output = render_to_string('app/inputs/qrcode.html', dict(widget=widget, name=name))
+        output = render_to_string('inputs/qrcode.html', dict(widget=widget, name=name))
         return mark_safe(output)

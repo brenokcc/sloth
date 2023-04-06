@@ -1,5 +1,5 @@
 from sloth import meta
-from sloth.app.dashboard import Dashboard
+from sloth.api.dashboard import Dashboard
 
 
 class PetshopDashboard(Dashboard):

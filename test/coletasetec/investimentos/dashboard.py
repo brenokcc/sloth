@@ -1,6 +1,6 @@
 from sloth import meta
 from datetime import date
-from sloth.app.dashboard import Dashboard
+from sloth.api.dashboard import Dashboard
 from .models import *
 
 

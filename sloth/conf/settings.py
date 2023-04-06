@@ -1,4 +1,3 @@
-
 # ALLOWED_HOSTS.append('*')
 # MEDIA_ROOT = '{}/{}'.format(BASE_DIR, 'media')
 # STATIC_ROOT = '{}/{}'.format(BASE_DIR, 'static')
@@ -18,24 +17,24 @@ OAUTH2_PROVIDER = {
 }
 
 SLOTH = {
-	'NAME': 'Sloth',
-	'ICON': '/static/images/icon.png',
-	'FAVICON': '/static/images/icon.png',
-	'VERSION': 1.0,
-	'LOGIN': {
-		'LOGO': '/static/images/logo.png',
-		'TITLE': None,
-		'TEXT': None,
-		'IMAGE': '/static/images/login.jpeg',
-		'USERNAME_MASK': None
-	},
-	'INCLUDE': {
-		'CSS': [],
-		'JS': [],
-	},
-	'ROLES':{
-		'ALLOW_MULTIPLE': True
-	},
+    'NAME': 'Sloth',
+    'ICON': '/static/images/icon.png',
+    'FAVICON': '/static/images/icon.png',
+    'VERSION': 1.0,
+    'LOGIN': {
+        'LOGO': '/static/images/logo.png',
+        'TITLE': None,
+        'TEXT': None,
+        'IMAGE': '/static/images/login.jpeg',
+        'USERNAME_MASK': None
+    },
+    'INCLUDE': {
+        'CSS': [],
+        'JS': [],
+    },
+    'ROLES': {
+        'ALLOW_MULTIPLE': True
+    },
     'OAUTH_LOGIN': {
         'APP': {
             'TEXT': 'Acessar com APP',
@@ -46,21 +45,21 @@ SLOTH = {
             'AUTHORIZE_URL': None,
             'ACCESS_TOKEN_URL': None,
             'USER_DATA_URL': None,
-			'USER_AUTO_CREATE': False,
-			'USER_DATA':{
-				'USERNAME': 'username',
-				'EMAIL': 'email',
-				'FIRST_NAME': None,
-				'LAST_NAME': None
-			}
+            'USER_AUTO_CREATE': False,
+            'USER_DATA': {
+                'USERNAME': 'username',
+                'EMAIL': 'email',
+                'FIRST_NAME': None,
+                'LAST_NAME': None
+            }
         }
     },
-	'2FA': False,
-	'WEB_PUSH_NOTIFICATION': False,
-	'LIST_PER_PAGE': 20,
-	'DEFAULT_PASSWORD': lambda user=None: '123',
-	'FORCE_PASSWORD_DEFINITION': False,
-	'ICONS': ['fontawesome', 'materialicons']
+    '2FA': False,
+    'WEB_PUSH_NOTIFICATION': False,
+    'LIST_PER_PAGE': 20,
+    'DEFAULT_PASSWORD': lambda user=None: '123',
+    'FORCE_PASSWORD_DEFINITION': False,
+    'ICONS': ['fontawesome', 'materialicons']
 }
 
 # #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

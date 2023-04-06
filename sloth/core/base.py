@@ -109,7 +109,7 @@ class ModelMixin(object):
             values = []
             for attr_name in select_fields:
                 values.append(getattr(self, attr_name))
-            return render_to_string('app/select.html', dict(obj=self, values=values))
+            return render_to_string('inputs/select.html', dict(obj=self, values=values))
         return None
 
     ### ROLE CREATION ###

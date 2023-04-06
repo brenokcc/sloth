@@ -5,5 +5,5 @@ from . import views
 urlpatterns = [
     path('videos/', views.videos),
     path('', include('sloth.api.urls')),
-    path('', include('sloth.app.urls')),
+
 ]

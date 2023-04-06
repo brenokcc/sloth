@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'simulado',
     'oauth2_provider',
     'sloth.api',
-    'sloth.app',
+    
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

@@ -9,7 +9,6 @@ from uuid import uuid1
 import zlib
 import pickle
 import base64
-from pprint import pprint
 from django.core import signing
 from django.conf import settings
 from django.contrib import messages
@@ -17,12 +16,11 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.aggregates import Sum, Count
 from django.template.loader import render_to_string
-from django.utils.text import slugify
 from django.apps import apps
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
-from sloth.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
-from sloth.utils import getattrr, serialize, pretty, to_api_params, to_snake_case
+from sloth.api.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
+from sloth.utils import getattrr, serialize, pretty, to_snake_case
 
 
 class QuerySet(models.QuerySet):
@@ -719,9 +717,9 @@ class QuerySet(models.QuerySet):
                 icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)
+            return render_to_string('valueset/valueset.html', dict(data=data), request=self.request)
         return render_to_string(
-            'app/queryset/queryset.html',
+            'queryset/queryset.html',
             dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.request)),
             request=self.request
         )
@@ -837,23 +835,23 @@ class QuerySet(models.QuerySet):
     # rendering template functions
 
     def cards(self):
-        self.metadata['template'] = 'app/queryset/cards.html'
+        self.metadata['template'] = 'queryset/cards.html'
         return self
 
     def accordion(self):
-        self.metadata['template'] = 'app/queryset/accordion.html'
+        self.metadata['template'] = 'queryset/accordion.html'
         return self
 
     def datatable(self):
-        self.metadata['template'] = 'app/queryset/datatable.html'
+        self.metadata['template'] = 'queryset/datatable.html'
         return self
 
     def rows(self):
-        self.metadata['template'] = 'app/queryset/rows.html'
+        self.metadata['template'] = 'queryset/rows.html'
         return self
 
     def timeline(self):
-        self.metadata['template'] = 'app/queryset/timeline.html'
+        self.metadata['template'] = 'queryset/timeline.html'
         return self
 
     def normalize_email(self, email):

@@ -31,7 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'lugares', 'oauth2_provider', 'sloth.api', 'sloth.app',
+    'lugares', 'oauth2_provider', 'sloth.api', 
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

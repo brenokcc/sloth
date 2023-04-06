@@ -1,0 +1,103 @@
+{% extends super_template|default:"dashboard/base.html" %}
+{% load tags %}
+{% block extrahead %}
+<style>
+  main{
+    padding: 0px !important;
+  }
+  form{
+    min-width: 250;
+  }
+
+  {% if settings.SLOTH.LOGIN.IMAGE %}
+    .image-section{
+      width:50%;
+      background:linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url({{ settings.SLOTH.LOGIN.IMAGE }});
+      background-size:cover;
+      background-repeat:no-repeat;
+      float:left;
+    }
+    .image-section div{
+      font-size: 30;
+      color: #FFF;
+      font-family:Helvetica Neue,Helvetica,Arial,sans-serif;
+      margin-top:40%;
+      text-align:center;
+    }
+    .form-section{
+      width:50%;
+      float:left;
+    }
+  {% endif %}
+
+  .form-section img{
+    max-width:250px;
+    max-height:200px;
+  }
+
+  @media only screen and (max-width: 800px) {
+    .image-section{
+      display: none !important;
+    }
+    .form-section{
+      width: 100% !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block header %}
+
+{% endblock %}
+
+{% block content %}
+
+{% if settings.SLOTH.LOGIN.IMAGE %}
+  <section class="vh-100 image-section">
+    {% if settings.SLOTH.LOGIN.TEXT  %}
+      <div>{{ settings.SLOTH.LOGIN.TEXT }}</div>
+    {% endif %}
+  </section>
+{% endif %}
+
+<section class="vh-100 form-section">
+  <div class="container py-5 h-100">
+    <div class="row d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+      <div align="center">
+        {% if settings.SLOTH.LOGIN.LOGO %}
+          <img src="{{ settings.SLOTH.LOGIN.LOGO }}" class="" alt="{{ settings.SLOTH.LOGIN.TITLE }}">
+        {% endif %}
+        {% if settings.SLOTH.LOGIN.TITLE %}
+          <h1>{{ settings.SLOTH.LOGIN.TITLE }}</h1>
+        {% endif %}
+      </div>
+      <div class="" style="max-width:300px">
+        {{ form }}
+        <div style="margin:auto;width:250px">
+          {% for provider_name, provider_data in settings.SLOTH.OAUTH_LOGIN.items %}
+            {% if provider_data.CLIENTE_ID %}
+              <a href="/app/login/{{ provider_name|lower }}/">
+                {% if provider_data.LOGO %}
+                  <img style="text-align:center" src="{{ provider_data.LOGO }}"/>
+                {% else %}
+                  {{ provider_data.TEXT }}
+                {% endif %}
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% if settings.SLOTH.LOGIN.ACTIONS %}
+      <div class="text-center m-5">
+        {% for name in settings.SLOTH.LOGIN.ACTIONS %}{{ name|action_link }}{% endfor %}
+      </div>
+      {% endif %}
+      {% include "dashboard/footer.html" %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
+

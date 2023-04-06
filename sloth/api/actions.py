@@ -90,7 +90,8 @@ class StopTask(actions.Action):
     def submit(self):
         self.instance.stop()
         cache.set('task_{}_stopped'.format(self.instance.id), True)
-        self.redirect(message='Ação realizada com sucesso')
+        self.message()
+        self.redirect()
 
     def has_permission(self, user):
         return self.instance.in_progress() and (user.is_superuser or self.instance.user == user)
@@ -339,12 +340,13 @@ class ManageTaskExecution(actions.Action):
         self.initial['deactivate'] = bool(cache.get('is_tasks_deactivated'))
 
     def has_permission(self, user):
-        return request.is_superuser and not cache.get('is_tasks_deactivated')
+        return self.request.is_superuser and not cache.get('is_tasks_deactivated')
 
     def submit(self):
         deactivate = self.cleaned_data['deactivate']
         cache.set('is_tasks_deactivated', deactivate)
-        return self.redirect('..', 'Ação realizada com sucesso.')
+        self.message()
+        self.redirect()
 
 
 class ExecuteQuery(actions.Action):

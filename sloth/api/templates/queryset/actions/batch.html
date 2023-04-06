@@ -1,0 +1,3 @@
+{% if data.actions.queryset %}
+    {% include "dashboard/actions.html" with uuid=data.uuid target="queryset" actions=data.actions.queryset  %}
+{% endif %}

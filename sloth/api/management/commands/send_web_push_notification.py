@@ -1,7 +1,8 @@
 import json
+
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from pywebpush import webpush
-from django.contrib.auth.models import User
 
 
 class Command(BaseCommand):

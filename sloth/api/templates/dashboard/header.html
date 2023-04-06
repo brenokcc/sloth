@@ -1,0 +1,46 @@
+{% load tags %}
+{% if request.user.is_authenticated and not request.GET.modal %}
+    {% if dashboard.data.header.shadow %}
+      <style>
+        .navbar {box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);}
+      </style>
+    {% endif %}
+    <nav class="navbar navbar-expand">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/app/dashboard/">
+          {% if dashboard.data.header.logo %}
+            <img height="30" src="{{ dashboard.data.header.logo }}" style="border-radius:3px;">
+          {% endif %}
+          {% if dashboard.data.header.title %}
+            <span>{{ dashboard.data.header.title }}</span>
+          {% endif %}
+        </a>
+        {% if dashboard.data.header.text and not request|mobile %}
+          {{ dashboard.data.header.text }}
+        {% endif %}
+
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav">
+            {% for action in dashboard.data.actions %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ action.url }}">
+                  {{ action.icon|icontag }}
+                  {{ action.label }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="collapse navbar-collapse">
+          {% include "dashboard/search.html" %}
+          {% include "dashboard/tools.html" %}
+          {% include "dashboard/apps.html" %}
+          {% if request.user.is_authenticated %}
+          {% include "dashboard/settings.html" %}
+          {% endif %}
+        </div>
+
+      </div>
+    </nav>
+{% endif %}

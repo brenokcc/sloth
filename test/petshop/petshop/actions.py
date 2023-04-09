@@ -3,6 +3,20 @@ import time
 import datetime
 from sloth import actions, meta
 from .models import Tratamento, Procedimento, TipoProcedimento, Animal, Doenca
+from .tasks import Tarefa
+
+
+class Teste(actions.Action):
+
+    def view(self):
+        # return Tratamento.objects.all()
+        # return Tratamento.objects.first().view()
+        # return 'static/report.pdf'
+        # return 12
+        # return dict()
+        self.run(Tarefa())
+        self.message('Tarefas iniciadas')
+        # self.redirect()
 
 
 class ExibirDataHora(actions.Action):

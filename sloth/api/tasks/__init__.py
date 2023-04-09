@@ -51,7 +51,10 @@ class Task(Thread):
             else:
                 break
 
-    def finalize(self, text):
+    def message(self, text):
+        TaskModel.objects.filter(pk=self.task_id).update(message=text)
+
+    def finalize(self, text='Ação realizada com sucesso'):
         TaskModel.objects.filter(pk=self.task_id).update(message=text, end=datetime.datetime.now(), partial=self.partial)
 
     def error(self, text, exception=None):

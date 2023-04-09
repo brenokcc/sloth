@@ -340,7 +340,7 @@ class ManageTaskExecution(actions.Action):
         self.initial['deactivate'] = bool(cache.get('is_tasks_deactivated'))
 
     def has_permission(self, user):
-        return self.request.is_superuser and not cache.get('is_tasks_deactivated')
+        return user.is_superuser and not cache.get('is_tasks_deactivated')
 
     def submit(self):
         deactivate = self.cleaned_data['deactivate']

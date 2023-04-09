@@ -8,7 +8,7 @@
             </div>
             <dl>
                 {% for v in row.data.values %}
-                    <dt>{{ v.name }}</dt>
+                    <dt><label>{{ v.name }}</label></dt>
                     <dd>{% include 'valueset/value.html' %}</dd>
                 {% endfor %}
             </dl>

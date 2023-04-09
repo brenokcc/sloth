@@ -1,18 +1,7 @@
 {% load tags %}
 <style>
 {% if data.metadata.collapsed  %}
-    #search-and-filters-{{ data.uuid }}.search-and-filters form{
-        display: none;
-    }
-{% endif %}
-{% if compact or request.GET.compact or request|mobile %}
-    #search-and-filters-{{ data.uuid }}.search-and-filters .filter {
-        width: 100% !important;
-    }
-{% else %}
-    #search-and-filters-{{ data.uuid }}.search-and-filters .filter {
-        width: 250px !important;
-    }
+    #search-and-filters-{{ data.uuid }}.search-and-filters form{display: none}
 {% endif %}
 </style>
 

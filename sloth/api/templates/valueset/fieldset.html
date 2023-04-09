@@ -1,11 +1,9 @@
 {% load tags %}
 {% if data.type == 'fieldset' %}
-    <div class="reloadable-fieldset" id="{{ data.key }}" data-path="{{ data.path }}">
+    <div class="reloadable-fieldset box" id="{{ data.key }}" data-path="{{ data.path }}">
     {% if data.template %}
         {% include data.template with data=data %}
     {% else %}
-      <div class="card">
-        <div class="card-body">
           {% if data.name %}
           <div class="fieldset-title" onclick="$(this).parent().find('.toogle-data').slideToggle();$(this).find('i').toggleClass('bi-chevron-down').toggleClass('bi-chevron-right');">
               <h5>
@@ -19,38 +17,30 @@
                   {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.actions   %}
               {% endif %}
           </div>
-          <div class="card-text fieldset-data toogle-data" id="{{ data.name|slugify }}">
+          <div class="fieldset-data toogle-data" id="{{ data.name|slugify }}">
               {% for action in data.inline_actions %}
                 {% action action.key data.instance action.path %}
               {% endfor %}
-              <table width="100%">
-                  <tr>
-                    {% if data.image %}
-                      <td style="width:0px;{% if request|mobile %}padding-bottom:20px;text-align:center;{% else %}padding-right:20px{% endif %}">
-                          <img width="200px" src="{{ data.image }}"/>
-                      </td>
-                    {% endif %}
-                  {% if request|mobile %}
-                  </tr><tr>
-                  {% endif %}
-                    <td style="vertical-align:top">
-                      <div class="responsive-container">
-                          {% for v in data.data.values %}
-                                {% include 'valueset/field.html' with v=v %}
-                          {% endfor %}
-                      </div>
-                    </td>
-                  </tr>
-              </table>
+
+              {% if data.image %}
+                <div style="display:flex">
+                  <div style="width:200px;margin-right:20px"><img width="200px" src="{{ data.image }}"/></div>
+                  <div style="width:calc(100% - 220px)">
+              {% endif %}
+                      <div class="responsive-container">{% for v in data.data.values %}{% include 'valueset/field.html' with v=v %}{% endfor %}</div>
+              {% if data.image %}
+                  </div>
+                </div>
+              {% endif %}
+
           </div>
-        </div>
-      </div>
+
       {% if data.refresh %}
           <script>
           {% if not request|is_ajax %}
                 var retry_{{ data.key }} = {{ data.refresh.retry }};
                 const interval_{{ data.key }} = setInterval(
-                    function(){$(document).refresh('{{ data.key }}')},
+                    function(){$(document).refresh(['{{ data.key }}'])},
                     {{ data.refresh.seconds }}000
                 );
           {% else %}

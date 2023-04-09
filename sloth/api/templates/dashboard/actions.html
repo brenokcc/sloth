@@ -1,7 +1,7 @@
 {% load tags %}
 {% if actions %}
 <div class="action-container {{ target }}" id="{{ target }}-{{ uuid }}-{{id}}">
-    {% if compact or request|mobile or request|tablet %}
+    {% if compact or request|mobile or request|tablet or request.GET.compact %}
     {% with grouped_actions=actions|group_by_icon %}
         {% for action in grouped_actions.with_icon %}
             {% if  target != 'instance' or  target == 'instance' and action.key in enabled %}

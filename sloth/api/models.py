@@ -188,7 +188,7 @@ class Application(AbstractApplication):
 class TaskManager(models.Manager):
     def all(self):
         return self.display(
-            'id', 'user', 'name', 'start', 'end', 'get_progress'
+            'id', 'user', 'name', 'start', 'end', 'get_progress', 'message'
         ).attach(
             'running', 'finished', 'unfinished', 'stopped'
         ).global_actions('ManageTaskExecution')
@@ -245,7 +245,7 @@ class Task(models.Model):
         elif self.stopped:
             return 'warning', 'Interrompida pelo usuário'
         elif self.progress < 100:
-            return 'primary', 'Em execução'
+            return 'primary', self.message or 'Em execução'
         else:
             return 'success', self.message or 'Concluída'
 
@@ -253,6 +253,7 @@ class Task(models.Model):
     def get_progress(self):
         return self.progress
 
+    @meta('Dados Gerais')
     def get_info(self):
         return self.value_set(('name', 'user'))
 

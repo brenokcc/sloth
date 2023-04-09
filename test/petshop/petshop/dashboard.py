@@ -10,7 +10,7 @@ class PetshopDashboard(Dashboard):
         self.header(title='Petshop', shadow=True)
         self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')
-        self.actions('petshop.animal', 'petshop.cliente')
+        self.actions('petshop.animal', 'petshop.cliente', 'teste')
         self.links('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa2', 'exibir_data_hora')
         self.links('fazer_alguma_coisa', modal=True)
         self.cards('petshop.animal', 'petshop.cliente', 'petshop.doenca.contagiosas')

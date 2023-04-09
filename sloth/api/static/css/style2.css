@@ -56,7 +56,11 @@ th, label, .fieldset-field-label, .nav-link.active{
     box-shadow: 0px -1px 0px 0px #001E3C1A inset;
 }
 
-.fieldset-inline-action .action-wrapper fieldset{
+.search-and-filters .filter {
+    width: 250px;
+}
+
+.fieldset-inline-action .action-wrapper fieldset, .fieldset-tab .box{
     box-shadow: none;
     padding: 0;
 }

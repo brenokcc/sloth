@@ -216,9 +216,6 @@ class Action(metaclass=ActionMetaclass):
             if k != 'bottom':
                 v.clear()
 
-    def download(self, file_path):
-        raise ReadyResponseException(FileResponse(file_path))
-
     def view(self):
         return None
 
@@ -526,24 +523,6 @@ class Action(metaclass=ActionMetaclass):
         return self.html()
 
     def html(self):
-        if self.response:
-            js = '<script>{}</script>'
-            display_messages = True
-            if self.response.get('dispose'):
-                js = js.format('fade{}({});'.format(self.get_metadata().get('key'), self.response.get('dispose')))
-            elif self.response.get('url') == '.':
-                if 'modal' in self.request.GET:
-                    js = js.format('$(document).popup("{}");'.format(self.request.path))
-                else:
-                    js = js.format('$(document).refresh([]);'.format(self.get_metadata().get('key')))
-            elif self.response.get('url') == '..':
-                display_messages = 'modal' in self.request.GET
-                js = js.format('$(document).back().refresh([]);')
-            elif self.response.get('url'):
-                display_messages = False
-                js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-            html = render_to_string('dashboard/messages.html', request=self.request) if display_messages else ''
-            return '<!---->{}{}<!---->'.format(js, html)
 
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
@@ -648,19 +627,63 @@ class Action(metaclass=ActionMetaclass):
                 text = None
             self.on_change_data['set'].append(dict(name=k, value=value, text=text))
 
-    def is_valid(self):
+    def check_ouput(self, output, submit=False):
         from ..core.valueset import ValueSet
+        position = 'bottom' if submit else 'center'
+        if type(output) == dict:
+            template_name = 'actions/{}.html'.format(self.get_api_name())
+            self.content[position].append(render_to_string([template_name], output, request=self.request))
+        elif type(output) == str and output[-5:].split('.')[-1] in FileResponse.CONTENT_TYPES.keys():
+            raise ReadyResponseException(FileResponse(output))
+        elif type(output) in (str, int, float, Decimal, datetime.date):
+            raise ReadyResponseException(HttpResponse(str(output)))
+        elif isinstance(output, HttpResponse):
+            raise ReadyResponseException(output)
+        elif isinstance(output, ValueSet) or isinstance(output, QuerySet):
+            if submit:
+                path = '{}{}/'.format(self.request.path, 'submit') if self.request.POST else None
+            else:
+                path = '{}{}/'.format(self.request.path, 'view')
+            self.content[position].append(output.contextualize(self.request).html(path=path))
+        elif output is not None:
+            raise Exception()
+
+        if self.request.path.startswith('/app/') and self.response and submit:
+            js = '<script>{}</script>'
+            display_messages = True
+            url = self.response.get('url')
+            if self.response.get('dispose'):
+                js = js.format('fade{}({});'.format(self.get_metadata().get('key'), self.response.get('dispose')))
+            elif url == '.':
+                if 'modal' in self.request.GET:
+                    js = js.format('$(document).popup("{}");'.format(self.request.path))
+                else:
+                    js = js.format('$(document).refresh([]);'.format(self.get_metadata().get('key')))
+            elif url == '..':
+                display_messages = 'modal' in self.request.GET
+                js = js.format('$(document).back().refresh([]);')
+            elif url:
+                display_messages = False
+                js = js.format('$(document).redirect("{}");'.format(self.response['url']))
+            html = render_to_string('dashboard/messages.html', request=self.request) if display_messages else ''
+            raise ReadyResponseException(HttpResponse('<!---->{}{}<!---->'.format(js, html)))
+
+        if self.request.path.startswith('/app/') and self.response and not submit:
+            stack = self.request.session.get('stack', [])
+            url = self.response.get('url')
+            if url in ('.', '..') and len(stack) > 1:
+                url = stack[-2]
+            raise ReadyResponseException(HttpResponseRedirect(url))
+
+        return output
+
+    def is_valid(self):
         if self.asynchronous:
             return False
-        view = self.view()
-        if type(view) == dict:
-            template = 'actions/{}.html'.format(self.get_api_name())
-            self.content['center'].append(render_to_string([template], view, request=self.request))
-        elif isinstance(view, ValueSet) or isinstance(view, QuerySet):
-            self.content['center'].append(view.contextualize(self.request).html())
+        self.check_ouput(self.view())
         for field in self.fields.values():
             if isinstance(field, forms.DecimalField):
-                field.clean = lambda value: value.replace('.', '').replace(',','.')
+                field.clean = lambda v: v.replace('.', '').replace(',', '.')
         self.load_fieldsets()
         if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(
@@ -711,15 +734,13 @@ class Action(metaclass=ActionMetaclass):
         if not self.get_metadata()['ajax']:
             raise ReadyResponseException(HttpResponseRedirect(url))
 
-    def run(self, *tasks, message=None):
+    def run(self, *tasks):
         for task in tasks:
             task.start(self.request)
         if len(tasks) > 1:
-            self.redirect(message=message or 'Tarefas iniciadas com sucesso')
-        elif message:
-            self.redirect(message=message)
+            self.redirect()
         else:
-            self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
+            self.redirect('/app/api/task/{}/'.format(task.task_id))
 
     def submit(self):
         if self.instances:
@@ -734,16 +755,7 @@ class Action(metaclass=ActionMetaclass):
 
     def process(self):
         try:
-            from ..core.valueset import ValueSet
-            response = self.submit()
-            if isinstance(response, HttpResponse):
-                raise ReadyResponseException(response)
-            elif isinstance(response, ValueSet) or isinstance(response, QuerySet):
-                self.content['bottom'].append(response.contextualize(self.request).html())
-            elif type(response) == dict:
-                template = 'actions/{}.html'.format(self.get_api_name())
-                self.content['bottom'].append(render_to_string([template], response, request=self.request))
-            return response
+            return self.check_ouput(self.submit(), True)
         except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):
                 message = 'Corrija os erros indicados no formulário'

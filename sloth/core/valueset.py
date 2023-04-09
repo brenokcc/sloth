@@ -366,7 +366,8 @@ class ValueSet(dict):
                 return self[list(self.metadata['names'].keys())[0]]
             return self
 
-    def html(self):
+    def html(self, path=None):
+        self.path = path if path else self.path
         serialized = self.serialize(wrap=True)
         if self.metadata['attr']:
             is_ajax = self.request.headers.get('x-requested-with') == 'XMLHttpRequest'

@@ -241,7 +241,7 @@ class Dashboards:
         self.dashboards = []
         self.request = request
         self.data = dict(
-            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
+            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[1, 2, 3],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
         )
         self.data['navigation'].append(

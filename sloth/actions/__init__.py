@@ -49,6 +49,8 @@ class ActionMetaclass(ModelFormMetaclass):
     def __new__(mcs, name, bases, attrs):
         if 'Meta' in attrs:
             if hasattr(attrs['Meta'], 'model'):
+                if isinstance(attrs['Meta'].model, str):
+                    attrs['Meta'].model = apps.get_model(attrs['Meta'].model)
                 bases += forms.ModelForm,
             else:
                 bases += forms.Form,
@@ -180,7 +182,7 @@ class Action(metaclass=ActionMetaclass):
             help_text = confirmation if isinstance(confirmation, str) else ''
             self.fields['confirmation'] = forms.BooleanField(
                 label='', initial='on', required=False, help_text=help_text,
-                widget=forms.TextInput(attrs={'style': 'display:none'})
+                widget=forms.HiddenInput()
             )
 
     def has_url_posted_data(self):
@@ -240,14 +242,19 @@ class Action(metaclass=ActionMetaclass):
         return self.instance.get_one_to_many_field_names() if self.instance else ()
 
     def get_fieldsets(self):
+        related_field = getattr(self.instance, 'related_field', None) if self.instance is not None else None
+        if related_field and related_field in self.fields:
+            del self.fields[related_field]
         fieldsets = getattr(self.metaclass, 'fieldsets', None)
         if fieldsets is None:
             fieldsets = {}
             if self.fields:
                 field_names = [
-                    name for name in self.fields.keys()
-                    if name not in self.get_one_to_one_field_names()
-                       and name not in self.get_one_to_many_field_names()
+                    name for name in self.fields.keys() if (
+                            name not in self.get_one_to_one_field_names()
+                            and name not in self.get_one_to_many_field_names()
+                            and name not in ('confirmation', related_field)
+                    )
                 ]
                 if field_names:
                     fieldsets[None] = field_names
@@ -478,9 +485,10 @@ class Action(metaclass=ActionMetaclass):
             style = getattr(metaclass, 'style', 'primary')
             method = getattr(metaclass, 'method', 'post')
             auto_reload = getattr(metaclass, 'auto_reload', None)
+            image = getattr(metaclass, 'image', None)
         else:
-            name, submit, icon, ajax, modal, style, method, auto_reload = (
-                'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None
+            name, submit, icon, ajax, modal, style, method, auto_reload, image = (
+                'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None, None
             )
         if path:
             path, *params = path.split('?')
@@ -492,7 +500,8 @@ class Action(metaclass=ActionMetaclass):
                 path = '{}?{}'.format(path, params[0])
         metadata = dict(
             type='form', key=cls.get_api_name(), name=name, submit=submit, target=target,
-            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal, auto_reload=auto_reload
+            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal,
+            auto_reload=auto_reload, image=image
         )
         return metadata
 

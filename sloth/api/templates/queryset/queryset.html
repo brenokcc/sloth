@@ -54,8 +54,7 @@
                     url:'{{ data.path|safe }}?{{ request|post_querystring }}',
                     data: data,
                     success:function( html ) {
-                        console.log($(html).html());
-                        $('#{{ data.key }}').html($(html).html()).initialize();
+                        $('#{{ data.key }}').html($(html).find('#{{ data.key }}').html()).initialize();
                         $(document.body).removeClass('page-loading');
                     }
                 });

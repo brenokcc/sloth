@@ -72,6 +72,9 @@ class LoginAsUser(actions.Action):
         verbose_name = 'Acessar'
         style = 'warning'
 
+    def view(self):
+        self.alert('Ao confirmar essa ação, você será autenticado com o usuário selecionado.')
+
     def submit(self):
         auth.login(self.request, self.instance)
         self.redirect('/')
@@ -103,6 +106,7 @@ class Login(actions.Action):
     auth_code = actions.CharField(label='Código', widget=actions.PasswordInput(), required=False)
 
     class Meta:
+        image = settings.SLOTH['LOGIN']['LOGO']
         verbose_name = settings.SLOTH['LOGIN']['TITLE']
         ajax = False
         submit_label = 'Acessar'
@@ -202,6 +206,7 @@ class ChangePassword(actions.Action):
 
     class Meta:
         modal = True
+        icon = 'input-cursor-text'
         verbose_name = 'Alterar Senha'
 
     def clean(self):
@@ -225,7 +230,7 @@ class ChangePassword(actions.Action):
         self.redirect()
 
     def has_permission(self, user):
-        return user.is_authenticated
+        return user.is_superuser or self.request.user == user
 
 
 class Logout(actions.Action):
@@ -237,6 +242,9 @@ class Logout(actions.Action):
         self.request.session.clear()
         auth.logout(self.request)
         self.redirect('/')
+
+    def has_permission(self, user):
+        return user.is_authenticated
 
 
 class Activate2FAuthentication(actions.Action):

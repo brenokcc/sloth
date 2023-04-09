@@ -55,6 +55,12 @@
         {% csrf_token %}
     {% endif %}
 
+    {% if self.get_metadata.image %}
+        <div align="center">
+            <img style="max-height:75" src="{{ self.get_metadata.image }}">
+        </div>
+    {% endif %}
+
     {% if self.non_field_errors %}
         <div class="errors" role="alert">
             {{ self.non_field_errors }}
@@ -68,20 +74,19 @@
 
     {% for title, itens in fieldsets.items %}
     <div class="{{ title|slugify }}">
-        {% if title %}
-        <h5>
-            {% for item in itens %}
-                {% if item.name|is_one_to_one_field_controller %}
-                    {% with field=self|formfield:item.name %}
-                        {{ field }}
-                    {% endwith %}
-                {% endif %}
-            {% endfor %}
-            {{ title }}
-        </h5>
-
-        {% endif %}
-        <fieldset>
+        <fieldset style="margin-bottom:10px">
+            {% if title %}
+                <h5>
+                    {% for item in itens %}
+                        {% if item.name|is_one_to_one_field_controller %}
+                            {% with field=self|formfield:item.name %}
+                                {{ field }}
+                            {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ title }}
+                </h5>
+            {% endif %}
             <div class="form-fieldset responsive-container">
             {% for item in itens %}
                 {% if not item.name|is_one_to_one_field_controller %}

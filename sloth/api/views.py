@@ -215,7 +215,7 @@ def dispatcher(request, path):
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
-        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe'))
+        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe', 'logout'))
         if not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()
@@ -235,7 +235,10 @@ def dispatcher(request, path):
         elif token in ACTIONS or token in ('add', 'edit', 'delete'):
             if token in ('edit', 'delete') and instance is None and instances is None:
                 raise PermissionDenied()
-            form_cls = obj.action_form_cls(token)
+            if token == 'add' and isinstance(obj, QuerySet) and obj.metadata['related_field']:
+                form_cls = obj.model.relation_form_cls(obj.metadata['related_field'])
+            else:
+                form_cls = obj.action_form_cls(token)
             # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances))
             form = form_cls(request=request, instantiator=instantiator, instance=instance, instances=instances)
             if form.check_permission(request.user):

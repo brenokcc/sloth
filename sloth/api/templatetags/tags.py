@@ -291,6 +291,14 @@ def start_querystring(path):
     return mark_safe('{}?'.format(path))
 
 
+@register.filter
+def has_only_primitive_fields(fieldset):
+    for value in fieldset.values():
+        if value['type'] != 'primitive':
+            return False
+    return True
+
+
 @register.tag
 def action(parser,token):
     _, action_name, instantiator, fieldset_name = token.split_contents()

@@ -52,7 +52,7 @@ class ModelMixin(object):
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return  attr is None or user.is_superuser or attr(user)
+        return attr is None or user.is_superuser or attr(user)
 
     def has_view_attr_permission(self, user, name):
         if user.is_superuser or self.has_permission(user):
@@ -65,6 +65,7 @@ class ModelMixin(object):
     def is_view_attr(self, name):
         if not hasattr(self.__class__, '__view__'):
             attr_names = []
+
             def append_attr_names(valueset):
                 names = list(valueset.metadata['names'].keys())
                 names.extend(valueset.metadata['append'])
@@ -262,6 +263,24 @@ class ModelMixin(object):
                 return user.is_superuser or self.instance.has_delete_permission(user) or self.instance.has_permission(user)
 
         return Delete
+
+    @classmethod
+    def relation_form_cls(cls, related_field):
+        _related_field = related_field
+
+        class Add(Action):
+            class Meta:
+                icon = 'plus'
+                modal = True
+                model = cls.get_field(_related_field).model
+                style = 'success'
+                related_field = _related_field
+                verbose_name = 'Adicionar {}'.format(cls.get_field(_related_field).model.metaclass().verbose_name)
+
+            def has_permission(self, user):
+                return user.is_superuser or self.instance.has_edit_permission(user) or self.instance.has_permission(user)
+
+        return Add
 
     @classmethod
     @lru_cache

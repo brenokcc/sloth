@@ -39,7 +39,7 @@ class QuerySet(models.QuerySet):
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, username_lookups=[]
+            verbose_name=None, username_lookups=[], related_field=None
         )
 
     def _clone(self):
@@ -48,6 +48,16 @@ class QuerySet(models.QuerySet):
         self.instantiator = self.instantiator
         clone.metadata = dict(self.metadata)
         return clone
+
+    def first(self):
+        obj = super().first()
+        if self.metadata['related_field']:
+            obj.related_field = self.metadata['related_field']
+        return obj
+
+    def related_field(self, name):
+        self.metadata['related_field'] = name
+        return self.ignore(name)
 
     def role_lookups(self, *names, **scopes):
         for name in names:
@@ -449,8 +459,8 @@ class QuerySet(models.QuerySet):
                 data.update(attach=attach)
 
             if not lazy:
-                collapsed =  bool(self.request and self.request.GET.get('collapsed', self.metadata['collapsed']) or 0)
-                subset =  self.request and self.request.GET.get('subset', 'all') or 'all'
+                collapsed = bool(self.request and self.request.GET.get('collapsed', self.metadata['collapsed']) or 0)
+                subset = self.request and self.request.GET.get('subset', 'all') or 'all'
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
                     collapsed=collapsed, subset=subset,
@@ -480,16 +490,25 @@ class QuerySet(models.QuerySet):
                     target = dict(global_actions='model', actions='instance', batch_actions='queryset', inline_actions='inline')[action_type]
                     for form_name in self.metadata[action_type]:
                         if form_name == 'view':
-                            contine
+                            continue
                         form_cls = self.model.action_form_cls(form_name)
-                        if action_type == 'actions' or self.request is None or form_cls.check_fake_permission(
-                                request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
-                        ):
+                        has_permission = self.request is None or form_cls.check_fake_permission(
+                            request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
+                        )
+                        if action_type == 'actions' or has_permission:
                             action_path = path
                             if self.request and self.request.GET.get('subset'):
                                 action_path = '{}{}/'.format(path, self.request.GET.get('subset'))
                             action = form_cls.get_metadata(path, target)
                             data['actions'][action['target']].append(action)
+                if self.metadata['related_field']:
+                    form_cls = self.model.relation_form_cls(self.metadata['related_field'])
+                    has_permission = self.request is None or form_cls.check_fake_permission(
+                        request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
+                    )
+                    if has_permission:
+                        action = form_cls.get_metadata(path, 'model')
+                        data['actions']['model'].append(action)
 
                 template = self.metadata['template']
                 if template is None:

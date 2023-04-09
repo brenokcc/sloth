@@ -16,14 +16,12 @@ class UserManager(models.Manager):
     def all(self):
         return self.display(
             'username', 'get_name', 'is_superuser', 'get_roles_names'
-        ).actions('LoginAsUser').verbose_name('Usuários').attach(
+        ).actions('login_as_user', 'change_password').verbose_name('Usuários').attach(
             'active', 'inactive'
         )
 
-
     def active(self):
         return self.all().filter(is_active=True).verbose_name('Ativos')
-
 
     def inactive(self):
         return self.all().filter(is_active=False).verbose_name('Inativos')

@@ -26,7 +26,7 @@ class Dashboard(metaclass=DashboardType):
         self.redirect_message = None
         self.request = request
         self.data = dict(
-            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[],
+            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], plus=[],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
         )
         self.defined_apps = {}
@@ -57,7 +57,7 @@ class Dashboard(metaclass=DashboardType):
         return
 
     def _load(self, key, items, modal=False, count=False, app=None):
-        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search'
+        allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search', 'plus'
         for cls in items:
             if '.' in cls:
                 tokens = cls.split('.')
@@ -74,24 +74,27 @@ class Dashboard(metaclass=DashboardType):
                 if subset is None:
                     if cls.check_fake_permission(request=self.request):
                         metadata = cls.get_metadata()
+                        url = '/app/dashboard/{}/'.format(metadata['key'])
                         self.data[key].append(dict(
-                            url='/app/dashboard/{}/'.format(metadata['key']), modal=metadata['modal'] and modal,
+                            url=url, modal=metadata['modal'] and modal,
                             label=metadata['name'], icon=metadata['icon'], app=app
                         ))
                 else:
                     qs = getattr(cls.objects, subset)()
                     if self.request.user.is_superuser or qs.has_permission(self.request.user):
                         if key in allways or self.request.path == '/app/dashboard/':
-                            label = cls.metaclass().verbose_name_plural
+                            label = cls.metaclass().verbose_name if key == 'plus' else cls.metaclass().verbose_name_plural
                             if subset and subset != 'all':
                                 label = '{} {}'.format(label, qs.get_attr_metadata(subset)[0])
                             url = cls.get_list_url('/app', subset)
+                            if key == 'plus':
+                                url = '{}{}/'.format(url, 'add')
                             for item in self.data[key]:
                                 add_item = add_item and not item['url'] == url
                             if add_item:
                                 self.data[key].append(
                                     dict(
-                                        url=url, label=label, modal=modal,
+                                        url=url, label=label, modal=modal or key == 'plus',
                                         count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
                                         icon=getattr(cls.metaclass(), 'icon', None),
                                         app=app
@@ -109,7 +112,7 @@ class Dashboard(metaclass=DashboardType):
     def warning(self, *items, app=None):
         self._load('warning', items, app=app)
 
-    def search(self, *items, app=None):
+    def search_menu(self, *items, app=None):
         self._load('search', items, app=app)
 
     def menu(self, *items, app=None):
@@ -118,7 +121,7 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._load('menu', items, app=app)
 
-    def links(self, *items, modal=False, app=None):
+    def top_menu(self, *items, modal=False, app=None):
         self._load('links', items, modal=modal, app=app)
 
     def add_link(self, url, label, app=None):
@@ -130,7 +133,7 @@ class Dashboard(metaclass=DashboardType):
     def add_shortcut(self, url, label, icon, app=None):
         self._item('shortcut', url, label, icon, app=app)
 
-    def actions(self, *items, app=None):
+    def action_bar(self, *items, app=None):
         if mobile(self.request):
             self._load('search', items, app=app)
         else:
@@ -152,8 +155,11 @@ class Dashboard(metaclass=DashboardType):
     def floating(self, *items, app=None):
         self._load('floating', items, app=app)
 
-    def tools(self, *items, app=None):
+    def tools_menu(self, *items, app=None):
         self._load('tools', items, app=app)
+
+    def plus_menu(self, *items, app=None):
+        self._load('plus', items, app=app)
 
     def navigation(self, *items, app=None):
         if mobile(self.request):
@@ -167,7 +173,7 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._item('navigation', url, label, icon, app=app)
 
-    def settings(self, *items, modal=False, app=None):
+    def settings_menu(self, *items, modal=False, app=None):
         self._load('settings', items, modal=modal, app=app)
 
     def append(self, data, aside=False, grid=1):
@@ -241,7 +247,7 @@ class Dashboards:
         self.dashboards = []
         self.request = request
         self.data = dict(
-            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[1, 2, 3],
+            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[], plus=[],
             floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
         )
         self.data['navigation'].append(

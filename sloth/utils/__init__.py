@@ -12,7 +12,7 @@ def to_snake_case(name):
 
 
 def to_camel_case(name):
-    return  ''.join(word.title() for word in name.split('_'))
+    return ''.join(word.title() for word in name.split('_'))
 
 
 def getattrr(obj, args):

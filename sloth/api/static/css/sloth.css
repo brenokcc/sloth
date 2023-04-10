@@ -406,6 +406,13 @@ th, label, .fieldset-field-label, .nav-link.active{
     color: inherit !important;
 }
 
+.valueset-subtitle-text{
+    font-family: Eina02-SemiBold;
+    font-size: 1.2rem;
+    font-style: italic;
+    margin-top: -10px;
+}
+
 .card{
     border: 0 !important;
 }

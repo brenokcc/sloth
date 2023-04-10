@@ -1,16 +1,11 @@
 {% load tags %}
-<style>
-  .settings-dropdown li{
-    text-align:center;
-  }
-</style>
 <ul class="navbar-nav">
   <li class="nav-item dropdown settings-dropdown">
     <a class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ request.user }}" style="white-space:nowrap" name="settings">
       <i class="bi bi-three-dots-vertical"></i>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-      <li>
+      <li style="text-align:center">
         <img width="50" height="50" src="/static/images/user.png" style="border-radius: 50%" onerror="this.onerror=null;this.src='/static/images/user.png';">
         <div class="p-2">
           {{ request.user.username }}
@@ -19,7 +14,7 @@
       {% if dashboard.data.settings %}
       <li><hr class="dropdown-divider"></li>
       {% for item in dashboard.data.settings %}
-          <li>
+          <li style="text-align:center">
             <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">
               {{ item.icon|icontag }}
               {{ item.label }}
@@ -27,28 +22,8 @@
           </li>
       {% endfor %}
       {% endif %}
-      <!--
-      {% with roles=request.user.roles.all %}
-        {% if roles %}
-          <li><hr class="dropdown-divider"></li>
-          <li class="text-center fw-bold">Papéis</li>
-          {% for name in request.user.roles.active.names %}
-            <li class="text-center" style="padding:5px">{{ name }}</li>
-          {% endfor %}
-          {% for name in request.user.roles.inactive.names %}
-            <li class="text-center" style="color:#CCC;padding:5px">{{ name }}</li>
-          {% endfor %}
-          <li><hr class="dropdown-divider"></li>
-          <li>
-            <a class="dropdown-item popup" href="/app/roles/">
-              <i class="bi bi-person-check"></i>
-              Gerenciar Papéis
-            </a>
-          </li>
-        {% endif %}
-      {% endwith %}-->
       <li><hr class="dropdown-divider"></li>
-      <li>
+      <li style="text-align:center">
         <a class="dropdown-item" href="/app/dashboard/logout/">
           <i class="bi bi-box-arrow-right"></i>
           Sair

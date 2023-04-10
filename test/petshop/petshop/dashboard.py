@@ -6,17 +6,17 @@ class PetshopDashboard(Dashboard):
 
     def __init__(self, request):
         super().__init__(request)
-        self.settings('ChangePassword', 'Activate2FAuthentication', 'Deactivate2FAuthentication', 'Icons', modal=True)
+        self.settings_menu('ChangePassword', 'Activate2FAuthentication', 'Deactivate2FAuthentication', 'Icons', modal=True)
         self.header(title='Petshop', shadow=True)
         self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')
-        self.actions('petshop.animal', 'petshop.cliente', 'teste')
-        self.links('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa2', 'exibir_data_hora')
-        self.links('fazer_alguma_coisa', modal=True)
+        self.action_bar('petshop.animal', 'petshop.cliente', 'teste')
+        self.top_menu('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa2', 'exibir_data_hora')
+        self.top_menu('fazer_alguma_coisa', modal=True)
         self.cards('petshop.animal', 'petshop.cliente', 'petshop.doenca.contagiosas')
         self.navigation('petshop.animal', 'petshop.cliente')
         self.floating('petshop.animal', 'petshop.cliente')
-        self.settings('petshop.animal', 'petshop.cliente')
+        self.settings_menu('petshop.animal', 'petshop.cliente')
 
     def get_animal_preferido(self):
         animal = self.objects('petshop.animal').first()

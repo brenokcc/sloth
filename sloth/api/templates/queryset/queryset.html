@@ -117,11 +117,11 @@
         {% include "queryset/calendar.html" with data=data %}
     {% endif %}
 
-    {% if data.metadata.total is not None %}
-    <div class="float-end">
-        <h3>Total: {{ data.metadata.total|format }}</h3>
-    </div>
-    <div class="clear-fix">&nbsp;</div>
+    {% if data.metadata.aggregations %}
+        {% for aggregation in data.metadata.aggregations.values %}
+            <h3 style="float:right; margin-left: 20">{{ aggregation.name }}: {{ aggregation.value|format }}</h3>
+        {% endfor %}
+        <div class="clear-fix">&nbsp;</div>
     {% endif %}
 
     {% endif %}

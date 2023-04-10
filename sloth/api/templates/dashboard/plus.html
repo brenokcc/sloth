@@ -1,12 +1,12 @@
 {% load tags %}
-{% if dashboard.data.tools %}
+{% if dashboard.data.plus %}
 <ul class="navbar-nav">
-  <li class="nav-item dropdown tools-dropdown">
+  <li class="nav-item dropdown add-dropdown">
     <a class="nav-link" href="#" id="navbarToolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Ferramentas" name="tools">
-      <i class="bi bi-tools"></i>
+      <i class="bi bi-plus-square"></i>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarToolsDropdown">
-      {% for item in dashboard.data.tools %}
+      {% for item in dashboard.data.plus %}
       <li style="text-align:center">
         <a class="dropdown-item {% if item.modal %}popup{% endif %}" href="{{ item.url }}">
           {{ item.icon|icontag }}

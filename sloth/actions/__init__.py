@@ -10,8 +10,7 @@ from functools import lru_cache
 from django.apps import apps
 from django.contrib import messages
 from django.forms.models import ModelFormMetaclass
-from django.forms.widgets import *
-from django.forms.fields import *
+from django.forms import *
 from .fields import *
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string

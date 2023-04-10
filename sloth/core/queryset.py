@@ -37,7 +37,7 @@ class QuerySet(models.QuerySet):
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[], filters={}, dfilters={}, search=None,
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
-            actions=[], attach=[], template=None, attr=None, source=None, totalizer=None, calendar=None,
+            actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
             verbose_name=None, username_lookups=[], related_field=None
         )
@@ -351,7 +351,7 @@ class QuerySet(models.QuerySet):
             last_day_of_next_month = last_day_of_next_month + datetime.timedelta(days=1)
         last_day_of_next_month = last_day_of_next_month - datetime.timedelta(days=1)
         selected_date = self.request.GET.get('selected-date')
-        if  selected_date:
+        if selected_date:
             selected_date = datetime.datetime.strptime(selected_date, '%d/%m/%Y').date()
         # print(first_day_of_month, last_day_of_month)
         # print(first_day_of_previous_month, last_day_of_previous_month)
@@ -468,8 +468,16 @@ class QuerySet(models.QuerySet):
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
-                if self.metadata['totalizer']:
-                    data['metadata'].update(total=self.sum(self.metadata['totalizer']))
+
+                if self.metadata['aggregations']:
+                    aggregations = {}
+                    for aggregation in self.metadata['aggregations']:
+                        aggregations[aggregation] = dict(
+                            name=pretty(self.get_attr_metadata(aggregation)[0]),
+                            value=getattr(self, aggregation)()
+                        )
+                    data['metadata'].update(aggregations=aggregations)
+
                 data['actions'].update(model=[], instance=[], queryset=[], inline=[])
 
                 for view in self.metadata['view']:
@@ -529,8 +537,8 @@ class QuerySet(models.QuerySet):
         self.metadata['is_admin'] = True
         return self
 
-    def totalizer(self, name):
-        self.metadata['totalizer'] = name
+    def aggregations(self, *names):
+        self.metadata['aggregations'].extend(names)
         return self
 
     def verbose_name(self, name):

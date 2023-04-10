@@ -53,7 +53,7 @@ class ValueSet(dict):
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
             attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
-            cards=[], shortcuts=[]
+            cards=[], shortcuts=[], collapsed=False
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -62,6 +62,13 @@ class ValueSet(dict):
             else:
                 self.metadata['names'][attr_name] = 100
         super().__init__()
+
+    def collapsed(self, flag=True):
+        self.metadata['collapsed'] = flag
+        return self
+
+    def expand(self):
+        return self.collapsed(False)
 
     def only(self, **names):
         for name, role in names.items():
@@ -232,17 +239,19 @@ class ValueSet(dict):
                         qs.metadata['uuid'] = attr_name
                         qs.metadata['path'] = path
                         verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
+                        template = getattr(attr, '__template__', None)
+                        template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:
                             qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
                         if wrap:
-                            if self.metadata['primitive'] and deep>0:
-                                data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
+                            if template or (self.metadata['primitive'] and deep > 0):
+                                data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
                                 data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
                             data.update(name=verbose_name, key=attr_name)
                         else:
-                            if self.metadata['primitive'] and deep>0:  # one-to-many or many-to-many
-                                data = dict(value=serialize(qs), width=width, template=None, type='primitive', path=path)
+                            if self.metadata['primitive']:  # one-to-many or many-to-many (and deep > 0)
+                                data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
                                 data = qs.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
@@ -262,8 +271,9 @@ class ValueSet(dict):
                         if not valueset:
                             continue
                         refresh = valueset.refresh_data()
+                        collapsed = valueset.metadata['collapsed']
                         data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name,
-                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path
+                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path, collapsed=collapsed
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
                             data.update(instance=valueset.instance)
@@ -335,10 +345,10 @@ class ValueSet(dict):
             for key in ('title', 'subtitle', 'status'):
                 if self.metadata[key]:
                     value = getattr(self.instance, self.metadata[key])
-                    if self.metadata[key]:
-                        verbose_name, ordering, template, metadata = self.instance.get_attr_metadata(self.metadata[key])
-                    else:
-                        verbose_name, ordering, template, metadata = str(self.instance), None, None, {}
+                    value = value() if callable(value) else value
+                    verbose_name, ordering, template, metadata = self.instance.get_attr_metadata(self.metadata[key])
+                    if isinstance(value, QuerySet):
+                        value = [str(obj) for obj in value]
                     output[key] = dict(value=value, template=template, metadata=metadata)
 
             output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
@@ -355,10 +365,9 @@ class ValueSet(dict):
                     output['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
             for attr_name in self.metadata['append']:
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
+                    template = getattr(getattr(self.instance, attr_name), '__template__', None)
                     output['append'].update(
-                        self.instance.value_set(attr_name).contextualize(
-                            self.request
-                        ).load(wrap=wrap)
+                        self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
                     )
             return output
         else:

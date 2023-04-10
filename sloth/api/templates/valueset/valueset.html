@@ -66,46 +66,48 @@
         {% if data.template %}
             {% include data.template with data=data.data %}
         {% else %}
-        <div class="valueset-fieldsets">
-            {% if data.data|has_only_primitive_fields %}
-                <div class="box">
+            {% if data.data %}
+            <div class="valueset-fieldsets">
+                {% if data.data|has_only_primitive_fields %}
+                    <div class="box">
+                        {% for name, item in data.data.items %}
+                            {% if item.template %}
+                                {% include item.template with value=item.value metadata=item.metadata %}
+                            {% else %}
+                                {% include 'valueset/field.html' with v=item %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
                     {% for name, item in data.data.items %}
-                        {% if item.template %}
-                            {% include item.template with value=item.value metadata=item.metadata %}
-                        {% else %}
-                            {% include 'valueset/field.html' with v=item %}
+                        {% if item.type == 'fieldset-group' %}
+                            {% include 'valueset/fieldset-group.html' with item=item %}
+                        {% endif %}
+                        {% if item.type == 'fieldset-list' %}
+                            {% include 'valueset/fieldset-list.html' with item=item %}
+                        {% endif %}
+                        {% if item.type == 'fieldset' %}
+                            {% include 'valueset/fieldset.html' with data=item %}
+                        {% endif %}
+                        {% if item.type == 'queryset' %}
+                            {% include 'valueset/fieldset.html' with data=item %}
+                        {% endif %}
+                        {% if item.type == 'statistics' %}
+                            {% include 'valueset/fieldset.html' with data=item %}
+                        {% endif %}
+                        {% if item.type == 'primitive' %}
+                            <div class="reloadable-fieldset box" id="{{ item.key }}" data-path="{{ item.path }}">
+                            {% if item.template %}
+                                {% include item.template with value=item.value metadata=item.metadata %}
+                            {% else %}
+                                {% include 'valueset/field.html' with v=item %}
+                            {% endif %}
+                            </div>
                         {% endif %}
                     {% endfor %}
-                </div>
-            {% else %}
-                {% for name, item in data.data.items %}
-                    {% if item.type == 'fieldset-group' %}
-                        {% include 'valueset/fieldset-group.html' with item=item %}
-                    {% endif %}
-                    {% if item.type == 'fieldset-list' %}
-                        {% include 'valueset/fieldset-list.html' with item=item %}
-                    {% endif %}
-                    {% if item.type == 'fieldset' %}
-                        {% include 'valueset/fieldset.html' with data=item %}
-                    {% endif %}
-                    {% if item.type == 'queryset' %}
-                        {% include 'valueset/fieldset.html' with data=item %}
-                    {% endif %}
-                    {% if item.type == 'statistics' %}
-                        {% include 'valueset/fieldset.html' with data=item %}
-                    {% endif %}
-                    {% if item.type == 'primitive' %}
-                        <div class="reloadable-fieldset box" id="{{ item.key }}" data-path="{{ item.path }}">
-                        {% if item.template %}
-                            {% include item.template with value=item.value metadata=item.metadata %}
-                        {% else %}
-                            {% include 'valueset/field.html' with v=item %}
-                        {% endif %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
+                {% endif %}
+            </div>
             {% endif %}
-        </div>
         {% endif %}
     </div>
     {% if data.append %}

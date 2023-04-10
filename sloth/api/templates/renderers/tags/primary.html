@@ -1,0 +1,12 @@
+{% if value %}
+    <div>
+        {% for tag in value %}
+            <span class="badge bg-primary" style="padding:10;margin:5">
+                <i class="bi bi-tag"></i>
+                {{ tag }}
+            </span>
+        {% endfor %}
+    </div>
+{% else %}
+    -
+{% endif %}

@@ -9,7 +9,7 @@
                 {% if image_key %}
                     {% for k, v in row.data.items %}
                         {% if k == image_key %}
-                            <img class="card-img-top" src="{{ v.value|image_src }}">
+                            <img class="card-img-top" src="{{ v.value|image_src }}" style="max-height:200px;display:block;margin-left:auto;margin-right:auto;">
                         {% endif %}
                     {% endfor %}
                 {% endif %}
@@ -21,7 +21,7 @@
                     <dl>
                         {% for k, v in row.data.items %}
                             {% if k != image_key %}
-                                <dt>{{ v.name }}</dt>
+                                <dt><label>{{ v.name }}</label></dt>
                                 <dd>{% include 'valueset/value.html' %}</dd>
                             {% endif %}
                         {% endfor %}

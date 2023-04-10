@@ -6,12 +6,13 @@ class PetshopDashboard(Dashboard):
 
     def __init__(self, request):
         super().__init__(request)
-        self.settings_menu('ChangePassword', 'Activate2FAuthentication', 'Deactivate2FAuthentication', 'Icons', modal=True)
+        self.settings_menu('change_password', 'activate_2f_authentication', 'deactivate_2f_authentication')
+        self.tools_menu('show_icons')
         self.header(title='Petshop', shadow=True)
         self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')
         self.action_bar('petshop.animal', 'petshop.cliente', 'teste')
-        self.top_menu('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa2', 'exibir_data_hora')
+        self.top_menu('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa_2', 'exibir_data_hora')
         self.top_menu('fazer_alguma_coisa', modal=True)
         self.cards('petshop.animal', 'petshop.cliente', 'petshop.doenca.contagiosas')
         self.navigation('petshop.animal', 'petshop.cliente')
@@ -26,10 +27,10 @@ class PetshopDashboard(Dashboard):
         return self.objects('petshop.tratamento').all().batch_actions('ExcluirTratamentos')
 
     def get_caes(self):
-        return self.objects('petshop.animal').filter(tipo=1).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa2')
+        return self.objects('petshop.animal').filter(tipo=1).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa_2')
 
     def get_gatos(self):
-        return self.objects('petshop.animal').filter(tipo=2).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa2')
+        return self.objects('petshop.animal').filter(tipo=2).ignore('foto').verbose_name('Cães').accordion().global_actions('fazer_alguma_coisa_2')
 
     def get_estatistica(self):
         return self.objects('petshop.animal').get_qtd_por_tipo().verbose_name('Animais por Tipo').bar_chart()
@@ -47,7 +48,7 @@ class PetshopDashboard(Dashboard):
         ).append(
             'get_caes', 'get_doencas'
         ).actions(
-            'fazer_alguma_coisa2', 'exibir_data_hora'
+            'fazer_alguma_coisa_2', 'exibir_data_hora'
         ).inline_actions('exibir_permissoes')
 
     def get_total_animais_por_tipo(self):

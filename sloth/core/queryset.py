@@ -69,12 +69,11 @@ class QuerySet(models.QuerySet):
         return self
 
     def grant_permission(self, *names, **scopes):
-        for name in names:
-            if name in ('User', 'Usuário') and 'username' in scopes.values():
-                for username_lookup in scopes:
-                    self.username_lookup(username_lookup)
-            else:
-                self.role_lookups(*names, **scopes)
+        if names:
+            self.role_lookups(*names, **scopes)
+        else:
+            for username_lookup in scopes:
+                self.username_lookup(username_lookup)
         return self
 
     def has_permission(self, user):

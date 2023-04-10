@@ -247,7 +247,7 @@ class Logout(actions.Action):
         return user.is_authenticated
 
 
-class Activate2FAuthentication(actions.Action):
+class Activate2fAuthentication(actions.Action):
     code = actions.CharField(label='Código')
 
     class Meta:
@@ -290,7 +290,7 @@ class Activate2FAuthentication(actions.Action):
         return self.request.user.is_authenticated and not self.request.user.authcode_set.filter(active=True).exists()
 
 
-class Deactivate2FAuthentication(actions.Action):
+class Deactivate2fAuthentication(actions.Action):
 
     class Meta:
         modal = True
@@ -323,7 +323,10 @@ class NotificationSubscribe(actions.Action):
         print(subscription)
 
 
-class Icons(actions.Action):
+class ShowIcons(actions.Action):
+    class Meta:
+        icon = 'palette'
+        verbose_name = 'Ícones'
 
     def view(self):
         libraries = {}

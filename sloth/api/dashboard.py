@@ -7,6 +7,8 @@ from .templatetags.tags import mobile
 from sloth.api.exceptions import ReadyResponseException
 from sloth.utils import pretty
 from ..actions import Action, ACTIONS
+from ..core.valueset import ValueSet
+from ..core.queryset import QuerySet
 
 DASHBOARDS = []
 
@@ -34,11 +36,14 @@ class Dashboard(metaclass=DashboardType):
         if self.request.user.is_authenticated:
             self.load(request)
         if self.request.path == '/app/dashboard/':
-            valueset = self.view()
-            if valueset:
-                self.append(valueset)
-                for data in valueset.get('append'):
-                    self.append(data, aside=True)
+            obj = self.view()
+            if obj:
+                if isinstance(obj, ValueSet):
+                    self.append(obj)
+                    for data in obj.get('append'):
+                        self.append(data, aside=True)
+                elif isinstance(obj, QuerySet):
+                    self.append(obj)
 
     def view(self):
         return None
@@ -155,11 +160,11 @@ class Dashboard(metaclass=DashboardType):
     def floating(self, *items, app=None):
         self._load('floating', items, app=app)
 
-    def tools_menu(self, *items, app=None):
-        self._load('tools', items, app=app)
+    def tools_menu(self, *items, modal=True, app=None):
+        self._load('tools', items, modal=modal, app=app)
 
-    def plus_menu(self, *items, app=None):
-        self._load('plus', items, app=app)
+    def plus_menu(self, *items, modal=True, app=None):
+        self._load('plus', items, modal=modal, app=app)
 
     def navigation(self, *items, app=None):
         if mobile(self.request):
@@ -173,7 +178,7 @@ class Dashboard(metaclass=DashboardType):
         else:
             self._item('navigation', url, label, icon, app=app)
 
-    def settings_menu(self, *items, modal=False, app=None):
+    def settings_menu(self, *items, modal=True, app=None):
         self._load('settings', items, modal=modal, app=app)
 
     def append(self, data, aside=False, grid=1):

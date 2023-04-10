@@ -116,7 +116,7 @@ class ApiTestCase(ServerTestCase):
 
         self.get('/api/base/servidor/1/')
         self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigir_nome_servidor1/', dict(nome='Emanoel'))
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigir_nome_servidor_1/', dict(nome='Emanoel'))
         self.get('/api/base/servidor/1/get_dados_gerais/')
         self.get('/api/base/servidor/1/get_ferias/')
         self.post('/api/base/servidor/1/get_ferias/1-2/alterar_ferias/', dict(inicio='01/06/2020', fim='01/07/2020'))

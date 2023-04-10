@@ -8,7 +8,7 @@ from django.db.models.fields.files import FieldFile
 
 
 def to_snake_case(name):
-    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+    return name if name.islower() else re.sub(r'(?<!^)(?=[A-Z0-9])', '_', name).lower()
 
 
 def to_camel_case(name):

@@ -209,7 +209,7 @@ class Animal(models.Model):
         return self.tratamento_set.count('doenca').donut_chart()
 
     def view(self):
-        return self.value_set('get_situacao', 'get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca').actions('fazer_alguma_coisa2')
+        return self.value_set('get_situacao', 'get_dados_gerais', 'get_tratamentos').append('get_proprietario', 'get_tratamentos_por_doenca').actions('fazer_alguma_coisa_2')
 
     def has_permission(self, user):
         return user.is_superuser or user.roles.contains('Funcionário')
@@ -270,7 +270,7 @@ class Tratamento(models.Model):
         return self.value_set(('animal', 'doenca'), ('data_inicio', 'data_fim'))#.inline_actions('RegistrarProcedimento')
 
     def get_procedimentos(self):
-        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').totalizer('tipo__valor').timeline().expand()
+        return self.procedimento_set.ignore('tratamento').inline_actions('RegistrarProcedimento').actions('edit', 'delete').aggregations('get_valor_gasto').timeline().expand()
 
     @meta('Procedimentos por Tipo')
     def get_procedimentos_por_tipo(self):

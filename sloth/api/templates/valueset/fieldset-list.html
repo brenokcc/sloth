@@ -14,7 +14,7 @@
   {% for fieldset in item.data.values %}
       <li class="nav-item">
           <a class="nav-link {{ fieldset.key }} {% if forloop.first %}active{% endif %}" aria-current="page"
-             href="javascript:" onclick="reloadFieldsetList{{ item.uuid }}('{{ fieldset.key }}', '{{ fieldset.path }}')">
+             href="javascript:" onclick="reloadFieldsetList{{ item.uuid }}('{{ fieldset.key }}', '{{ fieldset.path }}', '{{ fieldset.type }}')">
               <div class="spinner-border spinner-border-sm d-none" role="status">
                   <span class="visually-hidden">Loading...</span>
               </div>
@@ -24,7 +24,10 @@
   {% endfor %}
 </ul>
 <script>
-    function reloadFieldsetList{{ item.uuid }}(tab, path){
+    function hideTitles{{ item.uuid }}(){
+        $('#fieldset-list-{{ item.uuid }}-tab').find('.fieldset-title,.queryset-title').hide();
+    }
+    function reloadFieldsetList{{ item.uuid }}(tab, path, type){
         // $(document).setCookie('current_tab', tab);
         $(document.body).addClass('page-loading');
         $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
@@ -33,6 +36,7 @@
             data:{tab:1},
             success:function( html ) {
                 $('#fieldset-list-{{ item.uuid }}-tab').html(html).initialize();
+                if(['fieldset', 'queryset', 'statistics'].indexOf(type)>-1) hideTitles{{ item.uuid }}();
                 $('#fieldset-list-{{ item.uuid }}').find('.nav-link').removeClass('active');
                 $('#fieldset-list-{{ item.uuid }}').find('.nav-link.'+tab).addClass('active');
                 $(document.body).removeClass('page-loading');
@@ -42,11 +46,12 @@
     }
  </script>
 <div class="fieldset-tab" id="fieldset-list-{{ item.uuid }}-tab">
-{% for item in item.data.values %}
-    {% if forloop.first %}
-        {% include 'valueset/fieldset.html' with data=item %}
-    {% endif %}
-{% endfor %}
+    {% for item in item.data.values %}
+        {% if forloop.first %}
+            {% include 'valueset/fieldset.html' with data=item %}
+        {% endif %}
+    {% endfor %}
+    <script>hideTitles{{ item.uuid }}();</script>
 </div>
 {% endif %}
 </div>

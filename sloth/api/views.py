@@ -208,6 +208,7 @@ def dispatcher(request, path):
         app_label, model_name = token, tokens.pop(0)
         obj = apps.get_model(app_label, model_name).objects.view()
         if isinstance(obj, QuerySet):
+            instances = obj
             obj = obj.default_actions().expand().admin()
         allowed_attrs = obj.get_allowed_attrs()
         if not tokens and not obj.has_permission(request.user):
@@ -267,5 +268,7 @@ def dispatcher(request, path):
                     obj = getattr(obj, token)()
                 if isinstance(obj, ValueSet):
                     instance = instantiator
+                if isinstance(obj, QuerySet):
+                    instances = obj
         allowed_attrs = obj.get_allowed_attrs()
     return obj.contextualize(request).apply_role_lookups(request.user)

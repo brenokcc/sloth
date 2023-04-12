@@ -14,6 +14,7 @@ from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings
 from .models import AuthCode, PushNotification
+from ..utils.http import CsvResponse, XlsResponse, PdfReportResponse
 from ..utils.icons import bootstrap, materialicons, fontawesome
 
 
@@ -473,3 +474,40 @@ class ResetPassword(actions.ActionView):
         if self.cleaned_data.get('pass1') != self.cleaned_data.get('pass2'):
             raise actions.ValidationError('Senhas não conferem.')
         return self.cleaned_data
+
+
+class ExportCsv(actions.Action):
+    class Meta:
+        icon = 'file-text'
+        verbose_name = 'Exportar CSV'
+        style = 'primary'
+
+    def view(self):
+        return CsvResponse(self.instances.export())
+
+    def has_permission(self, user):
+        return self
+
+class ExportXls(actions.Action):
+    class Meta:
+        icon = 'file-excel'
+        verbose_name = 'Exportar XLS'
+        style = 'primary'
+
+    def view(self):
+        return XlsResponse([([self.instances.model.metaclass().verbose_name_plural, self.instances.export()])])
+
+    def has_permission(self, user):
+        return self
+
+class ExportPdf(actions.Action):
+    class Meta:
+        icon = 'file-pdf'
+        verbose_name = 'Exportar PDF'
+        style = 'primary'
+
+    def view(self):
+        return PdfReportResponse(self.request, self.instances.contextualize(self.request).html())
+
+    def has_permission(self, user):
+        return self

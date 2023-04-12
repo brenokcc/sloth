@@ -750,7 +750,6 @@ class QuerySet(models.QuerySet):
         return super().__str__()
 
     # request functions
-
     def contextualize(self, request):
         self.request = request
         if request and request.user.is_superuser and 'autouser' in self.metadata['ignore']:
@@ -760,21 +759,6 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)
                 )
-            if 'export' in request.GET:
-                export = request.GET['export']
-                if export == 'xls':
-                    raise ReadyResponseException(
-                        XlsResponse(
-                            [([self.model.metaclass().verbose_name_plural, self.export()])]
-                        )
-                    )
-                if export == 'csv':
-                    raise ReadyResponseException(
-                        CsvResponse(self.export())
-                    )
-            if 'attaches' in request.GET:
-                raise JsonReadyResponseException(self.get_attach())
-
             component = self.process_request(request).apply_role_lookups(request.user)
             if request.path.startswith('/app/'):
                 raise HtmlReadyResponseException(component.html())

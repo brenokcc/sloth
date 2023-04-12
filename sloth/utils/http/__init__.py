@@ -41,7 +41,7 @@ class CsvResponse(HttpResponse):
         with open(path, 'w', encoding='iso8859-1') as output:
             writer = csv.writer(output)
             for row in rows:
-                writer.writerow([col.replace(' – ',  ' - ') for col in row])
+                writer.writerow([str(col).replace(' – ',  ' - ') for col in row])
         file = open(path, 'rb')
         content = file.read()
         file.close()
@@ -128,16 +128,14 @@ class HtmlToPdfResponse(HttpResponse):
             html = html.replace('content="Portrait"', 'content="Landscape"')
         html = html.replace('/media', settings.MEDIA_ROOT)
         html = html.replace('/static', '{}/{}/static'.format(settings.BASE_DIR, settings.BASE_DIR.name))
-        pdfkit.from_string(html, file_name)
+        pdfkit.from_string(html, file_name, options={"enable-local-file-access": ""})
         str_bytes = open(file_name, "rb").read()
         os.unlink(file_name)
         super().__init__(str_bytes, content_type='application/pdf')
 
 
 class PdfReportResponse(HtmlToPdfResponse):
-    def __init__(self, request, data, landscape=False, template='dashboard/report.html'):
-        data.update(
-            today=datetime.date.today(), settings=settings
-        )
-        html = render_to_string([template], data, request=request)
+    def __init__(self, request, content, landscape=False, template='dashboard/report.html'):
+        context = dict(today=datetime.date.today(), settings=settings, content=content)
+        html = render_to_string([template], context, request=request)
         super().__init__(html, landscape=landscape)

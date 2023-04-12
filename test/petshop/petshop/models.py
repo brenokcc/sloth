@@ -132,7 +132,7 @@ class Cliente(models.Model):
         return self.value_set(('nome', 'cpf')).actions('fazer_alguma_coisa')
 
     def get_animais(self):
-        return self.animal_set.all().actions('view')
+        return self.animal_set.all().actions('view').global_actions('export_pdf')
 
     def get_total_gasto_por_tipo_procedimento(self):
         return Procedimento.objects.filter(tratamento__animal__proprietario=self).sum('tipo__valor', 'tipo')

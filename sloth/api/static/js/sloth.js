@@ -39,7 +39,7 @@ jQuery.fn.extend({
                     else if (contentType.indexOf('png') >= 0) a.download = 'Download.png';
                     document.body.appendChild(a);
                     a.click();
-                    $(document).back();
+                    $(document).back(true);
                 }
             },
             async: true,
@@ -117,7 +117,7 @@ jQuery.fn.extend({
         } else {
             //$(document).open(document.referrer);
             //window.history.pushState("string", "Title", document.referrer);
-            document.location.href = document.referrer;
+            if(!canceled) document.location.href = document.referrer;
         }
         return this;
     },

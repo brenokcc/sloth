@@ -9,3 +9,5 @@ class Tarefa(Task):
             if i % 5 == 0:
                 self.message('Executando passo {}'.format(i))
         self.finalize()
+
+

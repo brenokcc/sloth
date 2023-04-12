@@ -1,9 +1,154 @@
-<template name="class" value="class $NAME$Manager(models.Manager):&#10;    def all(self):&#10;        return self&#10;&#10; &#10;class $NAME$(models.Model):&#10;    &#10;    $FIELD$&#10;    &#10;    objects = $NAME$Manager()&#10;    &#10;    class Meta:&#10;        verbose_name = '$VERBOSE_NAME$'&#10;        verbose_name_plural = '$VERBOSE_NAME_PLURAL$'&#10;        &#10;    def __str__(self):&#10;        return '{}'.format(self.pk)&#10;" description="Creates model and its manager" toReformat="false" toShortenFQNames="true">
+<template name="BooleanField" value="$p1$ = models.BooleanField('$p2$', default=$p3$)" description="Creates a BooleanField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="CharField" value="$p1$ = models.CharField('$p2$')" description="Creates a CharField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="class (Action)" value="class $NAME$(actions.Action):&#10;    class Meta:&#10;        verbose_name = '$NAME$'&#10;        modal = False&#10;        style = 'primary'&#10;        &#10;    def submit(self):&#10;        super().submit()" description="Creates an action" toReformat="false" toShortenFQNames="true">
+  <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Top_Level" value="true" />
+  </context>
+</template>
+<template name="class (Manager/Model)" value="class $NAME$Manager(models.Manager):&#10;    def all(self):&#10;        return self&#10;&#10; &#10;class $NAME$(models.Model):&#10;    &#10;    objects = $NAME$Manager()&#10;    &#10;    class Meta:&#10;        verbose_name = '$VERBOSE_NAME$'&#10;        verbose_name_plural = '$VERBOSE_NAME_PLURAL$'&#10;        &#10;    def __str__(self):&#10;        return '{}'.format(self.pk)&#10;        &#10;    def has_permission(self, user):&#10;        return user.is_superuser&#10;" description="Creates model and its manager" toReformat="false" toShortenFQNames="true">
   <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true" />
   <variable name="VERBOSE_NAME" expression="" defaultValue="" alwaysStopAt="true" />
   <variable name="VERBOSE_NAME_PLURAL" expression="" defaultValue="" alwaysStopAt="true" />
-  <variable name="FIELD" expression="" defaultValue="" alwaysStopAt="true" />
   <context>
     <option name="Python" value="true" />
+  </context>
+</template>
+<template name="class (Task)" value="class $p1$(Task):&#10;    def __init__(self, *args, **kwargs):&#10;        super().__init__(*args, **kwargs)&#10;        &#10;    def run(self):&#10;        for i in self.iterate([]):&#10;            self.message(f'Executando passo {i}')&#10;        self.finalize()&#10;" description="Creates a Task" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Top_Level" value="true" />
+  </context>
+</template>
+<template name="DateField" value="$p1$ = models.DateField('$p2$')" description="Creates a DateField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="DateTimeField" value="$p1$ = models.DateTimeField('$p2$')" description="Creates a DateTimeField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="DecimalField" value="$p1$ = models.DecimalField('$p2$')" description="Creates a DecimalField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="fieldsets" value="fieldsets = {&#10;    '$p1$': ('$p2$',),&#10;}" description="Creates a fieldsets" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="FileField" value="$p1$ = models.FileField('$p2$', upload_to='$p3$')" description="Creates a FileField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="ForeignKey" value="$p1$ = models.ForeignKey($p2$, verbose_name='$p3$')" description="Creates a ForeignKey" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_add_permission" value="def has_add_permission(self, user):&#10;    return self and user.roles.contains('$p1$')" description="Defines has_add_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_attr_permission" value="def has_$p1$_permission(self, user):&#10;    return self and user.roles.contains('$p2$')" description="Defines has_attr_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_delete_permission" value="def has_delete_permission(self, user):&#10;    return self and user.roles.contains('$p1$')" description="Defines has_delete_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_edit_permission" value="def has_edit_permission(self, user):&#10;    return self and user.roles.contains('$p1$')" description="Defines has_edit_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_permission" value="def has_permission(self, user):&#10;    return self and user.roles.contains('$p1$')" description="Defines has_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="has_view_permission" value="def has_view_permission(self, user):&#10;    return self and user.roles.contains('$p1$')" description="Defines has_view_permission() method" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="IntegerField" value="$p1$ = models.IntegerField('$p2$')" description="Creates a IntegerField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="ManyToManyField" value="$p1$ = models.ManyToManyField($p2$, verbose_name='$p3$', blank=True)" description="Creates a ManyToManyField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="OneToManyField" value="$p1$ = models.OneToManyField($p2$, verbose_name='$p3$', min=1, max=3)" description="Creates a OneToManyField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="OneToOneField" value="$p1$ = models.OneToOneField($p2$, verbose_name='$p3$', blank=True)" description="Creates a OneToOneField" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p3" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
+  </context>
+</template>
+<template name="valueset" value="def $p1$(self):&#10;    return self.value_set('$p2$')" description="Creates a valueset" toReformat="false" toShortenFQNames="true">
+  <variable name="p1" expression="" defaultValue="" alwaysStopAt="true" />
+  <variable name="p2" expression="" defaultValue="" alwaysStopAt="true" />
+  <context>
+    <option name="Python_Class" value="true" />
   </context>
 </template>

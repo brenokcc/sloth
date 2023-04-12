@@ -26,6 +26,7 @@ from ..utils.formatter import format_value
 from ..utils.http import FileResponse
 
 ACTIONS = {}
+EXPOSE = []
 
 
 class PermissionChecker:
@@ -37,7 +38,7 @@ class PermissionChecker:
         self.metaclass = metaclass
 
     def has_permission(self, user):
-        return user
+        return self and user
 
 
 class ActionDefaultMetaClass:
@@ -71,8 +72,9 @@ class ActionMetaclass(ModelFormMetaclass):
             attrs['Meta'] = ActionDefaultMetaClass
         cls = super().__new__(mcs, name, bases, attrs)
         ACTIONS[name] = cls
-        ACTIONS[name.lower()] = cls
         ACTIONS[to_snake_case(name)] = cls
+        if 'ActionView' in [k.__name__ for k in bases]:
+            EXPOSE.append(to_snake_case(name))
         return cls
 
 
@@ -848,3 +850,7 @@ class Action(metaclass=ActionMetaclass):
 
     def apply_role_lookups(self, user):
         return self
+
+
+class ActionView(Action):
+    pass

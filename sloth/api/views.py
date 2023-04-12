@@ -16,15 +16,15 @@ from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpR
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
-from ..actions import Action, ACTIONS
+from ..actions import Action, ACTIONS, EXPOSE
 from .templatetags.tags import is_ajax
 from ..core.queryset import QuerySet
 from sloth.api.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
 from .dashboard import Dashboards
-from .. import initilize
+from .. import initialize
 
 
-initilize()
+initialize()
 
 
 def dashboard(request, path):
@@ -215,7 +215,8 @@ def dispatcher(request, path):
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
-        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe', 'logout', 'signup', 'reset_password'))
+        if i == 0:
+            allowed_attrs.extend(EXPOSE)
         if not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()

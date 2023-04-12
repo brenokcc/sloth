@@ -100,7 +100,7 @@ class StopTask(actions.Action):
         return self.instance.in_progress() and (user.is_superuser or self.instance.user == user)
 
 
-class Login(actions.Action):
+class Login(actions.ActionView):
     username = actions.CharField(label='Login')
     password = actions.CharField(label='Senha', widget=actions.PasswordInput())
     auth_code = actions.CharField(label='Código', widget=actions.PasswordInput(), required=False)
@@ -207,7 +207,7 @@ class Login(actions.Action):
         ]
 
 
-class ChangePassword(actions.Action):
+class ChangePassword(actions.ActionView):
     password = actions.CharField(label='Senha', widget=actions.PasswordInput())
     password2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())
 
@@ -240,7 +240,7 @@ class ChangePassword(actions.Action):
         return user.is_superuser or self.request.user == user
 
 
-class Logout(actions.Action):
+class Logout(actions.ActionView):
     class Meta:
         verbose_name = 'Sair'
         ajax = False
@@ -313,7 +313,7 @@ class Deactivate2fAuthentication(actions.Action):
         self.redirect()
 
 
-class NotificationSubscribe(actions.Action):
+class NotificationSubscribe(actions.ActionView):
 
     class Meta:
         verbose_name = 'Subscrever para Notificações'
@@ -409,9 +409,10 @@ class ExecuteScript(actions.Action):
         return user.is_superuser and user.roles.contains('Remote Developer')
 
 
-class Signup(actions.Action):
+class Signup(actions.ActionView):
     pass1 = actions.CharField(label='Senha', widget=actions.PasswordInput())
     pass2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())
+
     class Meta:
         model = User
         verbose_name = 'Cadastrar-se'
@@ -439,7 +440,7 @@ class Signup(actions.Action):
         return not user.is_authenticated
 
 
-class ResetPassword(actions.Action):
+class ResetPassword(actions.ActionView):
     email = actions.EmailField(label='E-mail')
     pass1 = actions.CharField(label='Nova Senha', widget=actions.PasswordInput())
     pass2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())

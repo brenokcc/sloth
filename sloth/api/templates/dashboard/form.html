@@ -28,7 +28,7 @@
     </div>
     {% endif %}
 {% if self.get_metadata.name %}
-    {% if self.should_display_buttons %}
+    {% if 1 or self.should_display_buttons %}
         <h2>
             {{ self.get_metadata.icon|icontag }}
             {{ self.get_verbose_name|default:self.get_metadata.name }}

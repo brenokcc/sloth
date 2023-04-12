@@ -64,12 +64,12 @@ def meta(verbose_name=None, renderer=None, **metadata):
     return decorate
 
 
-def initilize():
+def initialize():
     for module in ('dashboard', 'actions'):
         for app_label in settings.INSTALLED_APPS:
             try:
                 __import__('{}.{}'.format(app_label, module), fromlist=app_label.split('.'))
-                # print('{} {} initilized!'.format(app_label, module))
+                # print('{} {} initialized!'.format(app_label, module))
             except ImportError as e:
                 if not e.name.endswith('dashboard') and not e.name.endswith('actions'):
                     raise e

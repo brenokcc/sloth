@@ -253,7 +253,15 @@ class Manager(QuerySet):
     pass
 
 
-class Model(models.Model, ModelMixin, metaclass=base.ModelBase):
+class ModelBase(base.ModelBase):
+    def __new__(mcs, name, bases, attrs):
+        cls = super().__new__(mcs, name, bases, attrs)
+        if cls.metaclass() and getattr(cls.metaclass(), 'autouser', False):
+            cls.add_to_class('autouser', models.ForeignKey('auth.user', verbose_name='Usuário', null=True, on_delete=models.CASCADE))
+        return cls
+
+
+class Model(models.Model, ModelMixin, metaclass=ModelBase):
 
     class Meta:
         abstract = True

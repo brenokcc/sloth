@@ -469,7 +469,7 @@ th, label, .fieldset-field-label, .nav-link.active{
     display: none;
 }
 
-#login-wrapper .form-submit .btn-primary{
+#login-wrapper .btn{
     width: 100%;
 }
 

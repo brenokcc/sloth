@@ -199,6 +199,13 @@ class Login(actions.Action):
     def has_permission(self, user):
         return True
 
+    def get_alternative_links(self):
+        return [
+            ('Cadastrar-se', '/app/dashboard/signup/'),
+            ('Recuperar Senha', '/app/dashboard/reset_password/'),
+            ('Acessar com SUAP', '#'),
+        ]
+
 
 class ChangePassword(actions.Action):
     password = actions.CharField(label='Senha', widget=actions.PasswordInput())
@@ -400,3 +407,68 @@ class ExecuteScript(actions.Action):
 
     def has_permission(self, user):
         return user.is_superuser and user.roles.contains('Remote Developer')
+
+
+class Signup(actions.Action):
+    pass1 = actions.CharField(label='Senha', widget=actions.PasswordInput())
+    pass2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())
+    class Meta:
+        model = User
+        verbose_name = 'Cadastrar-se'
+        modal = True
+        style = 'primary'
+        fieldsets = {
+            'Dados Pessoais': (('first_name', 'last_name'), 'email'),
+            'Dados de Acesso': ('username', ('pass1', 'pass2')),
+        }
+
+    def submit(self):
+        self.instance.set_password(self.cleaned_data.get('pass1'))
+        super().submit()
+
+    def clean(self):
+        if User.objects.filter(username=self.cleaned_data.get('username')):
+            raise actions.ValidationError('Usuário já cadastrado.')
+        if User.objects.filter(email=self.cleaned_data.get('email')):
+            raise actions.ValidationError('E-mail já cadastrado.')
+        if self.cleaned_data.get('pass1') != self.cleaned_data.get('pass2'):
+            raise actions.ValidationError('Senhas não conferem.')
+        return self.cleaned_data
+
+    def has_permission(self, user):
+        return not user.is_authenticated
+
+
+class ResetPassword(actions.Action):
+    email = actions.EmailField(label='E-mail')
+    pass1 = actions.CharField(label='Nova Senha', widget=actions.PasswordInput())
+    pass2 = actions.CharField(label='Confirmação', widget=actions.PasswordInput())
+
+    class Meta:
+        verbose_name = 'Alterar Senha'
+        modal = True
+        style = 'primary'
+        fieldsets = {
+            None: ('email', ('pass1', 'pass2'))
+        }
+
+    def view(self):
+        self.info(
+            'Acesse o link que será enviado para seu e-mail para efetivar a alteração de sua senha.'
+            '\nVocê tem até 5 minutos para realizar essa confirmação antes que o token expire.'
+            '\nCaso não lembre ou não possua e-mail associado ao seu usuário, por favor contacte o administrador.'
+        )
+
+    def submit(self):
+        self.clear()
+        self.info('xxxx')
+
+    def has_permission(self, user):
+        return not user.is_authenticated
+
+    def clean(self):
+        if not User.objects.filter(email=self.cleaned_data.get('email')).exists():
+            raise actions.ValidationError('Usuário não localizado.')
+        if self.cleaned_data.get('pass1') != self.cleaned_data.get('pass2'):
+            raise actions.ValidationError('Senhas não conferem.')
+        return self.cleaned_data

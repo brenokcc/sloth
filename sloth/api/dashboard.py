@@ -65,6 +65,7 @@ class Dashboard(metaclass=DashboardType):
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search', 'plus'
         for cls in items:
             if '.' in cls:
+                modal = False if key in ('tools', 'settings') else modal
                 tokens = cls.split('.')
                 cls = apps.get_model(*tokens[0:2])
                 subset = 'all' if len(tokens) == 2 else tokens[-1]
@@ -86,7 +87,11 @@ class Dashboard(metaclass=DashboardType):
                         ))
                 else:
                     qs = getattr(cls.objects, subset)()
-                    if self.request.user.is_superuser or qs.has_permission(self.request.user):
+                    if key == 'plus':
+                        has_perm = self.request.user.is_superuser or qs.model().has_add_permission(self.request.user)
+                    else:
+                        has_perm = self.request.user.is_superuser or qs.has_permission(self.request.user)
+                    if has_perm:
                         if key in allways or self.request.path == '/app/dashboard/':
                             label = cls.metaclass().verbose_name if key == 'plus' else cls.metaclass().verbose_name_plural
                             if subset and subset != 'all':

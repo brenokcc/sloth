@@ -48,7 +48,7 @@ class AppTestCase(TestCase):
         if os.path.exists('/Users/breno') and False:
             self.debug()
         self.assertEqual(User.objects.count(), 7)
-        self.assertEqual(Role.objects.count(), 17)
+        self.assertEqual(Role.objects.count(), 31)
 
         user_f1 = User.objects.get(username='f1')
         qs = Funcionario.objects.role_lookups('Funcionário', pk='self').apply_role_lookups(user_f1)

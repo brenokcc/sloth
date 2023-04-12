@@ -94,7 +94,9 @@ class BaseManager(manager.BaseManager):
 
 
 class Manager(BaseManager.from_queryset(QuerySet)):
-    pass
+
+    def __call__(self, model_name):
+        return apps.get_model(model_name)
 
 
 ___new___ = ModelBase.__new__
@@ -124,8 +126,5 @@ models.QuerySet = QuerySet
 models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'fieldsets', 'select_template', 'select_fields', 'search_fields'
+    'icon', 'fieldsets', 'select_template', 'select_fields', 'search_fields', 'autouser'
 ))
-
-
-

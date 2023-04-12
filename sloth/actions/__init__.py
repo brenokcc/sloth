@@ -143,6 +143,11 @@ class Action(metaclass=ActionMetaclass):
                 kwargs['data'] = None
 
         super().__init__(*args, **kwargs)
+        if self.instance is not None and hasattr(self.instance, 'autouser') and not self.instance.autouser_id:
+            self.instance.autouser = self.request.user
+            if 'autouser' in self.fields:
+                del self.fields['autouser']
+
         for name in self.fields:
             setattr(self, name, self.initial.get(name, None))
         self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
@@ -529,6 +534,9 @@ class Action(metaclass=ActionMetaclass):
 
     def __str__(self):
         return self.html()
+
+    def get_alternative_links(self):
+        return []
 
     def html(self):
 

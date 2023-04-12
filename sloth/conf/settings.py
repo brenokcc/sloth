@@ -3,6 +3,7 @@
 # STATIC_ROOT = '{}/{}'.format(BASE_DIR, 'static')
 # MEDIA_URL = '/media/'
 
+USER_ROLE_NAME = 'Usuário'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Recife'

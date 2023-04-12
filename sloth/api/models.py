@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
+from django.conf import settings
 from oauth2_provider.models import AbstractApplication
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.models import User as DjangoUser, AnonymousUser
 from sloth.db import models, meta
 
 
 def user_post_save(instance, created, **kwargs):
-    pass
+    user_role_name = getattr(settings, 'USER_ROLE_NAME', 'Usuário')
+    if not instance.roles.contains(user_role_name):
+        Role.objects.create(
+            user=instance, name=user_role_name, scope_type='auth.user', scope_key='pk', scope_value=instance.pk
+        )
 
 
 models.signals.post_save.connect(user_post_save, sender=DjangoUser)
@@ -64,7 +69,6 @@ class User(DjangoUser):
         created = self.pk is None
         super().save(*args, **kwargs)
         user_post_save(self, created=created)
-
 
 class AuthCode(models.Model):
     user = models.ForeignKey(
@@ -272,3 +276,6 @@ class Task(models.Model):
 class PushNotification(models.Model):
     user = models.OneToOneField(DjangoUser, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
     subscription = models.JSONField(verbose_name='Dados da Inscrição')
+
+
+setattr(AnonymousUser, 'roles', Role.objects.none())

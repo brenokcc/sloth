@@ -37,11 +37,11 @@
 {% endif %}
 
 {% for text in self.content.info %}
-    <div class="alert alert-primary" role="alert">{{ text|safe }}</div>
+    <div class="alert alert-primary" role="alert">{{ text|breaklines|safe }}</div>
 {% endfor %}
 
 {% for text in self.content.alert %}
-    <div class="alert alert-warning" role="alert">{{ text|safe }}</div>
+    <div class="alert alert-warning" role="alert">{{ text|breaklines|safe }}</div>
 {% endfor %}
 
 <div class="form-display">
@@ -62,7 +62,7 @@
     {% endif %}
 
     {% if self.non_field_errors %}
-        <div class="errors" role="alert">
+        <div class="errors alert alert-danger" role="alert">
             {{ self.non_field_errors }}
         </div>
     {% endif %}
@@ -130,6 +130,15 @@
             {{ self.get_metadata.submit }}
         </button>
     </div>
+    {% with links=self.get_alternative_links %}
+        {% if links %}
+            <div align="center">
+                {% for label, url in links %}
+                    <a class="popup" style="text-decoration:none; margin:5" href="{{ url }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     {% endif %}
 </form>
 

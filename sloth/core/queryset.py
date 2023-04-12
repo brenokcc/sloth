@@ -39,8 +39,11 @@ class QuerySet(models.QuerySet):
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, username_lookups=[], related_field=None
+            verbose_name=None, related_field=None
         )
+        if self.model and getattr(self.model.metaclass(), 'autouser', False):
+            self.lookups(autouser='pk')
+            self.ignore('autouser')
 
     def _clone(self):
         clone = super()._clone()
@@ -64,21 +67,13 @@ class QuerySet(models.QuerySet):
             self.metadata['lookups'].append((name, scopes))
         return self
 
-    def username_lookup(self, name):
-        self.metadata['username_lookups'].append(name)
-        return self
-
-    def grant_permission(self, *names, **scopes):
-        if names:
-            self.role_lookups(*names, **scopes)
-        else:
-            for username_lookup in scopes:
-                self.username_lookup(username_lookup)
+    def lookups(self, name='Usuário', *names, **scopes):
+        self.role_lookups(*((name,) + names), **scopes)
         return self
 
     def has_permission(self, user):
         if user.is_authenticated:
-            return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups'])) or self.metadata['username_lookups']
+            return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
         return False
 
     def has_attr_permission(self, user, name):
@@ -108,7 +103,7 @@ class QuerySet(models.QuerySet):
             for field_name, role_names in self.metadata['only'].items():
                 if not self.request.user.roles.contains(*role_names):
                     self.ignore(field_name)
-        if self.metadata['lookups'] or self.metadata['username_lookups']:
+        if self.metadata['lookups']:
             lookups = []
             for name, scopes in self.metadata['lookups']:
                 if scopes:
@@ -118,8 +113,6 @@ class QuerySet(models.QuerySet):
                 else:
                     if user.roles.contains(name):
                         return self
-            for lookup in self.metadata['username_lookups']:
-                lookups.append(Q(**{lookup: user.username}))
             if lookups:
                 return self.filter(reduce(operator.__or__, lookups))
         return self.none() if self.metadata['is_admin'] else self
@@ -414,7 +407,6 @@ class QuerySet(models.QuerySet):
         return actions
 
     def serialize(self, path=None, wrap=False, lazy=False):
-
         if wrap:
             if self.metadata['verbose_name']:
                 verbose_name = self.metadata['verbose_name']
@@ -556,7 +548,9 @@ class QuerySet(models.QuerySet):
     def view(self):
         return self.all()
 
-    def display(self, *names):
+    def display(self, *names, add_default=False):
+        if add_default:
+            names = tuple(self.model.default_list_fields()) + names
         self.metadata['display'] = list(names)
         return self
 
@@ -759,6 +753,8 @@ class QuerySet(models.QuerySet):
 
     def contextualize(self, request):
         self.request = request
+        if request and request.user.is_superuser and 'autouser' in self.metadata['ignore']:
+            self.metadata['ignore'].remove('autouser')
         if request and self.metadata['uuid'] == request.GET.get('uuid'):
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(

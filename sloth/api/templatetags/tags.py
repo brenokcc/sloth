@@ -15,6 +15,11 @@ register = Library()
 
 
 @register.filter
+def breaklines(text):
+    return text.replace('\n', '<br>')
+
+
+@register.filter
 def is_ajax(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 

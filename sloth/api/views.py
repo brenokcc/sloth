@@ -215,7 +215,7 @@ def dispatcher(request, path):
     else:
         raise PermissionDenied()
     for i, token in enumerate(tokens):
-        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe', 'logout'))
+        allowed_attrs.extend(('change_password', 'login', 'notification_subscribe', 'logout', 'signup', 'reset_password'))
         if not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()

@@ -48,7 +48,7 @@ class ModelMixin(object):
         return user.is_superuser
 
     def has_view_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
@@ -84,13 +84,16 @@ class ModelMixin(object):
         return name in getattr(self.__class__, '__view__')
 
     def has_add_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or (hasattr(self, 'autouser') and self.is_autouser(user))
 
     def has_edit_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
 
     def has_delete_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
+
+    def is_autouser(self, user):
+        return getattr(self, 'autouser', None) == user
 
     ### VISUALIZATION ###
 
@@ -276,9 +279,10 @@ class ModelMixin(object):
                 style = 'success'
                 related_field = _related_field
                 verbose_name = 'Adicionar {}'.format(cls.get_field(_related_field).model.metaclass().verbose_name)
+                fieldsets = getattr(cls.get_field(_related_field).model.metaclass(), 'fieldsets', None)
 
             def has_permission(self, user):
-                return user.is_superuser or self.instance.has_edit_permission(user) or self.instance.has_permission(user)
+                return user.is_superuser or self.instantiator.has_edit_permission(user) or self.instantiator.has_permission(user)
 
         return Add
 

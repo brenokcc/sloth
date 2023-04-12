@@ -13,12 +13,14 @@
                 </div>
             {% endif %}
         {% endif %}
+        {% if not print %}
         <div id="queryset-global-actions-{{ data.uuid }}" class="queryset-action-bar">
             {% include "queryset/actions/global.html" %}
         </div>
+        {% endif %}
         <div class="clearfix"></div>
         <div class="queryset-container toogle-data" id="queryset-container{{ data.uuid }}">
-        {% if data.attach %}
+        {% if data.attach and not print %}
         <div class="clearfix"></div>
         <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">
             <ul class="nav nav-pills nav-fill">
@@ -41,49 +43,51 @@
             {% action action.key data.instantiator action.path %}
         {% endfor %}
 
-        {% include "queryset/filters.html" %}
-        <div class="clearfix"></div>
-        <script>
-            function reload{{ data.uuid }}(subset){
-                $(document.body).addClass('page-loading');
-                if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
-                $('#subset-{{ data.uuid }}').val(subset);
-                $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
-                var data = $('#form-{{ data.uuid }}').serialize();
-                $.ajax({
-                    url:'{{ data.path|safe }}?{{ request|post_querystring }}',
-                    data: data,
-                    success:function( html ) {
-                        $('#{{ data.key }}').html($(html).find('#{{ data.key }}').html()).initialize();
-                        $(document.body).removeClass('page-loading');
+        {% if not print %}
+            {% include "queryset/filters.html" %}
+            <div class="clearfix"></div>
+            <script>
+                function reload{{ data.uuid }}(subset){
+                    $(document.body).addClass('page-loading');
+                    if(subset==null) subset = $('#subset-{{ data.uuid }}').val();
+                    $('#subset-{{ data.uuid }}').val(subset);
+                    $('#tabs-container-{{ data.uuid }}').find('.nav-item.'+subset).find('.spinner-border').removeClass('d-none');
+                    var data = $('#form-{{ data.uuid }}').serialize();
+                    $.ajax({
+                        url:'{{ data.path|safe }}?{{ request|post_querystring }}',
+                        data: data,
+                        success:function( html ) {
+                            $('#{{ data.key }}').html($(html).find('#{{ data.key }}').html()).initialize();
+                            $(document.body).removeClass('page-loading');
+                        }
+                    });
+                }
+                function toggleActions{{ data.uuid }}(input){
+                    if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
+                    if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
+                        $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').removeClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance, .dropdown-toggle.model').addClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').addClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.btn.queryset').removeClass('disabled');
+                    } else {
+                        $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').addClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model, .dropdown-toggle.instance').removeClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').removeClass('disabled');
+                        $('#queryset-{{ data.uuid }}').find('.btn.queryset').addClass('disabled');
                     }
-                });
-            }
-            function toggleActions{{ data.uuid }}(input){
-                if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
-                if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
-                    $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').removeClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance, .dropdown-toggle.model').addClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').addClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.btn.queryset').removeClass('disabled');
-                } else {
-                    $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').addClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.model, .dropdown-toggle.instance').removeClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.btn.instance, .btn.model').removeClass('disabled');
-                    $('#queryset-{{ data.uuid }}').find('.btn.queryset').addClass('disabled');
                 }
-            }
-            function slideSearchAndFilters{{ data.uuid }}(a){
-                if(a) $(a).find('i:last-child').toggleClass('bi-chevron-up').toggleClass('bi-chevron-down');
-                if($('#form-{{ data.uuid }}').css('display') == 'none'){
-                    $('#form-{{ data.uuid }}').slideDown();
-                    $('#collapsed-{{ data.uuid }}').val("");
-                } else {
-                    $('#form-{{ data.uuid }}').slideUp();
-                    $('#collapsed-{{ data.uuid }}').val(1);
+                function slideSearchAndFilters{{ data.uuid }}(a){
+                    if(a) $(a).find('i:last-child').toggleClass('bi-chevron-up').toggleClass('bi-chevron-down');
+                    if($('#form-{{ data.uuid }}').css('display') == 'none'){
+                        $('#form-{{ data.uuid }}').slideDown();
+                        $('#collapsed-{{ data.uuid }}').val("");
+                    } else {
+                        $('#form-{{ data.uuid }}').slideUp();
+                        $('#collapsed-{{ data.uuid }}').val(1);
+                    }
                 }
-            }
-        </script>
+            </script>
+        {% endif %}
 
         <div class="queryset-data" id="queryset-data-{{ data.uuid }}">
 

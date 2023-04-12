@@ -23,7 +23,7 @@ class UserManager(models.Manager):
             'username', 'get_name', 'is_superuser', 'get_roles_names'
         ).actions('login_as_user', 'change_password').verbose_name('Usuários').attach(
             'active', 'inactive'
-        )
+        ).global_actions('export_csv', 'export_xls', 'print')
 
     def active(self):
         return self.all().filter(is_active=True).verbose_name('Ativos')
@@ -46,7 +46,7 @@ class User(DjangoUser):
         }
 
     def view(self):
-        return self.value_set('get_general_info', 'get_access_info', 'get_roles')
+        return self.value_set('get_general_info', 'get_access_info', 'get_roles').actions('print')
 
     def get_general_info(self):
         return self.value_set(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
@@ -59,7 +59,7 @@ class User(DjangoUser):
 
     @meta('Papéis')
     def get_roles(self):
-        return self.roles.all().ignore('user')
+        return self.roles.all().ignore('user').global_actions('print')
 
     @meta('Papéis')
     def get_roles_names(self):

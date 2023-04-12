@@ -375,7 +375,7 @@ class ValueSet(dict):
                 return self[list(self.metadata['names'].keys())[0]]
             return self
 
-    def html(self, path=None):
+    def html(self, path=None, print=False):
         self.path = path if path else self.path
         serialized = self.serialize(wrap=True)
         if self.metadata['attr']:
@@ -415,4 +415,4 @@ class ValueSet(dict):
         else:
             template_name, data = 'valueset/valueset.html', serialized
         # pprint.pprint(data)
-        return render_to_string(template_name, dict(data=data), request=self.request)
+        return render_to_string(template_name, dict(data=data, print=print), request=self.request)

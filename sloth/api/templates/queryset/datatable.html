@@ -30,7 +30,7 @@
             {% for label, display in data.metadata.display.items %}
             <th scope="col">{{ display.name }}</th>
             {% endfor %}
-            {% if data.actions.instance %}
+            {% if data.actions.instance and not print %}
                 <th style="text-align:center" scope="col"></th>
             {% endif %}
         </tr>
@@ -48,7 +48,7 @@
                 {% include 'valueset/value.html' %}
             </td>
             {% endfor %}
-            {% if data.actions.instance %}
+            {% if data.actions.instance and not print %}
             <td align="center" class="align-middle instance-actions">
                 {% include "queryset/actions/actions.html" %}
             </td>

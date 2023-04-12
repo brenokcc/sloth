@@ -500,14 +500,15 @@ class ExportXls(actions.Action):
     def has_permission(self, user):
         return self
 
-class ExportPdf(actions.Action):
+class Print(actions.Action):
     class Meta:
-        icon = 'file-pdf'
-        verbose_name = 'Exportar PDF'
+        icon = 'printer'
+        verbose_name = 'Imprimir'
         style = 'primary'
 
     def view(self):
-        return PdfReportResponse(self.request, self.instances.contextualize(self.request).html())
+        obj = self.instance or self.instances or self.instantiator
+        return PdfReportResponse(self.request, obj.contextualize(self.request).html(print=True))
 
     def has_permission(self, user):
         return self

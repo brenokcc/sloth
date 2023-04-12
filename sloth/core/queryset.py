@@ -381,7 +381,7 @@ class QuerySet(models.QuerySet):
             if i == 0:
                 for attr_name in self.get_list_display():
                     attr, value = getattrr(obj, attr_name)
-                    header.append(getattr(attr, 'verbose_name', attr_name))
+                    header.append(pretty(self.model.get_attr_metadata(attr_name)[0]).upper())
                 data.append(header)
             row = []
             values = obj.value_set(*self.get_list_display()).load(wrap=False, detail=False).values()
@@ -725,7 +725,7 @@ class QuerySet(models.QuerySet):
 
     # rendering function
 
-    def html(self, path=None):
+    def html(self, path=None, print=False):
         serialized = self.serialize(path=path or self.request.path, wrap=True)
         if self.metadata['source']:
             if hasattr(self.metadata['source'], 'model'):
@@ -740,7 +740,7 @@ class QuerySet(models.QuerySet):
             return render_to_string('valueset/valueset.html', dict(data=data), request=self.request)
         return render_to_string(
             'queryset/queryset.html',
-            dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.request)),
+            dict(data=serialized, uuid=self.metadata['uuid'], messages=messages.get_messages(self.request), print=print),
             request=self.request
         )
 

@@ -1,5 +1,4 @@
 {% load tags %}
-
 <div class="valueset row clearfix">
     <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
 
@@ -39,7 +38,7 @@
                 {% endif %}
             </div>
             <div class="valueset-action-bar">
-                  {% if data.actions %}
+                  {% if data.actions and not print %}
                       {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.actions   %}
                   {% endif %}
             </div>

@@ -9,9 +9,14 @@
     <style>
 
         body {
-            font-size: 8pt;
-            line-height: 1.4em;
             font-family: 'Open Sans', sans-serif;
+            line-height: 1.4em;
+        }
+        h1, h2, h3, h4, h5, .header .title{
+            font-weight: bolder;
+        }
+        th, label, .fieldset-field-label{
+            font-weight: bold;
         }
         dd {
             border-bottom: 1px dashed #ccc;
@@ -32,29 +37,24 @@
             font-size: 16pt;
             margin-bottom: 0;
             text-align: center;
-            padding: 5px;
+            text-transform: uppercase;
         }
         h2 {
             font-size: 14pt;
             text-align: center;
             text-transform: uppercase;
             vertical-align: bottom;
-            padding: 5px;
         }
-        h3 {
+        h3, h5 {
             font-size: 13pt;
             margin: 10px 0 0;
-            padding: 10px 0;
+            text-transform: uppercase;
+            padding-bottom: 5px;
         }
-        h4 {
-            font-size: 12pt;
-            font-weight: 400;
-            margin: 20px 0 0;
-            padding: 10px 0 0;
-        }
+
         .header .title{
             padding-top: 5px;
-            font-size: 14pt;
+            font-size: 24pt;
             font-weight: bold;
         }
         .header .subtitle{
@@ -126,7 +126,26 @@
         .page-break{
             page-break-after: always;
         }
-        * {font-size: 100% !important;}
+        .responsive-container > div{
+            display: inline-block;
+            vertical-align: top;
+        }
+        .width-100{
+            width: 98.5%;
+        }
+        .width-50{
+            width: 48.9%;
+        }
+        .width-33{
+            width: 32.45%;
+        }
+        .width-25{
+            width: 24.2%;
+        }
+        .row>* {
+            width: 100%;
+            max-width: 100%;
+        }
         {% block style %}
         {% endblock %}
     </style>
@@ -139,7 +158,7 @@
     <table class="header">
         <tr>
             {% if settings.SLOTH.ICON %}
-                <td class="logo" width="200px"><img width="200px" src="{{ settings.SLOTH.ICON }}"/></td>
+                <td class="logo" width="0"><img style="max-height:75px" src="{{ settings.SLOTH.ICON }}"/></td>
             {% endif %}
             <td align="center">
                 <div class="title">{{ settings.SLOTH.NAME }}</div>
@@ -157,7 +176,6 @@
 
 {% block content %}
 <section>
-    <h1 align="center">Relatório</h1>
     {{ content|safe }}
 </section>
 {% endblock %}

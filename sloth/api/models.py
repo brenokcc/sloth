@@ -152,7 +152,6 @@ class Role(models.Model):
     @meta('Referência')
     def get_scope_value(self):
         if self.scope_type:
-            print(self.name, self.user, self.scope_type, 888)
             return apps.get_model(self.scope_type).objects.filter(pk=self.scope_value).first()
 
 

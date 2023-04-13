@@ -1,6 +1,7 @@
 import sys
 import os
 from sloth.conf import settings
+from django.core.management import ManagementUtility
 
 
 URLS_FILE_CONTENT = '''from django.urls import path, include
@@ -35,6 +36,7 @@ class AppDashboard(Dashboard):
 
 def configure():
     name = os.path.basename(os.path.abspath('.'))
+    ManagementUtility(['django-admin.py', 'startproject', name, '.']).execute()
     settings_path = os.path.join(name, 'settings.py')
     settings_content = open(settings_path).read().replace(
         "'django.contrib.admin'",

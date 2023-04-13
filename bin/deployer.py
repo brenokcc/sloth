@@ -21,5 +21,5 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             file.write('{}\n\n'.format(output))
         self.wfile.write('{}'.format(output).encode())
 
-httpd = HTTPServer(('127.0.0.1', 9999), SimpleHTTPRequestHandler)
+httpd = HTTPServer(('0.0.0.0', 9999), SimpleHTTPRequestHandler)
 httpd.serve_forever()

@@ -8,8 +8,9 @@ FILE="$WORKDIR/$PROJECT_NAME/docker-compose.yml"
 
 if [[ $1 == "start" ]]; then
   echo "Starting nginx..."
+    docker network create sloth
     docker run --name nginx -d --rm -p 80:80 -v $(pwd):/etc/nginx/conf.d --network sloth nginx
-    ./deployer.py&
+    docker run --name deployer -d --rm -p 9999:9999 -v $(pwd):/opt --network sloth python /opt/deployer.py
 fi
 
 if [[ $1 == "deploy" ]]; then
@@ -41,5 +42,6 @@ fi
 if [[ $1 == "stop" ]]; then
   echo "Stoping nginx..."
   docker stop nginx
-  pkill -f deployer.py
+  docker stop deployer
+  docker network rm sloth
 fi

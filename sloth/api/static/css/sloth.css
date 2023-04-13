@@ -398,7 +398,7 @@ body{
     border: 0;
 }
 
-h1, h2, h3, h4, h5, .navbar-brand{
+h1, h2, h3, h4, h5, dt, .navbar-brand{
     font-family: Eina02-Bold !important;
 }
 th, label, .fieldset-field-label, .nav-link.active{

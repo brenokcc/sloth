@@ -3,8 +3,11 @@
 # STATIC_ROOT = '{}/{}'.format(BASE_DIR, 'static')
 # MEDIA_URL = '/media/'
 
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['*']
+ADMINS = [('admin', 'admin@mydomain.com')]
+
 USER_ROLE_NAME = 'Usuário'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Recife'
 USE_I18N = True
@@ -16,6 +19,15 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
+
+DEFAULT_FROM_EMAIL = 'noreply@mydomain.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mydomain.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'noreply@mydomain.com>'
+EMAIL_HOST_PASSWORD = '*****'
+EMAIL_USE_TLS = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 SLOTH = {
     'NAME': 'Sloth',

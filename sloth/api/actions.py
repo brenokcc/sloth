@@ -507,7 +507,7 @@ class Print(actions.Action):
         style = 'primary'
 
     def view(self):
-        obj = self.instance or self.instances or self.instantiator
+        obj = self.instance or self.instances or self.queryset
         return PdfReportResponse(self.request, obj.contextualize(self.request).html(print=True))
 
     def has_permission(self, user):

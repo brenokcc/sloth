@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
+from datetime import datetime
 from django.apps import apps
 from django.conf import settings
 from oauth2_provider.models import AbstractApplication
 from django.contrib.auth.models import User as DjangoUser, AnonymousUser
 from sloth.db import models, meta
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
 
 
 def user_post_save(instance, created, **kwargs):
@@ -148,6 +152,7 @@ class Role(models.Model):
     @meta('Referência')
     def get_scope_value(self):
         if self.scope_type:
+            print(self.name, self.user, self.scope_type, 888)
             return apps.get_model(self.scope_type).objects.filter(pk=self.scope_value).first()
 
 
@@ -276,6 +281,49 @@ class Task(models.Model):
 class PushNotification(models.Model):
     user = models.OneToOneField(DjangoUser, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
     subscription = models.JSONField(verbose_name='Dados da Inscrição')
+
+
+class EmailManager(models.Manager):
+    def all(self):
+        return self.rows()
+
+    def send(self, to, subject, content, from_email=None):
+        to = [to] if isinstance(to, str) else list(to)
+        return self.create(from_email=from_email, to=', '.join(to), subject=subject, content=content)
+
+
+class Email(models.Model):
+    from_email = models.EmailField('Remetente')
+    to = models.TextField('Destinatário', help_text='Separar endereços de e-mail por ",".')
+    subject = models.CharField('Assunto')
+    content = models.TextField('Conteúdo', formatted=True)
+    sent_at = models.DateTimeField('Data/Hora', null=True)
+
+    objects = EmailManager()
+
+    class Meta:
+        icon = 'envelope'
+        verbose_name = 'E-mail'
+        verbose_name_plural = 'E-mails'
+        fieldsets = {
+            'Dados Gerais': ('from_email', 'subject', 'to'),
+            'Detalhamento': ('content',),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return self.subject
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        to = [email.strip() for email in self.to.split(',')]
+        msg = EmailMultiAlternatives(self.subject, strip_tags(self.content), self.from_email, to)
+        msg.attach_alternative(self.content, "text/html")
+        if msg.send(fail_silently=False):
+            self.sent_at = datetime.now()
+            super().save(*args, **kwargs)
 
 
 setattr(AnonymousUser, 'roles', Role.objects.none())

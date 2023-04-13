@@ -1,0 +1,38 @@
+{% load tags %}
+<div class="infinity waiting"></div>
+<script>
+function isInViewport(el) {
+    if(el){
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    } else {
+        return false
+    }
+}
+
+document.addEventListener('scroll', function () {
+    if(isInViewport(document.querySelector('.infinity.waiting'))){
+        $('#pagination-{{ data.uuid }}').val(parseInt(($('#pagination-{{ data.uuid }}').val()||1))+1);
+        $('.infinity').removeClass('waiting');
+        $(document.body).addClass('page-loading');
+        var data = $('#form-{{ data.uuid }}').serialize();
+        $.ajax({
+            url:'{{ data.path|safe }}?{{ request|post_querystring }}',
+            data: data,
+            success:function( html ) {
+                $(document).find('tbody').append($(html).find('tbody').html());
+                $(document.body).removeClass('page-loading');
+                $('.infinity').addClass('waiting');
+            }
+        });
+    }
+
+}, {
+    passive: true
+});
+</script>

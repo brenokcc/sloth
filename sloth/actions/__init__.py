@@ -108,6 +108,7 @@ class Action(metaclass=ActionMetaclass):
         self.path = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
+        self.queryset = kwargs.pop('queryset', None)
         self.instances = kwargs.pop('instances', None)
         self.metaclass = getattr(self, 'Meta')
 

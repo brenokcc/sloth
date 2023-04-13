@@ -194,6 +194,7 @@ def dispatcher(request, path):
     instance = None
     instances = None
     instantiator = None
+    queryset = None
     tokens = path.split('/')
     token = tokens.pop(0)
     if token == 'dashboard':
@@ -208,7 +209,7 @@ def dispatcher(request, path):
         app_label, model_name = token, tokens.pop(0)
         obj = apps.get_model(app_label, model_name).objects.view()
         if isinstance(obj, QuerySet):
-            instances = obj
+            queryset = obj
             obj = obj.default_actions().expand().admin()
         allowed_attrs = obj.get_allowed_attrs()
         if not tokens and not obj.has_permission(request.user):
@@ -234,6 +235,7 @@ def dispatcher(request, path):
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
             instances = obj
+            queryset = obj
         elif token in ACTIONS or token in ('add', 'edit', 'delete'):
             if token in ('edit', 'delete') and instance is None and instances is None:
                 raise PermissionDenied()
@@ -241,8 +243,10 @@ def dispatcher(request, path):
                 form_cls = obj.model.relation_form_cls(obj.metadata['related_field'])
             else:
                 form_cls = obj.action_form_cls(token)
-            # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances))
-            form = form_cls(request=request, instantiator=instantiator, instance=instance, instances=instances)
+            # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances, queryset=queryset))
+            form = form_cls(
+                request=request, instantiator=instantiator, instance=instance, instances=instances, queryset=queryset
+            )
             if form.check_permission(request.user):
                 if form.is_valid():
                     result = form.process()
@@ -260,6 +264,7 @@ def dispatcher(request, path):
             else:
                 instance = None
                 instances = None
+                queryset = None
                 if isinstance(obj, ValueSet):
                     instantiator = obj.instance
                     obj = getattr(obj.instance, token)()
@@ -269,6 +274,6 @@ def dispatcher(request, path):
                 if isinstance(obj, ValueSet):
                     instance = instantiator
                 if isinstance(obj, QuerySet):
-                    instances = obj
+                    queryset = obj
         allowed_attrs = obj.get_allowed_attrs()
     return obj.contextualize(request).apply_role_lookups(request.user)

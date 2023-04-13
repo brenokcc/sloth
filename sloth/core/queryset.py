@@ -39,7 +39,7 @@ class QuerySet(models.QuerySet):
             page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, related_field=None
+            verbose_name=None, related_field=None, scrollable=False
         )
         if self.model and getattr(self.model.metaclass(), 'autouser', False):
             self.lookups(autouser='pk')
@@ -468,6 +468,8 @@ class QuerySet(models.QuerySet):
                             value=getattr(self, aggregation)()
                         )
                     data['metadata'].update(aggregations=aggregations)
+                if self.metadata['scrollable']:
+                    data['metadata'].update(scrollable=True)
 
                 data['actions'].update(model=[], instance=[], queryset=[], inline=[])
 
@@ -698,6 +700,10 @@ class QuerySet(models.QuerySet):
             return [ordering]
         else:
             return self.query.order_by or ['id']
+
+    def scrollable(self, flag=True):
+        self.metadata['scrollable'] = flag
+        return self.datatable()
 
     def paginate(self):
         qs = self

@@ -136,7 +136,7 @@
         {% include "queryset/datatable.html" with data=data %}
     {% endif %}
     {% include "queryset/actions/batch.html" %}
-    {% if data.metadata.pagination.pages|length > 1 %}
+    {% if data.metadata.pagination.pages|length > 1 and data.metadata.scrollable %}
 
         <nav aria-label="Paginação">
       <ul class="pagination" style="overflow-x:hidden">
@@ -164,4 +164,7 @@
         </div>
     </div>
 </div>
+{% if data.metadata.scrollable %}
+    {% include "queryset/scroll.html" %}
+{% endif %}
 </div>

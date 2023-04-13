@@ -13,7 +13,7 @@ def format_value(obj):
             if obj[0] == '#' and len(obj) == 7:
                 style = 'float:left;width:20px;height: 20px; margin-right:5px;border-radius:5px'
                 return mark_safe('<div style="background-color:{};{}"></div>'.format(obj, style))
-            return obj
+            return mark_safe(obj)
         elif isinstance(obj, bool):
             return 'Sim' if obj else 'Não'
         elif isinstance(obj, datetime.datetime):
@@ -38,7 +38,7 @@ def format_value(obj):
             )
         elif isinstance(obj, FieldFile):
             return obj.url
-        return str(obj)
+        return mark_safe(str(obj))
     return '-'
 
 

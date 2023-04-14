@@ -17,16 +17,14 @@ def execute(cmd):
     print(cmd)
     os.system(cmd)
 
-def start_nginx():
-    execute('docker network ls | grep sloth >/dev/null || docker network create sloth')
-    execute('docker ps -a | grep nginx >/dev/null || docker run --name nginx -d --rm -p 80:80 -v {}:/etc/nginx/conf.d --network sloth nginx'.format(WORKDIR))
-    execute('docker ps -a')
-    print('Cloud daemon started!')
+def start():
+    conf = 'server {server_name deploy.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (DOMAIN_NAME, PORT)
+    execute("echo '{}' > /etc/nginx/conf.d/deploy.conf".format(conf))
+    execute('nginx -s reload')
 
-def stop_nginx():
-    # execute('docker stop nginx')
-    # execute('docker network rm sloth')
-    execute('docker ps -a')
+def stop():
+    execute("rm -f /etc/nginx/conf.d/deploy.conf")
+    execute('nginx -s reload')
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -41,15 +39,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             execute('git clone {} {}'.format(self.get_project_git_url(), self._get_project_dir()))
         execute('docker-compose -f {} up --build --detach'.format(self._get_file_path()))
-        execute('docker network connect sloth {}'.format(self._get_container_name()))
-        execute("""docker exec nginx sh -c "echo '{}' > /etc/nginx/conf.d/{}.conf";""".format(
-            self._get_nginx_project_conf(), self._get_project_name()
-        ))
-        execute('docker exec nginx nginx -s reload')
+        execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
+        execute('nginx -s reload')
         return self.get_project_deploy_url()
 
     def undeploy(self):
-        execute('docker network disconnect sloth {}'.format(self._get_container_name()))
         execute('docker exec nginx sh -c "rm /etc/nginx/conf.d/{}.conf"'.format(self._get_project_name()))
         execute('docker exec nginx nginx -s reload')
         execute('docker-compose -f {} down'.format(self._get_file_path()))
@@ -77,17 +71,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _get_container_name(self):
         return '{}-web-1'.format(self._data.get('project_name'))
 
+    def _get_container_port(self):
+        cmd = 'docker ps -a --no-trunc --filter name=^/%s$ --format "{{.Ports}}"' % self._get_container_name()
+        return os.popen(cmd).read().split('->')[0].split(':')[-1].split('/')[0]
+
     def _get_file_path(self):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')
 
-    def _get_default_nginx_conf(self):
-        return 'server {server_name deploy.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (
-            DOMAIN_NAME, PORT
-        )
-
     def _get_nginx_project_conf(self):
-        return 'server {server_name %s.%s; location / { proxy_pass http://%s:8000; }}' % (
-            self._get_project_name(), DOMAIN_NAME, self._get_container_name()
+        return 'server {server_name %s.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (
+            self._get_project_name(), DOMAIN_NAME, self._get_container_port()
         )
 
     def get_project_deploy_url(self):
@@ -120,18 +113,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             message = 'unknown action'
         output = json.dumps(dict(message=message))
         print(output)
-        with open(os.path.join(WORKDIR, server.log), 'a') as file:
+        with open(os.path.join(WORKDIR, 'server.log'), 'a') as file:
             file.write('<<< {}\n\n'.format(data))
             file.write('>>> {}\n\n'.format(output))
         self.wfile.write('{}'.format(output).encode())
 
-signal.signal(signal.SIGTERM, stop_nginx)
-httpd = HTTPServer(('0.0.0.0', PORT), SimpleHTTPRequestHandler)
-start_nginx()
+signal.signal(signal.SIGTERM, stop)
+httpd = HTTPServer(('127.0.0.1', PORT), SimpleHTTPRequestHandler)
 try:
+    start()
+    print('Listening 127.0.0.1:{} ...'.format(PORT))
     httpd.serve_forever()
-except:
-    stop_nginx()
+except KeyboardInterrupt:
+    stop()
+    print('Stopped!')
+
+
 
 # curl -X POST http://localhost:9999 -d '{"action": "deploy", "project_name": "a1"}'
 # curl -X POST http://localhost:9999 -d '{"action": "undeploy", "project_name": "a1"}'

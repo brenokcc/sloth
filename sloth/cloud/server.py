@@ -5,6 +5,7 @@ import urllib.parse
 import signal
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+PORT = 9999
 WORKDIR = '/opt/cloud/'
 DOMAIN_NAME = 'cloud.aplicativo.click'
 
@@ -42,7 +43,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         execute('docker-compose -f {} up --build --detach'.format(self._get_file_path()))
         execute('docker network connect sloth {}'.format(self._get_container_name()))
         execute("""docker exec nginx sh -c "echo '{}' > /etc/nginx/conf.d/{}.conf";""".format(
-            self._get_nginx_conf(), self._get_project_name()
+            self._get_nginx_project_conf(), self._get_project_name()
         ))
         execute('docker exec nginx nginx -s reload')
         return self.get_project_deploy_url()
@@ -79,7 +80,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _get_file_path(self):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')
 
-    def _get_nginx_conf(self):
+    def _get_default_nginx_conf(self):
+        return 'server {server_name deploy.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (
+            DOMAIN_NAME, PORT
+        )
+
+    def _get_nginx_project_conf(self):
         return 'server {server_name %s.%s; location / { proxy_pass http://%s:8000; }}' % (
             self._get_project_name(), DOMAIN_NAME, self._get_container_name()
         )
@@ -120,7 +126,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write('{}'.format(output).encode())
 
 signal.signal(signal.SIGTERM, stop_nginx)
-httpd = HTTPServer(('0.0.0.0', 9999), SimpleHTTPRequestHandler)
+httpd = HTTPServer(('0.0.0.0', PORT), SimpleHTTPRequestHandler)
 start_nginx()
 try:
     httpd.serve_forever()

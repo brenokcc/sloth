@@ -9,7 +9,7 @@ class PetshopDashboard(Dashboard):
         self.settings_menu('change_password', 'activate_2f_authentication', 'deactivate_2f_authentication')
         self.tools_menu('show_icons')
         self.header(title='Petshop', shadow=True)
-        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.0')
+        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.1')
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')
         self.action_bar('petshop.animal', 'petshop.cliente', 'teste')
         self.top_menu('petshop.animal', 'petshop.cliente', 'fazer_alguma_coisa_2', 'exibir_data_hora')

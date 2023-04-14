@@ -35,7 +35,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def deploy(self):
         if os.path.exists(self._get_project_dir()):
-            execute('git pull origin main')
+            execute('cd {} && git pull origin main'.format(self._get_project_dir()))
         else:
             execute('git clone {} {}'.format(self.get_project_git_url(), self._get_project_dir()))
         execute('docker-compose -f {} up --build --detach'.format(self._get_file_path()))

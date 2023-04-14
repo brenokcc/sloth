@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         url = 'http://deploy.cloud.aplicativo.click'
-        if os.path.exists('/Users/breno/'):
+        if 0 and os.path.exists('/Users/breno/'):
             url = 'http://127.0.0.1:9999'
         user, project_name = open('.git/config').read().split('git@github.com:')[-1].split('.git')[0].split('/')
         print(url, user, project_name)

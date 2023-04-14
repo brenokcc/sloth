@@ -62,8 +62,9 @@ def configure():
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         configure()
-        os.system('python manage.py sync')
+        os.system('python3 manage.py sync')
     if len(sys.argv) == 2 and sys.argv[1] == 'cloud':
         os.system('docker build {}'.format(os.path.dirname(__file__)))
+        os.system('python3 {}&'.format(os.path.join(os.path.dirname(__file__), 'cloud', 'server.py')))
     else:
         print('Usage: python -m sloth <action>')

@@ -114,7 +114,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             message = 'unknown action'
         output = json.dumps(dict(message=message))
         print(output)
-        with open('server.log', 'a') as file:
+        with open(os.path.join(WORKDIR, server.log), 'a') as file:
             file.write('<<< {}\n\n'.format(data))
             file.write('>>> {}\n\n'.format(output))
         self.wfile.write('{}'.format(output).encode())

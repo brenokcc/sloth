@@ -71,15 +71,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _get_container_name(self):
         return '{}_web_1'.format(self._get_project_name())
 
-    def _get_container_port(self, retry=True):
+    def _get_container_port(self):
         execute('docker ps -a')
         cmd = 'docker ps -a --no-trunc --filter name=^/%s$ --format "{{.Ports}}"' % self._get_container_name()
-        port = os.popen(cmd).read().split('->')[0].split(':')[-1].split('/')[0]
-        print(cmd, port)
-        if retry and port == '':
-            time.sleep(5)
-            return self._get_container_port(retry=False)
-        return port
+        return os.popen(cmd).read().split('->')[0].split(':')[-1].split('/')[0]
 
     def _get_compose_file_path(self):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')

@@ -31,6 +31,6 @@ class StandaloneApplication(WSGIApplication):
 class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('sync')
-        call_command('collectstatic')
+        call_command('collectstatic', verbosity=0, interactive=False)
         options = dict(bind='0.0.0.0:8000', workers=(multiprocessing.cpu_count() * 2) + 1)
         StandaloneApplication("petshop.wsgi:application", options).run()

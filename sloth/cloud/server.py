@@ -100,24 +100,29 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         data = json.loads(self.rfile.read(int(self.headers.get('Content-Length'))).decode())
+        tokens = []
+        if os.path.exists(os.path.join(WORKDIR, 'tokens.txt')):
+            tokens = open(os.path.join(WORKDIR, 'tokens.txt')).read().split('\n')
         print(data)
-        self._data.update(data)
-        if data.get('action') == 'deploy':
-            message = self.deploy()
-        elif data.get('action') == 'update':
-            message = self.update()
-        elif data.get('action') == 'undeploy':
-            message = self.undeploy()
-        elif data.get('action') == 'destroy':
-            message = self.destroy()
+        if data.get('token') in tokens:
+            self._data.update(data)
+            if data.get('action') == 'deploy':
+                message = self.deploy()
+            elif data.get('action') == 'update':
+                message = self.update()
+            elif data.get('action') == 'undeploy':
+                message = self.undeploy()
+            elif data.get('action') == 'destroy':
+                message = self.destroy()
+            else:
+                message = 'unknown action'
+            print(output)
+            with open(os.path.join(WORKDIR, 'server.log'), 'a') as file:
+                file.write('<<< {}\n\n'.format(data))
+                file.write('>>> {}\n\n'.format(output))
         else:
-            message = 'unknown action'
-        output = json.dumps(dict(message=message))
-        print(output)
-        with open(os.path.join(WORKDIR, 'server.log'), 'a') as file:
-            file.write('<<< {}\n\n'.format(data))
-            file.write('>>> {}\n\n'.format(output))
-        self.wfile.write('{}'.format(output).encode())
+            message = 'not authorized'
+        self.wfile.write(json.dumps(dict(message=message)).encode())
 
 signal.signal(signal.SIGTERM, stop)
 httpd = HTTPServer(('127.0.0.1', PORT), SimpleHTTPRequestHandler)

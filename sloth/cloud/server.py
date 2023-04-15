@@ -88,9 +88,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _get_nginx_project_conf(self):
         ssl = 'listen 443 ssl; ssl_certificate %s; ssl_certificate_key %s; if ($scheme = http) {return 301 https://$server_name$request_uri;}' % CERTIFICATE if CERTIFICATE else ''
         static = 'location /static { alias %s; }' % os.path.join(self._get_project_dir(), 'static')
-        static = 'location /media { alias %s; }' % os.path.join(self._get_project_dir(), 'media')
+        media = 'location /media { alias %s; }' % os.path.join(self._get_project_dir(), 'media')
         return 'server {server_name %s.%s; location / { proxy_pass http://127.0.0.1:%s; } %s }' % (
-            self._get_project_name(), DOMAIN_NAME, self._get_container_port(), ssl
+            self._get_project_name(), DOMAIN_NAME, self._get_container_port(), ssl, static, media
         )
 
     def get_project_deploy_url(self):

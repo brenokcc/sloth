@@ -116,13 +116,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 message = self.destroy()
             else:
                 message = 'unknown action'
-            print(output)
-            with open(os.path.join(WORKDIR, 'server.log'), 'a') as file:
-                file.write('<<< {}\n\n'.format(data))
-                file.write('>>> {}\n\n'.format(output))
         else:
             message = 'not authorized'
-        self.wfile.write(json.dumps(dict(message=message)).encode())
+        output = json.dumps(dict(message=message))
+        with open(os.path.join(WORKDIR, 'server.log'), 'a') as file:
+            file.write('<<< {}\n\n'.format(data))
+            file.write('>>> {}\n\n'.format(output))
+        self.wfile.write(output.encode())
 
 signal.signal(signal.SIGTERM, stop)
 httpd = HTTPServer(('127.0.0.1', PORT), SimpleHTTPRequestHandler)

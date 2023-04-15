@@ -72,9 +72,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return '{}_web_1'.format(self._data.get(self._get_project_name()))
 
     def _get_container_port(self, retry=True):
+        execute('docker ps -a')
         cmd = 'docker ps -a --no-trunc --filter name=^/%s$ --format "{{.Ports}}"' % self._get_container_name()
         port = os.popen(cmd).read().split('->')[0].split(':')[-1].split('/')[0]
-        print(port)
+        print(cmd, port)
         if retry and port == '':
             time.sleep(5)
             return self._get_container_port(retry=False)

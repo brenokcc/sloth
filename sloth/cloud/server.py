@@ -37,8 +37,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if os.path.exists(self._get_project_dir()):
             execute('cd {} && git pull origin main'.format(self._get_project_dir()))
         else:
-            execute('git clone {} {}'.format(self.get_project_git_url(), self._get_project_dir()))
-        execute('docker-compose -f {} up --build --detach'.format(self._get_file_path()))
+            execute('git clone {} {}'.format(self._get_clone_url(), self._get_project_dir()))
+        execute('docker-compose -f {} up --build --detach'.format(self._get_compose_file_path()))
         execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
         execute('nginx -s reload')
         return self.get_project_deploy_url()
@@ -46,7 +46,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def undeploy(self):
         execute('docker exec nginx sh -c "rm /etc/nginx/conf.d/{}.conf"'.format(self._get_project_name()))
         execute('docker exec nginx nginx -s reload')
-        execute('docker-compose -f {} down'.format(self._get_file_path()))
+        execute('docker-compose -f {} down'.format(self._get_compose_file_path()))
         return 'OK'
 
     def destroy(self):
@@ -61,23 +61,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         execute('nginx -s reload')
         return 'OK'
 
-    def _get_user(self):
-        return self._data.get('user')
-
     def _get_project_name(self):
-        return self._data.get('project_name')
+        return self._data.get('repository').split('/')[-1].split('.git')[0]
 
     def _get_project_dir(self):
         return os.path.join(WORKDIR, self._get_project_name())
 
     def _get_container_name(self):
-        return '{}_web_1'.format(self._data.get('project_name'))
+        return '{}_web_1'.format(self._data.get(self._get_project_name()))
 
     def _get_container_port(self):
         cmd = 'docker ps -a --no-trunc --filter name=^/%s$ --format "{{.Ports}}"' % self._get_container_name()
         return os.popen(cmd).read().split('->')[0].split(':')[-1].split('/')[0]
 
-    def _get_file_path(self):
+    def _get_compose_file_path(self):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')
 
     def _get_nginx_project_conf(self):
@@ -88,8 +85,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def get_project_deploy_url(self):
         return 'http://{}.{}/'.format(self._get_project_name(), DOMAIN_NAME)
 
-    def get_project_git_url(self):
-        return 'https://github.com/{}/{}.git'.format(self._get_user(), self._get_project_name())
+    def _get_clone_url(self):
+        return self._data.get('repository').replace('git:', 'https:')
 
     def do_GET(self):
         self.send_response(200)

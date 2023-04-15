@@ -11,15 +11,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         url = 'http://deploy.cloud.aplicativo.click'
-        if 0 and os.path.exists('/Users/breno/'):
-            url = 'http://127.0.0.1:9999'
-        user, project_name = open('.git/config').read().split('git@github.com:')[-1].split('.git')[0].split('/')
-        print(url, user, project_name)
+        if os.path.exists('/Users/breno/'):
+            pass # url = 'http://127.0.0.1:9999'
+        repository = open('.git/config').read().split('git@github.com:')[-1].split('.git')[0]
+        print(url, repository)
         for action in OPTIONS:
             if options[action] is not None:
                 break
         if action:
-            data = dict(action=action, user=user, project_name=project_name, token='')
+            data = dict(action=action, repository='https://github.com/{}.git'.format(repository), token='')
             print('>>>', data)
             response = requests.post(url, json=data)
             print('<<<', response.json())

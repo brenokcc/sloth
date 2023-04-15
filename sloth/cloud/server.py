@@ -9,6 +9,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 PORT = 9999
 WORKDIR = '/opt/cloud/'
 DOMAIN_NAME = 'cloud.aplicativo.click'
+CERTIFICATE = (
+    '/etc/letsencrypt/live/cloud.aplicativo.click/fullchain.pem',
+    '/etc/letsencrypt/live/cloud.aplicativo.click/privkey.pem'
+)
 
 if os.path.exists('/Users/breno/'):
     WORKDIR = '/Users/breno/cloud/'
@@ -80,8 +84,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')
 
     def _get_nginx_project_conf(self):
-        return 'server {server_name %s.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (
-            self._get_project_name(), DOMAIN_NAME, self._get_container_port()
+        ssl = 'listen 443 ssl; ssl_certificate %s; ssl_certificate_key %s; if ($scheme = http) {return 301 https://$server_name$request_uri;}' % CERTIFICATE if CERTIFICATE else ''
+        return 'server {server_name %s.%s; location / { proxy_pass http://127.0.0.1:%s; } %s }' % (
+            self._get_project_name(), DOMAIN_NAME, self._get_container_port(), ssl
         )
 
     def get_project_deploy_url(self):

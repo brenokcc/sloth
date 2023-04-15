@@ -104,7 +104,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if os.path.exists(os.path.join(WORKDIR, 'tokens.txt')):
             tokens = open(os.path.join(WORKDIR, 'tokens.txt')).read().split('\n')
         print(data)
-        if data.get('token') in tokens:
+        if data.get('token') and data.get('token') in tokens:
             self._data.update(data)
             if data.get('action') == 'deploy':
                 message = self.deploy()

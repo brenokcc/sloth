@@ -7,8 +7,33 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - XXXX=123
     restart: always
     volumes:
       - .:/opt/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      USE_REDIS: 1
+      USE_POSTGRES: 1
+  redis:
+    image: redis
+    hostname: redis
+    restart: always
+    ports:
+      - "6379"
+    command: redis-server --loglevel warning
+    volumes:
+      - .docker/redis:/data
+  postgres:
+    image: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-database}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password}
+    ports:
+      - "5432"
+    volumes:
+      - .docker/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: psql -U postgres -d $$POSTGRES_DB -c "SELECT version();"

@@ -33,8 +33,26 @@ class AppDashboard(Dashboard):
 
 '''
 
+DEPLOY_WORKFLOW_CONTENT = '''name: DEPLOY
 
-def configure():
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          curl -X POST http://deploy.cloud.aplicativo.click/ -d '{"action": "deploy", "repository": "${{ github.repositoryUrl }}", "token": "${{ secrets.TOKEN }}"}'
+
+'''
+
+
+def startproject():
     name = os.path.basename(os.path.abspath('.'))
     ManagementUtility(['django-admin.py', 'startproject', name, '.']).execute()
     settings_path = os.path.join(name, 'settings.py')
@@ -57,14 +75,19 @@ def configure():
     dashboard_path = os.path.join(name, 'dashboard.py')
     with open(dashboard_path, 'w') as file:
         file.write(DASHBOARD_FILE_CONTENT)
+    workflows_path = os.path.join(name, '.github', 'workflows')
+    os.makedirs(workflows_path, exist_ok=True)
+    deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')
+    with open(deploy_workflow_path, 'w') as file:
+        file.write(DEPLOY_WORKFLOW_CONTENT)
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        configure()
+        startproject()
         os.system('python3 manage.py sync')
-    if len(sys.argv) == 2 and sys.argv[1] == 'cloud':
-        #os.system('docker build -t sloth {}'.format(os.path.dirname(__file__)))
-        os.system('python3 {}'.format(os.path.join(os.path.dirname(__file__), 'cloud', 'server.py')))
-    else:
-        print('Usage: python -m sloth <action>')
+    if len(sys.argv) == 2:
+        if sys.argv[1] == 'build':
+            os.system('docker build -t sloth {}'.format(os.path.dirname(__file__)))
+        if sys.argv[1] == 'cloud':
+            os.system('python3 {}'.format(os.path.join(os.path.dirname(__file__), 'cloud', 'server.py')))

@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title>{{ settings.SLOTH.NAME }}</title>
-    <link rel="manifest" href="/app/manifest/?v={{ settings.SLOTH.VERSION|stringformat:'s' }}">
+    <link rel="manifest" href="/app/manifest/?v={{ settings.SLOTH.VERSION }}">
     {% if settings.SLOTH.ICON %}
       <link rel="apple-touch-icon" sizes="128x128" href="{{ settings.SLOTH.ICON }}">
     {% endif %}
@@ -55,7 +55,7 @@
     {% endif %}
     <script src="/static/js/jquery-ui.js"></script>
     <script src="/static/js/masonry.pkgd.min.js"></script>
-    <script src="/static/js/sloth.js?v=1.0.0"></script>
+    <script src="/static/js/sloth.js?v={{ settings.SLOTH.VERSION|stringformat:'s' }}"></script>
     <script src="/static/js/jquery.binarytransport.js"></script>
     <script src="/static/js/jquery.mask.min.js"></script>
     <script src="/static/js/trumbowyg.min.js"></script>

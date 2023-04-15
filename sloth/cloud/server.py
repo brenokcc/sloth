@@ -69,7 +69,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return os.path.join(WORKDIR, self._get_project_name())
 
     def _get_container_name(self):
-        return '{}_web_1'.format(self._data.get(self._get_project_name()))
+        return '{}_web_1'.format(self._get_project_name())
 
     def _get_container_port(self, retry=True):
         execute('docker ps -a')

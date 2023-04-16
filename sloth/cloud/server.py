@@ -28,7 +28,7 @@ def start():
     execute("echo '{}' > /etc/nginx/conf.d/deploy.conf".format(conf))
     execute('nginx -s reload')
 
-def stop():
+def stop(*args):
     execute("rm -f /etc/nginx/conf.d/deploy.conf")
     execute('nginx -s reload')
 

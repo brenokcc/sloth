@@ -1,10 +1,13 @@
+import os
 # ALLOWED_HOSTS.append('*')
 # MEDIA_ROOT = '{}/{}'.format(BASE_DIR, 'media')
 # STATIC_ROOT = '{}/{}'.format(BASE_DIR, 'static')
 # MEDIA_URL = '/media/'
 
-ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['http://*.local.aplicativo.click']
+CSRF_TRUSTED_ORIGINS = [
+    'http://*.local.aplicativo.click',
+    'https://*.cloud.aplicativo.click',
+]
 ADMINS = [('admin', 'admin@mydomain.com')]
 
 USER_ROLE_NAME = 'Usuário'
@@ -29,51 +32,49 @@ EMAIL_HOST_PASSWORD = '*****'
 EMAIL_USE_TLS = True
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-SLOTH = {
-    'NAME': 'Sloth',
-    'ICON': '/static/images/icon.png',
-    'FAVICON': '/static/images/icon.png',
-    'VERSION': 1.0,
-    'LOGIN': {
-        'LOGO': '/static/images/logo.png',
-        'TITLE': None,
-        'TEXT': None,
-        'IMAGE': '/static/images/login.jpeg',
-        'USERNAME_MASK': None
-    },
-    'INCLUDE': {
-        'CSS': [],
-        'JS': [],
-    },
-    'ROLES': {
-        'ALLOW_MULTIPLE': True
-    },
-    'OAUTH_LOGIN': {
-        'APP': {
-            'TEXT': 'Acessar com APP',
-            'LOGO': None,
-            'REDIRECT_URI': 'http://localhost:8000/app/login/',
-            'CLIENTE_ID': None,
-            'CLIENT_SECRET': None,
-            'AUTHORIZE_URL': None,
-            'ACCESS_TOKEN_URL': None,
-            'USER_DATA_URL': None,
-            'USER_AUTO_CREATE': False,
-            'USER_DATA': {
-                'USERNAME': 'username',
-                'EMAIL': 'email',
-                'FIRST_NAME': None,
-                'LAST_NAME': None
-            }
+DEFAULT_PASSWORD = lambda user: '123'
+FORCE_PASSWORD_DEFINITION = False
+OAUTH2_AUTHENTICATORS = {
+    'APP': {
+        'TEXT': 'Acessar com App',
+        'LOGO': None,
+        'REDIRECT_URI': 'http://localhost:8000/app/login/',
+        'CLIENTE_ID': None,
+        'CLIENT_SECRET': None,
+        'AUTHORIZE_URL': None,
+        'ACCESS_TOKEN_URL': None,
+        'USER_DATA_URL': None,
+        'USER_AUTO_CREATE': False,
+        'USER_DATA': {
+            'USERNAME': 'username',
+            'EMAIL': 'email',
+            'FIRST_NAME': None,
+            'LAST_NAME': None
         }
-    },
-    '2FA': False,
-    'WEB_PUSH_NOTIFICATION': False,
-    'LIST_PER_PAGE': 20,
-    'DEFAULT_PASSWORD': lambda user=None: '123',
-    'FORCE_PASSWORD_DEFINITION': False,
-    'ICONS': ['fontawesome', 'materialicons']
+    }
 }
 
-# #SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-# #CACHES = {'default': {'BACKEND': 'django_redis.cache.RedisCache', 'LOCATION': 'redis://127.0.0.1:6379/1', 'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'}}}
+if bool(os.environ.get('USE_REDIS')):
+    REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+    REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
+    REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://{}:{}/1".format(REDIS_HOST, REDIS_PORT),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "PASSWORD": REDIS_PASSWORD
+            }
+        }
+    }
+
+if bool(os.environ.get('USE_POSTGRES')):
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
+    DATABASES['default']['NAME'] = os.environ.get('DATABASE_NAME', 'database')
+    DATABASES['default']['USER'] = os.environ.get('DATABASE_USER', 'postgres')
+    DATABASES['default']['PASSWORD'] = os.environ.get('DATABASE_PASSWORD', 'password')
+    DATABASES['default']['HOST'] = os.environ.get('DATABASE_HOST', 'postgres')
+    DATABASES['default']['PORT'] = os.environ.get('DATABASE_PORT', '5432')

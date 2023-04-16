@@ -27,13 +27,15 @@
         {% endif %}
     </div>
     {% endif %}
-{% if self.get_metadata.name %}
-    {% if 1 or self.should_display_buttons %}
-        <h2>
-            {{ self.get_metadata.icon|icontag }}
-            {{ self.get_verbose_name|default:self.get_metadata.name }}
-        </h2>
-    {% endif %}
+
+{% with title=self.get_verbose_name %}
+    {% if title %}<h2>{{ self.get_metadata.icon|icontag }} {{ title }}</h2>{% endif %}
+{% endwith %}
+
+{% if self.get_image %}
+    <div align="center">
+        <img style="max-height:75" src="{{ self.get_image }}">
+    </div>
 {% endif %}
 
 {% for text in self.content.info %}
@@ -53,12 +55,6 @@
     <input type="hidden" name="{{ self.get_metadata.key }}" value="{{ self.dumps }}">
     {% if self.get_metadata.method == "post" %}
         {% csrf_token %}
-    {% endif %}
-
-    {% if self.get_metadata.image %}
-        <div align="center">
-            <img style="max-height:75" src="{{ self.get_metadata.image }}">
-        </div>
     {% endif %}
 
     {% if self.non_field_errors %}

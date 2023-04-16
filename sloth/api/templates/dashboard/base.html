@@ -7,41 +7,34 @@
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>{{ settings.SLOTH.NAME }}</title>
-    <link rel="manifest" href="/app/manifest/?v={{ settings.SLOTH.VERSION }}">
-    {% if settings.SLOTH.ICON %}
-      <link rel="apple-touch-icon" sizes="128x128" href="{{ settings.SLOTH.ICON }}">
-    {% endif %}
-    {% if settings.SLOTH.FAVICON %}
-      <link rel="icon" sizes="192x192" href="{{ settings.SLOTH.FAVICON }}">
-    {% endif %}
+    <link rel="manifest" href="/app/manifest/?version={{ dashboard.data.footer.version }}">
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
-    {% if 'materialicons' in settings.SLOTH.ICONS %}
-      <link rel="stylesheet" href="/static/icons/materialicons/materialicons.css">
-    {% endif %}
-    {% if 'fontawesome' in settings.SLOTH.ICONS %}
-      <link rel="stylesheet" href="/static/icons/fontawesome/fontawesome.min.css">
-    {% endif %}
     <link rel="stylesheet" href="/static/css/select2.min.css"/>
     <link rel="stylesheet" href="/static/css/colorpick.min.css">
     <link rel="stylesheet" href="/static/css/jquery-ui.css">
     <link rel="stylesheet" href="/static/css/trumbowyg.min.css"/>
     <link rel="stylesheet" href="/static/css/all.min.css"/>
-    <link rel="stylesheet" href="/static/css/sloth.css?v={{ settings.SLOTH.VERSION }}" />
+
+    {% if dashboard.data.navbar.title %}
+      <title>{{ dashboard.data.navbar.title }}</title>
+    {% endif %}
+    {% if dashboard.data.navbar.icon %}
+      <link rel="apple-touch-icon" sizes="128x128" href="{{ dashboard.data.navbar.icon }}">
+    {% endif %}
+    {% if dashboard.data.navbar.favicon %}
+      <link rel="icon" sizes="192x192" href="{{ dashboard.data.navbar.favicon }}">
+    {% endif %}
+
     <style>
-      body{
-        visibility:hidden;
-      }
-      main{
-        padding: {% if request|mobile %}0.25rem{% else %}1rem{% endif %}
-      }
+      body{visibility:hidden;}
+      main{padding: {% if request|mobile %}0.25rem{% else %}1rem{% endif %}}
     </style>
     {% if 0 %}
       {% include "themes/dark.html" %}
     {% endif %}
-    {% for url in settings.SLOTH.INCLUDE.CSS %}
-      <link rel="stylesheet" href="{{ url }}?v={{ settings.SLOTH.VERSION }}" />
+    {% for url in dashboard.data.styles %}
+      <link rel="stylesheet" href="{{ url }}?version={{ dashboard.data.footer.version }}" />
     {% endfor %}
 
     <script src="/static/js/jquery-3.6.0.min.js"></script>
@@ -50,25 +43,20 @@
     <script src="/static/js/i18n/pt-BR.js"></script>
     <script src="/static/js/popper.min.js"></script>
     <script src="/static/js/bootstrap.bundle.min.js"></script>
-    {% if 'fontawesome' in settings.SLOTH.ICONS %}
-      <script src="/static/icons/fontawesome/fontawesome.min.js"></script>
-    {% endif %}
     <script src="/static/js/jquery-ui.js"></script>
     <script src="/static/js/masonry.pkgd.min.js"></script>
-    <script src="/static/js/sloth.js?v={{ settings.SLOTH.VERSION|stringformat:'s' }}"></script>
     <script src="/static/js/jquery.binarytransport.js"></script>
     <script src="/static/js/jquery.mask.min.js"></script>
     <script src="/static/js/trumbowyg.min.js"></script>
-
+    {% for url in dashboard.data.scripts %}
+      <script src="{{ url }}?version={{ dashboard.data.footer.version }}"></script>
+    {% endfor %}
     {% block extrahead %} {% endblock %}
 
   </head>
   <body id="{{ request.path|url_slug }}">
 
-    {% block header %}
-      {% include "dashboard/header.html" %}
-    {% endblock %}
-
+    {% block header %}{% include "dashboard/header.html" %}{% endblock %}
     {% include "dashboard/menu.html" with data=dashboard.data %}
     {% include "dashboard/links.html" with data=dashboard.data %}
 
@@ -78,9 +66,6 @@
 {% block content %}
 {% endblock %}
 {% include "dashboard/messages.html" %}
-{% for url in settings.SLOTH.INCLUDE.JS %}
-      <script src="{{ url }}?v={{ settings.SLOTH.VERSION }}"></script>
-{% endfor %}
 {% if not request|is_ajax %}
         <script src="/static/js/tests.js"></script>
       </main>
@@ -89,7 +74,6 @@
     {% endblock %}
     {% include "dashboard/modal.html" %}
     {% include "dashboard/bottom.html" %}
-    {% include "dashboard/wpn.html" %}
   </body>
 </html>
 {% endif %}

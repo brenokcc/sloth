@@ -1,5 +1,6 @@
 import inspect
 from django.apps import apps
+from django.core.cache import cache
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -28,8 +29,9 @@ class Dashboard(metaclass=DashboardType):
         self.redirect_message = None
         self.request = request
         self.data = dict(
-            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], plus=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
+            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], plus=[], navbar={},
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={},
+            styles=[], scripts=[]
         )
         self.defined_apps = {}
         self.enabled_apps = set()
@@ -51,6 +53,35 @@ class Dashboard(metaclass=DashboardType):
     def redirect(self, url, message=None):
         self.redirect_url = url
         self.redirect_message = message
+
+    def navbar(self, title=None, icon=None, favicon=None):
+        cache.set('icon', icon)
+        cache.set('favicon', favicon)
+        self.data['navbar'].update(title=title, icon=icon, favicon=favicon)
+
+    def login(self, logo=None, title=None, mask=None, two_factor=False, actions=()):
+        cache.set('login', dict(logo=logo, title=title, mask=mask, actions=actions))
+        if two_factor:
+            self.settings_menu('activate_2f_authentication', 'deactivate_2f_authentication')
+
+    def styles(self, *urls):
+        self.data['styles'].extend(urls)
+
+    def scripts(self, *urls):
+        self.data['scripts'].extend(urls)
+
+    def libraries(self, fontawesome=False, materialicons=False):
+        if fontawesome:
+            cache.set('fontawesome', True)
+            self.scripts('/static/icons/fontawesome/fontawesome.min.js')
+            self.styles('/static/icons/fontawesome/fontawesome.min.css')
+        if materialicons:
+            cache.set('materialicons', True)
+            self.styles('/static/icons/materialicons/materialicons.css')
+
+    def web_push_notification(self, activate=False):
+        if activate:
+            self.scripts('/static/js/wpn.min.js')
 
     def header(self, logo=None, title=None, text=None, shadow=True):
         self.data['header'].update(logo=logo, title=title, text=text, shadow=shadow)
@@ -257,8 +288,9 @@ class Dashboards:
         self.dashboards = []
         self.request = request
         self.data = dict(
-            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[], plus=[],
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={}
+            info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[], plus=[], navbar={},
+            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={},
+            styles=[], scripts=[]
         )
         self.data['navigation'].append(
             dict(url='/app/dashboard/', label='Principal', icon='house', app=None)
@@ -268,7 +300,7 @@ class Dashboards:
             if dashboard.redirect_url:
                 raise ReadyResponseException(HttpResponseRedirect(dashboard.redirect_url))
             for k, v in dashboard.data.items():
-                self.data[k].update(v) if k in ['header', 'footer'] else self.data[k].extend(v)
+                self.data[k].update(v) if isinstance(v, dict) else self.data[k].extend(v)
             self.apps.update(dashboard.defined_apps)
             for name in dashboard.enabled_apps:
                 self.apps[name]['enabled'] = True

@@ -2,6 +2,8 @@
 
 import base64
 import traceback
+
+from django.core.cache import cache
 from django.http import QueryDict
 from django.apps import apps
 from oauth2_provider.oauth2_backends import get_oauthlib_core
@@ -28,13 +30,13 @@ initialize()
 
 
 def dashboard(request, path):
-    if request.user.is_authenticated and settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
-        default_password = settings.SLOTH['DEFAULT_PASSWORD'](request.user)
+    if request.user.is_authenticated and settings.FORCE_PASSWORD_DEFINITION:
+        default_password = settings.DEFAULT_PASSWORD(request.user)
         if request.user.check_password(default_password):
             messages.warning(request, 'Altere sua senha padrão')
             return HttpResponseRedirect('/app/dashboard/change_password/')
     try:
-        ctx = dict(dashboard=Dashboards(request), settings=settings)
+        ctx = dict(dashboard=Dashboards(request))
         if request.user.is_authenticated and request.path.startswith('/app/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []
@@ -92,11 +94,11 @@ def manifest(request):
 
 
 def icon(request):
-    return HttpResponseRedirect(settings.SLOTH['ICON'] or '/static/images/icon.png')
+    return HttpResponseRedirect(cache.get('icon', '/static/images/icon.png'))
 
 
 def favicon(request):
-    return HttpResponseRedirect(settings.SLOTH['FAVICON'] or '/static/images/icon.png')
+    return HttpResponseRedirect(cache.get('favicon', '/static/images/icon.png'))
 
 
 def index(request):

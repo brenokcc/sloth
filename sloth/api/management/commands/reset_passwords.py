@@ -7,5 +7,5 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     def handle(self, *args, **options):
         user = User.objects.first()
-        user.set_password(settings.SLOTH['DEFAULT_PASSWORD']())
+        user.set_password(settings.DEFAULT_PASSWORD())
         User.objects.update(password=user.password)

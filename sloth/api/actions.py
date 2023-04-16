@@ -107,8 +107,6 @@ class Login(actions.ActionView):
     auth_code = actions.CharField(label='Código', widget=actions.PasswordInput(), required=False)
 
     class Meta:
-        image = settings.SLOTH['LOGIN']['LOGO']
-        verbose_name = settings.SLOTH['LOGIN']['TITLE']
         ajax = False
         submit_label = 'Acessar'
         fieldsets = {
@@ -118,13 +116,19 @@ class Login(actions.ActionView):
     def __init__(self, *args, **kwargs):
         self.user = None
         super().__init__(*args, **kwargs)
-        if settings.SLOTH['LOGIN'].get('USERNAME_MASK'):
-            self.fields['username'].widget.mask = settings.SLOTH['LOGIN']['USERNAME_MASK']
+        if cache.get('login', {}).get('mask'):
+            self.fields['username'].widget.mask = cache.get('login', {}).get('mask')
         self.show('auth_code') if self.requires_2fa() else self.hide('auth_code')
+
+    def get_verbose_name(self):
+        return cache.get('login', {}).get('title')
+
+    def get_image(self):
+        return cache.get('login', {}).get('logo')
 
     def view(self):
         if 'o' in self.request.GET:
-            provider = settings.SLOTH['OAUTH_LOGIN'][self.request.GET['o'].upper()]
+            provider = settings.OAUTH2_AUTHENTICATORS[self.request.GET['o'].upper()]
             authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
                 provider['AUTHORIZE_URL'], provider['CLIENTE_ID'], provider['REDIRECT_URI']
             )
@@ -134,7 +138,7 @@ class Login(actions.ActionView):
             self.request.session.save()
             self.redirect(authorize_url)
         elif 'code' in self.request.GET:
-            provider = settings.SLOTH['OAUTH_LOGIN'][self.request.session['o'].upper()]
+            provider = settings.OAUTH2_AUTHENTICATORS[self.request.session['o'].upper()]
             access_token_request_data = dict(
                 grant_type='authorization_code', code=self.request.GET.get('code'), redirect_uri=provider['REDIRECT_URI'],
                 client_id=provider['CLIENTE_ID'], client_secret=provider['CLIENT_SECRET']
@@ -201,11 +205,13 @@ class Login(actions.ActionView):
         return True
 
     def get_alternative_links(self):
-        return [
-            ('Cadastrar-se', '/app/dashboard/signup/'),
-            ('Recuperar Senha', '/app/dashboard/reset_password/'),
-            ('Acessar com SUAP', '#'),
-        ]
+        links = []
+        for name in cache.get('login', {}).get('actions', ()):
+            links.append((actions.ACTIONS[name](request=self.request).get_verbose_name(), '/app/dashboard/{}/'.format(name)))
+        for name, authenticator in settings.OAUTH2_AUTHENTICATORS.items():
+            if authenticator['CLIENTE_ID']:
+                links.append((authenticator['TEXT'], '/app/dashboard/login/?o={}'.format(name)))
+        return links
 
 
 class ChangePassword(actions.ActionView):
@@ -223,8 +229,8 @@ class ChangePassword(actions.ActionView):
         if password != password2:
             raise actions.ValidationError('Senhas não conferem.')
 
-        if settings.SLOTH.get('FORCE_PASSWORD_DEFINITION') == True and settings.SLOTH.get('DEFAULT_PASSWORD'):
-            default_password = settings.SLOTH['DEFAULT_PASSWORD'](self.request.user)
+        if settings.FORCE_PASSWORD_DEFINITION:
+            default_password = settings.DEFAULT_PASSWORD(self.request.user)
             if self.request.user.check_password(default_password) and self.request.user.check_password(password):
                 raise actions.ValidationError('Senha não pode ser a senha padrão.')
 
@@ -339,9 +345,9 @@ class ShowIcons(actions.Action):
     def view(self):
         libraries = {}
         libraries['Bootstrap'] = bootstrap.ICONS
-        if 'materialicons' in settings.SLOTH.get('ICONS', ()):
+        if cache.get('materialicons'):
             libraries['Material Icons'] = materialicons.ICONS
-        if 'fontawesome' in settings.SLOTH.get('ICONS', ()):
+        if cache.get('fontawesome'):
             libraries['Font Awesome'] = fontawesome.ICONS
         return dict(settings=settings, libraries=libraries)
 

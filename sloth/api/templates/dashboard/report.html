@@ -157,11 +157,11 @@
 {% block header %}
     <table class="header">
         <tr>
-            {% if settings.SLOTH.ICON %}
-                <td class="logo" width="0"><img style="max-height:75px" src="{{ settings.SLOTH.ICON }}"/></td>
+            {% if icon %}
+                <td class="logo" width="0"><img style="max-height:75px" src="{{ icon }}"/></td>
             {% endif %}
             <td align="center">
-                <div class="title">{{ settings.SLOTH.NAME }}</div>
+                <div class="title">{{ title }}</div>
                     <div class="subtitle">
                         {% block extra_header %}
 

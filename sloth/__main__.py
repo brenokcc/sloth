@@ -25,8 +25,16 @@ class AppDashboard(Dashboard):
 
     def __init__(self, request):
         super().__init__(request)
-        self.header(logo='/static/images/logo.png', title=None, text='Take your time!', shadow=False)
-        self.footer(title='© 2023 Sloth', text='Todos os direitos reservados', version='1.0.0')
+        self.styles('/static/css/sloth.css')
+        self.scripts('/static/js/sloth.js')
+        self.libraries(fontawesome=False, materialicons=False)
+        self.web_push_notification(False)
+        self.login(logo='/static/images/logo.png', title=None, mask=None, two_factor=False, actions=['signup', 'reset_password'])
+        self.navbar(title='Sloth', icon='/static/images/icon.png', favicon='/static/images/icon.png')
+        self.header(title='Sloth', shadow=True)
+        self.settings_menu('change_password')
+        self.tools_menu('show_icons')
+        self.footer(title='© 2022 Sloth', text='Todos os direitos reservados', version='1.0.5')
 
     def view(self):
         return self.value_set()
@@ -60,7 +68,7 @@ def startproject():
         "'django.contrib.admin'",
         "'{}', 'oauth2_provider', 'sloth.api'".format(name)
     )
-    settings_append = open(settings.__file__).read().replace('# ', '')
+    settings_append = open(settings.__file__).read().replace('from pathlib', 'import os\nfrom pathlib').replace('# ', '')
     with open(settings_path, 'w') as file:
         file.write('{}{}'.format(settings_content, settings_append))
     urls_path = os.path.join(name, 'urls.py')

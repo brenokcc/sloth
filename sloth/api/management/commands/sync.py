@@ -30,7 +30,9 @@ class Command(BaseCommand):
         if os.path.exists(os.path.join(settings.BASE_DIR, 'logs')):
             print_and_call('collectstatic', clear=True, verbosity=0, interactive=False)
 
-        if 'DEFAULT_PASSWORD' in settings.SLOTH and not User.objects.exists():
-            password = settings.SLOTH['DEFAULT_PASSWORD']()
-            User.objects.create_superuser('admin', password=password)
+        if not User.objects.exists():
+            user = User.objects.create_superuser('admin')
+            password = settings.DEFAULT_PASSWORD(user)
+            user.set_password(password)
+            user.save()
             print('Superuser "admin" with password "{}" was created.'.format(password))

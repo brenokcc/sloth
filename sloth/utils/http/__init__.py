@@ -136,6 +136,6 @@ class HtmlToPdfResponse(HttpResponse):
 
 class PdfReportResponse(HtmlToPdfResponse):
     def __init__(self, request, content, landscape=False, template='dashboard/report.html'):
-        context = dict(today=datetime.date.today(), settings=settings, content=content)
+        context = dict(today=datetime.date.today(), title='Relatório', icon=None, content=content)
         html = render_to_string([template], context, request=request)
         super().__init__(html, landscape=landscape)

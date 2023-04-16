@@ -62,7 +62,7 @@
     </script>
     {% endif %}
     {% if metadata.type == "date" or metadata.type == "datetime" %}
-    <input type="date" name="{{ metadata.key }}" value="{{ metadata.value }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
+    <input type="date" name="{{ metadata.key }}" value="{{ metadata.value|default:'' }}" class="form-control {{ metadata.key }}-{{ data.uuid }}"
            placeholder="Informe um data" style="padding-left:10px">
     {% endif %}
 </div>

@@ -192,6 +192,12 @@ class Action(metaclass=ActionMetaclass):
                 widget=forms.HiddenInput()
             )
 
+    def get_verbose_name(self):
+        return self.get_metadata().get('name')
+
+    def get_image(self):
+        return self.get_metadata().get('image')
+
     def has_url_posted_data(self):
         return 'post__{}'.format(self.get_api_name()) in self.request.GET
 
@@ -202,10 +208,12 @@ class Action(metaclass=ActionMetaclass):
         self.can_be_reloaded = flag
 
     def info(self, text):
-        self.content['info'].append(text)
+        if text:
+            self.content['info'].append(text)
 
     def alert(self, text):
-        self.content['alert'].append(text)
+        if text:
+            self.content['alert'].append(text)
 
     def parameters(self, index):
         values = None

@@ -159,10 +159,7 @@ class ModelMixin(object):
                     user = User.objects.create(username=username)
                     if email:
                         user.email = email
-                    if 'DEFAULT_PASSWORD' in settings.SLOTH:
-                        default_password = settings.SLOTH['DEFAULT_PASSWORD'](user)
-                    else:
-                        default_password = '123' if settings.DEBUG else str(abs(hash(username)))
+                    default_password = settings.DEFAULT_PASSWORD(user)
                     user.set_password(default_password)
                     user.save()
                     user_id = user.id

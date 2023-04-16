@@ -33,10 +33,9 @@ class QuerySet(models.QuerySet):
         self.reset()
 
     def reset(self):
-        limit = settings.SLOTH.get('LIST_PER_PAGE', 20)
         self.metadata = dict(uuid=uuid1().hex if self.model is None else self.model.__name__.lower(), subset=None,
             display=[], view=[], filters={}, dfilters={}, search=None,
-            page=1, limit=limit, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
+            page=1, limit=20, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
             verbose_name=None, related_field=None, scrollable=False

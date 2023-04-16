@@ -40,7 +40,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def deploy(self):
         if os.path.exists(self._get_project_dir()):
-            execute('cd {} && git pull origin main'.format(self._get_project_dir()))
+            execute('cd {} && git pull'.format(self._get_project_dir()))
         else:
             execute('git clone {} {}'.format(self._get_clone_url(), self._get_project_dir()))
         execute('docker-compose -f {} up --build --detach'.format(self._get_compose_file_path()))
@@ -62,7 +62,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return 'OK'
 
     def update(self):
-        execute('cd {} && git pull origin main && python manage.py sync'.format(self._get_project_dir()))
+        execute('cd {} && git pull && python manage.py sync'.format(self._get_project_dir()))
         execute('docker restart {}'.format(self._get_container_name()))
         execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
         execute('nginx -s reload')

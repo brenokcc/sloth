@@ -45,7 +45,7 @@ DEPLOY_WORKFLOW_CONTENT = '''name: DEPLOY
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 jobs:
   deploy:
@@ -59,6 +59,53 @@ jobs:
 
 '''
 
+DOCKER_FILE_CONTENT = '''FROM sloth
+WORKDIR /opt/app
+EXPOSE 8000
+ENTRYPOINT ["python", "manage.py", "startserver"]
+'''
+
+DOCKER_COMPOSE_FILE_CONTENT = '''version: '3.9'
+
+services:
+  web:
+    ports:
+      - "8000"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - .:/opt/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      USE_REDIS: 1
+      USE_POSTGRES: 1
+  redis:
+    image: redis
+    hostname: redis
+    restart: always
+    ports:
+      - "6379"
+    command: redis-server --loglevel warning
+    volumes:
+      - .docker/redis:/data
+  postgres:
+    image: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-database}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password}
+    ports:
+      - "5432"
+    volumes:
+      - .docker/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: psql -U postgres -d $$POSTGRES_DB -c "SELECT version();"
+
+'''
 
 def startproject():
     name = os.path.basename(os.path.abspath('.'))
@@ -88,6 +135,17 @@ def startproject():
     deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')
     with open(deploy_workflow_path, 'w') as file:
         file.write(DEPLOY_WORKFLOW_CONTENT)
+    ignore = ['bin/server.log', '.idea/', 'db.sqlite3', '*.pyc', '.DS_Store', 'geckodriver.log']
+    if os.path.exists('.gitignore'):
+        with open('.gitignore', 'a') as file:
+            file.write('\n'.join(ignore))
+    else:
+        with open('.gitignore', 'w') as file:
+            file.write('\n'.join(ignore))
+    with open('Dockerfile', 'w') as file:
+        file.write(DOCKER_FILE_CONTENT)
+    with open('docker-compose.yml', 'w') as file:
+        file.write(DOCKER_COMPOSE_FILE_CONTENT)
 
 
 if __name__ == "__main__":

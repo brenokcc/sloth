@@ -10,6 +10,7 @@ services:
     restart: always
     volumes:
       - .docker/media:/opt/app/media
+      - ./static:/opt/app/static
     depends_on:
       postgres:
         condition: service_healthy

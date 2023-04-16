@@ -77,7 +77,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
-      - ./docker/media:/opt/app/media
+      - .docker/media:/opt/app/media
+      - ./static:/opt/app/static
     depends_on:
       postgres:
         condition: service_healthy
@@ -108,6 +109,20 @@ services:
 
 '''
 
+DOCKER_IGNORE_FILE_CONTENT = '''.docker
+.github
+.git
+.gitignore
+.dockerignore
+docker-compose.yml
+Dockerfile
+static
+media
+*.pyc
+*.sqlite3
+*.md
+'''
+
 def startproject():
     name = os.path.basename(os.path.abspath('.'))
     ManagementUtility(['django-admin.py', 'startproject', name, '.']).execute()
@@ -136,7 +151,7 @@ def startproject():
     deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')
     with open(deploy_workflow_path, 'w') as file:
         file.write(DEPLOY_WORKFLOW_CONTENT)
-    ignore = ['bin/server.log', '.idea/', 'db.sqlite3', '*.pyc', '.DS_Store', 'geckodriver.log']
+    ignore = ['bin/server.log', '.idea/', 'db.sqlite3', '*.pyc', '.DS_Store', 'geckodriver.log', '.docker', 'media']
     if os.path.exists('.gitignore'):
         with open('.gitignore', 'a') as file:
             file.write('\n'.join(ignore))
@@ -147,6 +162,8 @@ def startproject():
         file.write(DOCKER_FILE_CONTENT.format(name))
     with open('docker-compose.yml', 'w') as file:
         file.write(DOCKER_COMPOSE_FILE_CONTENT)
+    with open('.dockerignore', 'w') as file:
+        file.write(DOCKER_IGNORE_FILE_CONTENT)
 
 
 if __name__ == "__main__":

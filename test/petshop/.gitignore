@@ -8,3 +8,4 @@ sloth.egg-info
 dist
 geckodriver.log
 static
+.docker

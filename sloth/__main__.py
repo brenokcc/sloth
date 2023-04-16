@@ -83,7 +83,7 @@ def startproject():
     dashboard_path = os.path.join(name, 'dashboard.py')
     with open(dashboard_path, 'w') as file:
         file.write(DASHBOARD_FILE_CONTENT)
-    workflows_path = os.path.join(name, '.github', 'workflows')
+    workflows_path = os.path.join('.github', 'workflows')
     os.makedirs(workflows_path, exist_ok=True)
     deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')
     with open(deploy_workflow_path, 'w') as file:

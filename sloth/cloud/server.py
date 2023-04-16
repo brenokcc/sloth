@@ -52,7 +52,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return self.get_project_deploy_url()
 
     def undeploy(self):
-        execute("rm -rf /etc/nginx/conf.d/{}.conf", self._get_project_name())
+        execute("rm -rf /etc/nginx/conf.d/{}.conf".format(self._get_project_name()))
         execute('nginx -s reload')
         execute('docker-compose -f {} down'.format(self._get_compose_file_path()))
         return 'OK'

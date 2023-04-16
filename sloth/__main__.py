@@ -114,8 +114,8 @@ def startproject():
     settings_content = open(settings_path).read().replace(
         "'django.contrib.admin'",
         "'{}', 'oauth2_provider', 'sloth.api'".format(name)
-    )
-    settings_append = open(settings.__file__).read().replace('from pathlib', 'import os\nfrom pathlib').replace('# ', '')
+    ).replace('from pathlib', 'import os\nfrom pathlib')
+    settings_append = open(settings.__file__).read().replace('import os', '').replace('# ', '')
     with open(settings_path, 'w') as file:
         file.write('{}{}'.format(settings_content, settings_append))
     urls_path = os.path.join(name, 'urls.py')

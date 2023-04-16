@@ -29,9 +29,15 @@ class StandaloneApplication(WSGIApplication):
 
 
 class Command(BaseCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument("aplication_name", nargs="*", type=str)
+
     def handle(self, *args, **options):
         call_command('sync')
         call_command('collectstatic', verbosity=0, interactive=False)
         application_name = os.path.basename(os.path.abspath('.'))
+        if options['aplication_name']:
+            application_name = options['aplication_name'][0]
         options = dict(bind='0.0.0.0:8000', workers=(multiprocessing.cpu_count() * 2) + 1)
         StandaloneApplication('{}.wsgi:application'.format(application_name), options).run()

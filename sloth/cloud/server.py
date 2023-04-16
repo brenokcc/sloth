@@ -44,7 +44,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             execute('cd {} && git pull'.format(self._get_project_dir()))
         else:
             execute('git clone {} {}'.format(self._get_clone_url(), self._get_project_dir()))
-        execute('docker-compose -f {} up --build --detach'.format(self._get_compose_file_path()))
+        execute('docker-compose -f {} up -d --build'.format(self._get_compose_file_path()))
         for image_id in os.popen('docker images -f "dangling=true" -q').read().split():
             execute('docker rmi {}'.format(image_id))
         execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
@@ -64,7 +64,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def update(self):
         execute('cd {} && git pull'.format(self._get_project_dir()))
-        execute('docker-compose -f {} up --detach --force-recreate --no-deps web'.format(self._get_compose_file_path()))
+        execute('docker-compose -f {} up -d --force-recreate --no-deps web'.format(self._get_compose_file_path()))
         execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
         execute('nginx -s reload')
         return 'OK'

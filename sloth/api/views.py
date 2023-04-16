@@ -77,14 +77,14 @@ def dashboard(request, path):
 def manifest(request):
     return JsonResponse(
         {
-            "name": settings.SLOTH['NAME'],
-            "short_name": settings.SLOTH['NAME'],
+            "name": cache.get('title', 'Sloth'),
+            "short_name": cache.get('title', 'Sloth'),
             "lang": settings.LANGUAGE_CODE,
             "start_url": "/",
             "scope": "/",
             "display": "standalone",
             "icons": [{
-                "src": settings.SLOTH['ICON'],
+                "src": cache.get('icon', '/static/images/icon.png'),
                 "sizes": "192x192",
                 "type": "image/png"
             }]

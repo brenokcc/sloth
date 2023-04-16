@@ -15,7 +15,7 @@ class PetshopDashboard(Dashboard):
         self.header(title='Petshop', shadow=True)
         self.settings_menu('change_password')
         self.tools_menu('show_icons')
-        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.5')
+        self.footer(title='© 2022 Petshop', text='Todos os direitos reservados', version='1.0.6')
 
         self.shortcuts('petshop.animal', 'petshop.cliente', 'petshop.tratamento')
         self.action_bar('petshop.animal', 'petshop.cliente', 'teste')

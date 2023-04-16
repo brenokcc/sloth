@@ -55,6 +55,7 @@ class Dashboard(metaclass=DashboardType):
         self.redirect_message = message
 
     def navbar(self, title=None, icon=None, favicon=None):
+        cache.set('title', title)
         cache.set('icon', icon)
         cache.set('favicon', favicon)
         self.data['navbar'].update(title=title, icon=icon, favicon=favicon)

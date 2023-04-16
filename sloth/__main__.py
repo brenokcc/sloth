@@ -62,7 +62,8 @@ jobs:
 DOCKER_FILE_CONTENT = '''FROM sloth
 WORKDIR /opt/app
 EXPOSE 8000
-ENTRYPOINT ["python", "manage.py", "startserver"]
+ADD . .
+ENTRYPOINT ["python", "manage.py", "startserver", "{}"]
 '''
 
 DOCKER_COMPOSE_FILE_CONTENT = '''version: '3.9'
@@ -76,7 +77,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
-      - .:/opt/app
+      - ./docker/media:/opt/app/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,7 +144,7 @@ def startproject():
         with open('.gitignore', 'w') as file:
             file.write('\n'.join(ignore))
     with open('Dockerfile', 'w') as file:
-        file.write(DOCKER_FILE_CONTENT)
+        file.write(DOCKER_FILE_CONTENT.format(name))
     with open('docker-compose.yml', 'w') as file:
         file.write(DOCKER_COMPOSE_FILE_CONTENT)
 

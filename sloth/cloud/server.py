@@ -23,7 +23,8 @@ def execute(cmd):
     os.system(cmd)
 
 def start():
-    conf = 'server {server_name deploy.%s; location / { proxy_pass http://127.0.0.1:%s; }}' % (DOMAIN_NAME, PORT)
+    ssl = 'listen 80; listen 443 ssl; ssl_certificate %s; ssl_certificate_key %s; if ($scheme = http) {return 301 https://$server_name$request_uri;}' % CERTIFICATE if CERTIFICATE else ''
+    conf = 'server {server_name deploy.%s; location / { proxy_pass http://127.0.0.1:%s; } %s }' % (DOMAIN_NAME, PORT, ssl)
     execute("echo '{}' > /etc/nginx/conf.d/deploy.conf".format(conf))
     execute('nginx -s reload')
 
@@ -86,7 +87,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return os.path.join(WORKDIR, self._get_project_name(), 'docker-compose.yml')
 
     def _get_nginx_project_conf(self):
-        ssl = 'listen 443 ssl; ssl_certificate %s; ssl_certificate_key %s; if ($scheme = http) {return 301 https://$server_name$request_uri;}' % CERTIFICATE if CERTIFICATE else ''
+        ssl = 'listen 80; listen 443 ssl; ssl_certificate %s; ssl_certificate_key %s; if ($scheme = http) {return 301 https://$server_name$request_uri;}' % CERTIFICATE if CERTIFICATE else ''
         static = 'location /static { alias %s; }' % os.path.join(self._get_project_dir(), 'static')
         media = 'location /media { alias %s; }' % os.path.join(self._get_project_dir(), 'media')
         return 'server {server_name %s.%s; location / { proxy_pass http://127.0.0.1:%s; } %s %s %s }' % (

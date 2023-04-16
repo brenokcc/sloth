@@ -64,7 +64,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def update(self):
         execute('cd {} && git pull && python manage.py sync'.format(self._get_project_dir()))
-        execute('docker restart {}'.format(self._get_container_name()))
+        execute('docker-compose restart {}'.format(self._get_project_name()))
         execute("echo '{}' > /etc/nginx/conf.d/{}.conf".format(self._get_nginx_project_conf(), self._get_project_name()))
         execute('nginx -s reload')
         return 'OK'

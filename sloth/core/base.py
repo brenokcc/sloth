@@ -48,11 +48,11 @@ class ModelMixin(object):
         return user.is_superuser
 
     def has_view_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
 
     def has_attr_permission(self, user, name):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return  attr is None or user.is_superuser or attr(user)
+        return attr is None or user.is_superuser or attr(user)
 
     def has_view_attr_permission(self, user, name):
         if user.is_superuser or self.has_permission(user):
@@ -65,6 +65,7 @@ class ModelMixin(object):
     def is_view_attr(self, name):
         if not hasattr(self.__class__, '__view__'):
             attr_names = []
+
             def append_attr_names(valueset):
                 names = list(valueset.metadata['names'].keys())
                 names.extend(valueset.metadata['append'])
@@ -83,30 +84,28 @@ class ModelMixin(object):
         return name in getattr(self.__class__, '__view__')
 
     def has_add_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or (hasattr(self, 'autouser') and self.is_autouser(user))
 
     def has_edit_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
 
     def has_delete_permission(self, user):
-        return user.is_superuser or self.has_permission(user)
+        return user.is_superuser or self.has_permission(user) or self.is_autouser(user)
+
+    def is_autouser(self, user):
+        return getattr(self, 'autouser', None) == user
 
     ### VISUALIZATION ###
 
-    def values(self, *names):
+    def value_set(self, *names):
         return ValueSet(self, names)
 
     def view(self):
         names = [field.name for field in self.metaclass().fields]
-        return self.values(*names)
+        return self.value_set(*names)
 
-    def display(self, name):
-        if name == 'self':
-            return self.view()
-        return self.values(name)
-
-    def serialize(self, wrap=True, verbose=True):
-        return self.view().serialize(wrap=wrap, verbose=verbose)
+    def serialize(self, wrap=True):
+        return self.view().serialize(wrap=wrap)
 
     def get_select_display(self):
         select_fields = getattr(type(self).metaclass(), 'select_fields', None)
@@ -114,7 +113,7 @@ class ModelMixin(object):
             values = []
             for attr_name in select_fields:
                 values.append(getattr(self, attr_name))
-            return render_to_string('app/select.html', dict(obj=self, values=values))
+            return render_to_string('inputs/select.html', dict(obj=self, values=values))
         return None
 
     ### ROLE CREATION ###
@@ -160,10 +159,7 @@ class ModelMixin(object):
                     user = User.objects.create(username=username)
                     if email:
                         user.email = email
-                    if 'DEFAULT_PASSWORD' in settings.SLOTH:
-                        default_password = settings.SLOTH['DEFAULT_PASSWORD'](user)
-                    else:
-                        default_password = '123' if settings.DEBUG else str(abs(hash(username)))
+                    default_password = settings.DEFAULT_PASSWORD(user)
                     user.set_password(default_password)
                     user.save()
                     user_id = user.id
@@ -181,8 +177,11 @@ class ModelMixin(object):
             ).delete()
 
     @classmethod
-    def get_list_url(cls, prefix=''):
-        return '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+    def get_list_url(cls, prefix='', subset='all'):
+        url = '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+        if subset != 'all':
+            url = '{}{}/'.format(url, subset)
+        return url
 
     @classmethod
     def add_form_cls(cls):
@@ -255,13 +254,34 @@ class ModelMixin(object):
                 submit_label = 'Excluir'
                 confirmation = True
 
-            def save(self):
+            def submit(self):
                 self.instance.delete()
+                self.message('Exclusão realizada com sucesso.')
+                self.redirect('..')
 
             def has_permission(self, user):
                 return user.is_superuser or self.instance.has_delete_permission(user) or self.instance.has_permission(user)
 
         return Delete
+
+    @classmethod
+    def relation_form_cls(cls, related_field):
+        _related_field = related_field
+
+        class Add(Action):
+            class Meta:
+                icon = 'plus'
+                modal = True
+                model = cls.get_field(_related_field).model
+                style = 'success'
+                related_field = _related_field
+                verbose_name = 'Adicionar {}'.format(cls.get_field(_related_field).model.metaclass().verbose_name)
+                fieldsets = getattr(cls.get_field(_related_field).model.metaclass(), 'fieldsets', None)
+
+            def has_permission(self, user):
+                return user.is_superuser or self.instantiator.has_edit_permission(user) or self.instantiator.has_permission(user)
+
+        return Add
 
     @classmethod
     @lru_cache
@@ -294,7 +314,7 @@ class ModelMixin(object):
     @classmethod
     def default_list_fields(cls):
         list_display = getattr(cls.metaclass(), 'list_display', None)
-        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id']
+        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id' and '_ptr' not in field.name]
 
     @classmethod
     def default_filter_fields(cls, exclude=None):
@@ -355,6 +375,9 @@ class ModelMixin(object):
                 param_type = 'integer'
                 param_format = 'int32'
         return dict(type=param_type, format=param_format)
+
+    def get_allowed_attrs(self, recursive=True):
+        return self.view().get_allowed_attrs()
 
     @classmethod
     def get_api_paths(cls, request):
@@ -465,3 +488,12 @@ class ModelMixin(object):
     @classmethod
     def metaclass(cls):
         return getattr(cls, '_meta')
+
+    def contextualize(self, request):
+        return self.view().contextualize(request)
+
+    def attr(self, name, source=False):
+        valueset = self.value_set(name).attr(name)
+        if source:
+            valueset = valueset.source(name)
+        return valueset

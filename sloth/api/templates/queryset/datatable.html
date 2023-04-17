@@ -1,0 +1,65 @@
+{% load tags %}
+{% if data.data %}
+    {% if compact or data.metadata.compact or request.GET.compact or request|mobile or request|tablet and data.metadata.display|length > 2 %}
+        <hr>
+        {% for row in data.data %}
+            <div class="float-end">
+                {% include "queryset/checkbox.html" %}
+            </div>
+            <dl>
+                {% for v in row.data.values %}
+                    <dt><label>{{ v.name }}</label></dt>
+                    <dd>{% include 'valueset/value.html' %}</dd>
+                {% endfor %}
+            </dl>
+            <div class="float-end">
+                {% include "dashboard/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id|stringformat:'s' enabled=row.actions  %}
+            </div>
+            <div class="clearfix"></div>
+            <hr>
+        {% endfor %}
+    {% else %}
+    <table class="table">
+        <thead>
+        <tr>
+            {% if data.actions.queryset %}
+            <th scope="col" width="10px">
+                {% include "queryset/checkbox.html" %}
+            </th>
+            {% endif %}
+            {% for label, display in data.metadata.display.items %}
+            <th scope="col">{{ display.name }}</th>
+            {% endfor %}
+            {% if data.actions.instance and not print %}
+                <th style="text-align:center" scope="col"></th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in data.data %}
+        <tr>
+            {% if data.actions.queryset %}
+            <th scope="col" class="align-middle">
+                {% include "queryset/checkbox.html" %}
+            </th>
+            {% endif %}
+            {% for v in row.data.values %}
+            <td class="align-middle">
+                {% include 'valueset/value.html' %}
+            </td>
+            {% endfor %}
+            {% if data.actions.instance and not print %}
+            <td align="center" class="align-middle instance-actions">
+                {% include "queryset/actions/actions.html" %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+{% else %}
+    <div class="alert alert-primary" role="alert" style="margin-top:30px;">
+      Nenhum registro encontrado.
+    </div>
+{% endif %}

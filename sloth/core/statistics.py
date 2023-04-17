@@ -3,9 +3,8 @@
 import json
 from decimal import Decimal
 from django.db.models.aggregates import Count
-from sloth.exceptions import HtmlJsonReadyResponseException
+from sloth.api.exceptions import HtmlReadyResponseException
 from django.template.loader import render_to_string
-from uuid import uuid1
 from sloth.utils import pretty, colors
 
 
@@ -46,6 +45,9 @@ class QuerySetStatistics(object):
         if request and self.metadata['uuid'] == request.GET.get('uuid'):
             self.process_request(request)
         return self
+
+    def get_allowed_attrs(self, recursive=True):
+        return self.qs.get_allowed_attrs(recursive=recursive)
 
     def _calc(self):
         if self._values_dict is None:
@@ -149,11 +151,10 @@ class QuerySetStatistics(object):
         return self
 
     def debug(self):
-        print(json.dumps(self.serialize(wrap=True, verbose=True), indent=4, ensure_ascii=False))
+        print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
 
-    def serialize(self, wrap=True, verbose=True, path=None, lazy=False):
+    def serialize(self, wrap=True, path=None, lazy=False):
         series = dict()
-        verbose_name = self.metadata['verbose_name']
         if not lazy:
             self._calc()
 
@@ -181,14 +182,13 @@ class QuerySetStatistics(object):
         if wrap:
             return dict(
                 type='statistics',
-                uuid=self.metadata['uuid'],
-                name=verbose_name,
-                key=None,
+                uuid=self.qs.metadata['uuid'],
+                name=self.qs.metadata['verbose_name'],
+                key=self.qs.metadata['attr'],
                 path=path,
                 series=series,
                 template=self.metadata['template'],
                 normalized=self.normalize(series),
-                # filters=self.qs.get_filters(verbose)
             )
         else:
             return series['default'] if 'default' in series else series
@@ -202,24 +202,20 @@ class QuerySetStatistics(object):
                 if item['type'] == 'boolean':
                     value = bool(int(value)) if value.isdigit() else value == 'true'
                 self.qs = self.qs.filter(**{item['key']: value})
-        raise HtmlJsonReadyResponseException(self.html())
-
+        raise HtmlReadyResponseException(self.html())
 
     def html(self):
-        serialized = self.serialize(wrap=True, verbose=True)
-        if self.metadata['source']:
-            if hasattr(self.metadata['source'], 'model'):
-                name = self.metadata['source'].model.metaclass().verbose_name_plural
-            else:
-                name = self.metadata['source']
+        serialized = self.serialize(wrap=True)
+        if self.qs.metadata['is_admin']:
+            name = self.qs.model.metaclass().verbose_name_plural
             data = dict(
                 type='object', name=str(name),
-                icon=None, data={serialized['name']: serialized}, actions=[], attach=[], append={}
+                icon=None, data={self.qs.metadata['verbose_name']: serialized}, actions=[], attach=[], append={}
             )
             # print(json.dumps(data, indent=4, ensure_ascii=False))
-            return render_to_string('app/valueset/valueset.html', dict(data=data), request=self.request)
+            return render_to_string('valueset/valueset.html', dict(data=data), request=self.request)
         else:
-            return render_to_string('app/statistics.html', dict(data=serialized), request=self.request)
+            return render_to_string('queryset/statistics.html', dict(data=serialized), request=self.request)
 
     def __str__(self):
         return self.html() if self.request else super().__str__()
@@ -253,7 +249,7 @@ class QuerySetStatistics(object):
         return data
 
     def chart(self, name):
-        self.metadata['template'] = 'app/charts/{}.html'.format(name)
+        self.metadata['template'] = 'charts/{}.html'.format(name)
         return self
 
     def pie_chart(self):

@@ -1,0 +1,27 @@
+<style>
+    footer{
+        text-align:center;
+        padding-top: 20px;
+    }
+    footer .footer-title{
+        font-size: 90%;
+    }
+    footer .footer-text{
+        font-size: 75%;
+    }
+</style>
+{% if dashboard.data.footer.title %}
+    <footer>
+        <div class="footer-title">
+            {{ dashboard.data.footer.title }}
+        </div>
+        {% if dashboard.data.footer.text %}
+            <div class="footer-text">
+                <div>{{ dashboard.data.footer.text }}</div>
+                {% if dashboard.data.footer.version %}
+                    <div>Versão {{ dashboard.data.footer.version|stringformat:'s' }}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </footer>
+{% endif %}

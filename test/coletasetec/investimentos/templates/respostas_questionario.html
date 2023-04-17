@@ -1,0 +1,10 @@
+{% load tags %}
+{% if data.data %}
+    {% for row in data.data %}
+        <p><strong>{{ row.data.pergunta.value }}</strong><br>R: {% if row.data.resposta.value %}<i>{{ row.data.resposta.value }}</i>{% endif %}</p>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-primary" role="alert" style="margin-top:30px;">
+      O questionário ainda não foi respondido.
+    </div>
+{% endif %}

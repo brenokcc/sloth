@@ -1,5 +1,5 @@
 import time
-from sloth.tasks import Task
+from sloth.api.tasks import Task
 
 class TarefaAssincrona(Task):
     def run(self):

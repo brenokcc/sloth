@@ -5,7 +5,7 @@ class Pessoa(models.Model):
     nome = models.CharField('Nome')
 
     def view(self):
-        return self.values(
+        return self.value_set(
             'badges_renderers',
             'utils_renderers',
             'calendar_renderers',
@@ -17,7 +17,7 @@ class Pessoa(models.Model):
 
     @meta('Badges')
     def badges_renderers(self):
-        return self.values(('is_casado', 'get_situacao', 'get_profissao'))
+        return self.value_set(('is_casado', 'get_situacao', 'get_profissao'))
 
     @meta('Casado', renderer='badges/boolean')
     def is_casado(self):
@@ -37,7 +37,7 @@ class Pessoa(models.Model):
 
     @meta('Utilitários')
     def utils_renderers(self):
-        return self.values('get_progresso', 'get_qrcode', 'get_etapas')
+        return self.value_set('get_progresso', 'get_qrcode', 'get_etapas')
 
     @meta('Progresso', renderer='utils/progress')
     def get_progresso(self):
@@ -58,7 +58,7 @@ class Pessoa(models.Model):
 
     @meta('Calendário')
     def calendar_renderers(self):
-        return self.values('get_programacao')
+        return self.value_set('get_programacao')
 
     @meta('Programação', renderer='calendar/events')
     def get_programacao(self):
@@ -70,7 +70,7 @@ class Pessoa(models.Model):
 
     @meta('Mapas')
     def map_renderers(self):
-        return self.values('get_mapa_rn', 'get_geolocalizacao')
+        return self.value_set('get_mapa_rn', 'get_geolocalizacao')
 
     @meta('RN', renderer='maps/map')
     def get_mapa_rn(self):
@@ -82,7 +82,7 @@ class Pessoa(models.Model):
 
     @meta('Mensagens')
     def message_renderers(self):
-        return self.values('get_mensagem_sucesso', 'get_mensagem_perigo')
+        return self.value_set('get_mensagem_sucesso', 'get_mensagem_perigo')
 
     @meta('Sucesso', renderer='messages/success')
     def get_mensagem_sucesso(self):
@@ -94,7 +94,7 @@ class Pessoa(models.Model):
 
     @meta('Fotos')
     def photo_renderers(self):
-        return self.values(('get_foto_normal', 'get_foto_redonda'), 'get_banner')
+        return self.value_set(('get_foto_normal', 'get_foto_redonda'), 'get_banner')
 
     @meta('Foto Normal', renderer='photos/photo')
     def get_foto_normal(self):
@@ -110,7 +110,7 @@ class Pessoa(models.Model):
 
     @meta('Documentos')
     def document_renderers(self):
-        return self.values('get_documento')
+        return self.value_set('get_documento')
 
     @meta('Documento PDF', renderer='documents/document')
     def get_documento(self):

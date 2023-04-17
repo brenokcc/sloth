@@ -1,29 +1,32 @@
 # -*- coding: utf-8 -*-
+import datetime
 import math
 import re
 import traceback
-from decimal import Decimal
 from copy import deepcopy
+from decimal import Decimal
 from functools import lru_cache
-from django.contrib import auth
+
+from django.apps import apps
 from django.contrib import messages
-from django.conf import settings
-from django.http import HttpResponse
+from django.forms.models import ModelFormMetaclass
+from django.forms import *
+from .fields import *
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+
 from . import inputs
-from django import forms
-from django.forms.models import ModelFormMetaclass, ModelMultipleChoiceField
-from ..exceptions import JsonReadyResponseException, ReadyResponseException
-from ..utils import to_api_params, to_camel_case, to_snake_case
-from django.forms.fields import *
-from django.forms.widgets import *
 from .fields import *
-from django.core.exceptions import ValidationError
+from ..core.queryset import QuerySet
+from sloth.api.exceptions import JsonReadyResponseException, ReadyResponseException, HtmlReadyResponseException
+from ..utils import to_api_params, to_snake_case
 from ..utils.formatter import format_value
+from ..utils.http import FileResponse
 
 ACTIONS = {}
+EXPOSE = []
 
 
 class PermissionChecker:
@@ -35,13 +38,19 @@ class PermissionChecker:
         self.metaclass = metaclass
 
     def has_permission(self, user):
-        pass
+        return self and user
+
+
+class ActionDefaultMetaClass:
+    modal = True
 
 
 class ActionMetaclass(ModelFormMetaclass):
     def __new__(mcs, name, bases, attrs):
         if 'Meta' in attrs:
             if hasattr(attrs['Meta'], 'model'):
+                if isinstance(attrs['Meta'].model, str):
+                    attrs['Meta'].model = apps.get_model(attrs['Meta'].model)
                 bases += forms.ModelForm,
             else:
                 bases += forms.Form,
@@ -58,41 +67,71 @@ class ActionMetaclass(ModelFormMetaclass):
                     setattr(attrs['Meta'], 'fields', form_fields)
                 else:
                     setattr(attrs['Meta'], 'exclude', ())
-        elif name != 'Action':
-            raise NotImplementedError('class {} must have a Meta class.'.format(name))
+        else:
+            bases += forms.Form,
+            attrs['Meta'] = ActionDefaultMetaClass
         cls = super().__new__(mcs, name, bases, attrs)
         ACTIONS[name] = cls
-        ACTIONS[name.lower()] = cls
         ACTIONS[to_snake_case(name)] = cls
+        if 'ActionView' in [k.__name__ for k in bases]:
+            EXPOSE.append(to_snake_case(name))
         return cls
+
+
+class RegionalDateWidget(DateInput):
+    input_type = 'date'
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if isinstance(value, datetime.date):
+            value = value.isoformat()
+        attrs = attrs or {}
+        attrs.update({'autocomplete': 'off'})
+        html = super().render(name, value, attrs)
+        return mark_safe(html)
+
+
+class RegionalDateTimeWidget(DateTimeInput):
+    input_type = 'datetime-local'
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if isinstance(value, datetime.datetime):
+            value = value.isoformat().split('.')[0]
+        attrs = attrs or {}
+        attrs.update({'step': '1'})
+        html = super().render(name, value, attrs)
+        return mark_safe(html)
 
 
 class Action(metaclass=ActionMetaclass):
 
     def __init__(self, *args, **kwargs):
+        self.path = None
         self.request = kwargs.pop('request', None)
         self.instantiator = kwargs.pop('instantiator', None)
-        self.instances = kwargs.pop('instances', ())
+        self.queryset = kwargs.pop('queryset', None)
+        self.instances = kwargs.pop('instances', None)
         self.metaclass = getattr(self, 'Meta')
-        self.output_data = None
-        self.on_change_data = {'show': [], 'hide': [], 'set': [], 'show_fieldset': [], 'hide_fieldset': []}
+
+        self.show_form = True
+        self.can_be_closed = False
+        self.can_be_reloaded = False
+        self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
+        self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
         if forms.ModelForm in self.__class__.__bases__:
             self.instance = kwargs.get('instance', None)
-            if self.instances:
-                kwargs.update(instance=self.instances[0])
         else:
             self.instance = kwargs.pop('instance', None)
-            if self.instance is None:
-                if self.instances:
-                    self.instance = self.instances[0]
-            else:
-                if self.instances == ():
-                    self.instances = self.instance,
 
-        form_name = type(self).__name__
+        if self.has_url_posted_data():
+            for k in self.request.GET:
+                if k.startswith('post__'):
+                    if 'data' not in kwargs:
+                        kwargs['data'] = {}
+                    kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
+
         if 'data' not in kwargs:
-            if form_name in self.request.GET or form_name in self.request.POST or self.request.path.startswith('/api/'):
+            if self.get_api_name() in self.request.GET or self.get_api_name() in self.request.POST or self.request.path.startswith('/api/'):
                 # if self.base_fields or self.requires_confirmation():
                 if self.request.method == 'GET' or self.requires_confirmation():
                     if self.get_method() == 'get':
@@ -107,23 +146,32 @@ class Action(metaclass=ActionMetaclass):
                 kwargs['data'] = None
 
         super().__init__(*args, **kwargs)
+        if self.instance is not None and hasattr(self.instance, 'autouser') and not self.instance.autouser_id:
+            self.instance.autouser = self.request.user
+            if 'autouser' in self.fields:
+                del self.fields['autouser']
+
+        for name in self.fields:
+            setattr(self, name, self.initial.get(name, None))
+        self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
+
+        related_field_name = getattr(self.metaclass, 'related_field', None)
+        if related_field_name:
+            setattr(self.instance, related_field_name, self.instantiator)
+            if related_field_name in self.fields:
+                del self.fields[related_field_name]
 
         for field_name in self.fields:
             field = self.fields[field_name]
-            if False and hasattr(field, 'queryset') and field.queryset.metadata['lookups']: # TODO
-                field.queryset = field.queryset.apply_role_lookups(self.request.user)
-                if field.queryset.count() == 1:
-                    field.initial = field.queryset.first().id
-                    field.widget = forms.HiddenInput()
-            if hasattr(field, 'queryset') and getattr(field, 'auto_user', False) and not self.request.user.is_superuser:
-                scope_type = '{}.{}'.format(
-                    field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
-                )
-                pks = self.request.user.roles.filter(scope_type=scope_type).values_list('scope_value', flat=True)
-                field.queryset = field.queryset.model.objects.filter(pk__in=pks)
-                if len(pks) == 1:
-                    field.initial = pks.first()
-                    field.widget = forms.HiddenInput()
+            if hasattr(field, 'queryset'):
+                if not self.request.user.is_superuser and getattr(field, 'username_lookup', None):
+                    pks = list(field.queryset.filter(**{field.username_lookup: self.request.user}).values_list('pk', flat=True)[0:2])
+                    if len(pks) == 1:
+                        field.queryset = field.queryset.model.objects.filter(pk=pks[0])
+                        field.initial = pks[0]
+                        field.widget = forms.HiddenInput()
+                else:
+                    field.queryset = field.queryset.contextualize(self.request).apply_role_lookups(self.request.user)
             if hasattr(field, 'picker'):
                 grouper = field.picker if isinstance(field.picker, str) else None
                 if isinstance(field, forms.ModelMultipleChoiceField):
@@ -141,8 +189,61 @@ class Action(metaclass=ActionMetaclass):
             help_text = confirmation if isinstance(confirmation, str) else ''
             self.fields['confirmation'] = forms.BooleanField(
                 label='', initial='on', required=False, help_text=help_text,
-                widget=forms.TextInput(attrs={'style': 'display:none'})
+                widget=forms.HiddenInput()
             )
+
+    def get_verbose_name(self):
+        return self.get_metadata().get('name')
+
+    def get_image(self):
+        return self.get_metadata().get('image')
+
+    def has_url_posted_data(self):
+        return 'post__{}'.format(self.get_api_name()) in self.request.GET
+
+    def closable(self, flag=True):
+        self.can_be_closed = flag
+
+    def reloadable(self, flag=True):
+        self.can_be_reloaded = flag
+
+    def info(self, text):
+        if text:
+            self.content['info'].append(text)
+
+    def alert(self, text):
+        if text:
+            self.content['alert'].append(text)
+
+    def parameters(self, index):
+        values = None
+        for token in self.request.path.split('/'):
+            if values is not None:
+                values.append((token))
+            if token.lower() == self.get_api_name():
+                values = []
+        return values[index] if values and len(values)>index else None
+
+    def objects(self, model_name):
+        return apps.get_model(model_name).objects.contextualize(self.request)
+
+    def clear(self):
+        self.show_form = False
+        for k, v in self.content.items():
+            if k != 'bottom':
+                v.clear()
+
+    def view(self):
+        return None
+
+    def append(self, item, position='center'):
+        if hasattr(item, 'contextualize'):
+            item.contextualize(self.request)
+        self.content[position].append(item.html())
+
+    def has_attr_permission(self, user, name):
+        attr = getattr(self, 'has_{}_permission'.format(name), None)
+        return attr is None or attr(user)
 
     def requires_confirmation(self):
         return getattr(self.metaclass, 'confirmation', False)
@@ -156,14 +257,19 @@ class Action(metaclass=ActionMetaclass):
         return self.instance.get_one_to_many_field_names() if self.instance else ()
 
     def get_fieldsets(self):
+        related_field = getattr(self.instance, 'related_field', None) if self.instance is not None else None
+        if related_field and related_field in self.fields:
+            del self.fields[related_field]
         fieldsets = getattr(self.metaclass, 'fieldsets', None)
         if fieldsets is None:
             fieldsets = {}
             if self.fields:
                 field_names = [
-                    name for name in self.fields.keys()
-                    if name not in self.get_one_to_one_field_names()
-                       and name not in self.get_one_to_many_field_names()
+                    name for name in self.fields.keys() if (
+                            name not in self.get_one_to_one_field_names()
+                            and name not in self.get_one_to_many_field_names()
+                            and name not in ('confirmation', related_field)
+                    )
                 ]
                 if field_names:
                     fieldsets[None] = field_names
@@ -183,6 +289,13 @@ class Action(metaclass=ActionMetaclass):
                 if name in self.get_one_to_many_field_names():
                     # remove one-to-many fields from the form
                     self.one_to_many[name] = self.fields.pop(name)
+
+        pop = []
+        for name, names in fieldsets.items():
+            if len(names) == 1 and (names[0] in self.one_to_one.keys() or names[0] in self.one_to_many.keys()):
+                pop.append(name)
+        for name in pop:
+            del fieldsets[name]
 
         # configure one-to-one fields
         for one_to_one_field_name, one_to_one_field in self.one_to_one.items():
@@ -314,7 +427,7 @@ class Action(metaclass=ActionMetaclass):
         for name in self.one_to_many:
             qs = getattr(self.instance, name)
             pks = list(qs.values_list('pk', flat=True))
-            for i in range(0, 6):
+            for i in range(0, 10):
                 key = '{}--{}'.format(name.upper(), i)
                 pk = self.data.get(key)
                 if pk:  # if checkbox is checked
@@ -333,7 +446,7 @@ class Action(metaclass=ActionMetaclass):
         if hasattr(self.instance, 'post_save'):
             self.instance.post_save()
 
-    def serialize(self, wrap=False, verbose=False):
+    def serialize(self, wrap=False):
         if self.response:
             return self.response
         if wrap:
@@ -366,33 +479,44 @@ class Action(metaclass=ActionMetaclass):
                 on_change.append(field_name)
         return on_change
 
+    def get_allowed_attrs(self, recursive=True):
+        return []
+
+    @classmethod
+    def get_api_name(cls):
+        return to_snake_case(cls.__name__)
+
     @classmethod
     @lru_cache
-    def get_metadata(cls, path=None, inline=False, batch=False):
-        form_name = cls.__name__
+    def get_metadata(cls, path=None, target=None):
         metaclass = getattr(cls, 'Meta', None)
         if metaclass:
-            target = 'model'
-            name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", form_name))
+            target = target
+            name = getattr(metaclass, 'verbose_name', re.sub("([a-z])([A-Z])", "\g<1> \g<2>", cls.__name__))
             submit = getattr(metaclass, 'submit_label', name)
             icon = getattr(metaclass, 'icon', None)
             ajax = getattr(metaclass, 'ajax', True)
             modal = getattr(metaclass, 'modal', True)
             style = getattr(metaclass, 'style', 'primary')
             method = getattr(metaclass, 'method', 'post')
+            auto_reload = getattr(metaclass, 'auto_reload', None)
+            image = getattr(metaclass, 'image', None)
         else:
-            target, name, submit, icon, ajax, modal, style, method = (
-                'model', 'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get'
+            name, submit, icon, ajax, modal, style, method, auto_reload, image = (
+                'Enviar', 'Enviar', None, True, 'modal', 'primary', 'get', None, None
             )
         if path:
-            if inline or batch:
-                target = 'queryset' if batch else 'instance'
-                path = '{}{{id}}/{}/'.format(path, form_name)
+            path, *params = path.split('?')
+            if target in ('queryset', 'instance'):
+                path = '{}{{id}}/{}/'.format(path, cls.get_api_name())
             else:
-                path = '{}{}/'.format(path, form_name)
+                path = '{}{}/'.format(path, cls.get_api_name())
+            if params:
+                path = '{}?{}'.format(path, params[0])
         metadata = dict(
-            type='form', key=form_name, name=name, submit=submit, target=target,
-            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal
+            type='form', key=cls.get_api_name(), name=name, submit=submit, target=target,
+            method=method, icon=icon, style=style, ajax=ajax, path=path, modal=modal,
+            auto_reload=auto_reload, image=image
         )
         return metadata
 
@@ -401,12 +525,6 @@ class Action(metaclass=ActionMetaclass):
 
     def get_instructions(self):
         return None
-
-    def get_reload_areas(self):
-        reload = getattr(self.metaclass, 'reload', 'self')
-        if isinstance(reload, tuple):
-            return ','.join(reload)
-        return reload or ''
 
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
@@ -419,7 +537,7 @@ class Action(metaclass=ActionMetaclass):
 
     @classmethod
     def check_fake_permission(cls, request, instance=None, instantiator=None):
-        if request and not request.user.is_superuser:
+        if request:  # and not request.user.is_superuser
             checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
             has_permission = cls.has_permission(checker, request.user)
             return cls.check_permission(checker, request.user) if has_permission is None else has_permission
@@ -428,23 +546,10 @@ class Action(metaclass=ActionMetaclass):
     def __str__(self):
         return self.html()
 
+    def get_alternative_links(self):
+        return []
+
     def html(self):
-        if self.response:
-            if 'html' in self.response:
-                return self.response['html']
-            else:
-                js = '<script>{}</script>'
-                if self.response['url'] == '.':
-                    display_messages = True
-                    js = js.format('$(document).reload();')
-                elif self.response['url'] == '..':
-                    display_messages = 'modal' in self.request.GET
-                    js = js.format('$(document).back();')
-                else:
-                    display_messages = False
-                    js = js.format('$(document).redirect("{}");'.format(self.response['url']))
-                html = render_to_string('app/messages.html', request=self.request) if display_messages else ''
-                return '<!---->{}{}<!---->'.format(js, html)
 
         for name, field in self.fields.items():
             classes = field.widget.attrs.get('class', '').split()
@@ -453,11 +558,17 @@ class Action(metaclass=ActionMetaclass):
             elif isinstance(field.widget, forms.widgets.Input):
                 classes.append('form-control')
 
-            if isinstance(field, forms.DateTimeField):
-                classes.append('date-time-input')
-
             if isinstance(field, forms.DateField):
+                field.widget = RegionalDateWidget()
                 classes.append('date-input')
+                if name in self.initial and self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
+                    self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m')
+
+            if isinstance(field, forms.DateTimeField):
+                field.widget = RegionalDateTimeWidget()
+                classes.append('date-time-input')
+                if name in self.initial and self.initial[name] and isinstance(self.initial[name], str) and '/' in self.initial[name]:
+                    self.initial[name] = datetime.datetime.strptime(self.initial[name], '%d/%m/%Y').strftime('%Y-%m-%m %H:%M')
 
             if isinstance(field, forms.DecimalField):
                 field.widget.input_type = 'text'
@@ -480,8 +591,8 @@ class Action(metaclass=ActionMetaclass):
                     pks = [pk for pk in self.data.getlist(name) if pk]
                 if getattr(field, 'picker', None) is None:
                     field.queryset = field.queryset.filter(pk__in=pks) if pks else field.queryset.none()
-                field.widget.attrs['data-choices-url'] = '{}?action_choices={}'.format(
-                    self.request.path, name
+                field.widget.attrs['data-choices-url'] = '{}{}action_choices={}'.format(
+                    self.get_full_path(), '&' if '?' in self.get_full_path() else '?', name
                 )
 
             if getattr(field.widget, 'mask', None):
@@ -498,7 +609,7 @@ class Action(metaclass=ActionMetaclass):
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(
-                ['app/form.html'], dict(
+                ['dashboard/form.html'], dict(
                     self=self, fieldsets=self.fieldsets
                 ),
                 request=self.request
@@ -543,10 +654,63 @@ class Action(metaclass=ActionMetaclass):
                 text = None
             self.on_change_data['set'].append(dict(name=k, value=value, text=text))
 
+    def check_ouput(self, output, submit=False):
+        from ..core.valueset import ValueSet
+        position = 'bottom' if submit else 'center'
+        if type(output) == dict:
+            template_name = 'actions/{}.html'.format(self.get_api_name())
+            self.content[position].append(render_to_string([template_name], output, request=self.request))
+        elif type(output) == str and output[-5:].split('.')[-1] in FileResponse.CONTENT_TYPES.keys():
+            raise ReadyResponseException(FileResponse(output))
+        elif type(output) in (str, int, float, Decimal, datetime.date):
+            raise ReadyResponseException(HttpResponse(str(output)))
+        elif isinstance(output, HttpResponse):
+            raise ReadyResponseException(output)
+        elif isinstance(output, ValueSet) or isinstance(output, QuerySet):
+            if submit:
+                path = '{}{}/'.format(self.request.path, 'submit') if self.request.POST else None
+            else:
+                path = '{}{}/'.format(self.request.path, 'view')
+            self.content[position].append(output.contextualize(self.request).html(path=path))
+        elif output is not None:
+            raise Exception()
+
+        if self.request.path.startswith('/app/') and self.response and submit:
+            js = '<script>{}</script>'
+            display_messages = True
+            url = self.response.get('url')
+            if self.response.get('dispose'):
+                js = js.format('fade{}({});'.format(self.get_metadata().get('key'), self.response.get('dispose')))
+            elif url == '.':
+                if 'modal' in self.request.GET:
+                    js = js.format('$(document).popup("{}");'.format(self.request.path))
+                else:
+                    js = js.format('$(document).refresh([]);'.format(self.get_metadata().get('key')))
+            elif url == '..':
+                display_messages = 'modal' in self.request.GET
+                js = js.format('$(document).back().refresh([]);')
+            elif url:
+                display_messages = False
+                js = js.format('$(document).redirect("{}");'.format(self.response['url']))
+            html = render_to_string('dashboard/messages.html', request=self.request) if display_messages else ''
+            raise ReadyResponseException(HttpResponse('<!---->{}{}<!---->'.format(js, html)))
+
+        if self.request.path.startswith('/app/') and self.response and not submit:
+            stack = self.request.session.get('stack', [])
+            url = self.response.get('url')
+            if url in ('.', '..') and len(stack) > 1:
+                url = stack[-2]
+            raise ReadyResponseException(HttpResponseRedirect(url))
+
+        return output
+
     def is_valid(self):
+        if self.asynchronous:
+            return False
+        self.check_ouput(self.view())
         for field in self.fields.values():
             if isinstance(field, forms.DecimalField):
-                field.clean = lambda value: value.replace('.', '').replace(',','.')
+                field.clean = lambda v: v.replace('.', '').replace(',', '.')
         self.load_fieldsets()
         if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(
@@ -578,36 +742,33 @@ class Action(metaclass=ActionMetaclass):
             q=q, items=items
         )
 
-    def redirect(self, url=None, message=None, style='success'):
-        if url is None:
-            url = '..' if self.fields or self.is_modal() else '.'
-            # if url == '..' and not self.get_refresh():
-            #     url = '.'
-        self.response.update(type='redirect', url=url)
-        if message is None:
-            message = getattr(self.metaclass, 'message', None)
-        if message and self.request.path.startswith('/app/'):
-            messages.add_message(self.request, messages.SUCCESS, message)
-            self.response.update(message=message, style=style)
+    def dispose(self, milleseconds=2000):
+        self.response.update(dispose=milleseconds)
 
-    def run(self, *tasks, message=None):
+    def reload(self):
+        return self.redirect('.')
+
+    def message(self, text='Ação realizada com sucesso.', style='success', milleseconds=60000):
+        level = dict(success=messages.SUCCESS, warning=messages.WARNING, info=messages.INFO)[style]
+        if self.request.path.startswith('/app/'):
+            messages.add_message(self.request, level, text)
+        else:
+            self.response.update(message=dict(text=text, style=style, milleseconds=milleseconds))
+
+    def redirect(self, url=None):
+        if url is None:
+            url = '..' if getattr(self, 'fields', None) or self.is_modal() else '.'
+        self.response.update(type='redirect', url=url)
+        if not self.get_metadata()['ajax']:
+            raise ReadyResponseException(HttpResponseRedirect(url))
+
+    def run(self, *tasks):
         for task in tasks:
             task.start(self.request)
         if len(tasks) > 1:
-            self.redirect(message=message or 'Tarefas iniciadas com sucesso')
-        elif message:
-            self.redirect(message=message)
+            self.redirect()
         else:
-            self.redirect('/app/api/task/{}/'.format(task.task_id), message=message)
-
-    def display(self, data, template='app/default.html'):
-        if isinstance(data, dict):
-            ctx = data
-        else:
-            ctx = dict(form=self, data=data.contextualize(self.request).html())
-        self.response.update(
-            html=render_to_string([template], ctx, request=self.request)
-        )
+            self.redirect('/app/api/task/{}/'.format(task.task_id))
 
     def submit(self):
         if self.instances:
@@ -617,13 +778,12 @@ class Action(metaclass=ActionMetaclass):
                 self.save()
         else:
             self.save()
-        self.redirect(message='Ação realizada com sucesso.')
+        self.message('Ação realizada com sucesso.')
+        self.redirect()
 
     def process(self):
         try:
-            response = self.submit()
-            if isinstance(response, HttpResponse):
-                raise ReadyResponseException(response)
+            return self.check_ouput(self.submit(), True)
         except forms.ValidationError as e:
             if self.request.path.startswith('/app/'):
                 message = 'Corrija os erros indicados no formulário'
@@ -632,20 +792,15 @@ class Action(metaclass=ActionMetaclass):
         except BaseException as e:
             if isinstance(e, ReadyResponseException):
                 raise e
+            if isinstance(e, JsonReadyResponseException):
+                raise e
+            if isinstance(e, HtmlReadyResponseException):
+                raise e
             traceback.print_exc()
             if self.request.path.startswith('/app/'):
                 message = 'Ocorreu um erro no servidor: {}'.format(e)
                 messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, message)
-
-    def display(self):
-        return None
-
-    def output(self, data, template=None):
-        if template:
-            self.output_data = render_to_string(template, data, request=self.request)
-        else:
-            self.output_data = data
 
     @classmethod
     def get_attr_metadata(cls, lookup):
@@ -659,6 +814,53 @@ class Action(metaclass=ActionMetaclass):
                 template = 'renderers/{}'.format(template)
         return getattr(attr, '__verbose_name__', lookup), False, template, metadata
 
-    def values(self, *names):
+    def value_set(self, *names):
         from sloth.core.base import ValueSet
         return ValueSet(self, names)
+
+    @classmethod
+    @lru_cache
+    def action_form_cls(cls, action):
+        return ACTIONS.get(action)
+
+    def should_display_buttons(self):
+        return self.fields or self.submit.__func__ != Action.submit
+
+    # def dumps(self):
+    #     state = dict(instantiator=None, instance=None, instances=None)
+    #     if self.instantiator:
+    #         state['instantiator'] = '{}.{}'.format(
+    #             self.instantiator.metaclass().app_label,
+    #             self.instantiator.metaclass().model_name,
+    #         ), self.instantiator.id
+    #     if self.instance:
+    #         state['instance'] = '{}.{}'.format(
+    #             self.instance.metaclass().app_label,
+    #             self.instance.metaclass().model_name,
+    #         ), self.instance.id
+    #     if self.instances:
+    #         state['instances'] = self.instances.dumps()
+    #     from pprint import pprint;pprint(state)
+    #     return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
+    #
+    # def loads(self, s):
+    #     state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
+    #     if state['instantiator'] and state['instantiator'][1]:
+    #         self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
+    #     if state['instance'] and state['instance'][1]:
+    #         self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
+    #     if state['instances']:
+    #         self.instances = QuerySet.loads(state['instances'])
+
+    def get_full_path(self):
+        return self.path or self.request.get_full_path()
+
+    def contextualize(self, request):
+        return self
+
+    def apply_role_lookups(self, user):
+        return self
+
+
+class ActionView(Action):
+    pass

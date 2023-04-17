@@ -19,6 +19,7 @@ from sloth.core.validation import validate_model
 
 PROXIED_MODELS = []
 
+
 class RoleLookup:
     def __init__(self, instance):
         self.instance = instance
@@ -49,6 +50,7 @@ class RoleLookup:
                         return True
         return False
 
+
 def meta(verbose_name=None, renderer=None, **metadata):
     def decorate(func):
         if verbose_name:
@@ -62,12 +64,12 @@ def meta(verbose_name=None, renderer=None, **metadata):
     return decorate
 
 
-def initilize():
+def initialize():
     for module in ('dashboard', 'actions'):
         for app_label in settings.INSTALLED_APPS:
             try:
                 __import__('{}.{}'.format(app_label, module), fromlist=app_label.split('.'))
-                # print('{} {} initilized!'.format(app_label, module))
+                # print('{} {} initialized!'.format(app_label, module))
             except ImportError as e:
                 if not e.name.endswith('dashboard') and not e.name.endswith('actions'):
                     raise e
@@ -84,9 +86,17 @@ class BaseManager(manager.BaseManager):
     def all(self):
         return self.get_queryset().all()
 
+    def view(self):
+        return self.get_queryset().view()
+
+    def __call__(self, model_name):
+        return apps.get_model(model_name).objects
+
 
 class Manager(BaseManager.from_queryset(QuerySet)):
-    pass
+
+    def __call__(self, model_name):
+        return apps.get_model(model_name)
 
 
 ___new___ = ModelBase.__new__
@@ -116,8 +126,5 @@ models.QuerySet = QuerySet
 models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'fieldsets', 'select_template', 'select_fields', 'search_fields'
+    'icon', 'fieldsets', 'select_template', 'select_fields', 'search_fields', 'autouser'
 ))
-
-
-

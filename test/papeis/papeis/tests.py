@@ -40,11 +40,15 @@ class AppTestCase(TestCase):
                 print('{}|{}|{}|{}'.format(role.name, role.scope_key, role.scope_type, role.get_scope_value()))
             print('---')
 
+    def print(self, *args):
+        if os.path.exists('/Users/breno') and False:
+            print(*args)
+
     def test(self):
-        if os.path.exists('/Users/breno'):
+        if os.path.exists('/Users/breno') and False:
             self.debug()
         self.assertEqual(User.objects.count(), 7)
-        self.assertEqual(Role.objects.count(), 17)
+        self.assertEqual(Role.objects.count(), 31)
 
         user_f1 = User.objects.get(username='f1')
         qs = Funcionario.objects.role_lookups('Funcionário', pk='self').apply_role_lookups(user_f1)
@@ -52,19 +56,19 @@ class AppTestCase(TestCase):
 
         user_f2 = User.objects.get(username='f2')
         qs = Loja.objects.role_lookups('Funcionário', pk='loja').apply_role_lookups(user_f2)
-        print(qs)
-        print('----')
+        self.print(qs)
+        self.print('----')
         l1 = Loja.objects.get(nome='l1')
-        print(l1.role_lookups('Funcionário', pk='loja').apply(user_f2))
-        print(Produto.objects.role_lookups('Funcionário', loja='loja').apply_role_lookups(user_f2))
+        self.print(l1.role_lookups('Funcionário', pk='loja').apply(user_f2))
+        self.print(Produto.objects.role_lookups('Funcionário', loja='loja').apply_role_lookups(user_f2))
         p1l1 = Produto.objects.get(nome='p1l1')
-        print(p1l1.role_lookups('Funcionário', loja='loja').apply(user_f2))
-        print('----')
+        self.print(p1l1.role_lookups('Funcionário', loja='loja').apply(user_f2))
+        self.print('----')
         user_d1 = User.objects.get(username='d1')
         qs = Rede.objects.role_lookups('Diretor', pk='rede').apply_role_lookups(user_d1)
         self.assertEqual(qs.count(), 1)
-        print('----')
+        self.print('----')
         user_f4 = User.objects.get(username='f4')
         for user in (user_f1, user_f2, user_d1, user_f4):
-            print(user, Produto.objects.all().apply_role_lookups(user))
-            print(user, Produto.objects.all().apply_role_lookups(user).has_permission(user))
+            self.print(user, Produto.objects.all().apply_role_lookups(user))
+            self.print(user, Produto.objects.all().apply_role_lookups(user).has_permission(user))

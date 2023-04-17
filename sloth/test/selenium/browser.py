@@ -154,7 +154,6 @@ class Browser(webdriver.Firefox):
             if self.slowly:
                 self.wait(2)
 
-
     def see_message(self, text, count=4):
         self.print('See message {}'.format(text))
         try:
@@ -162,7 +161,7 @@ class Browser(webdriver.Firefox):
         except WebDriverException as e:
             if count:
                 self.wait()
-                self.see_message(count - 1)
+                self.see_message(text, count - 1)
             else:
                 self.watch(e)
         if self.slowly:

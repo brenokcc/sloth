@@ -1,0 +1,188 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>{{ title }}</title>
+    <meta charset="utf-8">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <meta name="pdfkit-page-size" content="Legal"/>
+    <meta name="pdfkit-orientation" content="Portrait"/>
+    <style>
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            line-height: 1.4em;
+        }
+        h1, h2, h3, h4, h5, .header .title{
+            font-weight: bolder;
+        }
+        th, label, .fieldset-field-label{
+            font-weight: bold;
+        }
+        dd {
+            border-bottom: 1px dashed #ccc;
+            font-size: 9pt;
+            font-weight: bold;
+            margin-right: 5px;
+            padding: 3px 0 10px;
+        }
+        dt {
+            color: #666;
+            font-size: 7pt;
+            padding: 10px 0 0;
+        }
+        dt::after {
+            content: ":";
+        }
+        h1 {
+            font-size: 16pt;
+            margin-bottom: 0;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        h2 {
+            font-size: 14pt;
+            text-align: center;
+            text-transform: uppercase;
+            vertical-align: bottom;
+        }
+        h3, h5 {
+            font-size: 13pt;
+            margin: 10px 0 0;
+            text-transform: uppercase;
+            padding-bottom: 5px;
+        }
+
+        .header .title{
+            padding-top: 5px;
+            font-size: 24pt;
+            font-weight: bold;
+        }
+        .header .subtitle{
+            font-size: 11pt;
+            font-weight: bold;
+        }
+        .header tr{
+            border: solid 1px #bbb;
+        }
+        .header td{
+            border: 0;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .logo{
+            text-align: center;
+        }
+        .footer {
+            margin-top: 10px;
+        }
+        hr {
+            border-top: 1px dotted #8c8b8b;
+        }
+        p {
+            line-height: 20px;
+            padding: 0 !important;
+        }
+        section {
+            margin: 0.5cm; 
+        }
+        table {
+            border: 0 none;
+            border-collapse: collapse;
+            padding: 0;
+            vertical-align: middle;
+            width: 100%;
+        }
+        tfoot {
+            font-weight: bold;
+            text-align: right;
+        }
+        th {
+            background: #ddd;
+        }
+        .align-center {
+            text-align: center;
+        }
+        .align-left {
+            text-align: left;
+        }
+        .align-right {
+            text-align: right;
+        }
+        .table header {
+            border-bottom: 1px solid #ccc;
+            margin: 0.5cm;
+            padding: 0 0 15px;
+        }
+        .table header td{
+            padding: 5px;
+            line-height: 2rem;
+        }
+        .table td,
+        .table th {
+            border: 1px solid #ccc;
+            line-height: 1em;
+            padding: 5px;
+        }
+        .page-break{
+            page-break-after: always;
+        }
+        .responsive-container > div{
+            display: inline-block;
+            vertical-align: top;
+        }
+        .width-100{
+            width: 98.5%;
+        }
+        .width-50{
+            width: 48.9%;
+        }
+        .width-33{
+            width: 32.45%;
+        }
+        .width-25{
+            width: 24.2%;
+        }
+        .row>* {
+            width: 100%;
+            max-width: 100%;
+        }
+        {% block style %}
+        {% endblock %}
+    </style>
+</head>
+
+<body>
+
+<header>
+{% block header %}
+    <table class="header">
+        <tr>
+            {% if icon %}
+                <td class="logo" width="0"><img style="max-height:75px" src="{{ icon }}"/></td>
+            {% endif %}
+            <td align="center">
+                <div class="title">{{ title }}</div>
+                    <div class="subtitle">
+                        {% block extra_header %}
+
+                        {% endblock %}
+                    </div>
+                <div>Emitido em {{ today }}</div>
+            </td>
+        </tr>
+    </table>
+{% endblock %}
+</header>
+
+{% block content %}
+<section>
+    {{ content|safe }}
+</section>
+{% endblock %}
+
+{% block footer %}
+
+{% endblock %}
+
+</body>
+</html>

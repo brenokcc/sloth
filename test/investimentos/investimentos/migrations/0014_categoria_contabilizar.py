@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='categoria',
             name='contabilizar',
-            field=models.BooleanField(default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.', verbose_name='Contatilizar'),
+            field=models.BooleanField(default=True, help_text='Debitar no limite de investimento quando uma solicitação for realizada.', verbose_name='Contabilizar'),
         ),
     ]

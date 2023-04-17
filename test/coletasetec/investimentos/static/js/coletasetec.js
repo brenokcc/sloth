@@ -1,0 +1,1 @@
+$('#get_minhas_solicitacoes').find('.bi.bi-search').after(' Acessar Ciclo');

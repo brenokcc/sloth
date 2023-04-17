@@ -1,4 +1,5 @@
 from django import forms
+
 from . import inputs
 
 
@@ -10,7 +11,7 @@ class QrCodeField(forms.CharField):
 
 class ModelChoiceField(forms.ModelChoiceField):
     def __init__(self, *args, **kwargs):
-        self.auto_user = kwargs.pop('auto_user', False)
+        self.username_lookup = kwargs.pop('username_lookup', None)
         super().__init__(*args, **kwargs)
 
 

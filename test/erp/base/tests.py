@@ -34,7 +34,7 @@ def loaddata():
 class ModelTestCase(TestCase):
 
     def __init__(self, *args, **kwargs):
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         super().__init__(*args, **kwargs)
 
     def log(self, data, dumps=True):
@@ -46,19 +46,19 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno')
-        self.log(Municipio.objects.first().serialize(wrap=True, verbose=True), dumps=False)
+        self.debug = os.path.exists('/Users/breno') and False
+        self.log(Municipio.objects.first().serialize(wrap=True), dumps=False)
         self.log(Municipio.objects.count('estado').serialize())
-        self.log(Municipio.objects.all().serialize(wrap=True, verbose=True), dumps=False)
+        self.log(Municipio.objects.all().serialize(wrap=True), dumps=False)
         servidor = Servidor.objects.first()
-        self.log(servidor.serialize(wrap=True, verbose=True), dumps=False)
+        self.log(servidor.serialize(wrap=True), dumps=False)
         self.log(Servidor.objects.count('naturalidade').serialize())
         self.log(Servidor.objects.count('naturalidade', 'ativo').serialize())
-        self.log(Servidor.objects.serialize(wrap=True, verbose=True), dumps=False)
+        self.log(Servidor.objects.serialize(wrap=True), dumps=False)
 
         self.log(servidor.get_ferias().count('ano').serialize())
-        self.log(servidor.serialize(wrap=True, verbose=True), dumps=False)
-        self.log(Servidor.objects.com_endereco().serialize(wrap=True, verbose=True), dumps=False)
+        self.log(servidor.serialize(wrap=True), dumps=False)
+        self.log(Servidor.objects.com_endereco().serialize(wrap=True), dumps=False)
         self.log(Group.objects.first().serialize())
         self.log(Group.objects.all().serialize())
         self.log(Ferias.objects.all().serialize())
@@ -77,7 +77,7 @@ class ApiTestCase(ServerTestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         self.create_user('user', '123')
         self.create_user('admin', '123', True)
 
@@ -111,22 +111,22 @@ class ApiTestCase(ServerTestCase):
 
         self.get('/api/base/servidor/')
         self.get('/api/base/servidor/ativos/')
-        self.post('/api/base/servidor/1/inativarservidores/')
+        self.post('/api/base/servidor/0-1/inativar_servidores/')
         self.get('/api/base/servidor/ativos/')
 
         self.get('/api/base/servidor/1/')
         self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor1/', dict(nome='Emanoel'))
+        self.post('/api/base/servidor/1/get_dados_gerais/corrigir_nome_servidor_1/', dict(nome='Emanoel'))
         self.get('/api/base/servidor/1/get_dados_gerais/')
         self.get('/api/base/servidor/1/get_ferias/')
-        self.post('/api/base/servidor/1/get_ferias/1-2/alterarferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
+        self.post('/api/base/servidor/1/get_ferias/1-2/alterar_ferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
         self.get('/api/base/servidor/1/get_ferias/')
 
 
 class Oauth2TestCase(ServerTestCase):
 
     def test(self):
-        self.debug = os.path.exists('/Users/breno')
+        self.debug = os.path.exists('/Users/breno') and False
         Estado.objects.create(sigla='RN')
         Estado.objects.create(sigla='PB')
         admin = self.create_user('admin', '123', True)

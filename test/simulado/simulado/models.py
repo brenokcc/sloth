@@ -65,13 +65,13 @@ class Disciplina(models.Model):
         return user.roles.contains('Administrador')
 
     def get_dados_gerais(self):
-        return self.values('nome')
+        return self.value_set('nome')
 
     def get_topicos(self):
         return self.topico_set.ignore('disciplina').global_actions('AdicionarTopico')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_topicos')
+        return self.value_set('get_dados_gerais', 'get_topicos')
 
 
 class Topico(models.Model):
@@ -106,13 +106,13 @@ class Escola(models.Model):
         return self.nome
 
     def get_dados_gerais(self):
-        return self.values('nome')
+        return self.value_set('nome')
 
     def get_coordenadores(self):
         return self.coordenador_set.ignore('escola').global_actions('AdicionarCoordenador')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_coordenadores')
+        return self.value_set('get_dados_gerais', 'get_coordenadores')
 
     def has_permission(self, user):
         return user.roles.contains('Administrador')
@@ -249,7 +249,7 @@ class Agendamento(models.Model):
                     Resposta.objects.create(simulado=simulado, pergunta=pergunta)
 
     def get_dados_gerais(self):
-        return self.values('data')
+        return self.value_set('data')
 
     def get_perguntas(self):
         return self.perguntas.display('enunciado', 'get_resposta')
@@ -258,7 +258,7 @@ class Agendamento(models.Model):
         return self.alunos.cards()
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_perguntas', 'get_alunos')
+        return self.value_set('get_dados_gerais', 'get_perguntas', 'get_alunos')
 
 
 class SimuladoManager(models.Manager):
@@ -282,13 +282,13 @@ class Simulado(models.Model):
         return 'Simulado {}'.format(self.pk)
 
     def get_dados_gerais(self):
-        return self.values(('aluno', 'progresso'))
+        return self.value_set(('aluno', 'progresso'))
 
     def get_perguntas(self):
         return self.resposta_set.display('get_alternativas').rows().actions('RespostaA')
 
     def view(self):
-        return self.values('get_dados_gerais', 'get_perguntas')
+        return self.value_set('get_dados_gerais', 'get_perguntas')
 
 
 class Resposta(models.Model):

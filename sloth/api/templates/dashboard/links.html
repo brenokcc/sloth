@@ -1,0 +1,31 @@
+{% load tags %}
+{% if data.links %}
+<style>
+    .app-title{
+        float: left;
+        font-size: 1.1rem;
+    }
+    .app-links-wrapper{
+        float: right;
+        text-align: right;
+    }
+    .app-links-wrapper a{
+        margin: 5px;
+        text-decoration: none;
+    }
+</style>
+
+<div class="app-links m-2">
+    <div class="app-title">
+        {{ request.session.app_icon|icontag }} {{ request.session.app_name }}
+    </div>
+    <div class="app-links-wrapper">
+    {% for item in data.links %}
+        <a href="{{ item.url }}" class="shortcut-link {% if item.modal %}popup{% endif %}">
+            {{ item.label }}
+        </a>
+    {% endfor %}
+    </div>
+</div>
+<div class="clearfix"></div>
+{% endif %}

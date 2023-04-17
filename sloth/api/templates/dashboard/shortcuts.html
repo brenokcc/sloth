@@ -1,0 +1,35 @@
+{% load tags %}
+{% if shortcuts %}
+<style>
+.shortcut-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: stretch;
+    align-items: self-start;
+    text-align: center;
+}
+.shortcut-wrapper .shortcut-link {
+    flex-basis: 105px;
+    margin: 10px;
+    text-decoration: none;
+    display: inline-block;
+}
+.shortcut-wrapper .shortcut-link i, .shortcut-wrapper .shortcut-link span{
+    font-size: 2rem;
+}
+</style>
+
+<div class="shortcut-wrapper">
+{% for item in shortcuts %}
+    <a href="{{ item.url }}" class="shortcut-link">
+        <div>
+          {{ item.icon|icontag }}
+          <p>{{ item.label }}</p>
+        </div>
+    </a>
+{% endfor %}
+</div>
+<div class="clearfix"></div>
+{% endif %}

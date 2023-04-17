@@ -1,0 +1,36 @@
+{% load tags %}
+<input class="form-control me-2" id="search" name="search" type="search" placeholder="Buscar..." aria-label="Search" onclick="search(this)" onkeyup="search(this)" onfocus="search(this)" style="{% if not dashboard.data.search  %}visibility:hidden{% endif %}">
+<div class="search-results d-none" onmouseleave="$(this).addClass('d-none')">
+<ul class="list-group search-menu">
+  {% for item in dashboard.data.search %}
+  <li class="list-group-item d-flex justify-content-between align-items-start">
+    <div class="ms-2 me-auto">
+      <div>
+        {% if item.subitems %}
+          {{ item.label }}
+        {% else %}
+        <a class="item" href="{{ item.url }}">
+          {{ item.label }}
+        </a>
+        {% endif %}
+      </div>
+      {% for subitem in item.subitems %}
+        <div><a class="subitem" href="{{ subitem.url }}">{{ subitem.label }}</a></div>
+      {% endfor %}
+    </div>
+    {% if item.icon %}
+    <span>
+      {{ item.icon|icontag }}
+    </span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+</div>
+<script>
+function search(input){
+  $('.search-results li').addClass('d-none');
+  $('.search-results li:icontains('+ input.value +')').removeClass('d-none');
+  $('.search-results').css('width', $(input).css('width')).removeClass('d-none');
+}
+</script>

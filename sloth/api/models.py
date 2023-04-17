@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
+import json
+from datetime import datetime
 from django.apps import apps
+from django.conf import settings
 from oauth2_provider.models import AbstractApplication
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.models import User as DjangoUser, AnonymousUser
 from sloth.db import models, meta
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
 
 
 def user_post_save(instance, created, **kwargs):
-    pass
+    user_role_name = getattr(settings, 'USER_ROLE_NAME', 'Usuário')
+    if not instance.roles.contains(user_role_name):
+        Role.objects.create(
+            user=instance, name=user_role_name, scope_type='auth.user', scope_key='pk', scope_value=instance.pk
+        )
 
 
 models.signals.post_save.connect(user_post_save, sender=DjangoUser)
@@ -16,14 +25,12 @@ class UserManager(models.Manager):
     def all(self):
         return self.display(
             'username', 'get_name', 'is_superuser', 'get_roles_names'
-        ).actions('LoginAsUser').verbose_name('Usuários').attach(
+        ).actions('login_as_user', 'change_password').verbose_name('Usuários').attach(
             'active', 'inactive'
-        )
-
+        ).global_actions('export_csv', 'export_xls', 'print')
 
     def active(self):
         return self.all().filter(is_active=True).verbose_name('Ativos')
-
 
     def inactive(self):
         return self.all().filter(is_active=False).verbose_name('Inativos')
@@ -43,20 +50,20 @@ class User(DjangoUser):
         }
 
     def view(self):
-        return self.values('get_general_info', 'get_access_info', 'get_roles')
+        return self.value_set('get_general_info', 'get_access_info', 'get_roles').actions('print')
 
     def get_general_info(self):
-        return self.values(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
+        return self.value_set(('first_name', 'last_name'), 'username', 'email').verbose_name('Dados Gerais')
 
     def get_access_info(self):
-        return self.values('is_superuser',).verbose_name('Dados de Acesso')
+        return self.value_set('is_superuser',).verbose_name('Dados de Acesso')
 
     def get_name(self):
         return '{} {}'.format(self.first_name or '', self.last_name or '')
 
     @meta('Papéis')
     def get_roles(self):
-        return self.roles.all().ignore('user')
+        return self.roles.all().ignore('user').global_actions('print')
 
     @meta('Papéis')
     def get_roles_names(self):
@@ -66,6 +73,22 @@ class User(DjangoUser):
         created = self.pk is None
         super().save(*args, **kwargs)
         user_post_save(self, created=created)
+
+class AuthCode(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Usuário'
+    )
+    secret = models.CharField(max_length=16, verbose_name='Chave')
+    active = models.BooleanField(verbose_name='Ativo', default=False)
+
+    class Meta:
+        verbose_name = 'Código de Autenticação'
+        verbose_name_plural = 'Códigos de Autenticação'
+
+    def __str__(self):
+        return self.secret
 
 
 class RoleManager(models.Manager):
@@ -95,23 +118,6 @@ class RoleManager(models.Manager):
 
     def names(self):
         return self.values_list('name', flat=True).distinct()
-
-
-class AuthCode(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Usuário'
-    )
-    secret = models.CharField(max_length=16, verbose_name='Chave')
-    active = models.BooleanField(verbose_name='Ativo', default=False)
-
-    class Meta:
-        verbose_name = 'Código de Autenticação'
-        verbose_name_plural = 'Códigos de Autenticação'
-
-    def __str__(self):
-        return self.secret
 
 
 class Role(models.Model):
@@ -176,19 +182,19 @@ class Application(AbstractApplication):
         return self.accesstoken_set.all().verbose_name('Tokens de Acesso')
 
     def general_data(self):
-        return self.values('id', 'name').verbose_name('Dados Gerais')
+        return self.value_set('id', 'name').verbose_name('Dados Gerais')
 
     def access_data(self):
-        return self.values('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
+        return self.value_set('client_id', 'client_secret', 'authorization_grant_type').verbose_name('Dados de Acesso')
 
     def view(self):
-        return self.values('general_data', 'access_data', 'default_scopes', 'available_scopes')
+        return self.value_set('general_data', 'access_data', 'default_scopes', 'available_scopes')
 
 
 class TaskManager(models.Manager):
     def all(self):
         return self.display(
-            'id', 'user', 'name', 'start', 'end', 'get_progress'
+            'id', 'user', 'name', 'start', 'end', 'get_progress', 'message'
         ).attach(
             'running', 'finished', 'unfinished', 'stopped'
         ).global_actions('ManageTaskExecution')
@@ -245,7 +251,7 @@ class Task(models.Model):
         elif self.stopped:
             return 'warning', 'Interrompida pelo usuário'
         elif self.progress < 100:
-            return 'primary', 'Em execução'
+            return 'primary', self.message or 'Em execução'
         else:
             return 'success', self.message or 'Concluída'
 
@@ -253,18 +259,19 @@ class Task(models.Model):
     def get_progress(self):
         return self.progress
 
+    @meta('Dados Gerais')
     def get_info(self):
-        return self.values(('name', 'user'))
+        return self.value_set(('name', 'user'))
 
     @meta('Processamento')
     def get_process(self):
-        return self.values(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=360).actions('StopTask')
+        return self.value_set(('start', 'end'), ('total', 'partial'), 'get_progress', 'get_message').reload(seconds=5, condition='in_progress', max_requests=360).actions('StopTask')
 
     def in_progress(self):
         return self.end is None
 
     def view(self):
-        return self.values('get_info', 'get_process')
+        return self.value_set('get_info', 'get_process')
 
     def has_view_permission(self, user):
         return user.is_superuser or self.user == user
@@ -273,3 +280,49 @@ class Task(models.Model):
 class PushNotification(models.Model):
     user = models.OneToOneField(DjangoUser, verbose_name='Usuário', on_delete=models.CASCADE, related_name='push_notification')
     subscription = models.JSONField(verbose_name='Dados da Inscrição')
+
+
+class EmailManager(models.Manager):
+    def all(self):
+        return self.rows()
+
+    def send(self, to, subject, content, from_email=None):
+        to = [to] if isinstance(to, str) else list(to)
+        return self.create(from_email=from_email, to=', '.join(to), subject=subject, content=content)
+
+
+class Email(models.Model):
+    from_email = models.EmailField('Remetente')
+    to = models.TextField('Destinatário', help_text='Separar endereços de e-mail por ",".')
+    subject = models.CharField('Assunto')
+    content = models.TextField('Conteúdo', formatted=True)
+    sent_at = models.DateTimeField('Data/Hora', null=True)
+
+    objects = EmailManager()
+
+    class Meta:
+        icon = 'envelope'
+        verbose_name = 'E-mail'
+        verbose_name_plural = 'E-mails'
+        fieldsets = {
+            'Dados Gerais': ('from_email', 'subject', 'to'),
+            'Detalhamento': ('content',),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return self.subject
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        to = [email.strip() for email in self.to.split(',')]
+        msg = EmailMultiAlternatives(self.subject, strip_tags(self.content), self.from_email, to)
+        msg.attach_alternative(self.content, "text/html")
+        if msg.send(fail_silently=False):
+            self.sent_at = datetime.now()
+            super().save(*args, **kwargs)
+
+
+setattr(AnonymousUser, 'roles', Role.objects.none())

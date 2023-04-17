@@ -1,0 +1,43 @@
+{% load tags %}
+
+
+    <input class="form-control" style="margin:20;width:400;margin:auto" type="search" placeholder="Type a key-work and press <enter> key..." aria-label="Search" onchange="searchIcons(this.value);">
+
+    <style>
+        .icon-container{
+            width:100px;
+            display:inline-block;
+            vertical-align:top;
+        }
+        .icon-container i{
+            font-size:35px;
+        }
+        .icon-container span{
+            font-size:10px;
+        }
+        .icon-container span.material-icons{
+            font-size:35px;
+        }
+        .icon-container svg{
+            font-size:30px;
+        }
+    </style>
+    <script>
+        function searchIcons(q){
+            if(q){
+                $('.icon-container').hide();
+                $('.icon-container:contains("'+q+'")').show();
+            } else {
+                $('.icon-container').show();
+            }
+        }
+    </script>
+    {% for library, icons in libraries.items  %}
+        <h4>{{ library }}</h4>
+        {% for icon in icons %}
+        <div align="center" class="icon-container">
+            {{ icon|icontag }}<br>
+            <span>{{ icon }}</span>
+        </div>
+        {% endfor %}
+    {% endfor %}

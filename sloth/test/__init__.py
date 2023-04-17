@@ -14,11 +14,14 @@ class ServerTestCase(StaticLiveServerTestCase):
     def __init__(self, *args, **kwargs):
         self.authorization = None
         self.debug = False
+        self.headers = {}
         super().__init__(*args, **kwargs)
 
-    def headers(self):
+    def get_headers(self, ):
         if self.authorization:
-            return {'Authorization': self.authorization}
+            headers = {'Authorization': self.authorization}
+            headers.update(self.headers)
+            return headers
         return None
 
     def log(self, method, url, data, response):
@@ -29,6 +32,7 @@ class ServerTestCase(StaticLiveServerTestCase):
                     print('Input:\n{}'.format(json.dumps(data, indent=4, ensure_ascii=False)))
                 print('Output:\n{}'.format(json.dumps(response.json(), indent=4, ensure_ascii=False)))
             except Exception:
+                print(response.text)
                 import traceback
                 print(traceback.format_exc())
                 print(data)
@@ -41,28 +45,28 @@ class ServerTestCase(StaticLiveServerTestCase):
 
     def get(self, path, data=None, status_code=200):
         url = self.url(path)
-        response = requests.get(url, data=data, headers=self.headers())
+        response = requests.get(url, data=data, headers=self.get_headers())
         self.log('GET', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def post(self, path, data=None, status_code=200):
         url = self.url(path)
-        response = requests.post(url, data=data, headers=self.headers())
+        response = requests.post(url, data=data, headers=self.get_headers())
         self.log('POST', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def put(self, path, data=None, status_code=200):
         url = self.url(path)
-        response = requests.put(url, data=data, headers=self.headers())
+        response = requests.put(url, data=data, headers=self.get_headers())
         self.log('PUT', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()
 
     def delete(self, path, data=None, status_code=200):
         url = self.url(path)
-        response = requests.delete(url, data=data, headers=self.headers())
+        response = requests.delete(url, data=data, headers=self.get_headers())
         self.log('DELETE', url, data, response)
         self.assertEquals(response.status_code, status_code)
         return response.json()

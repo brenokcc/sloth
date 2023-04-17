@@ -1,0 +1,14 @@
+{% load tags %}
+<div class="fieldset-field width-{{ v.width }}">
+    {% if not v.metadata.icon %}
+        <div class="fieldset-field-label">{{ v.name }}:</div>
+    {% endif %}
+    <div class="fieldset-field-value">
+        {{ v.metadata.icon|icontag }}
+        {% if v.template %}
+            {% include v.template with value=v.value metadata=v.metadata %}
+        {% else %}
+            {{ v.value|format|linebreaksbr }}
+        {% endif %}
+    </div>
+</div>

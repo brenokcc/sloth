@@ -1,0 +1,45 @@
+{% load tags %}
+<style>
+{% if data.metadata.collapsed  %}
+    #search-and-filters-{{ data.uuid }}.search-and-filters form{display: none}
+{% endif %}
+</style>
+
+        <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}">
+            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}" style="{% if data.metadata.collapsed %}display:none{% endif %}">
+                <input type="hidden" name="uuid" value="{{ data.uuid }}">
+                <input type="hidden" name="is_admin" value="{% if data.metadata.is_admin %}1{% endif %}">
+                <input type="hidden" name="collapsed" value="{% if data.metadata.collapsed %}1{% endif %}" id="collapsed-{{ data.uuid }}">
+                <input type="hidden" name="page" value="{{ data.page }}" id="pagination-{{ data.uuid }}">
+                <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
+                <input type="hidden" name="subset" value="{{ data.metadata.subset }}" id="subset-{{ data.uuid }}">
+                <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
+                <!--{% for k, v in request.POST.items %}
+                    {% if k != 'csrfmiddlewaretoken' %}
+                        <input type="hidden" name="post__{{ k }}" value="{{ v }}">
+                    {% endif %}
+                {% endfor %}-->
+                {% if data.metadata.search or data.metadata.filters %}
+                    <div class="filters" id="filters-{{ data.uuid }}">
+                        {% if data.metadata.search %}
+                            <div class="filter">
+                                <label>Busca</label>
+                                <input type="text" class="form-control" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}" placeholder="">
+                            </div>
+                        {% endif %}
+                        {% for metadata in data.metadata.filters.values %}
+                            {% include "queryset/filter.html" %}
+                        {% endfor %}
+                        <div class="filter">
+                            <button type="button" class="btn btn-primary filter-button" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}()">
+                                <div class="spinner-border spinner-border-sm d-none" role="status">
+                                  <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <i class="bi bi-funnel"></i>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </form>
+        </div>

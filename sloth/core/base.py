@@ -314,7 +314,7 @@ class ModelMixin(object):
     @classmethod
     def default_list_fields(cls):
         list_display = getattr(cls.metaclass(), 'list_display', None)
-        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id']
+        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id' and '_ptr' not in field.name]
 
     @classmethod
     def default_filter_fields(cls, exclude=None):

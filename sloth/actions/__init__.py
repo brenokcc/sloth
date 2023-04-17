@@ -749,8 +749,9 @@ class Action(metaclass=ActionMetaclass):
         return self.redirect('.')
 
     def message(self, text='Ação realizada com sucesso.', style='success', milleseconds=60000):
+        level = dict(success=messages.SUCCESS, warning=messages.WARNING, info=messages.INFO)[style]
         if self.request.path.startswith('/app/'):
-            messages.add_message(self.request, messages.SUCCESS, text)
+            messages.add_message(self.request, level, text)
         else:
             self.response.update(message=dict(text=text, style=style, milleseconds=milleseconds))
 

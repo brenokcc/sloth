@@ -169,7 +169,8 @@ class Login(actions.ActionView):
                     auth.login(self.request, user)
                     self.redirect('/app/dashboard/')
                 else:
-                    self.alert('Usuário "{}" inexistente.'.format(username))
+                    self.message('Usuário "{}" inexistente.'.format(username), 'warning')
+                    self.redirect('/app/dashboard/login/')
             else:
                 self.info('Acesso não autorizado.')
 
@@ -207,10 +208,23 @@ class Login(actions.ActionView):
     def get_alternative_links(self):
         links = []
         for name in cache.get('login', {}).get('actions', ()):
-            links.append((actions.ACTIONS[name](request=self.request).get_verbose_name(), '/app/dashboard/{}/'.format(name)))
+            action = actions.ACTIONS[name](request=self.request)
+            links.append(dict(
+                label=action.get_verbose_name(),
+                image=None,
+                url='/app/dashboard/{}/'.format(name),
+                popup=action.get_metadata()['modal'],
+            )
+        )
         for name, authenticator in settings.OAUTH2_AUTHENTICATORS.items():
             if authenticator['CLIENTE_ID']:
-                links.append((authenticator['TEXT'], '/app/dashboard/login/?o={}'.format(name)))
+                links.append(dict(
+                    label = authenticator['TEXT'],
+                    image = authenticator['LOGO'],
+                    url='/app/dashboard/login/?o={}'.format(name),
+                    popup=False
+                )
+            )
         return links
 
 

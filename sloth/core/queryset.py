@@ -53,7 +53,7 @@ class QuerySet(models.QuerySet):
 
     def first(self):
         obj = super().first()
-        if self.metadata['related_field']:
+        if self.metadata['related_field'] and isinstance(obj, self.model):
             obj.related_field = self.metadata['related_field']
         return obj
 

@@ -129,8 +129,10 @@
     {% with links=self.get_alternative_links %}
         {% if links %}
             <div align="center">
-                {% for label, url in links %}
-                    <a class="popup" style="text-decoration:none; margin:5" href="{{ url }}">{{ label }}</a>
+                {% for link in links %}
+                    <a class="{% if link.popup %}popup{% endif %} login-action-{{ link.label|slugify }}" style="text-decoration:none; margin:5" href="{{ link.url }}">
+                        {% if link.image %}<img style="max-height:38" src="{{ link.image }}">{% else %}{{ link.label }}{% endif %}
+                    </a>
                 {% endfor %}
             </div>
         {% endif %}

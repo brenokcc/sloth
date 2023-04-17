@@ -20,7 +20,7 @@ class Command(BaseCommand):
             if options[action] is not None:
                 break
         if action:
-            data = dict(action=action, repository='https://github.com/{}.git'.format(repository), token=token)
+            data = dict(action=action, repository=repository, token=token)
             print('>>>', data)
             response = requests.post(url, json=data)
             print(response.text)

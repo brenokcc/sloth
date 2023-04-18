@@ -12,7 +12,7 @@ RUN tar -xf geckodriver-v0.32.0-linux32.tar.gz
 RUN chmod +x geckodriver
 RUN mv geckodriver /usr/local/bin/
 ENV PYTHONPATH=/var/site-packages
-ADD sloth $PYTHONPATH/sloth
+ADD . $PYTHONPATH/sloth
 
 FROM sloth-base as sloth-src
 ENV PYTHONPATH=/var/site-packages

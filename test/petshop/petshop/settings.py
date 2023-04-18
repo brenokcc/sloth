@@ -144,7 +144,7 @@ OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
 
-if bool(os.environ.get('USE_REDIS')):
+if os.environ.get('REDIS_HOST'):
     REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
     REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
@@ -161,13 +161,19 @@ if bool(os.environ.get('USE_REDIS')):
         }
     }
 
-if bool(os.environ.get('USE_POSTGRES')):
+if os.environ.get('POSTGRES_HOST'):
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
-    DATABASES['default']['NAME'] = os.environ.get('DATABASE_NAME', 'database')
-    DATABASES['default']['USER'] = os.environ.get('DATABASE_USER', 'postgres')
-    DATABASES['default']['PASSWORD'] = os.environ.get('DATABASE_PASSWORD', 'password')
-    DATABASES['default']['HOST'] = os.environ.get('DATABASE_HOST', 'postgres')
-    DATABASES['default']['PORT'] = os.environ.get('DATABASE_PORT', '5432')
+    DATABASES['default']['NAME'] = os.environ.get('POSTGRES_DATABASE', 'database')
+    DATABASES['default']['USER'] = os.environ.get('POSTGRES_USER', 'postgres')
+    DATABASES['default']['PASSWORD'] = os.environ.get('POSTGRES_PASSWORD', 'password')
+    DATABASES['default']['HOST'] = os.environ.get('POSTGRES_HOST', 'postgres')
+    DATABASES['default']['PORT'] = os.environ.get('POSTGRES_PORT', '5432')
+
+if os.environ.get('WEASYPRINT_HOST'):
+    WEASYPRINT_HOST = os.environ.get('WEASYPRINT_HOST', 'postgres')
+    WEASYPRINT_PORT = os.environ.get('WEASYPRINT_HOST', '8888')
+    WEASYPRINT_PROTOCOL = os.environ.get('WEASYPRINT_HOST', 'http')
+    WEASYPRINT_PASSWORD = os.environ.get('WEASYPRINT_HOST', None)
 
 DEFAULT_PASSWORD = lambda user: '123'
 FORCE_PASSWORD_DEFINITION = False

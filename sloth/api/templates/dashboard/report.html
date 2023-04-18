@@ -7,7 +7,6 @@
     <meta name="pdfkit-page-size" content="Legal"/>
     <meta name="pdfkit-orientation" content="Portrait"/>
     <style>
-
         body {
             font-family: 'Open Sans', sans-serif;
             line-height: 1.4em;
@@ -54,12 +53,14 @@
 
         .header .title{
             padding-top: 5px;
-            font-size: 24pt;
+            font-size: 18pt;
             font-weight: bold;
+            text-align: center;
         }
         .header .subtitle{
             font-size: 11pt;
             font-weight: bold;
+            text-align: center;
         }
         .header tr{
             border: solid 1px #bbb;
@@ -81,9 +82,6 @@
         p {
             line-height: 20px;
             padding: 0 !important;
-        }
-        section {
-            margin: 0.5cm; 
         }
         table {
             border: 0 none;
@@ -110,7 +108,6 @@
         }
         .table header {
             border-bottom: 1px solid #ccc;
-            margin: 0.5cm;
             padding: 0 0 15px;
         }
         .table header td{
@@ -160,7 +157,7 @@
             {% if icon %}
                 <td class="logo" width="0"><img style="max-height:75px" src="{{ icon }}"/></td>
             {% endif %}
-            <td align="center">
+            <td style="text-align:center">
                 <div class="title">{{ title }}</div>
                     <div class="subtitle">
                         {% block extra_header %}

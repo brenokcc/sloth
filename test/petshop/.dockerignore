@@ -1,0 +1,12 @@
+.docker
+.github
+.git
+.gitignore
+.dockerignore
+docker-compose.yml
+Dockerfile
+static
+media
+*.pyc
+*.sqlite3
+*.md

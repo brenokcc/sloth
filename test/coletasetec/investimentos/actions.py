@@ -119,7 +119,7 @@ class AlterarPrioridade(actions.Action):
         super().submit()
 
     def has_permission(self, user):
-        return self.instance.prioridade_id > 1 and not self.instance.finalizada and user.roles.contains('Gestor')
+        return self.instance.id and self.instance.prioridade_id > 1 and not self.instance.finalizada and user.roles.contains('Gestor')
 
 
 class AdicionarDemanda(actions.Action):
@@ -186,7 +186,7 @@ class AlterarDemanda(AdicionarDemanda):
         }
 
     def has_permission(self, user):
-        return self.instance.solicitacao.ciclo.is_aberto() and not self.instance.finalizada
+        return self.instance.id and self.instance.solicitacao.ciclo.is_aberto() and not self.instance.finalizada
 
 
 class Reabrir(actions.Action):
@@ -195,7 +195,7 @@ class Reabrir(actions.Action):
         style = 'warning'
 
     def has_permission(self, user):
-        return self.instance.finalizada and (user.roles.contains('Administrador') or user.is_superuser)
+        return self.instance.id and self.instance.finalizada and (user.roles.contains('Administrador') or user.is_superuser)
 
     def submit(self):
         self.instance.finalizada = False
@@ -214,7 +214,7 @@ class DetalharDemanda(actions.Action):
         fields = []
 
     def has_permission(self, user):
-        return not self.instance.solicitacao.is_finalizada() and self.instance.solicitacao.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists()
+        return self.instance.id and not self.instance.solicitacao.is_finalizada() and self.instance.solicitacao.ciclo.is_aberto() and user.roles.filter(name='Gestor').exists()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -479,12 +479,12 @@ class ExportarResultado(actions.Action):
                     l2.append(resposta_questionario.resposta)
                 questionario.append(l2)
 
-        if demanda is not None:
-            instituicoes = demanda.solicitacao.ciclo.instituicoes.all()
+        if 1:
+            instituicoes = self.instance.instituicoes.all()
             if instituicao:
                 instituicoes = instituicoes.filter(pk=instituicao.pk)
             for instituicao1 in instituicoes:
-                questionario_final = demanda.solicitacao.questionariofinal_set.first()
+                questionario_final = self.instance.solicitacao_set.get(instituicao=instituicao1).questionariofinal_set.first()
                 if questionario_final:
                     fechamento.append([instituicao1.sigla, 'Prioridade 01', questionario_final.prioridade_1.descricao if questionario_final.prioridade_1 else ''])
                     fechamento.append([instituicao1.sigla, 'Prioridade 02', questionario_final.prioridade_2.descricao if questionario_final.prioridade_2 else ''])

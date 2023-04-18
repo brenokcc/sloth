@@ -3,14 +3,14 @@ from setuptools import find_packages, setup
 
 root_dir = os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir))
 
-with open(os.path.join(root_dir, 'requirements.txt')) as file:
+with open(os.path.join(root_dir, 'sloth/requirements.txt')) as file:
     requirements = file.read().strip().splitlines()
 
 os.chdir(root_dir)
 
 setup(
-    name='django-sloth',
-    version='0.1.0',
+    name='sloth-framework',
+    version='0.1.1',
     packages=find_packages(),
     install_requires=requirements,
     extras_require={

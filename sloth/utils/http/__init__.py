@@ -2,6 +2,7 @@
 import os
 import xlwt
 import csv
+import requests
 import tempfile
 import datetime
 from tempfile import mktemp
@@ -120,22 +121,23 @@ class FileResponse(HttpResponse):
 
 class HtmlToPdfResponse(HttpResponse):
 
-    def __init__(self, html, landscape=False):
-        import pdfkit
-        file_name = tempfile.mktemp('.pdf')
-        if landscape:
-            html = html.replace('logo_if_portrait', 'logo_if_landscape')
-            html = html.replace('content="Portrait"', 'content="Landscape"')
-        html = html.replace('/media', settings.MEDIA_ROOT)
-        html = html.replace('/static', '{}/{}/static'.format(settings.BASE_DIR, settings.BASE_DIR.name))
-        pdfkit.from_string(html, file_name, options={"enable-local-file-access": ""})
-        str_bytes = open(file_name, "rb").read()
-        os.unlink(file_name)
-        super().__init__(str_bytes, content_type='application/pdf')
+    def __init__(self, html, request, landscape=False):
+        base_url = 'http://{}'.format(request.META['HTTP_HOST'])
+        html = html.replace('/static/', '{}/static/'.format(base_url))
+        html = html.replace('/media/', '{}/media/'.format(base_url))
+        if getattr(settings, 'WEASYPRINT_HOST', None):
+            url = '{}://{}:{}'.format(settings.WEASYPRINT_PROTOCOL, settings.WEASYPRINT_HOST, settings.WEASYPRINT_PORT)
+            data = requests.post(url, html.encode()).content
+        else:
+            from weasyprint import HTML
+            tmp = tempfile.NamedTemporaryFile(mode='w+b')
+            HTML(string=html, base_url=base_url).write_pdf(tmp.name)
+            data = tmp.read()
+        super().__init__(data, content_type='application/pdf')
 
 
 class PdfReportResponse(HtmlToPdfResponse):
     def __init__(self, request, content, landscape=False, template='dashboard/report.html'):
-        context = dict(today=datetime.date.today(), title='Relatório', icon=None, content=content)
+        context = dict(today=datetime.date.today(), title='Relatório', icon='/static/images/logo.png', content=content)
         html = render_to_string([template], context, request=request)
-        super().__init__(html, landscape=landscape)
+        super().__init__(html, request, landscape=landscape)

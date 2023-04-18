@@ -53,7 +53,7 @@ class ValueSet(dict):
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
             attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
-            cards=[], shortcuts=[], collapsed=False
+            cards=[], shortcuts=[], collapsed=False, printing=False
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -223,7 +223,7 @@ class ValueSet(dict):
                         if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
                             continue
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    lazy = wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None
+                    lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
                     attr, value = getattrr(self.instance, attr_name)
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':
@@ -264,6 +264,7 @@ class ValueSet(dict):
                         valueset = value
                         verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'] or pretty(attr_name))
                         valueset.contextualize(self.request)
+                        value.metadata['printing'] = self.metadata['printing']
                         key = attr_name
                         inner_deep = 0 if self.metadata['attr'] or (deep==1 and i==0) else deep+1
                         valueset.path = path
@@ -377,6 +378,7 @@ class ValueSet(dict):
 
     def html(self, path=None, print=False):
         self.path = path if path else self.path
+        self.metadata['printing'] = True
         serialized = self.serialize(wrap=True)
         if self.metadata['attr']:
             is_ajax = self.request.headers.get('x-requested-with') == 'XMLHttpRequest'

@@ -138,54 +138,9 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
-
-SLOTH = {
-	'NAME': 'COLETA SETEC',
-	'ICON': None,
-	'FAVICON': '/static/images/favicon.png',
-	'VERSION': 1.0,
-	'LOGIN': {
-		'LOGO': None,
-		'TITLE': 'COLETA SETEC',
-		'TEXT': None,
-		'IMAGE': None,
-		'USERNAME_MASK': None
-	},
-	'INCLUDE': {
-		'CSS': ['/static/css/coletasetec.css'],
-		'JS': ['/static/js/coletasetec.js'],
-	},
-	'ROLES':{
-		'ALLOW_MULTIPLE': True
-	},
-    'OAUTH_LOGIN': {
-        'APP': {
-            'TEXT': 'Acessar com APP',
-            'LOGO': None,
-            'REDIRECT_URI': 'http://localhost:8000/app/login/APP/',
-            'CLIENTE_ID': None,
-            'CLIENT_SECRET': None,
-            'AUTHORIZE_URL': None,
-            'ACCESS_TOKEN_URL': None,
-            'USER_DATA_URL': None,
-			'USER_AUTO_CREATE': False,
-			'USER_DATA':{
-				'USERNAME': 'username',
-				'EMAIL': 'email',
-				'FIRST_NAME': None,
-				'LAST_NAME': None
-			}
-        }
-    },
-	'2FA': False,
-	'LIST_PER_PAGE': 20,
-	'DEFAULT_PASSWORD': lambda user=None: '123',
-	'FORCE_PASSWORD_DEFINITION': False,
-	'ICONS': ['fontawesome', 'materialicons']
-}
-
-#SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-#CACHES = {'default': {'BACKEND': 'django_redis.cache.RedisCache', 'LOCATION': 'redis://127.0.0.1:6379/1', 'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'}}}
+DEFAULT_PASSWORD = lambda user: '123'
+FORCE_PASSWORD_DEFINITION = False
+OAUTH2_AUTHENTICATORS = {}
 
 try:
     from .local_settings import *

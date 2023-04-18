@@ -55,6 +55,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         execute("rm -rf /etc/nginx/conf.d/{}.conf".format(self._get_project_name()))
         execute('nginx -s reload')
         execute('docker-compose -f {} down'.format(self._get_compose_file_path()))
+        execute('docker rmi {}_web'.format(self._get_project_name()))
         return 'OK'
 
     def destroy(self):

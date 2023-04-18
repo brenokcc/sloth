@@ -14,7 +14,10 @@ class Command(BaseCommand):
         url = settings.CLOUD_PROVIDER_API_URL
         token = settings.CLOUD_PROVIDER_API_TOKEN
         repository = open('.git/config').read().split('git@github.com:')[-1].split('.git')[0]
-        repository = os.popen('git config --get remote.origin.url').read().strip().replace('git:', 'https:')
+        repository = os.popen('git config --get remote.origin.url').read().strip()
+        if repository.startswith('git@'):
+            # git@domain:x/y.git --> https://domain/x/y.git
+            repository = repository.replace(':', '/').replace('git@', 'https://')
         print(url, repository)
         for action in OPTIONS:
             if options[action] is not None:

@@ -83,8 +83,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      USE_REDIS: 1
-      USE_POSTGRES: 1
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      WEASYPRINT_HOST: weasyprint
   redis:
     image: redis
     hostname: redis
@@ -106,7 +107,11 @@ services:
       - .docker/postgres:/var/lib/postgresql/data
     healthcheck:
       test: psql -U postgres -d $$POSTGRES_DB -c "SELECT version();"
-
+  weasyprint:
+    image: weasyprint
+    hostname: weasyprint
+    ports:
+      - "8888"
 '''
 
 DOCKER_IGNORE_FILE_CONTENT = '''.docker
@@ -172,6 +177,7 @@ if __name__ == "__main__":
         os.system('python3 manage.py sync')
     if len(sys.argv) == 2:
         if sys.argv[1] == 'build':
-            os.system('docker build -t sloth {}'.format(os.path.dirname(__file__)))
+            os.system('docker build --target sloth-src -t sloth {}'.format(os.path.dirname(__file__)))
+            os.system('docker build --target sloth-weasyprint -t weasyprint {}'.format(os.path.dirname(__file__)))
         if sys.argv[1] == 'cloud':
             os.system('python3 {}'.format(os.path.join(os.path.dirname(__file__), 'cloud', 'server.py')))

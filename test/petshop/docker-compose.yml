@@ -15,8 +15,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      USE_REDIS: 1
-      USE_POSTGRES: 1
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      WEASYPRINT_HOST: weasyprint
   redis:
     image: redis
     hostname: redis
@@ -38,3 +39,8 @@ services:
       - .docker/postgres:/var/lib/postgresql/data
     healthcheck:
       test: psql -U postgres -d $$POSTGRES_DB -c "SELECT version();"
+  weasyprint:
+    image: weasyprint
+    hostname: weasyprint
+    ports:
+      - "8888"

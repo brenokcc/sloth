@@ -24,4 +24,4 @@ EXPOSE 8888
 ENTRYPOINT ["python", "/opt/printer.py"]
 
 FROM sloth-base as sloth
-RUN pip install --no-cache-dir django-sloth
+RUN pip install --no-cache-dir sloth-framework

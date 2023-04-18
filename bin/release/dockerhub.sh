@@ -13,7 +13,7 @@ if [[ "$DOCKERHUB_VERSION" != "$CURRENT_VERSION" ]]; then
   PYPI_VERSION=$(pip install sloth-framework==0.0.0 2>&1 >/dev/null | grep -o $CURRENT_VERSION)
   echo "PyPi version: $PYPI_VERSION"
   if [[ "$PYPI_VERSION" != "" ]]; then
-    docker build -f sloth/Dockerfile --target sloth -t brenokcc/sloth:$CURRENT_VERSION .
+    docker build -f sloth/Dockerfile --target sloth -t brenokcc/sloth:$CURRENT_VERSION sloth
     docker login -u brenokcc -p $DOCKERHUB_PASSWORD
     docker push brenokcc/sloth:$CURRENT_VERSION
   fi

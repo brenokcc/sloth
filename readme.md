@@ -22,31 +22,23 @@ The main functionalities offered by the framework are:
 
 ### Production
 
-> pip install django-sloth
+> pip install sloth-framework
 
-## Create Project
+## Create Project 
 
-> django-admin startproject <project-name>
+> mkdir <project-name> OR git clone <repository-url> <project-name>
 >
 > cd <project-name>
 >
-> python -m sloth configure
->
-> python manage.py sync
->
-> python manage.py createsuperuser
->
-> python manage.py runserver
+> python -m sloth
 
 ## Docker
 
 ### Build
 
-> bin/build.sh
+> python -m sloth build
 
 ### Run
 > docker run -it --rm --name app -p 8000:8000 -v $(pwd):/app -w /app sloth sh
-
-
 
 

@@ -143,6 +143,8 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.application'
 OAUTH2_PROVIDER = {
     'SCOPES_BACKEND_CLASS': 'sloth.api.backends.Scopes'
 }
+CLOUD_PROVIDER_API_URL = os.environ.get('CLOUD_PROVIDER_API_URL', 'https://deploy.cloud.aplicativo.click')
+CLOUD_PROVIDER_API_TOKEN = os.environ.get('CLOUD_PROVIDER_API_TOKEN', '0123456789')
 
 if os.environ.get('REDIS_HOST'):
     REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')

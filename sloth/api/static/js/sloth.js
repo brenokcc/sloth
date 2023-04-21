@@ -65,8 +65,8 @@ jQuery.fn.extend({
                     //$('.modal-body').find('input[type=text], input[type=number]').first().focus();
                 }, 200);
             }
+            $('#modal').on('shown.bs.modal', function (e) {$('#modal').responsive()});
             $('#modal').modal('show');
-            document.getElementById('modal').addEventListener('hidden.bs.modal', function (event) {});
         });
     },
     reloadAreas(areas){

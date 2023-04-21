@@ -19,7 +19,7 @@
                     <h2>{{ data.icon|icontag }} {{ data.name }}</h2>
                 {% endif %}
                 {% if data.subtitle.value %}
-                    <div class="valueset-subtitle pb-1">
+                    <div class="valueset-subtitle pb-2">
                         {% if data.subtitle.template %}
                             {% include data.subtitle.template with value=data.subtitle.value metadata=data.subtitle.metadata %}
                         {% else %}
@@ -28,7 +28,7 @@
                     </div>
                 {% endif %}
                 {% if data.status.value %}
-                    <div class="valueset-status pb-1">
+                    <div class="valueset-status pb-2">
                         {% if data.status.template %}
                             {% include data.status.template with value=data.status.value metadata=data.status.metadata %}
                         {% else %}
@@ -68,7 +68,7 @@
             {% if data.data %}
             <div class="valueset-fieldsets">
                 {% if data.data|has_only_primitive_fields %}
-                    <div class="box">
+                    <div class="box responsive-container">
                         {% for name, item in data.data.items %}
                             {% if item.template %}
                                 {% include item.template with value=item.value metadata=item.metadata %}
@@ -95,13 +95,13 @@
                             {% include 'valueset/fieldset.html' with data=item %}
                         {% endif %}
                         {% if item.type == 'primitive' %}
-                            <div class="reloadable-fieldset box" id="{{ item.key }}" data-path="{{ item.path }}">
                             {% if item.template %}
                                 {% include item.template with value=item.value metadata=item.metadata %}
                             {% else %}
-                                {% include 'valueset/field.html' with v=item %}
+                                <div class="reloadable-fieldset box responsive-container" id="{{ item.key }}" data-path="{{ item.path }}">
+                                    {% include 'valueset/field.html' with v=item %}
+                                </div>
                             {% endif %}
-                            </div>
                         {% endif %}
                     {% endfor %}
                 {% endif %}

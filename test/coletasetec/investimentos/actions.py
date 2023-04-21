@@ -455,9 +455,9 @@ class ExportarResultado(actions.Action):
 
     def submit(self):
         dados = list()
-        demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']])
-        questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA']])
-        fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA']])
+        demandas = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'ID']])
+        questionario = list([['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'PERGUNTA', 'RESPOSTA', 'ID']])
+        fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA', 'ID']])
         dados.append(('Demandas', demandas))
         dados.append(('Questionário', questionario))
         dados.append(('Fechamento', fechamento))
@@ -470,13 +470,16 @@ class ExportarResultado(actions.Action):
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
         demanda = None
         for demanda in qs.filter(valor__isnull=False).exclude(valor=0):
-            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+            l1 = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor, demanda.id]
             demandas.append(l1)
             for resposta_questionario in demanda.get_respostas_questionario():
                 l2 = list(l1)
                 l2.append(str(resposta_questionario.pergunta))
                 if resposta_questionario.resposta is not None:
                     l2.append(resposta_questionario.resposta)
+                else:
+                    l2.append('')
+                l2.append(demanda.id)
                 questionario.append(l2)
 
         if 1:
@@ -486,11 +489,11 @@ class ExportarResultado(actions.Action):
             for instituicao1 in instituicoes:
                 questionario_final = self.instance.solicitacao_set.get(instituicao=instituicao1).questionariofinal_set.first()
                 if questionario_final:
-                    fechamento.append([instituicao1.sigla, 'Prioridade 01', questionario_final.prioridade_1.descricao if questionario_final.prioridade_1 else ''])
-                    fechamento.append([instituicao1.sigla, 'Prioridade 02', questionario_final.prioridade_2.descricao if questionario_final.prioridade_2 else ''])
-                    fechamento.append([instituicao1.sigla, 'Prioridade 03', questionario_final.prioridade_3.descricao if questionario_final.prioridade_3 else ''])
-                    fechamento.append([instituicao1.sigla, 'Prioridade 04', questionario_final.prioridade_4.descricao if questionario_final.prioridade_4 else ''])
-                    fechamento.append([instituicao1.sigla, 'Prioridade 05', questionario_final.prioridade_5.descricao if questionario_final.prioridade_5 else ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 01', questionario_final.prioridade_1.descricao if questionario_final.prioridade_1 else '', questionario_final.prioridade_1_id or ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 02', questionario_final.prioridade_2.descricao if questionario_final.prioridade_2 else '', questionario_final.prioridade_2_id or ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 03', questionario_final.prioridade_3.descricao if questionario_final.prioridade_3 else '', questionario_final.prioridade_3_id or ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 04', questionario_final.prioridade_4.descricao if questionario_final.prioridade_4 else '', questionario_final.prioridade_4_id or ''])
+                    fechamento.append([instituicao1.sigla, 'Prioridade 05', questionario_final.prioridade_5.descricao if questionario_final.prioridade_5 else '', questionario_final.prioridade_5_id or ''])
                     fechamento.append([instituicao1.sigla, 'A instituição possui RCO pendente de entrega para a SETEC?', questionario_final.rco_pendente or ''])
                     fechamento.append([instituicao1.sigla, 'Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC', questionario_final.detalhe_rco_pendente or ''])
                     fechamento.append([instituicao1.sigla, 'A instituição devolveu algum valor de TED em 2021?', questionario_final.devolucao_ted or ''])
@@ -498,7 +501,7 @@ class ExportarResultado(actions.Action):
         return XlsResponse(dados)
 
     def has_permission(self, user):
-        return user.roles.contains('Administrador')
+        return user.is_superuser or user.roles.contains('Administrador')
 
 
 class ExportarResultadoPorCategoria(actions.Action):

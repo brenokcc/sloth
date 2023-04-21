@@ -100,8 +100,8 @@ class ModelMixin(object):
     def value_set(self, *names):
         return ValueSet(self, names)
 
-    def view(self):
-        names = [field.name for field in self.metaclass().fields]
+    def view(self, *names):
+        names = names or [field.name for field in self.metaclass().fields]
         return self.value_set(*names)
 
     def serialize(self, wrap=True):

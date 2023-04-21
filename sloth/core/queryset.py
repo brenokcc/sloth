@@ -47,7 +47,7 @@ class QuerySet(models.QuerySet):
     def _clone(self):
         clone = super()._clone()
         clone.request = self.request
-        self.instantiator = self.instantiator
+        clone.instantiator = self.instantiator
         clone.metadata = dict(self.metadata)
         return clone
 
@@ -78,7 +78,7 @@ class QuerySet(models.QuerySet):
     def has_attr_permission(self, user, name):
         if user.is_superuser:
             return True
-        qs = self.model.objects.all()
+        qs = self.model.objects
         if name == 'all' or name in qs.metadata['attach']:
             return qs.has_permission(user)
         return getattr(self._clone(), name)().has_permission(user)
@@ -369,7 +369,7 @@ class QuerySet(models.QuerySet):
                         has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
                     if self.request.user.is_superuser or has_view_permission or obj.has_permission(self.request.user):
                         actions.append(view['name'])
-            item = obj.value_set(*self.get_list_display(add_id=add_id)).load(wrap=False, detail=detail)
+            item = obj.value_set(*self.get_list_display(add_id=add_id)).contextualize(self.request).load(wrap=False, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
         return data
 
@@ -516,7 +516,7 @@ class QuerySet(models.QuerySet):
                 if template:
                     template = template if template.endswith('.html') else '{}.html'.format(template)
                     data.update(template=template)
-            # pprint(data)
+            # from pprint import pprint; pprint(data)
             return data
         return self.to_list(detail=False)
 
@@ -591,7 +591,7 @@ class QuerySet(models.QuerySet):
         return qs
 
     def ignore(self, *names):
-        self.metadata['ignore'].extend(names)
+        self.metadata['ignore'] = list(names)
         return self
 
     def only(self, *names, **kwargs):
@@ -774,7 +774,6 @@ class QuerySet(models.QuerySet):
         return self
 
     def process_request(self, request):
-        self.get_attach()
         from sloth.core.valueset import ValueSet
         page = 1
         attr_name = request.GET.get('subset', 'all')
@@ -782,8 +781,10 @@ class QuerySet(models.QuerySet):
         if attr_name == 'all':
             attach = self
         else:
+            attaches = self.get_attach()
             self.metadata['subset'] = attr_name
             attach = getattr(self._clone(), attr_name)()
+            attach.metadata['attach'] = attaches
         if isinstance(attach, QuerySet):
             qs = attach
             if self.metadata['ignore']:

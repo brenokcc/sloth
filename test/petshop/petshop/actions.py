@@ -32,10 +32,9 @@ class ExibirDataHora(actions.Action):
 
 
 class FazerAlgumaCoisa(actions.Action):
-    data = actions.DateField(label='Data', required=False, initial=datetime.date.today())
+    x = actions.DateField(label='Data', required=False, initial=datetime.date.today())
 
     class Meta:
-        method = 'get'
         verbose_name = 'Fazer Alguma Coisa'
 
     def __init__(self, *args, **kwargs):

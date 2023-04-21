@@ -281,6 +281,9 @@ dl dl {
 textarea{
     width: 100%;
 }
+.form-display{
+    margin-bottom: 10;
+}
 .form-display .valueset-header{
     display: none;
 }
@@ -432,7 +435,7 @@ th, label, .fieldset-field-label, .nav-link.active{
     padding: 0;
 }
 
-.admin-queryset .queryset-data, .admin-queryset .search-and-filters form,
+.admin-queryset .queryset-data, .admin-queryset .search-and-filters form.with-filter,
 .fieldset-inline-action, .action-wrapper fieldset, .cards-wrapper,
 .shortcut-wrapper, .fieldset-list, .fieldset-group, .box,
 .valueset-fieldsets > reloadable-fieldset:not(.box){
@@ -471,4 +474,10 @@ th, label, .fieldset-field-label, .nav-link.active{
 
 #login-wrapper h2{
     text-align: center;
+}
+
+.accordion-button:not(.collapsed), .accordion-button:focus{
+	border-color: white;
+	background-color: white;
+	box-shadow: none;
 }

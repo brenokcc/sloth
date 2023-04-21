@@ -131,6 +131,7 @@
     {% endif %}
 
     {% if data.template %}
+        <div class="clear-fix">&nbsp;</div>
         {% include data.template with data=data %}
     {% else %}
         {% include "queryset/datatable.html" with data=data %}

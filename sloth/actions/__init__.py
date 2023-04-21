@@ -152,7 +152,8 @@ class Action(metaclass=ActionMetaclass):
                 del self.fields['autouser']
 
         for name in self.fields:
-            setattr(self, name, self.initial.get(name, None))
+            if name != 'data':
+                setattr(self, name, self.initial.get(name, None))
         self.asynchronous = getattr(self.metaclass, 'asynchronous', None) and self.request.GET.get('synchronous') is None
 
         related_field_name = getattr(self.metaclass, 'related_field', None)
@@ -523,8 +524,8 @@ class Action(metaclass=ActionMetaclass):
     def get_method(self):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
-    def get_instructions(self):
-        return None
+    def get_instances(self):
+        return [self.instance] if self.instance else (self.instances or [])
 
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True
@@ -778,7 +779,7 @@ class Action(metaclass=ActionMetaclass):
                 self.save()
         else:
             self.save()
-        self.message('Ação realizada com sucesso.')
+        self.message()
         self.redirect()
 
     def process(self):

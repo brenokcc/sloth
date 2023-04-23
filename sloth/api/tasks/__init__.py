@@ -12,6 +12,7 @@ class Task(Thread):
         self.partial = 0
         self.previous = 0
         self.task_id = None
+        self._message = None
         super().__init__(*args, **kwargs)
 
     def start(self, request):
@@ -36,7 +37,10 @@ class Task(Thread):
             progress = 100 if self.total == 0 else int(self.partial / self.total * 100)
             if (self.previous == 0 and progress) or (progress - self.previous) >= self.get_update_progress_interval() or self.partial % 1000 == 0 or progress == 100:
                 self.previous = progress
-                TaskModel.objects.filter(pk=self.task_id).update(progress=progress, partial=self.partial)
+                kwargs = dict(progress=progress, partial=self.partial)
+                if self._message:
+                    kwargs.update(message=self._message)
+                TaskModel.objects.filter(pk=self.task_id).update(**kwargs)
             return True
         return False
 
@@ -52,7 +56,7 @@ class Task(Thread):
                 break
 
     def message(self, text):
-        TaskModel.objects.filter(pk=self.task_id).update(message=text)
+        self._message = text
 
     def finalize(self, text='Ação realizada com sucesso'):
         TaskModel.objects.filter(pk=self.task_id).update(message=text, end=datetime.datetime.now(), partial=self.partial)

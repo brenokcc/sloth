@@ -154,6 +154,8 @@ class QuerySetStatistics(object):
         print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
 
     def serialize(self, wrap=True, path=None, lazy=False):
+        tx = []
+        ty = []
         series = dict()
         if not lazy:
             self._calc()
@@ -170,12 +172,41 @@ class QuerySetStatistics(object):
                     for j, (xk, xv) in enumerate(self._xdict.items()):
                         data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
                     series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
+                ty = []
+                for k, serie in series.items():
+                    sy = 0
+                    ly = len(serie)
+                    for i, item in enumerate(serie):
+                        sy += item[1]
+                    ty.append(sy)
+                tx = [0 for i in range(0, ly)]
+                # breakpoint()
+                for i in range(0, len(tx)):
+                    for kj in series:
+                        tx[i] += series[kj][i][1]
+                print(tx, ty)
+                if len(tx) == len(ty) == 1:
+                    tx = ty = []
+                elif len(tx) > 1 and len(ty) > 1:
+                    ty.append(sum(ty))
+                    tx.append(sum(tx))
+                elif len(ty) > 1:
+                    if len(ty) > 2: tx.append(sum(tx))
+                    ty = []
+                elif len(tx) > 1:
+                    if len(tx) > 2: ty.append(sum(ty))
+                    tx = []
+                print(tx, ty)
             else:
+                sx = 0
                 data = list()
                 for j, (xk, xv) in enumerate(self._xdict.items()):
                     data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
+                    sx+=data[-1][1]
                 if data:
                     series['default'] = data
+                tx = [sx]
+                print(tx)
         if self.request and path is None:
             prefix = self.request.path.split('/')[1]
             path = self.request.path.replace('/{}'.format(prefix), '')
@@ -189,6 +220,7 @@ class QuerySetStatistics(object):
                 series=series,
                 template=self.metadata['template'],
                 normalized=self.normalize(series),
+                tx=tx, ty=ty
             )
         else:
             return series['default'] if 'default' in series else series

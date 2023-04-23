@@ -13,7 +13,11 @@ def warning(message):
 
 
 def validate_model(model):
-    validate_valueset(model(pk=0).view())
+    valueset = model(pk=0).view()
+    if valueset is None:
+        warning('The method "view" of class {} must return a ValueSet intance. It returned "None".'.format(model))
+    else:
+        validate_valueset(valueset)
     validate_queryset(model.objects.all())
 
 

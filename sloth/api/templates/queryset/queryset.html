@@ -63,7 +63,7 @@
                     });
                 }
                 function toggleActions{{ data.uuid }}(input){
-                    if(input.value=='on') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
+                    if(input.value=='') $('#queryset-{{ data.uuid }}').find('.action-checkbox').prop('checked', input.checked);
                     if($('#queryset-{{ data.uuid }}').find('.action-checkbox:checked').length>0){
                         $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.queryset').removeClass('disabled');
                         $('#queryset-{{ data.uuid }}').find('.dropdown-toggle.instance, .dropdown-toggle.model').addClass('disabled');
@@ -137,7 +137,7 @@
         {% include "queryset/datatable.html" with data=data %}
     {% endif %}
     {% include "queryset/actions/batch.html" %}
-    {% if data.metadata.pagination.pages|length > 1 and data.metadata.scrollable %}
+    {% if data.metadata.pagination.pages|length > 1 and not data.metadata.scrollable %}
 
         <nav aria-label="Paginação">
       <ul class="pagination" style="overflow-x:hidden">

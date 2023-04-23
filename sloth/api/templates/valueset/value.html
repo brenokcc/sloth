@@ -2,26 +2,28 @@
 
 {% if v|is_valueset %}
     <dl>
-    {% for v2 in v.values %}
-        {% if v2.metadata.icon %}
-            <dt></dt>
-            <dd>
-            {{ v2.metadata.icon|icontag }}
-            {% if v2.template %}
-                {% include v2.template with value=v2.value metadata=v2.metadata %}
-            {% else %}
-                {{ v2.value|format|linebreaksbr }}
-            {% endif %}
-            </dd>
-        {% else %}
-            <dt>{{ v2.name }}</dt>
-            <dd>
+    {% for k2, v2 in v.items %}
+        {% if k2 != 'instance' %}
+            {% if v2.metadata.icon %}
+                <dt></dt>
+                <dd>
+                {{ v2.metadata.icon|icontag }}
                 {% if v2.template %}
                     {% include v2.template with value=v2.value metadata=v2.metadata %}
                 {% else %}
                     {{ v2.value|format|linebreaksbr }}
                 {% endif %}
-            </dd>
+                </dd>
+            {% else %}
+                <dt>{{ v2.name }}</dt>
+                <dd>
+                    {% if v2.template %}
+                        {% include v2.template with value=v2.value metadata=v2.metadata %}
+                    {% else %}
+                        {{ v2.value|format|linebreaksbr }}
+                    {% endif %}
+                </dd>
+            {% endif %}
         {% endif %}
     {% endfor %}
     </dl>

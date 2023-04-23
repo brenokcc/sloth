@@ -22,7 +22,7 @@
                 {% if data.metadata.search or data.metadata.filters %}
                     <div class="filters" id="filters-{{ data.uuid }}">
                         {% if data.metadata.search %}
-                            <div class="filter">
+                            <div class="filter {% if request|mobile %}mobile{% endif %}">
                                 <label>Busca</label>
                                 <input type="text" class="form-control" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}" placeholder="">
                             </div>
@@ -30,7 +30,7 @@
                         {% for metadata in data.metadata.filters.values %}
                             {% include "queryset/filter.html" %}
                         {% endfor %}
-                        <div class="filter">
+                        <div class="filter {% if request|mobile %}mobile{% endif %}">
                             <button type="button" class="btn btn-primary filter-button" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}()">
                                 <div class="spinner-border spinner-border-sm d-none" role="status">
                                   <span class="visually-hidden">Loading...</span>

@@ -516,7 +516,8 @@ class ExportarResultadoPorCategoria(actions.Action):
 
     def submit(self):
         dados = list()
-        demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO']
+        rotulos = ['Obras', 'Equipamentos', 'Acessibilidade', 'PPCIP', 'Fotovoltaicas', 'Incidentes Climáticos', 'Saneamento Básico']
+        demandas = ['DEMANDA', 'CATEGORIA', 'INSTITUIÇÃO', 'UNIDADES BENEFICIADAS', 'PRIORIDADE', 'VALOR TOTAL', 'VALOR EMPENHO', 'ID']
         instituicao = self.cleaned_data['instituicao']
         categoria = self.cleaned_data['categoria']
         prioridade = self.cleaned_data['prioridade']
@@ -524,6 +525,7 @@ class ExportarResultadoPorCategoria(actions.Action):
         qs = qs.filter(solicitacao__instituicao=instituicao) if instituicao else qs
         qs = qs.filter(classificacao=categoria) if categoria else qs
         qs = qs.filter(prioridade=prioridade) if prioridade else qs
+        dados.append(('Demandas', [demandas]))
         ids = qs.order_by('classificacao').values_list('classificacao', flat=True).distinct()
         for i, classificacao in enumerate(Categoria.objects.filter(id__in=ids)):
             linhas = list()
@@ -533,7 +535,8 @@ class ExportarResultadoPorCategoria(actions.Action):
                 cabecalho.append(pergunta.texto.upper())
             linhas.append(cabecalho)
             for demanda in qs.filter(valor__isnull=False).exclude(valor=0).filter(classificacao=classificacao):
-                linha = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor]
+                linha = [demanda.descricao, demanda.classificacao.nome, demanda.solicitacao.instituicao.sigla, ', '.join(demanda.unidades_beneficiadas.values_list('nome', flat=True)), demanda.prioridade.numero, demanda.valor_total, demanda.valor, demanda.id]
+                dados[0][1].append(list(linha))
                 for pergunta in perguntas:
                     resposta_questionario = demanda.get_respostas_questionario().filter(pergunta=pergunta).first()
                     if resposta_questionario:
@@ -542,11 +545,28 @@ class ExportarResultadoPorCategoria(actions.Action):
                         else:
                             linha.append(resposta_questionario.resposta)
                 linhas.append(linha)
-            dados.append((str(i+1), linhas))
+            dados.append((rotulos[i], linhas))
+        fechamento = list([['INSTITUIÇÃO', 'PERGUNTA', 'RESPOSTA', 'ID']])
+        dados.append(('Fechamento', fechamento))
+        instituicoes = self.instance.instituicoes.all()
+        if instituicao:
+            instituicoes = instituicoes.filter(pk=instituicao.pk)
+        for inst in instituicoes:
+            quest = self.instance.solicitacao_set.get(instituicao=i).questionariofinal_set.first()
+            if quest:
+                fechamento.append([inst.sigla, 'Prioridade 01', quest.prioridade_1.descricao if quest.prioridade_1 else '', quest.prioridade_1_id or ''])
+                fechamento.append([inst.sigla, 'Prioridade 02', quest.prioridade_2.descricao if quest.prioridade_2 else '', quest.prioridade_2_id or ''])
+                fechamento.append([inst.sigla, 'Prioridade 03', quest.prioridade_3.descricao if quest.prioridade_3 else '', quest.prioridade_3_id or ''])
+                fechamento.append([inst.sigla, 'Prioridade 04', quest.prioridade_4.descricao if quest.prioridade_4 else '', quest.prioridade_4_id or ''])
+                fechamento.append([inst.sigla, 'Prioridade 05', quest.prioridade_5.descricao if quest.prioridade_5 else '', quest.prioridade_5_id or ''])
+                fechamento.append([inst.sigla, 'A instituição possui RCO pendente de entrega para a SETEC?', quest.rco_pendente or ''])
+                fechamento.append([inst.sigla, 'Número do(s) TED(s) e o resumo da situação caso possua RCO pendente de entregue para a SETEC', quest.detalhe_rco_pendente or ''])
+                fechamento.append([inst.sigla, 'A instituição devolveu algum valor de TED em 2021?', quest.devolucao_ted or ''])
+                fechamento.append([inst.sigla, 'Número do(s) TED(s) e o resumo da situação caso tenha devolvido algum valor de TED em 2021', quest.detalhe_devolucao_ted or ''])
         return XlsResponse(dados)
 
     def has_permission(self, user):
-        return user.roles.contains('Administrador')
+        return user.is_superuser or user.roles.contains('Administrador')
 
 
 class EnviarSenhas(actions.Action):

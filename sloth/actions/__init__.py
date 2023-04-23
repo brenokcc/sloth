@@ -115,7 +115,7 @@ class Action(metaclass=ActionMetaclass):
         self.show_form = True
         self.can_be_closed = False
         self.can_be_reloaded = False
-        self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[])
+        self.content = dict(top=[], left=[], center=[], right=[], bottom=[], info=[], alert=[], danger=[])
         self.on_change_data = dict(show=[], hide=[], set=[], show_fieldset=[], hide_fieldset=[])
 
         if forms.ModelForm in self.__class__.__bases__:
@@ -215,6 +215,10 @@ class Action(metaclass=ActionMetaclass):
     def alert(self, text):
         if text:
             self.content['alert'].append(text)
+
+    def danger(self, text):
+        if text:
+            self.content['danger'].append(text)
 
     def parameters(self, index):
         values = None
@@ -525,7 +529,13 @@ class Action(metaclass=ActionMetaclass):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
     def get_instances(self):
-        return [self.instance] if self.instance else (self.instances or [])
+        if self.instance:
+            return [self.instance]
+        elif self.instances is not None:
+            return self.instances
+        elif self.queryset is not None:
+            return self.queryset
+        return []
 
     def is_modal(self):
         return getattr(self.metaclass, 'modal', True) if hasattr(self, 'Meta') else True

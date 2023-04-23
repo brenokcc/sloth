@@ -1,5 +1,5 @@
 {% load tags %}
-<div class="filter {% if metadata.hidden %}d-none{% endif %}">
+<div class="filter {% if metadata.hidden %}d-none{% endif %} {% if request|mobile %}mobile{% endif %}">
     <label>{{ metadata.name|truncatechars:25 }}</label>
     {% if metadata.type == "choices" %}
     <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">

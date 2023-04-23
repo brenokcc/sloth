@@ -177,6 +177,9 @@
 .search-and-filters form>div {
     display: inline;
 }
+.search-and-filters .filter.mobile, .search-and-filters .filter.mobile .btn{
+    width: 100%;
+}
 .search-and-filters .filter {
     display: inline-block;
     margin-right: 10px;

@@ -70,6 +70,11 @@ class QuerySet(models.QuerySet):
         self.role_lookups(*((name,) + names), **scopes)
         return self
 
+    def readonly(self):
+        for key in ('actions', 'inline_actions', 'batch_actions'):
+            self.metadata[key].clear()
+        return self
+
     def has_permission(self, user):
         if user.is_authenticated:
             return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
@@ -541,6 +546,7 @@ class QuerySet(models.QuerySet):
     def preview(self, *names, modal=True, icon=None):
         for name in names:
             if name:
+                self.metadata['view'] = list(self.metadata['view'])
                 self.metadata['view'].append(dict(name=name, modal=modal, icon=icon))
             else:
                 self.metadata['view'].clear()

@@ -50,8 +50,6 @@ body::-webkit-scrollbar {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background-color: #cfe2ff;
-  border-top: 1px solid #dee2e6;
   z-index: 101;
 }
 
@@ -61,16 +59,15 @@ body::-webkit-scrollbar {
   text-align: center;
   text-decoration: none;
   width: {% widthratio 100 dashboard.data.navigation|length 1 %}%;
-  height: 100;
   font-size: 12px;
 }
 
 .bottom-navbar a.active {
-  color: #333;
+  color: white;
 }
 
 .bottom-navbar a:hover {
-  color: #0d6efd;
+  color: white;
 }
 
 .bottom-navbar a i{
@@ -83,7 +80,7 @@ body::-webkit-scrollbar {
 
 </style>
 
-<div class="bottom-navbar">
+<div class="bottom-navbar bg-primary">
   {% for item in dashboard.data.navigation %}
   <a href="{{ item.url }}" class="active">
     <div>

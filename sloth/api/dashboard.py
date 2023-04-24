@@ -205,15 +205,15 @@ class Dashboard(metaclass=DashboardType):
 
     def navigation(self, *items, app=None):
         if mobile(self.request):
-            self._load('floating', items, app=app)
-        else:
             self._load('navigation', items, app=app)
+        else:
+            self._load('floating', items, app=app)
 
     def add_navigation(self, url, label, icon, app=None):
         if mobile(self.request):
-            self._item('floating', url, label, icon, app=app)
-        else:
             self._item('navigation', url, label, icon, app=app)
+        else:
+            self._item('floating', url, label, icon, app=app)
 
     def settings_menu(self, *items, modal=True, app=None):
         self._load('settings', items, modal=modal, app=app)

@@ -1,7 +1,7 @@
 {% load tags %}
 {% for key, series in data.normalized.items %}
 <style>
-    #container-{{ forloop.counter }} .pie-chart {
+    #container{{ data.key }}-{{ forloop.counter }} .pie-chart {
       background:
         conic-gradient(
           {% for serie in series %}
@@ -22,7 +22,7 @@
       height: 150;
       margin-top: -62px;
     }
-    #container-{{ forloop.counter }} .pie-center{
+    #container{{ data.key }}-{{ forloop.counter }} .pie-center{
 
       top: 50px;
       width: 75px;
@@ -35,7 +35,7 @@
       {% if donut is None %}visibility: hidden;{% endif %}
     }
 </style>
-<div style="width:100%" id="container-{{ forloop.counter }}">
+<div style="width:100%" id="container{{ data.key }}-{{ forloop.counter }}">
     {% if key != 'default' %}
     <h5>{{ key }}</h5>
     {% endif %}

@@ -6,7 +6,7 @@
 </style>
 
         <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}">
-            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}" style="{% if data.metadata.collapsed %}display:none{% endif %}">
+            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}" style="{% if data.metadata.collapsed %}display:none{% endif %}" class="{% if data.metadata.search or data.metadata.filters %}with-filter{% endif %}">
                 <input type="hidden" name="uuid" value="{{ data.uuid }}">
                 <input type="hidden" name="is_admin" value="{% if data.metadata.is_admin %}1{% endif %}">
                 <input type="hidden" name="collapsed" value="{% if data.metadata.collapsed %}1{% endif %}" id="collapsed-{{ data.uuid }}">
@@ -22,7 +22,7 @@
                 {% if data.metadata.search or data.metadata.filters %}
                     <div class="filters" id="filters-{{ data.uuid }}">
                         {% if data.metadata.search %}
-                            <div class="filter">
+                            <div class="filter {% if request|mobile %}mobile{% endif %}">
                                 <label>Busca</label>
                                 <input type="text" class="form-control" pattern=".{3,}" name="q" value="{{ request.GET.q|default:'' }}" id="searchbar" title="3 ou mais caracteres" onkeypress="if(event.which==13){reload{{ data.uuid }}();return false;}" placeholder="">
                             </div>
@@ -30,7 +30,7 @@
                         {% for metadata in data.metadata.filters.values %}
                             {% include "queryset/filter.html" %}
                         {% endfor %}
-                        <div class="filter">
+                        <div class="filter {% if request|mobile %}mobile{% endif %}">
                             <button type="button" class="btn btn-primary filter-button" onclick="$(this).find('.spinner-border').removeClass('d-none');$(this).find('i').addClass('d-none');$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}()">
                                 <div class="spinner-border spinner-border-sm d-none" role="status">
                                   <span class="visually-hidden">Loading...</span>

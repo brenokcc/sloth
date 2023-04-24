@@ -17,6 +17,9 @@ MODELS_FILE_CONTENT = '''from sloth.db import models, role, meta
 ACTIONS_FILE_CONTENT = '''from sloth import actions
 '''
 
+TASKS_FILE_CONTENT = '''from sloth.api.tasks import Task
+'''
+
 DASHBOARD_FILE_CONTENT = '''from sloth.api.dashboard import Dashboard
 from .models import *
 
@@ -148,6 +151,9 @@ def startproject():
     actions_path = os.path.join(name, 'actions.py')
     with open(actions_path, 'w') as file:
         file.write(ACTIONS_FILE_CONTENT)
+    tasks_path = os.path.join(name, 'tasks.py')
+    with open(tasks_path, 'w') as file:
+        file.write(TASKS_FILE_CONTENT)
     dashboard_path = os.path.join(name, 'dashboard.py')
     with open(dashboard_path, 'w') as file:
         file.write(DASHBOARD_FILE_CONTENT)

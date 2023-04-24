@@ -177,6 +177,9 @@
 .search-and-filters form>div {
     display: inline;
 }
+.search-and-filters .filter.mobile, .search-and-filters .filter.mobile .btn{
+    width: 100%;
+}
 .search-and-filters .filter {
     display: inline-block;
     margin-right: 10px;
@@ -261,10 +264,12 @@ main > .row > .col{
     margin-top: 8px;
     padding-right: 12px !important;
 }
-
+#search, .search-menu{
+    border-radius: 0;
+}
 .search-results{
     position: absolute;
-    top: 50;
+    top: 57;
     z-index: 1;
     max-height: 300px;
     overflow-y: scroll;
@@ -280,6 +285,9 @@ dl dl {
 
 textarea{
     width: 100%;
+}
+.form-display{
+    margin-bottom: 10;
 }
 .form-display .valueset-header{
     display: none;
@@ -432,7 +440,7 @@ th, label, .fieldset-field-label, .nav-link.active{
     padding: 0;
 }
 
-.admin-queryset .queryset-data, .admin-queryset .search-and-filters form,
+.admin-queryset .queryset-data, .admin-queryset .search-and-filters form.with-filter,
 .fieldset-inline-action, .action-wrapper fieldset, .cards-wrapper,
 .shortcut-wrapper, .fieldset-list, .fieldset-group, .box,
 .valueset-fieldsets > reloadable-fieldset:not(.box){
@@ -471,4 +479,10 @@ th, label, .fieldset-field-label, .nav-link.active{
 
 #login-wrapper h2{
     text-align: center;
+}
+
+.accordion-button:not(.collapsed), .accordion-button:focus{
+	border-color: white;
+	background-color: white;
+	box-shadow: none;
 }

@@ -207,9 +207,7 @@ class ValueSet(dict):
         return dict(type='object', properties=schema)
 
     def load(self, wrap=True, detail=False, deep=0):
-        is_meta_api = False
         if self.request:
-            is_meta_api = self.request.path.startswith('/meta/')
             if 'only' in self.request.GET:
                 self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',') if hasattr(self.instance, k)}
                 self.request.GET._mutable = True
@@ -217,6 +215,7 @@ class ValueSet(dict):
                 self.request.GET._mutable = False
 
         if self.metadata['names']:
+            is_app = self.request and self.request.path.startswith('/app/')
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if self.request and not self.request.user.is_superuser:
                     if self.metadata['only'] and attr_name in self.metadata['only']:
@@ -299,7 +298,7 @@ class ValueSet(dict):
                         data = value
                         verbose_name = pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                         self.metadata['primitive'] = True
-                        if not wrap or is_meta_api:
+                        if not is_app:
                             data = serialize(data)
                         if wrap or detail:
                             template = getattr(attr, '__template__', None)
@@ -351,7 +350,7 @@ class ValueSet(dict):
                     if isinstance(value, QuerySet):
                         value = [str(obj) for obj in value]
                     output[key] = dict(value=value, template=template, metadata=metadata)
-
+            is_app = self.request and self.request.path.startswith('/app/')
             output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
             for action_type in ('actions', 'inline_actions'):
                 for form_name in self.metadata[action_type]:

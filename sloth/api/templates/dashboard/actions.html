@@ -75,7 +75,7 @@
         if($(this).hasClass('queryset')){
             var ids = $('#queryset-{{ uuid }}').find('.action-checkbox:checked').map(function(){
               return $(this).val();
-            }).get().filter(function (id) { return id!='on' }).join('-');
+            }).get().filter(function (id) { return id!='' }).join('-');
             this.href = actionURL($(this).data('url').replace('{id}', '0-'+ids));
         }
         if($(this).hasClass('model')){

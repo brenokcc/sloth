@@ -4,7 +4,7 @@
 web applications. It used metadate provided in the model classes to generate
 the backend (REST API) and the frontend (Web interface).
 
-![Kiku](sloth/app/static/images/logo.png)
+![Kiku](sloth/api/static/images/logo.png)
 
 The main functionalities offered by the framework are:
 

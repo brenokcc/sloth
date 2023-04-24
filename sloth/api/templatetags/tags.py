@@ -38,7 +38,7 @@ def index(indexable, i):
 def mobile(request):
     if request:
         width = int(request.COOKIES.get('width', 0))
-        return width if width < 600 else False
+        return width < 600
     return False
 
 

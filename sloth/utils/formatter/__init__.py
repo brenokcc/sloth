@@ -20,6 +20,8 @@ def format_value(obj):
             return obj.strftime('%d/%m/%Y %H:%M')
         elif isinstance(obj, datetime.date):
             return obj.strftime('%d/%m/%Y')
+        elif isinstance(obj, int):
+            return format_decimal(obj, 0)
         elif isinstance(obj, float):
             return format_decimal(obj)
         elif isinstance(obj, Decimal):

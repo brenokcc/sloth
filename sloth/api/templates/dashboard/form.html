@@ -46,6 +46,10 @@
     <div class="alert alert-warning" role="alert">{{ text|breaklines|safe }}</div>
 {% endfor %}
 
+{% for text in self.content.danger %}
+    <div class="alert alert-danger" role="alert">{{ text|breaklines|safe }}</div>
+{% endfor %}
+
 <div class="form-display">
 {% for item in self.content.center %}{{ item }}{% endfor %}
 </div>

@@ -347,10 +347,10 @@ class Ciclo(models.Model):
         return self.value_set('get_total_por_instituicao', 'get_total_por_categoria')
 
     def get_detalhamento(self):
-        return self.value_set('get_solicitantes', 'get_resumo', 'get_demandas')
+        return self.value_set('get_solicitantes', 'get_resumo', 'get_demandas').actions('exportar_resultado', 'exportar_resultado_por_categoria')
 
     def view(self):
-        return self.value_set('get_dados_gerais', 'get_detalhamento').actions('exportar_resultado', 'exportar_resultado_por_categoria')
+        return self.value_set('get_dados_gerais', 'get_detalhamento')
 
 
 class SolicitacaoManager(models.Manager):

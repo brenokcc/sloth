@@ -184,7 +184,6 @@ class QuerySetStatistics(object):
                 for i in range(0, len(tx)):
                     for kj in series:
                         tx[i] += series[kj][i][1]
-                print(tx, ty)
                 if len(tx) == len(ty) == 1:
                     tx = ty = []
                 elif len(tx) > 1 and len(ty) > 1:
@@ -196,7 +195,6 @@ class QuerySetStatistics(object):
                 elif len(tx) > 1:
                     if len(tx) > 2: ty.append(sum(ty))
                     tx = []
-                print(tx, ty)
             else:
                 sx = 0
                 data = list()
@@ -206,7 +204,6 @@ class QuerySetStatistics(object):
                 if data:
                     series['default'] = data
                 tx = [sx]
-                print(tx)
         if self.request and path is None:
             prefix = self.request.path.split('/')[1]
             path = self.request.path.replace('/{}'.format(prefix), '')

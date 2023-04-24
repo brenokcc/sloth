@@ -264,10 +264,12 @@ main > .row > .col{
     margin-top: 8px;
     padding-right: 12px !important;
 }
-
+#search, .search-menu{
+    border-radius: 0;
+}
 .search-results{
     position: absolute;
-    top: 50;
+    top: 57;
     z-index: 1;
     max-height: 300px;
     overflow-y: scroll;

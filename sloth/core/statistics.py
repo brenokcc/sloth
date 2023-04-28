@@ -27,6 +27,7 @@ class QuerySetStatistics(object):
         self.cursor = 0
         self.request = None
         self.metadata = dict(uuid='123456', attr=None, source=None, template='', verbose_name=None)
+        self.colors = {}
 
         if '__month' in x:
             self._xdict = {i + 1: month for i, month in enumerate(MONTHS)}
@@ -95,6 +96,8 @@ class QuerySetStatistics(object):
         if self._xdict == {}:
             xvalues = self.qs.values_list(self.x, flat=True).order_by(self.x).distinct()
             if self._xfield.related_model:
+                if hasattr(self._xfield.related_model, 'cor'):
+                    self.colors = {pk: color for pk, color in self._xfield.related_model.objects.values_list('id', 'cor')}
                 self._xdict = {
                     obj.pk: str(obj) for obj in self._xfield.related_model.objects.filter(pk__in=xvalues)
                 }
@@ -170,7 +173,7 @@ class QuerySetStatistics(object):
                     data = []
                     self.cursor = 0
                     for j, (xk, xv) in enumerate(self._xdict.items()):
-                        data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color()])
+                        data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, yk), 0)), self.nex_color(xk)])
                     series.update(**{formatter.get(yv, str(self._yfield_display_value(yv))): data})
                 ty = []
                 for k, serie in series.items():
@@ -199,7 +202,7 @@ class QuerySetStatistics(object):
                 sx = 0
                 data = list()
                 for j, (xk, xv) in enumerate(self._xdict.items()):
-                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color()])
+                    data.append([formatter.get(xv, str(self._xfield_display_value(xv))), format_value(self._values_dict.get((xk, None), 0)), self.nex_color(xk)])
                     sx+=data[-1][1]
                 if data:
                     series['default'] = data
@@ -293,7 +296,9 @@ class QuerySetStatistics(object):
     def column_chart(self):
         return self.chart('column')
 
-    def nex_color(self):
+    def nex_color(self, xk=None):
+        if self.colors and xk:
+            return self.colors[xk]
         color = colors()[self.cursor]
         self.cursor += 1
         if self.cursor == len(colors()):

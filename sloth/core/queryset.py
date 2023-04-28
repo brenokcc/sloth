@@ -815,7 +815,7 @@ class QuerySet(models.QuerySet):
                         value = bool(int(value)) if value.isdigit() else value == 'true'
                     if item['key'] != request.GET.get('choices'):
                         qs = qs.filter(**{item['key']: value})
-        if 'q' in request.GET:
+        if 'q' in request.GET and request.GET['q']:
             qs = qs.search(q=request.GET['q'])
         if 'page' in request.GET:
             page = int(request.GET['page'] or 1)

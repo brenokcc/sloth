@@ -38,7 +38,7 @@ class QuerySet(models.QuerySet):
             page=1, limit=20, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, related_field=None, scrollable=False
+            verbose_name=None, related_field=None, scrollable=False, tree=None
         )
         if self.model and getattr(self.model.metaclass(), 'autouser', False):
             self.lookups(autouser='pk')
@@ -274,6 +274,14 @@ class QuerySet(models.QuerySet):
         self.metadata['attach'] = attaches
         return attaches
 
+    # tree function
+
+    def tree_nodes(self):
+        qs = self.model.objects.filter(**{self.metadata['tree']: self.request.GET['tree-nodes']})
+        qs.metadata = self.metadata
+        qs.request = self.request
+        return dict(items=[dict(id=value.id, text=str(value)) for value in qs])
+
     # choices function
 
     def choices(self, request):
@@ -301,6 +309,10 @@ class QuerySet(models.QuerySet):
 
     def calendar(self, name):
         self.metadata['calendar'] = name
+        return self
+
+    def tree(self, name):
+        self.metadata['tree'] = name
         return self
 
     def to_calendar(self):
@@ -463,6 +475,8 @@ class QuerySet(models.QuerySet):
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
+                if self.metadata['tree']:
+                    data['metadata']['tree'] = self.metadata['tree']
 
                 if self.metadata['aggregations']:
                     aggregations = {}
@@ -712,6 +726,9 @@ class QuerySet(models.QuerySet):
 
     def paginate(self):
         qs = self
+        if self.metadata['tree']:
+            if not [child for child in qs.query.where.children if hasattr(child, 'lhs') and child.lhs.target.name == self.metadata['tree']]:
+                qs = qs.filter(**{'{}__isnull'.format(self.metadata['tree']): True})
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']
             if selected_date:
@@ -770,6 +787,10 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)
                 )
+            if 'tree-nodes' in request.GET:
+                raise JsonReadyResponseException(
+                    self.process_request(request).tree_nodes()
+                )
             component = self.process_request(request).apply_role_lookups(request.user)
             if request.path.startswith('/app/'):
                 raise HtmlReadyResponseException(component.html())
@@ -817,6 +838,13 @@ class QuerySet(models.QuerySet):
                         qs = qs.filter(**{item['key']: value})
         if 'q' in request.GET and request.GET['q']:
             qs = qs.search(q=request.GET['q'])
+        if 'tree-node' in request.GET and request.GET['tree-node']:
+            qs = qs.model.objects.filter(**{self.metadata['tree']: request.GET['tree-node']})
+            if not qs.exists():
+                qs = qs.model.objects.filter(pk=request.GET['tree-node'])
+            qs.metadata = self.metadata
+            qs.request = self.request
+            qs.tree(None)
         if 'page' in request.GET:
             page = int(request.GET['page'] or 1)
         if isinstance(attach, QuerySet):

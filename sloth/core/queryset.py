@@ -316,6 +316,7 @@ class QuerySet(models.QuerySet):
         return self
 
     def to_calendar(self):
+        i = 0
         days = {}
         attr_name = self.metadata['calendar']
         start = self.request.GET.get('{}__gte'.format(attr_name))

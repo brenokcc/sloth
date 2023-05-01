@@ -158,10 +158,7 @@ class Dashboard(metaclass=DashboardType):
         self._load('search', items, app=app)
 
     def menu(self, *items, app=None):
-        if mobile(self.request):
-            self._load('search', items, app=app)
-        else:
-            self._load('menu', items, app=app)
+        self._load('menu', items, app=app)
 
     def top_menu(self, *items, modal=False, app=None):
         self._load('links', items, modal=modal, app=app)

@@ -51,6 +51,16 @@ class QuerySet(models.QuerySet):
         clone.metadata = dict(self.metadata)
         return clone
 
+    def clone(self):
+        qs = self._clone()
+        for k, v in self.metadata.items():
+            v = self.metadata[k]
+            if isinstance(v, list):
+                qs.metadata[k] = list(v)
+            elif isinstance(v, dict):
+                qs.metadata[k] = dict(v)
+        return qs
+
     def first(self):
         obj = super().first()
         if self.metadata['related_field'] and isinstance(obj, self.model):
@@ -418,7 +428,7 @@ class QuerySet(models.QuerySet):
             if form_cls is None:
                 raise BaseException('Action does not exist: {}'.format(form_name))
             if self.request is None or form_cls.check_fake_permission(
-                    request=self.request, instance=obj
+                    request=self.request, instance=obj, instantiator=self.instantiator
             ):
                 actions.append(form_cls.get_api_name())
         return actions
@@ -513,7 +523,7 @@ class QuerySet(models.QuerySet):
                             continue
                         form_cls = self.model.action_form_cls(form_name)
                         has_permission = self.request is None or form_cls.check_fake_permission(
-                            request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
+                            request=self.request, instance=self.model(), instantiator=self._hints.get('instance', self.instantiator)
                         )
                         if action_type == 'actions' or has_permission:
                             action_path = path
@@ -570,10 +580,23 @@ class QuerySet(models.QuerySet):
     def view(self):
         return self.all()
 
-    def display(self, *names, add_default=False):
-        if add_default:
-            names = tuple(self.model.default_list_fields()) + names
-        self.metadata['display'] = list(names)
+    def display(self, *names, add_default=False, before=None, after=None):
+        if before or after:
+            display = []
+            for name in (self.metadata['display'] or self.model.default_list_fields()):
+                if name == before:
+                    display.extend(names)
+                    display.append(name)
+                elif name == after:
+                    display.append(name)
+                    display.extend(names)
+                else:
+                    display.append(name)
+            self.metadata['display'] = display
+        else:
+            if add_default:
+                names = tuple(self.model.default_list_fields()) + names
+            self.metadata['display'] = list(names)
         return self
 
     def search(self, *names, q=None):

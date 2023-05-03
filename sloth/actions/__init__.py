@@ -530,7 +530,7 @@ class Action(metaclass=ActionMetaclass):
 
     def get_instances(self):
         if self.instance:
-            return [self.instance]
+            return type(self.instance).objects.filter(pk=self.instance.pk)
         elif self.instances is not None:
             return self.instances
         elif self.queryset is not None:

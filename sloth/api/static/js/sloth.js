@@ -58,6 +58,26 @@ jQuery.fn.extend({
         $('.alert-dismissible').hide();
         if(url.indexOf('?')>0) url = url+='&modal=1'
         else url+='?modal=1'
+
+        if(window['POPUP_STACK']==null){
+            window['POPUP_STACK'] = [];
+            $('#modal').on('hidden.bs.modal', function (e) {
+                if(window['POPUP_STACK'].length > 0){
+                    $('#modal .modal-body').replaceWith(window['POPUP_STACK'].pop().initialize());
+                    $('#modal').modal('show');
+                    $('#modal').find('.modal-body').css('visibility', 'visible');
+                }
+                else $('#modal').find('.modal-body').html('');
+            });
+            $('#modal').on('shown.bs.modal', function (e) {
+                $('#modal').responsive();
+            });
+        }
+        if($('#modal').find('.modal-body').html().trim()){
+            $('#modal').find('.modal-body').css('visibility', 'hidden');
+            $('#modal .modal-body .select2-hidden-accessible').select2("destroy");
+            window['POPUP_STACK'].push($('#modal').find('.modal-body').clone());
+        }
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
             if($('.modal-body input[type=text]:first').length > 0){
@@ -65,8 +85,8 @@ jQuery.fn.extend({
                     //$('.modal-body').find('input[type=text], input[type=number]').first().focus();
                 }, 200);
             }
-            $('#modal').on('shown.bs.modal', function (e) {$('#modal').responsive()});
             $('#modal').modal('show');
+            $('#modal').find('.modal-body').css('visibility', 'visible');
         });
     },
     reloadAreas(areas){
@@ -76,7 +96,6 @@ jQuery.fn.extend({
                     $.get($(item).data('path'), function(html){
                         if($(item).find('.bi-chevron-right').length){
                             html=html.replace('bi-chevron-down', 'bi-chevron-right');
-                            console.log(html);
                         }
                         $(item).html(html).initialize();
                     })

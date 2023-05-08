@@ -102,7 +102,7 @@
                             {% endif %}
                             {{ field }}
                             {% if field.help_text %}
-                        <span class="help"><i>{{ field.help_text|safe }}</i></span>
+                        <div class="help">{{ field.help_text|safe }}</div>
                             {% endif %}
                             {% if field.errors %}
                                 <div class="errors" role="alert">

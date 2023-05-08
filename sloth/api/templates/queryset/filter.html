@@ -50,8 +50,9 @@
     {% if metadata.type == "boolean" %}
     <select name="{{ metadata.key }}" class="{{ metadata.key }}-{{ data.uuid }}">
         <option selected></option>
-        <option {% if metadata.value == True %}selected{% endif %} value="1">Sim</option>
-        <option {% if metadata.value == False %}selected{% endif %} value="0">Não</option>
+        <option {% if metadata.value == 'true' %}selected{% endif %} value="true">Sim</option>
+        <option {% if metadata.value == 'false' %}selected{% endif %} value="false">Não</option>
+        <option {% if metadata.value == 'null' %}selected{% endif %} value="null">Indefinido</option>
     </select>
     <script>
            $('.{{ metadata.key }}-{{ data.uuid }}').select2({

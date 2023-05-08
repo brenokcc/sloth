@@ -9,6 +9,7 @@ from functools import lru_cache
 
 from django.apps import apps
 from django.contrib import messages
+from django.db import transaction
 from django.forms.models import ModelFormMetaclass
 from django.forms import *
 from .fields import *
@@ -78,6 +79,14 @@ class ActionMetaclass(ModelFormMetaclass):
         return cls
 
 
+class DecimalField(forms.DecimalField):
+    def clean(self, value):
+        if value:
+            value = value.replace('.', '').replace(',', '.')
+        value = super().clean(value)
+        return value
+
+
 class RegionalDateWidget(DateInput):
     input_type = 'date'
 
@@ -122,6 +131,9 @@ class Action(metaclass=ActionMetaclass):
             self.instance = kwargs.get('instance', None)
         else:
             self.instance = kwargs.pop('instance', None)
+
+        if self.instance is None and self.instances is not None and self.instances.exists():
+            self.instance = self.instances.first()
 
         if self.has_url_posted_data():
             for k in self.request.GET:
@@ -173,12 +185,6 @@ class Action(metaclass=ActionMetaclass):
                         field.widget = forms.HiddenInput()
                 else:
                     field.queryset = field.queryset.contextualize(self.request).apply_role_lookups(self.request.user)
-            if hasattr(field, 'picker'):
-                grouper = field.picker if isinstance(field.picker, str) else None
-                if isinstance(field, forms.ModelMultipleChoiceField):
-                    field.widget = inputs.MultiplePickInput(field.queryset, grouper=grouper)
-                else:
-                    field.widget = inputs.PickInput(field.queryset, grouper=grouper)
 
         self.response = {}
         self.fieldsets = {}
@@ -405,6 +411,13 @@ class Action(metaclass=ActionMetaclass):
         return to_api_params(self.fields.items())
 
     def save(self, *args, **kwargs):
+        if hasattr(self.instance, '__roles__'):
+            with transaction.atomic():
+                self._save()
+        else:
+            self._save()
+
+    def _save(self, *args, **kwargs):
 
         if hasattr(self.instance, 'pre_save'):
             self.instance.pre_save()
@@ -617,6 +630,24 @@ class Action(metaclass=ActionMetaclass):
             if getattr(field.widget, 'formatted', False):
                 classes.append('html-input')
 
+            if hasattr(field, 'picker'):
+                grouper = field.picker if isinstance(field.picker, str) else None
+                if isinstance(field, forms.ModelMultipleChoiceField):
+                    field.widget = inputs.MultiplePickInput(field.queryset, grouper=grouper)
+                else:
+                    field.widget = inputs.PickInput(field.queryset, grouper=grouper)
+
+            if getattr(field, 'addable', False):
+                has_permission = field.queryset.model().has_add_permission(self.request.user)
+                has_permission = has_permission or field.queryset.model().has_permission(self.request.user)
+                help_text = '<div>{}</div>'.format(field.help_text) if field.help_text else ''
+                link = '<a style="text-decoration:none" class="popup" href="/app/{}/{}/add/">Adicionar</a>'.format(
+                    field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
+                )
+                help_text = '<div style="float:right">{}</div>'.format(link) + help_text
+                if has_permission:
+                    field.help_text = help_text
+
             field.widget.attrs['class'] = ' '.join(classes)
         return mark_safe(
             render_to_string(
@@ -719,9 +750,6 @@ class Action(metaclass=ActionMetaclass):
         if self.asynchronous:
             return False
         self.check_ouput(self.view())
-        for field in self.fields.values():
-            if isinstance(field, forms.DecimalField):
-                field.clean = lambda v: v.replace('.', '').replace(',', '.')
         self.load_fieldsets()
         if 'action_choices' in self.request.GET:
             raise JsonReadyResponseException(
@@ -736,6 +764,8 @@ class Action(metaclass=ActionMetaclass):
                 value = True
             if value == 'false':
                 value = False
+            if value == 'unknown':
+                value = None
             getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
         return super().is_valid()
@@ -785,8 +815,9 @@ class Action(metaclass=ActionMetaclass):
         if self.instances:
             for instance in self.instances:
                 self.instance = instance
-                self._post_clean()
-                self.save()
+                if self.has_permission(self.request.user):
+                    self._post_clean()
+                    self.save()
         else:
             self.save()
         self.message()

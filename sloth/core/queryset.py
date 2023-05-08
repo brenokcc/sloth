@@ -61,6 +61,10 @@ class QuerySet(models.QuerySet):
                 qs.metadata[k] = dict(v)
         return qs
 
+    def uuid(self, value):
+        self.metadata['uuid'] = value
+        return self
+
     def first(self):
         obj = super().first()
         if self.metadata['related_field'] and isinstance(obj, self.model):
@@ -122,8 +126,11 @@ class QuerySet(models.QuerySet):
             for name, scopes in self.metadata['lookups']:
                 if scopes:
                     for scope_value_attr, scope_key in scopes.items():
-                        for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
-                            lookups.append(Q(**{scope_value_attr: scope_value}))
+                        if scope_key == 'username':
+                            lookups.append(Q(**{scope_value_attr: user.username}))
+                        else:
+                            for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                                lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):
                         return self
@@ -223,7 +230,7 @@ class QuerySet(models.QuerySet):
             if as_form:
                 filters[key].update(formfield=formfield)
             if filter_type == 'boolean':
-                filters[key]['value'] = int(filters[key]['value']) if filters[key]['value'] else None
+                filters[key]['value'] = filters[key]['value'] if filters[key]['value'] else None
 
         ordering = []
         for lookup in self.metadata['ordering']:
@@ -295,21 +302,24 @@ class QuerySet(models.QuerySet):
     # choices function
 
     def choices(self, request):
+        items = []
         filter_lookup = request.GET['choices']
         q = request.GET.get('term')
         field = self.model.get_field(filter_lookup)
         values = self.apply_role_lookups(request.user).values_list(
             filter_lookup, flat=True
         ).order_by(filter_lookup).order_by(filter_lookup).distinct()
+        if field.null:
+            items.append(dict(id='null', text='Indefinido'))
         if field.related_model:
             qs = field.related_model.objects.filter(id__in=values)
             qs = qs.search(q=q) if q else qs
             qs = qs.distinct()
             total = values.count()
-            items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
+            items.extend([dict(id=value.id, text=str(value)) for value in qs[0:25]])
         else:
             total = values.count()
-            items = [dict(id=value, text=str(value)) for value in values]
+            items.extend([dict(id=value, text=str(value)) for value in values])
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items
@@ -696,43 +706,51 @@ class QuerySet(models.QuerySet):
     # action functions
 
     def actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['actions'] = qs.metadata['actions'].copy()
         if clear:
-            self.metadata['actions'].clear()
+            qs.metadata['actions'].clear()
         for name in names:
             if name == 'view':
-                self.metadata['view'].append(dict(name='self', modal=False, icon='search'))
-            elif to_snake_case(name) not in self.metadata['actions']:
-                self.metadata['actions'].append(to_snake_case(name))
-        return self
+                qs.metadata['view'] = self.metadata['view'].copy()
+                qs.metadata['view'].append(dict(name='self', modal=False, icon='search'))
+            elif to_snake_case(name) not in qs.metadata['actions']:
+                qs.metadata['actions'].append(to_snake_case(name))
+        return qs
 
     def global_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['global_actions'] = qs.metadata['global_actions'].copy()
         if clear:
-            self.metadata['global_actions'].clear()
-        self.metadata['global_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['global_actions']]
+            qs.metadata['global_actions'].clear()
+        qs.metadata['global_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['global_actions']]
         )
-        return self
+        return qs
 
     def batch_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['batch_actions'] = qs.metadata['batch_actions'].copy()
         if clear:
-            self.metadata['batch_actions'].clear()
-        self.metadata['batch_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['batch_actions']]
+            qs.metadata['batch_actions'].clear()
+        qs.metadata['batch_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['batch_actions']]
         )
-        return self
+        return qs
 
     def inline_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['inline_actions'] = qs.metadata['inline_actions'].copy()
         if clear:
-            self.metadata['inline_actions'].clear()
-        self.metadata['inline_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['inline_actions']]
+            qs.metadata['inline_actions'].clear()
+        q.metadata['inline_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['inline_actions']]
         )
-        return self
+        return qs
 
     def default_actions(self):
         if self.metadata['attr'] is None:
-            self.actions('view', 'edit', 'delete')
-            self.global_actions('add')
+            return self.actions('view', 'edit', 'delete').global_actions('add')
         return self
 
     # search and pagination functions
@@ -857,7 +875,15 @@ class QuerySet(models.QuerySet):
                     if item['type'] in ('date', 'datetime'):
                         value = datetime.datetime.strptime(value, '%d/%m/%Y' if '/' in value else '%Y-%m-%d')
                     if item['type'] == 'boolean':
-                        value = bool(int(value)) if value.isdigit() else value == 'true'
+                        if value == 'true':
+                            value = True
+                        elif value == 'false':
+                            value = False
+                        elif value == 'null':
+                            value = None
+                    if item['type'] == 'choices':
+                        if value == 'null':
+                            value = None
                     if item['key'] != request.GET.get('choices'):
                         qs = qs.filter(**{item['key']: value})
         if 'q' in request.GET and request.GET['q']:

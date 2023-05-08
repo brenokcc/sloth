@@ -25,7 +25,7 @@
         <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">
             <ul class="nav nav-pills nav-fill">
                 {% for subset in data.attach.values %}
-              <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">
+              <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %} {% if request|mobile %}mobile{% endif %}">
                 <a class="nav-link" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
@@ -123,6 +123,10 @@
                     });
                 }
                 initializeNode{{ data.uuid }}($('#queryset-{{ data.uuid }}'));
+                $('#queryset-global-actions-{{ data.uuid }}').find('a').click(function(){
+                    var params = $('#form-{{ data.uuid }}').serialize();
+                    this.href = this.href.split('?')[0] + '?' + params + '&global_action=1';
+                });
             </script>
         {% endif %}
 

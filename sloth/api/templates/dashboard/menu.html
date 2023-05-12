@@ -1,5 +1,5 @@
 {% load tags %}
-{% if data.menu %}
+{% if menu %}
 <style>
   .side-menu{
     width:0px;
@@ -74,17 +74,7 @@
     {% endif %}
     <i class="bi bi-x"></i>
     <ul class="open">
-        {% for item in data.menu %}
-            <li>
-                <a href="{{ item.url }}">
-                    <i class="bi bi-{{ item.icon|default:'record-circle' }} menu-item-icon"></i>
-                    &nbsp;&nbsp;&nbsp;{{ item.label }}
-                    {% if item.subitems %}
-                        <i class="bi bi-chevron-down chevron"></i>
-                    {% endif %}
-                </a>
-            </li>
-        {% endfor %}
+        {{ menu }}
     </ul>
 </div>
 <script>

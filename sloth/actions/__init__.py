@@ -199,6 +199,9 @@ class Action(metaclass=ActionMetaclass):
                 widget=forms.HiddenInput()
             )
 
+    def render(self, template_name, **context):
+        return HttpResponse(render_to_string([template_name], context, request=self.request))
+
     def get_verbose_name(self):
         return self.get_metadata().get('name')
 

@@ -282,6 +282,6 @@ def dispatcher(request, path):
                 if isinstance(obj, QuerySet):
                     queryset = obj
                     if 'global_action' in request.GET:
-                        queryset = obj.process_request(request).apply_role_lookups(request.user)
+                        queryset = obj.process_request(request, uuid=token).apply_role_lookups(request.user)
         allowed_attrs = obj.get_allowed_attrs()
     return obj.contextualize(request).apply_role_lookups(request.user)

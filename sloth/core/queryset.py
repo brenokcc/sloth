@@ -194,6 +194,8 @@ class QuerySet(models.QuerySet):
             list_filter.append(self.metadata['calendar'])
         for lookup in list_filter:
             field = self.model.get_field(lookup)
+            if field is None:
+                raise Exception('Model {} can not have a filter named {}'.format(self.model, lookup))
             formfield = field.formfield()
             filter_type = 'choices'
             if isinstance(formfield, actions.BooleanField):
@@ -519,7 +521,7 @@ class QuerySet(models.QuerySet):
                     else:
                         view_suffix = '{}/'.format(view['name'])
                         view_name = pretty(self.model.get_attr_metadata(view['name'])[0])
-                    data['actions']['instance'].append(
+                    data['actions']['instance'].insert(0,
                         dict(
                             type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
                             method='get', icon=view['icon'], style='primary', ajax=False,
@@ -842,11 +844,11 @@ class QuerySet(models.QuerySet):
             return self.apply_role_lookups(request.user)
         return self
 
-    def process_request(self, request):
+    def process_request(self, request, uuid=None):
         from sloth.core.valueset import ValueSet
         page = 1
         attr_name = request.GET.get('subset', 'all')
-        self.metadata['uuid'] = request.GET.get('uuid')
+        self.metadata['uuid'] = uuid or request.GET.get('uuid')
         if attr_name == 'all':
             attach = self
         else:

@@ -22,7 +22,7 @@ from ..actions import Action, ACTIONS, EXPOSE
 from .templatetags.tags import is_ajax
 from ..core.queryset import QuerySet
 from sloth.api.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
-from .dashboard import Dashboards
+from .dashboard import Dashboards, Dashboard
 from .. import initialize
 
 
@@ -225,6 +225,8 @@ def dispatcher(request, path):
             print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()
         if token.isdigit():
+            if isinstance(obj, Dashboard):
+                obj = obj.view()
             extra_attrs = obj.metadata['actions'] + obj.metadata['inline_actions'] + ['view' if view['name'] == 'self' else view['name'] for view in obj.metadata['view']]
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk=token).first()
             if obj:
@@ -233,6 +235,8 @@ def dispatcher(request, path):
             else:
                 raise PermissionDenied()
         elif '-' in token:
+            if isinstance(obj, Dashboard):
+                obj = obj.view()
             extra_attrs = obj.metadata['batch_actions']
             obj = obj.contextualize(request).apply_role_lookups(request.user).filter(pk__in=token.split('-'))
             instance = None
@@ -277,5 +281,7 @@ def dispatcher(request, path):
                     instance = instantiator
                 if isinstance(obj, QuerySet):
                     queryset = obj
+                    if 'global_action' in request.GET:
+                        queryset = obj.process_request(request, uuid=token).apply_role_lookups(request.user)
         allowed_attrs = obj.get_allowed_attrs()
     return obj.contextualize(request).apply_role_lookups(request.user)

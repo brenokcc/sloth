@@ -55,9 +55,8 @@
 
   </head>
   <body id="{{ request.path|url_slug }}">
-
+    {% include "dashboard/menu.html" with menu=dashboard.render_menu %}
     {% block header %}{% include "dashboard/header.html" %}{% endblock %}
-    {% include "dashboard/menu.html" with data=dashboard.data %}
     {% include "dashboard/links.html" with data=dashboard.data %}
 
       <main>

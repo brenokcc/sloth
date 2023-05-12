@@ -134,14 +134,14 @@ class Dashboard(metaclass=DashboardType):
                             for item in self.data[key]:
                                 add_item = add_item and not item['url'] == url
                             if add_item:
-                                self.data[key].append(
-                                    dict(
-                                        url=url, label=label, modal=modal or key == 'plus',
-                                        count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
-                                        icon=getattr(cls.metaclass(), 'icon', None),
-                                        app=app
-                                    )
+                                new_item = dict(
+                                    url=url, label=label, modal=modal or key == 'plus',
+                                    count=cls.objects.all().apply_role_lookups(self.request.user).count() if count else None,
+                                    icon=getattr(cls.metaclass(), 'icon', None),
+                                    app=app
                                 )
+                                self.data[key].append(new_item)
+                                return new_item
 
     def _item(self, key, url, label, icon, count=None, app=None):
         self.data[key].append(
@@ -157,11 +157,10 @@ class Dashboard(metaclass=DashboardType):
     def search_menu(self, *items, app=None):
         self._load('search', items, app=app)
 
-    def menu(self, *items, app=None):
-        if mobile(self.request):
-            self._load('search', items, app=app)
-        else:
-            self._load('menu', items, app=app)
+    def menu(self, *items, app=None, hierarchy=None, icon=None):
+        item = self._load('menu', items, app=app)
+        if item:
+            item.update(hierarchy=hierarchy, menu_icon=icon)
 
     def top_menu(self, *items, modal=False, app=None):
         self._load('links', items, modal=modal, app=app)
@@ -344,3 +343,52 @@ class Dashboards:
                 if add_item:
                     item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[], app=None)
                     self.data['search'].append(item)
+
+    def render_menu(self):
+        icons = {}
+        default_icon = 'record2'
+        def create_submenu(hierarchy, item, level=0):
+            tokens = item['hierarchy'].split('::')
+            if len(tokens) == 1:
+                if level == 0:
+                    icons[tokens[0]] = item['menu_icon'] or item['icon'] or default_icon
+                if tokens[0] not in hierarchy:
+                    hierarchy[tokens[0]] = {}
+                hierarchy[tokens[0]][item['label']] = item
+            else:
+                if level == 0:
+                    icons[tokens[0]] = item['menu_icon'] or default_icon
+                if tokens[0] in hierarchy:
+                    submenu = hierarchy[tokens[0]]
+                else:
+                    submenu = {}
+                    hierarchy[tokens[0]] = submenu
+                item['hierarchy'] = '::'.join(tokens[1:])
+                create_submenu(submenu, item, level+1)
+
+        menu = {}
+        for item in self.data['menu']:
+            if item['hierarchy']:
+                create_submenu(menu, item)
+            else:
+                menu[item['label']] = item
+                icons[item['label']] = item['icon'] or 'record-circle'
+
+        html = []
+        def append_html(label, item, level=0):
+            ident = '\t' * level
+            nbsp = '&nbsp;' * level * 3
+            html.append('{}<li>'.format(ident))
+            icon = '<i class="bi bi-{} menu-item-icon"></i> '.format(icons[label]) if level == 0 else ''
+            if 'url' in item:
+                html.append('{}\t<a href="{}">{}{}{}</a>'.format(ident, item['url'], icon, nbsp, item['label']))
+            else:
+                html.append('{}\t<a href="javascript:">{}{}{}<i class="bi bi-chevron-down chevron"></i></a>'.format(ident, icon, nbsp, label))
+                html.append('{}<ul>'.format(ident))
+                for sublabel, subitem in item.items():
+                    append_html(sublabel, subitem, level+1)
+                html.append('{}</ul>'.format(ident))
+            html.append('{}</li>'.format(ident))
+        for label, item in menu.items():
+            append_html(label, item, 0)
+        return mark_safe('\n'.join(html))

@@ -176,11 +176,13 @@ class TextField(TextField):
 class ForeignKey(ForeignKey):
     def __init__(self, to, on_delete=CASCADE, **kwargs):
         self.picker = kwargs.pop('picker', None)
+        self.addable = kwargs.pop('addable', False)
         self.username_lookup = kwargs.pop('username_lookup', None)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
+        field.addable = self.addable
         if self.picker:
             field.picker = self.picker
         if self.username_lookup:
@@ -202,10 +204,12 @@ class ManyToManyField(ManyToManyField):
         else:
             self.queryset = None
         self.picker = kwargs.pop('picker', None)
+        self.addable = kwargs.pop('addable', False)
         super().__init__(to, **kwargs)
 
     def formfield(self, **kwargs):
         field = super().formfield(**kwargs)
+        field.addable = self.addable
         if self.picker:
             field.picker = self.picker
         if self.queryset:
@@ -240,6 +244,11 @@ class DecimalField(models.DecimalField):
         decimal_places = kwargs.pop('decimal_places', 2)
         max_digits = kwargs.pop('max_digits', 9)
         super().__init__(*args, decimal_places=decimal_places, max_digits=max_digits, **kwargs)
+
+    def formfield(self, **kwargs):
+        from ...actions import DecimalField
+        kwargs.update(form_class=DecimalField)
+        return super().formfield(**kwargs)
 
 
 class Decimal3Field(models.DecimalField):

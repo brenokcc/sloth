@@ -25,7 +25,7 @@
         <div class="tabs-container mb-2" id="tabs-container-{{ data.uuid }}">
             <ul class="nav nav-pills nav-fill">
                 {% for subset in data.attach.values %}
-              <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %}">
+              <li class="nav-item {{ subset.key }} {% if subset.active %}selected{% endif %} {% if request|mobile %}mobile{% endif %}">
                 <a class="nav-link" aria-current="page" href="javascript:" onclick="$('#pagination-{{ data.uuid }}').val(1);reload{{ data.uuid }}('{{ subset.key }}')">
                     <div class="spinner-border spinner-border-sm d-none" role="status">
                       <span class="visually-hidden">Loading...</span>
@@ -44,6 +44,9 @@
         {% endfor %}
 
         {% if not print %}
+            {% if data.metadata.tree %}
+                {% include "queryset/tree.html" with data=data %}
+            {% endif %}
             {% include "queryset/filters.html" %}
             <div class="clearfix"></div>
             <script>
@@ -86,6 +89,44 @@
                         $('#collapsed-{{ data.uuid }}').val(1);
                     }
                 }
+                function treeNode{{ data.uuid }}(id){
+                    $(document.body).addClass('page-loading');
+                    $('#queryset-{{ data.uuid }}').find('input[name=tree-node]').val(id);
+                    $.ajax({
+                        url:'{{ data.path|safe }}?{{ request|post_querystring }}',
+                        data: $('#form-{{ data.uuid }}').serialize(),
+                        success:function( html ) {
+                            $('#queryset-data-{{ data.uuid }}').html($(html).find('#queryset-data-{{ data.uuid }}').html()).initialize();
+                            $(document.body).removeClass('page-loading');
+                        }
+                    });
+                }
+                function initializeNode{{ data.uuid }}(element){
+                    element.find('.tree-node').unbind().removeAttr('onclick').click(function(){
+                        var ul = $(this).parent();
+
+                        $('#queryset-{{ data.uuid }}').find('.tree-filter .tree-node').removeClass('text-primary');
+                        $.ajax({
+                            url:'{{ data.path|safe }}?uuid={{ data.uuid }}&tree-nodes='+this.id+'&{{ request|post_querystring }}',
+                            success:function( data ) {
+                                var lis = data.items.map(function(item){return '<li><i class="bi bi-folder2"></i><span class="tree-node" id="'+item.id+'"> '+item.text+'</span></li>'}).join('');
+
+                                $('<ul>'+lis+'</ul>').hide().appendTo(ul).slideDown("slow");
+                                initializeNode{{ data.uuid }}(ul);
+                            }
+                        });
+                        $(ul).parent().children('.opened').children('ul').slideUp( "slow");
+                        ul.addClass('opened');
+                        $(this).addClass('text-primary');
+                        treeNode{{ data.uuid }}(this.id);
+
+                    });
+                }
+                initializeNode{{ data.uuid }}($('#queryset-{{ data.uuid }}'));
+                $('#queryset-global-actions-{{ data.uuid }}').find('a').click(function(){
+                    var params = $('#form-{{ data.uuid }}').serialize();
+                    this.href = this.href.split('?')[0] + '?' + params + '&global_action=1';
+                });
             </script>
         {% endif %}
 

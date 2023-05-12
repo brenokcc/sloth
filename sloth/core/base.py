@@ -2,7 +2,7 @@ from functools import lru_cache
 import types
 from django.apps import apps
 from django.conf import settings
-from django.core.exceptions import FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.template.loader import render_to_string
 
 from sloth.actions import Action, ACTIONS
@@ -127,8 +127,6 @@ class ModelMixin(object):
                 lookups.append(role['username'])
                 if role['email']:
                     lookups.append(role['email'])
-                if model.__name__.lower() not in role['scopes']:
-                    role['scopes']['self'] = 'id'
                 lookups.extend(role['scopes'].values())
                 if role['name'].islower():
                     lookups.append(role['name'])
@@ -137,11 +135,14 @@ class ModelMixin(object):
                     username = value[role['username']]
                     email = value[role['email']] if role['email'] else None
                     if username:
+                        scope_name = value[role['name']] if role['name'].islower() else role['name']
+                        tuples.add((username, email, scope_name, None, None, None))
                         for scope_key, lookup in role['scopes'].items():
-                            scope_name = value[role['name']] if role['name'].islower() else role['name']
-                            scope_type = model if lookup in ('id', 'pk') else model.get_field(lookup).related_model
+                            scope_type = model if lookup in ('pk', 'id', 'self') else model.get_field(lookup).related_model
                             scope_value = value[lookup]
                             tuples.add((username, email, scope_name, scope_type, scope_key, scope_value))
+                    # else:
+                    #     raise ValidationError('O "login" do usuário ({}) deve ser informado.'.format(role['username'].upper().replace('__', '->')))
         # print('----- {} -----'.format(self))
         # for x in tuples: print(x)
         # print('\n\n')
@@ -152,9 +153,8 @@ class ModelMixin(object):
         role = apps.get_model('api', 'Role')
         role_tuples2 = self.get_role_tuples()
         for username, email, scope_name, scope_type, scope_key, scope_value in role_tuples2:
-            if scope_value:
+            if username:
                 user_id = User.objects.filter(username=username).values_list('id', flat=True).first()
-                scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
                 if user_id is None:
                     user = User.objects.create(username=username)
                     if email:
@@ -165,7 +165,9 @@ class ModelMixin(object):
                     user_id = user.id
                 role.objects.get_or_create(
                     user_id=user_id, name=scope_name,
-                    scope_type=scope_type,
+                    scope_type='{}.{}'.format(
+                        scope_type.metaclass().app_label, scope_type.metaclass().model_name
+                    ) if scope_type else None,
                     scope_key=scope_key, scope_value=scope_value
                 )
         deleted_role_tuples = role_tuples - role_tuples2
@@ -225,7 +227,9 @@ class ModelMixin(object):
                     submit_label = 'Editar'
                     icon = 'pencil'
                     style = 'primary'
-                    if hasattr(cls.metaclass(), 'fieldsets'):
+                    if hasattr(cls.metaclass(), 'edit_fieldsets'):
+                        fieldsets = cls.metaclass().edit_fieldsets
+                    elif hasattr(cls.metaclass(), 'fieldsets'):
                         fieldsets = cls.metaclass().fieldsets
 
                 def has_permission(self, user):

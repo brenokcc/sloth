@@ -6,7 +6,7 @@
 </style>
 
         <div class="search-and-filters" id="search-and-filters-{{ data.uuid }}">
-            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}" style="{% if data.metadata.collapsed %}display:none{% endif %}" class="{% if data.metadata.search or data.metadata.filters %}with-filter{% endif %}">
+            <form method="get" id="form-{{ data.uuid }}" action="{{ data.path }}" style="{% if data.metadata.collapsed %}display:none{% endif %}" class="{% if data.metadata.search or data.metadata.filters %}{% if data.metadata.tree is None %}with-filter{% endif %}{% endif %}">
                 <input type="hidden" name="uuid" value="{{ data.uuid }}">
                 <input type="hidden" name="is_admin" value="{% if data.metadata.is_admin %}1{% endif %}">
                 <input type="hidden" name="collapsed" value="{% if data.metadata.collapsed %}1{% endif %}" id="collapsed-{{ data.uuid }}">
@@ -14,12 +14,14 @@
                 <input type="hidden" name="compact" value="{% if compact or request.GET.compact or request|mobile %}1{%endif%}">
                 <input type="hidden" name="subset" value="{{ data.metadata.subset }}" id="subset-{{ data.uuid }}">
                 <input type="hidden" name="selected-date" value="" id="selected-date-{{ data.uuid }}">
+                <input type="hidden" name="tree-node" value="" id="tree-node-{{ data.uuid }}">
                 <!--{% for k, v in request.POST.items %}
                     {% if k != 'csrfmiddlewaretoken' %}
                         <input type="hidden" name="post__{{ k }}" value="{{ v }}">
                     {% endif %}
                 {% endfor %}-->
                 {% if data.metadata.search or data.metadata.filters %}
+                    {% if data.metadata.tree is None %}
                     <div class="filters" id="filters-{{ data.uuid }}">
                         {% if data.metadata.search %}
                             <div class="filter {% if request|mobile %}mobile{% endif %}">
@@ -40,6 +42,7 @@
                             </button>
                         </div>
                     </div>
+                    {% endif %}
                 {% endif %}
             </form>
         </div>

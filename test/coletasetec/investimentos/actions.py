@@ -552,7 +552,7 @@ class ExportarResultadoPorCategoria(actions.Action):
         if instituicao:
             instituicoes = instituicoes.filter(pk=instituicao.pk)
         for inst in instituicoes:
-            quest = self.instance.solicitacao_set.get(instituicao=i).questionariofinal_set.first()
+            quest = self.instance.solicitacao_set.get(instituicao=inst).questionariofinal_set.first()
             if quest:
                 fechamento.append([inst.sigla, 'Prioridade 01', quest.prioridade_1.descricao if quest.prioridade_1 else '', quest.prioridade_1_id or ''])
                 fechamento.append([inst.sigla, 'Prioridade 02', quest.prioridade_2.descricao if quest.prioridade_2 else '', quest.prioridade_2_id or ''])

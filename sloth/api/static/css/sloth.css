@@ -204,11 +204,17 @@
 .search-and-filters .submit-panel{
     padding-top: 24px;
 }
+.queryset .nav-item.mobile{
+   width: 100%;
+}
+.queryset .nav-item:not(.mobile){
+    border-bottom: solid 3px #EEE;
+}
+.queryset .nav-item.mobile.selected{
+   border: solid 1px #1351b4;
+}
 .queryset .nav-item.selected{
    border-bottom-color: #1351b4;
-}
-.queryset .nav-item{
-    border-bottom: solid 3px #EEE;
 }
 .queryset .search-and-filters form{
     width: 100%;
@@ -247,10 +253,10 @@ main > .row > .col{
     padding:0px;
 }
 
-.select2-container--default .select2-selection--single{
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple{
     height: 38px;
     padding-top: 3px;
-
     border-color: #ced4da !important;
 }
 .select2-container--open {
@@ -303,6 +309,9 @@ textarea{
 }
 .form-field label.required{
     font-weight: bold;
+}
+.form-field help{
+    font-
 }
 .form-submit{
     float: right;

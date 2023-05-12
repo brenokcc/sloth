@@ -272,7 +272,7 @@ class Logout(actions.ActionView):
         self.redirect('/')
 
     def has_permission(self, user):
-        return user.is_authenticated
+        return True
 
 
 class Activate2fAuthentication(actions.Action):

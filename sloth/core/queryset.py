@@ -38,7 +38,7 @@ class QuerySet(models.QuerySet):
             page=1, limit=20, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, related_field=None, scrollable=False
+            verbose_name=None, related_field=None, scrollable=False, tree=None
         )
         if self.model and getattr(self.model.metaclass(), 'autouser', False):
             self.lookups(autouser='pk')
@@ -50,6 +50,20 @@ class QuerySet(models.QuerySet):
         clone.instantiator = self.instantiator
         clone.metadata = dict(self.metadata)
         return clone
+
+    def clone(self):
+        qs = self._clone()
+        for k, v in self.metadata.items():
+            v = self.metadata[k]
+            if isinstance(v, list):
+                qs.metadata[k] = list(v)
+            elif isinstance(v, dict):
+                qs.metadata[k] = dict(v)
+        return qs
+
+    def uuid(self, value):
+        self.metadata['uuid'] = value
+        return self
 
     def first(self):
         obj = super().first()
@@ -112,8 +126,11 @@ class QuerySet(models.QuerySet):
             for name, scopes in self.metadata['lookups']:
                 if scopes:
                     for scope_value_attr, scope_key in scopes.items():
-                        for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
-                            lookups.append(Q(**{scope_value_attr: scope_value}))
+                        if scope_key == 'username':
+                            lookups.append(Q(**{scope_value_attr: user.username}))
+                        else:
+                            for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                                lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):
                         return self
@@ -177,6 +194,8 @@ class QuerySet(models.QuerySet):
             list_filter.append(self.metadata['calendar'])
         for lookup in list_filter:
             field = self.model.get_field(lookup)
+            if field is None:
+                raise Exception('Model {} can not have a filter named {}'.format(self.model, lookup))
             formfield = field.formfield()
             filter_type = 'choices'
             if isinstance(formfield, actions.BooleanField):
@@ -213,7 +232,7 @@ class QuerySet(models.QuerySet):
             if as_form:
                 filters[key].update(formfield=formfield)
             if filter_type == 'boolean':
-                filters[key]['value'] = int(filters[key]['value']) if filters[key]['value'] else None
+                filters[key]['value'] = filters[key]['value'] if filters[key]['value'] else None
 
         ordering = []
         for lookup in self.metadata['ordering']:
@@ -274,24 +293,35 @@ class QuerySet(models.QuerySet):
         self.metadata['attach'] = attaches
         return attaches
 
+    # tree function
+
+    def tree_nodes(self):
+        qs = self.model.objects.filter(**{self.metadata['tree']: self.request.GET['tree-nodes']})
+        qs.metadata = self.metadata
+        qs.request = self.request
+        return dict(items=[dict(id=value.id, text=str(value)) for value in qs])
+
     # choices function
 
     def choices(self, request):
+        items = []
         filter_lookup = request.GET['choices']
         q = request.GET.get('term')
         field = self.model.get_field(filter_lookup)
         values = self.apply_role_lookups(request.user).values_list(
             filter_lookup, flat=True
         ).order_by(filter_lookup).order_by(filter_lookup).distinct()
+        if field.null:
+            items.append(dict(id='null', text='Indefinido'))
         if field.related_model:
             qs = field.related_model.objects.filter(id__in=values)
             qs = qs.search(q=q) if q else qs
             qs = qs.distinct()
             total = values.count()
-            items = [dict(id=value.id, text=str(value)) for value in qs[0:25]]
+            items.extend([dict(id=value.id, text=str(value)) for value in qs[0:25]])
         else:
             total = values.count()
-            items = [dict(id=value, text=str(value)) for value in values]
+            items.extend([dict(id=value, text=str(value)) for value in values])
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items
@@ -303,7 +333,12 @@ class QuerySet(models.QuerySet):
         self.metadata['calendar'] = name
         return self
 
+    def tree(self, name):
+        self.metadata['tree'] = name
+        return self
+
     def to_calendar(self):
+        i = 0
         days = {}
         attr_name = self.metadata['calendar']
         start = self.request.GET.get('{}__gte'.format(attr_name))
@@ -405,7 +440,7 @@ class QuerySet(models.QuerySet):
             if form_cls is None:
                 raise BaseException('Action does not exist: {}'.format(form_name))
             if self.request is None or form_cls.check_fake_permission(
-                    request=self.request, instance=obj
+                    request=self.request, instance=obj, instantiator=self.instantiator
             ):
                 actions.append(form_cls.get_api_name())
         return actions
@@ -463,6 +498,8 @@ class QuerySet(models.QuerySet):
                 )
                 if calendar:
                     data['metadata']['calendar'] = calendar
+                if self.metadata['tree']:
+                    data['metadata']['tree'] = self.metadata['tree']
 
                 if self.metadata['aggregations']:
                     aggregations = {}
@@ -484,7 +521,7 @@ class QuerySet(models.QuerySet):
                     else:
                         view_suffix = '{}/'.format(view['name'])
                         view_name = pretty(self.model.get_attr_metadata(view['name'])[0])
-                    data['actions']['instance'].append(
+                    data['actions']['instance'].insert(0,
                         dict(
                             type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
                             method='get', icon=view['icon'], style='primary', ajax=False,
@@ -498,7 +535,7 @@ class QuerySet(models.QuerySet):
                             continue
                         form_cls = self.model.action_form_cls(form_name)
                         has_permission = self.request is None or form_cls.check_fake_permission(
-                            request=self.request, instance=self.model(), instantiator=self._hints.get('instance')
+                            request=self.request, instance=self.model(), instantiator=self._hints.get('instance', self.instantiator)
                         )
                         if action_type == 'actions' or has_permission:
                             action_path = path
@@ -555,10 +592,23 @@ class QuerySet(models.QuerySet):
     def view(self):
         return self.all()
 
-    def display(self, *names, add_default=False):
-        if add_default:
-            names = tuple(self.model.default_list_fields()) + names
-        self.metadata['display'] = list(names)
+    def display(self, *names, add_default=False, before=None, after=None):
+        if before or after:
+            display = []
+            for name in (self.metadata['display'] or self.model.default_list_fields()):
+                if name == before:
+                    display.extend(names)
+                    display.append(name)
+                elif name == after:
+                    display.append(name)
+                    display.extend(names)
+                else:
+                    display.append(name)
+            self.metadata['display'] = display
+        else:
+            if add_default:
+                names = tuple(self.model.default_list_fields()) + names
+            self.metadata['display'] = list(names)
         return self
 
     def search(self, *names, q=None):
@@ -658,43 +708,51 @@ class QuerySet(models.QuerySet):
     # action functions
 
     def actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['actions'] = qs.metadata['actions'].copy()
         if clear:
-            self.metadata['actions'].clear()
+            qs.metadata['actions'].clear()
         for name in names:
             if name == 'view':
-                self.metadata['view'].append(dict(name='self', modal=False, icon='search'))
-            elif to_snake_case(name) not in self.metadata['actions']:
-                self.metadata['actions'].append(to_snake_case(name))
-        return self
+                qs.metadata['view'] = self.metadata['view'].copy()
+                qs.metadata['view'].append(dict(name='self', modal=False, icon='search'))
+            elif to_snake_case(name) not in qs.metadata['actions']:
+                qs.metadata['actions'].append(to_snake_case(name))
+        return qs
 
     def global_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['global_actions'] = qs.metadata['global_actions'].copy()
         if clear:
-            self.metadata['global_actions'].clear()
-        self.metadata['global_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['global_actions']]
+            qs.metadata['global_actions'].clear()
+        qs.metadata['global_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['global_actions']]
         )
-        return self
+        return qs
 
     def batch_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['batch_actions'] = qs.metadata['batch_actions'].copy()
         if clear:
-            self.metadata['batch_actions'].clear()
-        self.metadata['batch_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['batch_actions']]
+            qs.metadata['batch_actions'].clear()
+        qs.metadata['batch_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['batch_actions']]
         )
-        return self
+        return qs
 
     def inline_actions(self, *names, clear=False):
+        qs = self._clone()
+        qs.metadata['inline_actions'] = qs.metadata['inline_actions'].copy()
         if clear:
-            self.metadata['inline_actions'].clear()
-        self.metadata['inline_actions'].extend(
-            [to_snake_case(name) for name in names if to_snake_case(name) not in self.metadata['inline_actions']]
+            qs.metadata['inline_actions'].clear()
+        q.metadata['inline_actions'].extend(
+            [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['inline_actions']]
         )
-        return self
+        return qs
 
     def default_actions(self):
         if self.metadata['attr'] is None:
-            self.actions('view', 'edit', 'delete')
-            self.global_actions('add')
+            return self.actions('view', 'edit', 'delete').global_actions('add')
         return self
 
     # search and pagination functions
@@ -712,6 +770,9 @@ class QuerySet(models.QuerySet):
 
     def paginate(self):
         qs = self
+        if self.metadata['tree']:
+            if not [child for child in qs.query.where.children if hasattr(child, 'lhs') and child.lhs.target.name == self.metadata['tree']]:
+                qs = qs.filter(**{'{}__isnull'.format(self.metadata['tree']): True})
         if self.metadata['calendar'] and 'selected-date' in self.request.GET:
             selected_date = self.request.GET['selected-date']
             if selected_date:
@@ -770,6 +831,10 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)
                 )
+            if 'tree-nodes' in request.GET:
+                raise JsonReadyResponseException(
+                    self.process_request(request).tree_nodes()
+                )
             component = self.process_request(request).apply_role_lookups(request.user)
             if request.path.startswith('/app/'):
                 raise HtmlReadyResponseException(component.html())
@@ -779,11 +844,11 @@ class QuerySet(models.QuerySet):
             return self.apply_role_lookups(request.user)
         return self
 
-    def process_request(self, request):
+    def process_request(self, request, uuid=None):
         from sloth.core.valueset import ValueSet
         page = 1
         attr_name = request.GET.get('subset', 'all')
-        self.metadata['uuid'] = request.GET.get('uuid')
+        self.metadata['uuid'] = uuid or request.GET.get('uuid')
         if attr_name == 'all':
             attach = self
         else:
@@ -812,11 +877,26 @@ class QuerySet(models.QuerySet):
                     if item['type'] in ('date', 'datetime'):
                         value = datetime.datetime.strptime(value, '%d/%m/%Y' if '/' in value else '%Y-%m-%d')
                     if item['type'] == 'boolean':
-                        value = bool(int(value)) if value.isdigit() else value == 'true'
+                        if value == 'true':
+                            value = True
+                        elif value == 'false':
+                            value = False
+                        elif value == 'null':
+                            value = None
+                    if item['type'] == 'choices':
+                        if value == 'null':
+                            value = None
                     if item['key'] != request.GET.get('choices'):
                         qs = qs.filter(**{item['key']: value})
-        if 'q' in request.GET:
+        if 'q' in request.GET and request.GET['q']:
             qs = qs.search(q=request.GET['q'])
+        if 'tree-node' in request.GET and request.GET['tree-node']:
+            qs = qs.model.objects.filter(**{self.metadata['tree']: request.GET['tree-node']})
+            if not qs.exists():
+                qs = qs.model.objects.filter(pk=request.GET['tree-node'])
+            qs.metadata = self.metadata
+            qs.request = self.request
+            qs.tree(None)
         if 'page' in request.GET:
             page = int(request.GET['page'] or 1)
         if isinstance(attach, QuerySet):

@@ -4,7 +4,7 @@
         window['toastTimeout'] = setTimeout(function(){$('.toast').hide();}, 10000);
     </script>
     {% for message in messages %}
-        <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed; top:10; left:10">
+        <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="position:fixed; top:10; left:10; z-index: 1061;">
           <div class="d-flex">
             <div class="toast-body">
               {{ message }}

@@ -8,4 +8,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for cls in ROLE_DEFINER_CLASSES:
             for obj in cls.objects.all():
-                obj.persist()
+                obj.save()

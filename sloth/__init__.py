@@ -1,4 +1,4 @@
-
+from threading import local
 from django.apps import apps
 from django.conf import settings
 from django.db import models
@@ -18,6 +18,8 @@ from sloth.core.validation import validate_model
 #         file.extractall(os.path.dirname(file_name))
 
 PROXIED_MODELS = []
+
+threadlocals = local()
 
 
 class RoleLookup:
@@ -126,5 +128,5 @@ models.QuerySet = QuerySet
 models.Manager = Manager
 
 setattr(options, 'DEFAULT_NAMES', options.DEFAULT_NAMES + (
-    'icon', 'fieldsets', 'edit_fieldsets', 'select_template', 'select_fields', 'search_fields', 'autouser'
+    'icon', 'fieldsets', 'edit_fieldsets', 'select_template', 'select_fields', 'search_fields', 'autouser', 'logging'
 ))

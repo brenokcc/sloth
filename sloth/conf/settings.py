@@ -81,3 +81,6 @@ if os.environ.get('POSTGRES_HOST'):
     DATABASES['default']['PASSWORD'] = os.environ.get('DATABASE_PASSWORD', 'password')
     DATABASES['default']['HOST'] = os.environ.get('DATABASE_HOST', 'postgres')
     DATABASES['default']['PORT'] = os.environ.get('DATABASE_PORT', '5432')
+
+
+from .local_settings import *

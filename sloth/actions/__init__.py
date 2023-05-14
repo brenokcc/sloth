@@ -545,12 +545,12 @@ class Action(metaclass=ActionMetaclass):
         return getattr(self.metaclass, 'method', 'post') if hasattr(self, 'Meta') else 'post'
 
     def get_instances(self):
-        if self.instance:
-            return type(self.instance).objects.filter(pk=self.instance.pk)
-        elif self.instances is not None:
+        if self.instances is not None:
             return self.instances
         elif self.queryset is not None:
             return self.queryset
+        elif self.instance:
+            return type(self.instance).objects.filter(pk=self.instance.pk)
         return []
 
     def is_modal(self):

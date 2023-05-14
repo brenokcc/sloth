@@ -129,6 +129,11 @@ media
 *.pyc
 *.sqlite3
 *.md
+local_settings.py
+'''
+
+REQUIREMENTS = '''
+sloth-framework
 '''
 
 def startproject():
@@ -142,6 +147,9 @@ def startproject():
     settings_append = open(settings.__file__).read().replace('import os', '').replace('# ', '')
     with open(settings_path, 'w') as file:
         file.write('{}{}'.format(settings_content, settings_append))
+    local_settings_path = os.path.join(name, 'local_settings.py')
+    with open(local_settings_path, 'w') as file:
+        file.write('')
     urls_path = os.path.join(name, 'urls.py')
     with open(urls_path, 'w') as file:
         file.write(URLS_FILE_CONTENT)
@@ -162,7 +170,7 @@ def startproject():
     deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')
     with open(deploy_workflow_path, 'w') as file:
         file.write(DEPLOY_WORKFLOW_CONTENT)
-    ignore = ['bin/server.log', '.idea/', 'db.sqlite3', '*.pyc', '.DS_Store', 'geckodriver.log', '.docker', 'media']
+    ignore = ['bin/server.log', '.idea/', 'db.sqlite3', '*.pyc', '.DS_Store', 'geckodriver.log', '.docker', 'media', 'local_settings.py']
     if os.path.exists('.gitignore'):
         with open('.gitignore', 'a') as file:
             file.write('\n'.join(ignore))
@@ -175,6 +183,8 @@ def startproject():
         file.write(DOCKER_COMPOSE_FILE_CONTENT)
     with open('.dockerignore', 'w') as file:
         file.write(DOCKER_IGNORE_FILE_CONTENT)
+    with open('requirements.txt', 'w') as file:
+        file.write(REQUIREMENTS)
 
 
 if __name__ == "__main__":

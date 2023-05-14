@@ -20,11 +20,11 @@ class AppTestCase(TestCase):
 
         self.data['l1'] = Loja.objects.create(nome='l1', rede=self.data['r1'], gerente=self.data['f1'])
         self.data['l1'].funcionarios.add(self.data['f2'])
-        self.data['l1'].persist()
+        self.data['l1'].save()
 
         self.data['l2'] = Loja.objects.create(nome='l2', rede=self.data['r2'], gerente=self.data['f4'])
         self.data['l2'].funcionarios.add(self.data['f5'])
-        self.data['l2'].persist()
+        self.data['l2'].save()
 
         self.data['l3'] = Loja.objects.create(nome='l3', rede=self.data['r1'], gerente=None)
 
@@ -48,7 +48,7 @@ class AppTestCase(TestCase):
         if os.path.exists('/Users/breno') and False:
             self.debug()
         self.assertEqual(User.objects.count(), 7)
-        self.assertEqual(Role.objects.count(), 33)
+        self.assertEqual(Role.objects.count(), 29)
 
         user_f1 = User.objects.get(username='f1')
         qs = Funcionario.objects.role_lookups('Funcionário', nome='username').apply_role_lookups(user_f1)

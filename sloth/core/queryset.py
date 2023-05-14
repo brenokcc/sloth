@@ -17,6 +17,7 @@ from django.db.models import Q
 from django.db.models.aggregates import Sum, Count
 from django.template.loader import render_to_string
 from django.apps import apps
+
 from sloth.utils.http import XlsResponse, CsvResponse
 from sloth.core.statistics import QuerySetStatistics
 from sloth.api.exceptions import JsonReadyResponseException, HtmlReadyResponseException, ReadyResponseException
@@ -167,10 +168,9 @@ class QuerySet(models.QuerySet):
 
     def get_search(self):
         search = {}
-        if self.metadata['search'] is None:
-            for lookup in self.metadata['search'] or self.model.default_search_fields():
-                verbose_name = self.model.get_attr_metadata(lookup)[0]
-                search[lookup] = dict(key=lookup, name=verbose_name)
+        for lookup in self.metadata['search'] or self.model.default_search_fields():
+            verbose_name = self.model.get_attr_metadata(lookup)[0]
+            search[lookup] = dict(key=lookup, name=verbose_name)
         return search
 
     def get_display(self):
@@ -521,13 +521,16 @@ class QuerySet(models.QuerySet):
                     else:
                         view_suffix = '{}/'.format(view['name'])
                         view_name = pretty(self.model.get_attr_metadata(view['name'])[0])
-                    data['actions']['instance'].insert(0,
-                        dict(
-                            type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
-                            method='get', icon=view['icon'], style='primary', ajax=False,
-                            modal=view['modal'], path='{}{{id}}/{}'.format((path or '').split('?')[0], view_suffix)
-                        )
+                    item = dict(
+                        type='view', key=view['name'], name=view_name, submit=view_name, target='instance',
+                        method='get', icon=view['icon'], style='primary', ajax=False,
+                        modal=view['modal'], path='{}{{id}}/{}'.format((path or '').split('?')[0], view_suffix)
                     )
+                    if view_suffix:
+                        data['actions']['instance'].append(item)
+                    else:
+                        data['actions']['instance'].insert(0, item)
+
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
                     target = dict(global_actions='model', actions='instance', batch_actions='queryset', inline_actions='inline')[action_type]
                     for form_name in self.metadata[action_type]:
@@ -707,7 +710,7 @@ class QuerySet(models.QuerySet):
 
     # action functions
 
-    def actions(self, *names, clear=False):
+    def actions(self, *names, clear=False, priority=False):
         qs = self._clone()
         qs.metadata['actions'] = qs.metadata['actions'].copy()
         if clear:
@@ -717,7 +720,10 @@ class QuerySet(models.QuerySet):
                 qs.metadata['view'] = self.metadata['view'].copy()
                 qs.metadata['view'].append(dict(name='self', modal=False, icon='search'))
             elif to_snake_case(name) not in qs.metadata['actions']:
-                qs.metadata['actions'].append(to_snake_case(name))
+                if priority:
+                    qs.metadata['actions'].insert(0, to_snake_case(name))
+                else:
+                    qs.metadata['actions'].append(to_snake_case(name))
         return qs
 
     def global_actions(self, *names, clear=False):
@@ -752,7 +758,7 @@ class QuerySet(models.QuerySet):
 
     def default_actions(self):
         if self.metadata['attr'] is None:
-            return self.actions('view', 'edit', 'delete').global_actions('add')
+            return self.actions('delete', 'edit', 'view', priority=True).global_actions('add')
         return self
 
     # search and pagination functions
@@ -980,3 +986,26 @@ class QuerySet(models.QuerySet):
 
     def get_full_path(self):
         pass
+
+    # logging
+
+    def __log__(self, operation, **kwargs):
+        from sloth import threadlocals
+        if hasattr(threadlocals, 'transaction'):
+            threadlocals.transaction['operation'] = operation
+            model_name = '{}.{}'.format(self.model.metaclass().app_label, self.model.metaclass().model_name)
+            for values in self.values(*(set(kwargs.keys()) | {'pk'})):
+                item = dict(pk=values['pk'], model=model_name, fields={
+                    k: (serialize(values[k], identifier=True), serialize(kwargs[k], identifier=True))
+                    for k in kwargs if values[k] != kwargs[k] and k != 'id'
+                })
+                threadlocals.transaction['diff'].append(item) if item['fields'] else None
+
+    def update(self, **kwargs):
+        self.__log__('edit', **kwargs)
+        super().update(**kwargs)
+
+    def delete(self):
+        kwargs = {f.name: None for f in self.model._meta.fields}
+        self.__log__('delete', **kwargs)
+        super().delete()

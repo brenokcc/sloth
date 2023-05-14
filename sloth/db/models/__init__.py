@@ -288,7 +288,11 @@ class Model(models.Model, ModelMixin, metaclass=ModelBase):
             if value != self.__dict__.get(key) and key in type(self).__fieldnames__:
                 field_names = getattr(self.metaclass(), 'logging')
                 if field_names is True or key in field_names:
-                    self.__dict__['__diff__'][key] = serialize(getattr(self, key), identifier=True), serialize(value, identifier=True)
+                    if self.__dict__.get('{}_id'.format(key), 0) is None:
+                        previous = None
+                    else:
+                        previous = serialize(getattr(self, key), identifier=True)
+                    self.__dict__['__diff__'][key] = previous, serialize(value, identifier=True)
         super().__setattr__(key, value)
 
     def pre_save(self, *args, **kwargs):

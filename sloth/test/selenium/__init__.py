@@ -88,6 +88,9 @@ class SeleniumTestCase(LiveServerTestCase):
     def click_menu(self, *texts):
         self.browser.click_menu(*texts)
 
+    def search_menu(self, *texts):
+        self.browser.search_menu(*texts)
+
     def click_link(self, text):
         self.browser.click_link(text)
 

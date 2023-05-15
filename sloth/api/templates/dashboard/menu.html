@@ -79,7 +79,7 @@
 </div>
 <script>
 $( document ).ready(function() {
-    $('nav .bi-list').click(function(){$('.side-menu').animate({'margin-left': '0px'},'slow');});
+    $('#menu-toogler').click(function(){$('.side-menu').animate({'margin-left': '0px'},'slow');});
     $('.side-menu .bi-x').click(function() {$('.side-menu').animate({'margin-left': '-250px'},'slow');});
     $('.side-menu').mouseleave(function(){$(this).find('.bi-x').click()});
     $('.side-menu a').click(function(){

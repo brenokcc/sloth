@@ -130,7 +130,7 @@ function click(name, type, index){
     throw Error('Not found.')
 }
 
-function clickMenu(name){
+function searchMenu(name){
     enter('search', name)
     return clickLink(name);
 }

@@ -775,16 +775,26 @@ class Action(metaclass=ActionMetaclass):
 
     def choices(self, field_name, q=None):
         field = self.fields[field_name]
-        attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
-        self.data.update(self.request.GET)
+        if self.__class__.__name__ in ('Add', 'Edit'):
+            attr = getattr(self.instance, 'get_{}_queryset'.format(field_name), None)
+            if attr:
+                for name in self.fields:
+                    if isinstance(self.fields[name], MultipleChoiceField):
+                        value = self.request.GET.getlist(name)
+                    if isinstance(self.fields[name], ModelMultipleChoiceField):
+                        value = self.request.GET.getlist(name)
+                    else:
+                        value = self.request.GET.get(name)
+                        if value:
+                            setattr(self.instance, name, self.fields[name].clean(value))
+        else:
+            attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
         qs = field.queryset if attr is None else attr(field.queryset)
+        self.data.update(self.request.GET)
         total = qs.count()
         qs = qs.search(q=q) if q else qs
         items = [dict(id=value.id, text=str(value), html=value.get_select_display()) for value in qs[0:25]]
-        return dict(
-            total=total, page=1, pages=math.ceil((1.0 * total) / 25),
-            q=q, items=items
-        )
+        return dict(total=total, page=1, pages=math.ceil((1.0 * total) / 25), q=q, items=items )
 
     def dispose(self, milleseconds=2000):
         self.response.update(dispose=milleseconds)

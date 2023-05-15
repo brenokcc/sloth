@@ -308,19 +308,18 @@ class QuerySet(models.QuerySet):
         filter_lookup = request.GET['choices']
         q = request.GET.get('term')
         field = self.model.get_field(filter_lookup)
-        values = self.apply_role_lookups(request.user).values_list(
+        ids = self.apply_role_lookups(request.user).values_list(
             filter_lookup, flat=True
-        ).order_by(filter_lookup).order_by(filter_lookup).distinct()
+        ).order_by(filter_lookup).distinct()
         if field.null:
             items.append(dict(id='null', text='Indefinido'))
         if field.related_model:
-            qs = field.related_model.objects.filter(id__in=values)
+            qs = field.related_model.objects.filter(pk__in=ids)
             qs = qs.search(q=q) if q else qs
-            qs = qs.distinct()
-            total = values.count()
+            total = 25
             items.extend([dict(id=value.id, text=str(value)) for value in qs[0:25]])
         else:
-            total = values.count()
+            total = ids.count()
             items.extend([dict(id=value, text=str(value)) for value in values])
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),

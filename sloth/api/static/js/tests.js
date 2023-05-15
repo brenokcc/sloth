@@ -185,6 +185,8 @@ function lookAtPanel(text){
 
 function enter(name, value, submit){
     if(String(value)!='null' && String(value)){
+        var tokens = value.split('/');
+        if(tokens.length==3 && value[2]=='/' && value[5]=='/') value = tokens[2]+'-'+tokens[1]+'-'+tokens[0];
         var element = $(cursor||document).find( "input[name='"+name+"'], textarea[name='"+name+"']" ).not("input[type='checkbox']").not("input[type='hidden']").first();
         if (!element[0]) element = $(cursor||document).find( "label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('input, textarea').not("input[type='checkbox']").first();
         $('input[name=hidden-upload-value]').remove();

@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+from sloth import threadlocals
 from decimal import Decimal
 from django.apps import apps
 from django.db import models
 from django.db.models import *
 from django.db.models import base
 from django.db.models.query_utils import DeferredAttribute
-
+from django.forms.models import model_to_dict
 from sloth.core.queryset import QuerySet
 from sloth.core.base import ModelMixin
+from sloth.utils import serialize
 
 
 class GenericModelWrapper(object):
@@ -275,6 +277,24 @@ class Model(models.Model, ModelMixin, metaclass=ModelBase):
     class Meta:
         abstract = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__dict__['__diff__'] = {}
+        if not hasattr(type(self), '__fieldnames__'):
+            type(self).__fieldnames__ = [f.name for f in type(self)._meta.get_fields()]
+
+    def __setattr__(self, key, value):
+        if getattr(self.metaclass(), 'logging', False) and self.__dict__.get('__diff__') is not None and key != 'id':
+            if value != self.__dict__.get(key) and key in type(self).__fieldnames__:
+                field_names = getattr(self.metaclass(), 'logging')
+                if field_names is True or key in field_names:
+                    if self.__dict__.get('{}_id'.format(key), 0) is None:
+                        previous = None
+                    else:
+                        previous = serialize(getattr(self, key), identifier=True)
+                    self.__dict__['__diff__'][key] = previous, serialize(value, identifier=True)
+        super().__setattr__(key, value)
+
     def pre_save(self, *args, **kwargs):
         setattr(self, '_pre_saved', True)
         if hasattr(self, '__roles__'):
@@ -291,20 +311,38 @@ class Model(models.Model, ModelMixin, metaclass=ModelBase):
             self.post_save()
 
     def post_save(self, *args, **kwargs):
+        self.__log__()
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
 
-    def persist(self):
-        self.pre_save()
-        self.save()
-        self.post_save()
-
     def delete(self, *args, **kwargs):
+        if getattr(self.metaclass(), 'logging', False):
+            field_names = getattr(self.metaclass(), 'logging')
+            for key in type(self).__fieldnames__:
+                if field_names is True or key in field_names:
+                    self.__dict__['__diff__'][key]= serialize(self.__dict__.get(key), identifier=True), None
+            self.__log__(delete=True)
         if hasattr(self, '__roles__'):
             setattr(self, '_role_tuples', self.get_role_tuples(True))
         super().delete(*args, **kwargs)
         if hasattr(self, '__roles__') and hasattr(self, '_role_tuples'):
             self.sync_roles(getattr(self, '_role_tuples'))
+
+    def __log__(self, delete=False):
+        if getattr(self.metaclass(), 'logging', False) and hasattr(threadlocals, 'transaction'):
+            if self.__dict__['__diff__']:
+                if delete:
+                    operation = 'delete'
+                elif 'id' in self.__dict__['__diff__']:
+                    operation = 'add'
+                else:
+                    operation = 'edit'
+                threadlocals.transaction['operation'] = operation
+                threadlocals.transaction['diff'].append(
+                    dict(pk=self.pk, model='{}.{}'.format(
+                        self.metaclass().app_label, self.metaclass().model_name
+                    ), fields=self.__dict__['__diff__'])
+                )
 
     def __str__(self):
         for field in self.metaclass().fields:

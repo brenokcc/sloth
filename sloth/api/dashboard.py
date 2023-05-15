@@ -94,6 +94,7 @@ class Dashboard(metaclass=DashboardType):
         return
 
     def _load(self, key, items, modal=False, count=False, app=None):
+        new_item = None
         allways = 'floating', 'navigation', 'settings', 'actions', 'menu', 'links', 'tools', 'search', 'plus'
         for cls in items:
             if '.' in cls:
@@ -141,7 +142,7 @@ class Dashboard(metaclass=DashboardType):
                                     app=app
                                 )
                                 self.data[key].append(new_item)
-                                return new_item
+        return new_item
 
     def _item(self, key, url, label, icon, count=None, app=None):
         self.data[key].append(

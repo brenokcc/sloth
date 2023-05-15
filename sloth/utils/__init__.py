@@ -46,7 +46,7 @@ def igetattr(obj, attr):
             return getattr(obj, a)
 
 
-def serialize(obj):
+def serialize(obj, identifier=False):
     if obj is not None:
         if isinstance(obj, str):
             return obj
@@ -64,8 +64,10 @@ def serialize(obj):
             return [serialize(o) for o in obj]
         elif isinstance(obj, tuple):
             return [serialize(o) for o in obj]
+        elif hasattr(obj, 'pk'):
+            return obj.pk if identifier else str(obj)
         elif hasattr(obj, 'all'):
-            return [str(o) for o in obj.filter()]
+            return [o.pk if identifier else str(o) for o in obj.filter()]
         elif isinstance(obj, FieldFile):
             return obj and obj.url or '/static/images/no-image.png'
         return str(obj)

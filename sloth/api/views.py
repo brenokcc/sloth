@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import json
 import base64
 import traceback
-
+from datetime import datetime
+from sloth import threadlocals
 from django.core.cache import cache
 from django.http import QueryDict
 from django.apps import apps
@@ -29,7 +30,20 @@ from .. import initialize
 initialize()
 
 
-def dashboard(request, path):
+def logger(func):
+    def decorate(request, *args, **kwargs):
+        threadlocals.transaction = dict(
+            user=request.user.username, operation=None, time=datetime.now().strftime('%d/%m/%Y %H:%M'), path=request.path, diff=[]
+        )
+        response = func(request, *args, **kwargs)
+        if threadlocals.transaction['diff']:
+            print(json.dumps(threadlocals.transaction, ensure_ascii=False))
+        return response
+    return decorate
+
+
+@logger
+def app(request, path):
     if request.user.is_authenticated and settings.FORCE_PASSWORD_DEFINITION:
         default_password = settings.DEFAULT_PASSWORD(request.user)
         if request.user.check_password(default_password):

@@ -33,5 +33,5 @@ urlpatterns.extend([
     path('icon', views.icon),
     path('favicon.ico', views.favicon),
     re_path(r'^apple-touch.*', views.icon),
-    re_path(r'^app/(?P<path>.*)/$', views.dashboard),
+    re_path(r'^app/(?P<path>.*)/$', views.app),
 ])

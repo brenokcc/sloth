@@ -236,11 +236,29 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def click_menu(self, *texts, count=4):
-        self.print('Clicking menu "{}"'.format('->'.join(texts)))
+    def search_menu(self, *texts, count=4):
+        self.print('Searching "{}"'.format('->'.join(texts)))
         for text in texts:
             try:
-                self.execute_script("clickMenu('{}')".format(text.strip()))
+                self.execute_script("searchMenu('{}')".format(text.strip()))
+            except WebDriverException as e:
+                if count:
+                    self.wait()
+                    self.search_menu(*texts, count=count - 1)
+                else:
+                    self.watch(e)
+        self.wait()
+
+    def click_menu(self, *texts, count=1):
+        self.print('Clicking menu "{}"'.format('->'.join(texts)))
+        for i, text in enumerate(texts):
+            if i==0:
+                self.click_icon('list')
+                time.sleep(1)
+            if i==len(texts)-1:
+                time.sleep(0.5)
+            try:
+                self.click_link(text)
             except WebDriverException as e:
                 if count:
                     self.wait()

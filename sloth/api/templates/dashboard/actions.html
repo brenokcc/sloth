@@ -1,6 +1,6 @@
 {% load tags %}
 {% if actions %}
-<div class="action-container {{ target }}" id="{{ target }}-{{ uuid }}-{{id}}">
+<div class="action-container {{ target }}" id="{{ target }}-{{ uuid }}-{{id}}-{{ forloop.counter }}">
     {% if compact or request|mobile or request|tablet or request.GET.compact %}
     {% with grouped_actions=actions|group_by_icon %}
         {% for action in grouped_actions.with_icon %}
@@ -68,7 +68,7 @@
             else return url + '?' + extra;
         } else { return url;}
     }
-    $('#{{ target }}-{{ uuid }}-{{id}}').find('.action-button').on('mouseenter', function(){
+    $('#{{ target }}-{{ uuid }}-{{id}}-{{ forloop.counter }}').find('.action-button').on('mouseenter', function(){
         if($(this).hasClass('instance')){
             this.href = actionURL($(this).data('url').replace('{id}', $(this).data('id')));
         }

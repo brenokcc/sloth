@@ -51,7 +51,7 @@ class ValueSet(dict):
         self.instance = instance
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
+            attach=[], append={}, image=None, template=None, primitive=False, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
             cards=[], shortcuts=[], collapsed=False, printing=False
         )
@@ -85,9 +85,21 @@ class ValueSet(dict):
         self.metadata['inline_actions'] = [to_snake_case(name) for name in names]
         return self
 
-    def append(self, *names):
-        self.metadata['append'] = [to_snake_case(name) for name in names]
+    def append(self, *names, position='right'):
+        self.metadata['append'][position] = [to_snake_case(name) for name in names]
         return self
+
+    def top(self, *names):
+        return self.append(*names, position='top')
+
+    def left(self, *names):
+        return self.append(*names, position='left')
+
+    def right(self, *names):
+        return self.append(*names, position='right')
+
+    def bottom(self, *names):
+        return self.append(*names, position='bottom')
 
     def attach(self, *names):
         self.metadata['attach'] = [to_snake_case(name) for name in names]
@@ -131,8 +143,10 @@ class ValueSet(dict):
 
     def get_allowed_attrs(self, recursive=True):
         allowed = []
-        for key in ('actions', 'inline_actions', 'append', 'attach'):
+        for key in ('actions', 'inline_actions', 'attach'):
             allowed.extend(self.metadata[key])
+        for items in self.metadata['append']:
+            allowed.extend(items)
         allowed.extend([name for name in self.metadata['names'].keys() if name.startswith('get_')])
         return allowed
 
@@ -363,12 +377,15 @@ class ValueSet(dict):
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     output['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
-            for attr_name in self.metadata['append']:
-                if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    template = getattr(getattr(self.instance, attr_name), '__template__', None)
-                    output['append'].update(
-                        self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
-                    )
+            for position, attr_names in self.metadata['append'].items():
+                for attr_name in attr_names:
+                    if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
+                        template = getattr(getattr(self.instance, attr_name), '__template__', None)
+                        if position not in output['append']:
+                            output['append'][position] = {}
+                        output['append'][position].update(
+                            self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
+                        )
             return output
         else:
             if len(self.metadata['names']) == 1:

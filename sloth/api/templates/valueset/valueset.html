@@ -1,6 +1,9 @@
 {% load tags %}
 <div class="valueset row clearfix">
-    <div class="{% if append %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
+    {% for item in data.append.top.values %}
+        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
+    {% endfor %}
+    <div class="{% if data.append.right %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
 
         {% include "dashboard/shortcuts.html" with shortcuts=data.instance.data.shortcuts %}
         {% include "dashboard/cards.html" with cards=data.instance.data.cards %}
@@ -109,16 +112,21 @@
             {% endif %}
         {% endif %}
     </div>
-    {% if data.append %}
-    <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
-        {% for name, item in data.append.items %}
-            <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}?compact=1">
-                {% include 'valueset/fieldset.html' with data=item compact=True %}
-            </div>
-        {% endfor %}
-    </div>
+    {% for item in data.append.center.values %}
+        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
+    {% endfor %}
+    {% if data.append.right %}
+        <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
+            {% for name, item in data.append.right.items %}
+                <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}?compact=1">
+                    {% include 'valueset/fieldset.html' with data=item compact=True %}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
-
+    {% for item in data.append.bottom.values %}
+        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
+    {% endfor %}
 </div>
 
 

@@ -115,7 +115,7 @@ class AlterarPrioridade(actions.Action):
 
     def submit(self):
         prioridade = Demanda.objects.get(pk=self.instance.pk).prioridade
-        self.instance.solicitacao.demanda_set.filter(prioridade=self.instance.prioridade).update(prioridade=prioridade)
+        self.instance.solicitacao.demanda_set.filter(prioridade=self.instance.prioridade, classificacao=self.instance.classificacao).update(prioridade=prioridade)
         super().submit()
 
     def has_permission(self, user):

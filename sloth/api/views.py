@@ -3,6 +3,9 @@ import json
 import base64
 import traceback
 from datetime import datetime
+
+from django.views import static
+
 from sloth import threadlocals
 from django.core.cache import cache
 from django.http import QueryDict
@@ -40,6 +43,10 @@ def logger(func):
             print(json.dumps(threadlocals.transaction, ensure_ascii=False))
         return response
     return decorate
+
+
+def media(request, path):
+    return static.serve(request, path, document_root=settings.MEDIA_ROOT)
 
 
 @logger
@@ -126,6 +133,9 @@ def endpoint(func):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
                 serialized = data.serialize(wrap=wrap)
+                if request.path == '/meta/dashboard/':
+                    dashboard = Dashboards(request)
+                    serialized = dashboard.serialize(serialized)
                 # from pprint import pprint; pprint(serialized)
                 return ApiResponse(serialized, safe=False)
             else:
@@ -211,7 +221,7 @@ def dispatcher(request, path):
     instances = None
     instantiator = None
     queryset = None
-    tokens = path.split('/')
+    tokens = [token for token in path.split('/') if '=' not in token]
     token = tokens.pop(0)
     if token == 'dashboard':
         obj = Dashboards(request).main()
@@ -236,7 +246,7 @@ def dispatcher(request, path):
         if i == 0:
             allowed_attrs.extend(EXPOSE)
         if not request.user.is_authenticated and token not in allowed_attrs and token not in extra_attrs and not token.isdigit() and '-' not in token:
-            print(token, type(obj).__name__, allowed_attrs, extra_attrs)
+            # print(token, type(obj).__name__, allowed_attrs, extra_attrs)
             raise PermissionDenied()
         if token.isdigit():
             if isinstance(obj, Dashboard):
@@ -263,7 +273,7 @@ def dispatcher(request, path):
                 form_cls = obj.model.relation_form_cls(obj.metadata['related_field'])
             else:
                 form_cls = obj.action_form_cls(token)
-            # print(dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances, queryset=queryset))
+            # print(token, dict(action=form_cls, instantiator=instantiator, instance=instance, instances=instances, queryset=queryset))
             form = form_cls(
                 request=request, instantiator=instantiator, instance=instance, instances=instances, queryset=queryset
             )
@@ -292,10 +302,13 @@ def dispatcher(request, path):
                     instantiator = obj
                     obj = getattr(obj, token)()
                 if isinstance(obj, ValueSet):
-                    instance = instantiator
+                    instance = obj.instance
                 if isinstance(obj, QuerySet):
                     queryset = obj
                     if 'global_action' in request.GET:
                         queryset = obj.process_request(request, uuid=token).apply_role_lookups(request.user)
         allowed_attrs = obj.get_allowed_attrs()
-    return obj.contextualize(request).apply_role_lookups(request.user)
+    obj = obj.contextualize(request).apply_role_lookups(request.user)
+    if request.path.startswith('/api/') and isinstance(obj, QuerySet):
+        obj = obj.process_request(request)
+    return obj

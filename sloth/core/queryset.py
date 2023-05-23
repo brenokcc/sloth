@@ -406,7 +406,7 @@ class QuerySet(models.QuerySet):
                         has_view_permission = obj.has_view_permission(self.request.user)
                     else:
                         has_view_permission = obj.has_view_attr_permission(self.request.user, view['name'])
-                    if self.request.user.is_superuser or has_view_permission or obj.has_permission(self.request.user):
+                    if has_view_permission:
                         actions.append(view['name'])
             item = obj.value_set(*self.get_list_display(add_id=add_id)).contextualize(self.request).load(wrap=False, detail=detail)
             data.append(dict(id=obj.id, description=str(obj), data=item, actions=actions) if wrap else item)
@@ -562,7 +562,7 @@ class QuerySet(models.QuerySet):
                     data.update(template=template)
             # from pprint import pprint; pprint(data)
             return data
-        return self.to_list(detail=False)
+        return self.paginate().to_list(detail=False)
 
     def debug(self):
         print(json.dumps(self.serialize(wrap=True), indent=4, ensure_ascii=False))
@@ -831,7 +831,7 @@ class QuerySet(models.QuerySet):
         self.request = request
         if request and request.user.is_superuser and 'autouser' in self.metadata['ignore']:
             self.metadata['ignore'].remove('autouser')
-        if request and self.metadata['uuid'] == request.GET.get('uuid'):
+        if request and self.metadata['uuid'] == request.GET.get('uuid'): #  or (request and request.path.startswith('/api/'))
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)

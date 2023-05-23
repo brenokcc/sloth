@@ -54,6 +54,12 @@ jQuery.fn.extend({
             $('main').html(html).initialize();
         });
     },
+    ipopup: function(url){
+        var html = '<iframe src="'+url+'" width="100%" height="500px"></iframe>';
+        $('#modal').find('.modal-body').html(html);
+        $('#modal').modal('show');
+        $('#modal').find('.modal-body').css('visibility', 'visible');
+    },
     popup: function(url, method, data){
         $('.alert-dismissible').hide();
         if(url.indexOf('?')>0) url = url+='&modal=1'

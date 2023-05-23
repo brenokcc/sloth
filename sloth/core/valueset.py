@@ -107,7 +107,7 @@ class ValueSet(dict):
 
     def image(self, image):
         image_attr = getattr(self.instance, image)
-        self.metadata['image'] = image_attr() if callable(image_attr) else image_attr
+        self.metadata['image'] = (image_attr() if callable(image_attr) else image_attr) or '/static/images/no-image.png'
         return self
 
     def title(self, title):
@@ -251,7 +251,9 @@ class ValueSet(dict):
                         qs.instantiator = self.instance
                         qs.metadata['uuid'] = attr_name
                         qs.metadata['path'] = path
-                        verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'] or pretty(attr_name))
+                        verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'])
+                        if verbose_name is None:
+                            verbose_name = pretty(attr_name)
                         template = getattr(attr, '__template__', None)
                         template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:
@@ -269,13 +271,17 @@ class ValueSet(dict):
                                 data = qs.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
                         statistics = value
-                        verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'] or pretty(attr_name))
+                        verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'])
+                        if verbose_name is None:
+                            verbose_name = pretty(attr_name)
                         statistics.contextualize(self.request)
                         data = statistics.serialize(path=path, wrap=wrap, lazy=lazy)
                         data.update(name=verbose_name, key=attr_name) if wrap else None
                     elif isinstance(value, ValueSet):
                         valueset = value
-                        verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'] or pretty(attr_name))
+                        verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'])
+                        if verbose_name is None:
+                            verbose_name = pretty(attr_name)
                         valueset.contextualize(self.request)
                         value.metadata['printing'] = self.metadata['printing']
                         key = attr_name
@@ -295,7 +301,7 @@ class ValueSet(dict):
                             for action_type in ('actions', 'inline_actions'):
                                 for form_name in valueset.metadata[action_type]:
                                     form_cls = self.instance.action_form_cls(form_name)
-                                    if form_cls.check_fake_permission(self.request, self.instance, self.instance):
+                                    if form_cls.check_fake_permission(self.request, valueset.instance, self.instance):
                                         data[action_type].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:

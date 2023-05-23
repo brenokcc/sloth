@@ -99,7 +99,9 @@
                         {% endif %}
                         {% if item.type == 'primitive' %}
                             {% if item.template %}
-                                {% include item.template with value=item.value metadata=item.metadata %}
+                                <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}">
+                                {% include item.template with value=item.value metadata=item.metadata key=item.key %}
+                                </div>
                             {% else %}
                                 <div class="reloadable-fieldset box responsive-container" id="{{ item.key }}" data-path="{{ item.path }}">
                                     {% include 'valueset/field.html' with v=item %}

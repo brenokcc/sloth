@@ -426,7 +426,7 @@ class Solicitacao(models.Model):
         return self.value_set('get_dados_gerais', 'get_detalhamento')
 
     def has_view_permission(self, user):
-        return user.roles.contains('Administrador') or (user.roles.contains('Gestor') and self.ciclo.is_aberto())
+        return user.roles.contains('Administrador') or (user.roles.contains('Gestor')) # and self.ciclo.is_aberto()
 
 
 class DemandaManager(models.Manager):

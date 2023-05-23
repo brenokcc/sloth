@@ -30,7 +30,7 @@ class Dashboard(metaclass=DashboardType):
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], plus=[], navbar={},
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={},
+            floating=[], navigation=[], settings=[], top=[], center=[], right=[], bottom=[], actions=[], tools=[], header={}, footer={},
             styles=[], scripts=[]
         )
         self.defined_apps = {}
@@ -290,7 +290,7 @@ class Dashboards:
         self.request = request
         self.data = dict(
             info=[], warning=[], search=[], menu=[], links=[], shortcuts=[], cards=[], tasks=[], plus=[], navbar={},
-            floating=[], navigation=[], settings=[], center=[], right=[], actions=[], tools=[], header={}, footer={},
+            floating=[], navigation=[], settings=[], top=[], center=[], right=[], bottom=[], actions=[], tools=[], header={}, footer={},
             styles=[], scripts=[]
         )
         self.data['navigation'].append(
@@ -323,6 +323,11 @@ class Dashboards:
         if self.request.user.is_superuser:
             self.superuser()
 
+        if self.request.path.startswith('/app/'):
+            self.data['menu'] = self.create_menu(render=True)
+        else:
+            self.data['menu'] = self.create_menu(render=False)
+
     def main(self):
         for dashboard in self.dashboards:
             if dashboard.view.__func__ != Dashboard.view:
@@ -345,7 +350,7 @@ class Dashboards:
                     item = dict(label=pretty(str(model_verbose_name_plural)), description=None, url=url, icon=icon, subitems=[], app=None)
                     self.data['search'].append(item)
 
-    def render_menu(self):
+    def create_menu(self, render=True):
         icons = {}
         default_icon = 'record2'
         def create_submenu(hierarchy, item, level=0):
@@ -375,6 +380,9 @@ class Dashboards:
                 menu[item['label']] = item
                 icons[item['label']] = item['icon'] or 'record-circle'
 
+        if not render:
+            return dict(icons=icons, items=menu)
+
         html = []
         def append_html(label, item, level=0):
             ident = '\t' * level
@@ -393,3 +401,10 @@ class Dashboards:
         for label, item in menu.items():
             append_html(label, item, 0)
         return mark_safe('\n'.join(html))
+
+    def serialize(self, data):
+        for k, v in data.items():
+            pass # print(k, v)
+        for k, v in data.get('append', {}).items():
+            self.data[k].append(v)
+        return self.data

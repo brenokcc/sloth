@@ -23,7 +23,7 @@ urlpatterns.append(re_path(r'^api/(?P<path>.*)/$', views.api_dispatcher))
 urlpatterns.append(re_path(r'^meta/(?P<path>.*)/$', views.api_dispatcher))
 
 urlpatterns.extend(static(settings.STATIC_URL, document_root=settings.STATIC_ROOT))
-urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
+# urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
 
 
 urlpatterns.extend([
@@ -34,4 +34,5 @@ urlpatterns.extend([
     path('favicon.ico', views.favicon),
     re_path(r'^apple-touch.*', views.icon),
     re_path(r'^app/(?P<path>.*)/$', views.app),
+    re_path(r'^media/(?P<path>.*)/$', views.media),
 ])

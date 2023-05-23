@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bpmn.css">
+    <script src="/static/js/bpmn.js"></script>
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <style>
+      html, body, #canvas {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+      .diagram-note {
+        background-color: rgba(66, 180, 21, 0.7);
+        color: White;
+        border-radius: 5px;
+        font-family: Arial;
+        font-size: 12px;
+        padding: 5px;
+        min-height: 16px;
+        width: 50px;
+        text-align: center;
+      }
+      .needs-discussion:not(.djs-connection) .djs-visual > :nth-child(1) {
+        stroke: rgba(66, 180, 21, 0.7) !important; /* color elements as red */
+      }
+      #save-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+      }
+      #save-button2 {
+        position: fixed;
+        bottom: 20px;
+        left: 100px;
+      }
+      #save-button3 {
+        position: fixed;
+        bottom: 20px;
+        left: 240px;
+      }
+    </style>
+  </head>
+  <body>
+    <form method="post" id="workflowform">
+      {% csrf_token %}
+      <input type="hidden" name="xml" id="xml">
+      <input type="hidden" name="png" id="png">
+    </form>
+    <div id="canvas"></div>
+    <a id="save-button" href="javascript:saveDiagram();" class="btn btn-success">Salvar</a>
+    <a id="save-button2" href="javascript:saveDiagram(true)" class="btn btn-primary">Salvar e Voltar</a>
+
+    <script>
+      var bpmnModeler = new BpmnJS({container: '#canvas', keyboard: {bindTo: window}});
+      async function openDiagram(bpmnXML) {
+        try {
+          await bpmnModeler.importXML(bpmnXML);
+          var canvas = bpmnModeler.get('canvas');
+          var overlays = bpmnModeler.get('overlays');
+          canvas.zoom('fit-viewport');
+        } catch (err) {
+          console.error('could not import BPMN 2.0 diagram', err);
+        }
+      }
+      async function saveDiagram(redirect) {
+          var result = await bpmnModeler.saveXML({ format: true });
+          bpmnModeler.saveSVG(function (err, svg) {
+                  // can use the domUrl function from the browser
+                  var domUrl = window.URL || window.webkitURL || window;
+                  // figure out the height and width from svg text
+                  var match = svg.match(/height=\"(\d+)/m);
+                  var height = match && match[1] ? parseInt(match[1], 10) : 200;
+                  var match = svg.match(/width=\"(\d+)/m);
+                  var width = match && match[1] ? parseInt(match[1], 10) : 200;
+                  var margin =  0; // set margin
+                  var fill =  '#FFFFFF'; // set fill color
+                  // it needs a namespace
+                  if (!svg.match(/xmlns=\"/mi)) {
+                      svg = svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+                  }
+                  // create a canvas element to pass through
+                  var canvas = document.createElement("canvas");
+                  canvas.width = width + margin * 2;
+                  canvas.height = height + margin * 2;
+                  var ctx = canvas.getContext("2d");
+                  // make a blob from the svg
+                  var svg = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
+                  // create a dom object for that image
+                  var url = domUrl.createObjectURL(svg);
+                  // create a new image to hold it the converted type
+                  var img = new Image;
+                  // when the image is loaded we can get it as base64 url
+                  img.onload = function () {
+                      // draw it to the canvas
+                      ctx.drawImage(this, margin, margin);
+                      // if it needs some styling, we need a new canvas
+                      if (fill) {
+                          var styled = document.createElement("canvas");
+                          styled.width = canvas.width;
+                          styled.height = canvas.height;
+                          var styledCtx = styled.getContext("2d");
+                          styledCtx.save();
+                          styledCtx.fillStyle = fill;
+                          styledCtx.fillRect(0, 0, canvas.width, canvas.height);
+                          styledCtx.strokeRect(0, 0, canvas.width, canvas.height);
+                          styledCtx.restore();
+                          styledCtx.drawImage(canvas, 0, 0);
+                          canvas = styled;
+                      }
+                      // we don't need the original any more
+                      domUrl.revokeObjectURL(url);
+                      // now we can resolve the promise, passing the base64 url
+                      $('#xml').val(result.xml);
+                      $('#png').val(canvas.toDataURL().substring(22));
+                      var data = $('#workflowform').serialize();
+                      $.post('{{ request.path }}', data);
+                      if(redirect) window.location = document.referrer;
+                      return;
+                      var fileName = 'teste.png';
+                      var downloadLink = document.createElement('a');
+                      downloadLink.download = fileName;
+                      downloadLink.innerHTML = 'Get BPMN PNG';
+                      downloadLink.href = canvas.toDataURL();
+                      downloadLink.onclick = function (event) {
+                          document.body.removeChild(event.target);
+                      };
+                      downloadLink.style.visibility = 'hidden';
+                      document.body.appendChild(downloadLink);
+                      downloadLink.click();
+                  };
+                  // load the image
+                  img.src = url;
+          });
+      };
+      openDiagram(`{{ content|safe }}`);
+    </script>
+  </body>
+</html>

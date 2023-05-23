@@ -55,9 +55,9 @@ class RoleLookup:
 
 def meta(verbose_name=None, renderer=None, **metadata):
     def decorate(func):
-        if verbose_name:
+        if verbose_name is not None:
             setattr(func, '__verbose_name__', verbose_name)
-        if renderer:
+        if renderer is not None:
             setattr(func, '__template__', renderer)
         if metadata:
             setattr(func, '__metadata__', metadata)

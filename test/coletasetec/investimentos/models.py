@@ -396,7 +396,7 @@ class Solicitacao(models.Model):
 
     @meta('Demandas')
     def get_demandas(self):
-        return self.demanda_set.all().filters('prioridade', 'classificacao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).global_actions('adicionar_demanda', 'concluir_solicitacao').aggreations('get_valor_total').ordering('prioridade', 'classificacao').actions('visualizar_questionario', 'descartar_demanda')
+        return self.demanda_set.all().filters('prioridade', 'classificacao').order_by('prioridade__numero').ignore('ciclo').collapsed(False).global_actions('adicionar_demanda', 'concluir_solicitacao').aggregations('get_valor_total').ordering('prioridade', 'classificacao').actions('visualizar_questionario', 'descartar_demanda')
 
     @meta('Período')
     def get_periodo(self):

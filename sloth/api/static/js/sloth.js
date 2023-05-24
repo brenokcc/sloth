@@ -67,11 +67,14 @@ jQuery.fn.extend({
 
         if(window['POPUP_STACK']==null){
             window['POPUP_STACK'] = [];
+            window['POPUP_STACK_SELECT2'] = [];
             $('#modal').on('hidden.bs.modal', function (e) {
                 if(window['POPUP_STACK'].length > 0){
                     $('#modal .modal-body').replaceWith(window['POPUP_STACK'].pop().initialize());
                     $('#modal').modal('show');
                     $('#modal').find('.modal-body').css('visibility', 'visible');
+                    var vals = window['POPUP_STACK_SELECT2'].pop();
+                    for(k in vals) {$('#'+k).val(vals[k]).trigger('change')}
                 }
                 else $('#modal').find('.modal-body').html('');
             });
@@ -83,6 +86,9 @@ jQuery.fn.extend({
             $('#modal').find('.modal-body').css('visibility', 'hidden');
             $('#modal .modal-body .select2-hidden-accessible').select2("destroy");
             window['POPUP_STACK'].push($('#modal').find('.modal-body').clone());
+            var vals={}; var elements=$('.modal-body select');
+            for(var i=0; i<elements.length; i++) vals[elements[i].id] = $(elements[i]).val();
+            window['POPUP_STACK_SELECT2'].push(vals);
         }
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();

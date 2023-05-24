@@ -314,7 +314,7 @@ class QuerySet(models.QuerySet):
         if field.null:
             items.append(dict(id='null', text='Indefinido'))
         if field.related_model:
-            qs = field.related_model.objects.filter(pk__in=ids)
+            qs = field.related_model.objects.all().filter(pk__in=ids)
             qs = qs.search(q=q) if q else qs
             total = 25
             items.extend([dict(id=value.id, text=str(value)) for value in qs[0:25]])

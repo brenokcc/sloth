@@ -89,10 +89,8 @@ class Browser(webdriver.Firefox):
                 self.execute_script("enter('{}', '{}')".format(name, value))
                 elements = self.find_elements(By.NAME, 'hidden-upload-value')
                 for element in elements:
-                    element_id, file_path = element.get_property('value').split(':')
-                    if file_path.startswith('/static'):
-                        file_path = '{}/{}/{}'.format(settings.BASE_DIR, settings.PROJECT_NAME, file_path)
-                    self.find_element(By.ID, element_id).send_keys(file_path)
+                    self.find_element(By.ID, element.get_property('value')).send_keys(os.path.join(settings.BASE_DIR, value))
+                    return
         except WebDriverException as e:
             if count:
                 self.wait()

@@ -9,6 +9,7 @@
     left:0;
     z-index: 999;
     margin-left:-250px;
+    display:none;
     width: 250;
     overflow-y: scroll;
   }
@@ -79,8 +80,8 @@
 </div>
 <script>
 $( document ).ready(function() {
-    $('#menu-toogler').click(function(){$('.side-menu').animate({'margin-left': '0px'},'slow');});
-    $('.side-menu .bi-x').click(function() {$('.side-menu').animate({'margin-left': '-250px'},'slow');});
+    $('#menu-toogler').click(function(){$('.side-menu').animate({'margin-left': '0px'},'slow').show();});
+    $('.side-menu .bi-x').click(function() {$('.side-menu').animate({'margin-left': '-250px'},'slow').hide();});
     $('.side-menu').mouseleave(function(){$(this).find('.bi-x').click()});
     $('.side-menu a').click(function(){
         var opened = $(this).parent().parent().find('ul.open');

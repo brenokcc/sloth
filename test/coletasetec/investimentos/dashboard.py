@@ -12,7 +12,7 @@ class AppDashboard(Dashboard):
         self.scripts('/static/js/sloth.js', '/static/js/coletasetec.js')
         self.libraries(fontawesome=False, materialicons=False)
         self.web_push_notification(False)
-        self.login(logo='/static/images/logo.png', title=None, mask=None, two_factor=False, actions=['signup', 'reset_password'])
+        self.login(title='COLETA SETEC', mask=None, two_factor=False)
         self.navbar(title='COLETA SETEC', icon=None, favicon='/static/images/favicon.png')
         self.header(title='COLETA SETEC', shadow=True)
         self.settings_menu('change_password')

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import json
 from datetime import datetime
 from django.apps import apps
@@ -193,7 +194,7 @@ class Application(AbstractApplication):
 
 class TaskManager(models.Manager):
     def all(self):
-        return self.display(
+        return self.lookups(user__username='username').display(
             'id', 'user', 'name', 'start', 'end', 'get_progress', 'message'
         ).attach(
             'running', 'finished', 'unfinished', 'stopped'
@@ -288,7 +289,7 @@ class EmailManager(models.Manager):
 
     def send(self, to, subject, content, from_email=None):
         to = [to] if isinstance(to, str) else list(to)
-        return self.create(from_email=from_email, to=', '.join(to), subject=subject, content=content)
+        return self.create(from_email=from_email or 'no-replay@mail.com', to=', '.join(to), subject=subject, content=content)
 
 
 class Email(models.Model):
@@ -316,13 +317,12 @@ class Email(models.Model):
         return self.subject
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
         to = [email.strip() for email in self.to.split(',')]
         msg = EmailMultiAlternatives(self.subject, strip_tags(self.content), self.from_email, to)
         msg.attach_alternative(self.content, "text/html")
-        if msg.send(fail_silently=False):
+        if settings.DEBUG or 'test' in sys.argv or msg.send(fail_silently=True):
             self.sent_at = datetime.now()
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 setattr(AnonymousUser, 'roles', Role.objects.none())

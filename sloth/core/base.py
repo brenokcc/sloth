@@ -55,12 +55,13 @@ class ModelMixin(object):
         return attr is None or user.is_superuser or attr(user)
 
     def has_view_attr_permission(self, user, name):
+        has_permission = False
         if user.is_superuser or self.has_permission(user):
-            return True
+            has_permission = True
         if self.is_view_attr(name) and self.has_view_permission(user):
-            return True
+            has_permission = True
         attr = getattr(self, 'has_{}_permission'.format(name), None)
-        return attr(user) if attr else False
+        return attr(user) if attr else has_permission
 
     def is_view_attr(self, name):
         if not hasattr(self.__class__, '__view__'):
@@ -136,7 +137,8 @@ class ModelMixin(object):
                     email = value[role['email']] if role['email'] else None
                     if username:
                         scope_name = value[role['name']] if role['name'].islower() else role['name']
-                        tuples.add((username, email, scope_name, None, None, None))
+                        if not role['scopes']:
+                            tuples.add((username, email, scope_name, None, None, None))
                         for scope_key, lookup in role['scopes'].items():
                             scope_type = model if lookup in ('pk', 'id', 'self') else model.get_field(lookup).related_model
                             scope_value = value[lookup]
@@ -277,7 +279,7 @@ class ModelMixin(object):
                 icon = 'plus'
                 modal = True
                 model = cls.get_field(_related_field).model
-                style = 'success'
+                style = 'primary'
                 related_field = _related_field
                 verbose_name = 'Adicionar {}'.format(cls.get_field(_related_field).model.metaclass().verbose_name)
                 fieldsets = getattr(cls.get_field(_related_field).model.metaclass(), 'fieldsets', None)
@@ -318,7 +320,7 @@ class ModelMixin(object):
     @classmethod
     def default_list_fields(cls):
         list_display = getattr(cls.metaclass(), 'list_display', None)
-        return list_display or [field.name for field in cls.metaclass().fields[0:5] if field.name != 'id' and '_ptr' not in field.name]
+        return list_display or [field.name for field in cls.metaclass().fields[0:10] if field.name != 'id' and '_ptr' not in field.name]
 
     @classmethod
     def default_filter_fields(cls, exclude=None):

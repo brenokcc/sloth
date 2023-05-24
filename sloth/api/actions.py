@@ -532,3 +532,45 @@ class Print(actions.Action):
 
     def has_permission(self, user):
         return self
+
+
+class Workflow(actions.ActionView):
+    INITIAL_CONTENT = '''
+            <?xml version="1.0" encoding="UTF-8"?>
+            <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_0nf790r" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="12.0.0">
+              <bpmn:process id="Process_0rezp77" isExecutable="false">
+                <bpmn:startEvent id="StartEvent_0disvw0" />
+              </bpmn:process>
+              <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+                <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0rezp77">
+                  <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_0disvw0">
+                    <dc:Bounds x="156" y="82" width="36" height="36" />
+                  </bpmndi:BPMNShape>
+                </bpmndi:BPMNPlane>
+              </bpmndi:BPMNDiagram>
+            </bpmn:definitions>
+        '''
+
+    class Meta:
+        icon = 'diagram-3'
+        verbose_name = 'Fluxograma'
+        modal = False
+        style = 'primary'
+
+    def view(self):
+        if self.request.POST:
+            content = self.request.POST['xml']
+            with open('workflow.xml', 'w') as file:
+                file.write(self.request.POST['xml'])
+            with open('workflow.png', 'wb') as file:
+                file.write(base64.b64decode(self.request.POST['png']))
+        else:
+            if os.path.exists('workflow.xml'):
+                with open('workflow.xml') as file:
+                    content = file.read()
+            else:
+                content = Workflow.INITIAL_CONTENT
+        return self.render('actions/workflow.html', title='Fluxograma', content=content)
+
+    def has_permission(self, user):
+        return user.is_superuser

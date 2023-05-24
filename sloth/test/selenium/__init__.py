@@ -41,6 +41,7 @@ class SeleniumTestCase(LiveServerTestCase):
             fixture_path = os.path.join(app_dir, 'fixtures', 'test.json')
             if os.path.exists(fixture_path):
                 call_command('loaddata', fixture_path)
+        settings.DEBUG = True
 
     def create_superuser(self, username, password):
         if not User.objects.filter(username=username).exists():

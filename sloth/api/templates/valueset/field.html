@@ -1,6 +1,6 @@
 {% load tags %}
 <div class="fieldset-field width-{{ v.width }}">
-    {% if not v.metadata.icon %}
+    {% if not v.metadata.icon and v.name %}
         <div class="fieldset-field-label">{{ v.name }}:</div>
     {% endif %}
     <div class="fieldset-field-value">

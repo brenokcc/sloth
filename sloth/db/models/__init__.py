@@ -128,6 +128,16 @@ class CharField(CharField):
         return field
 
 
+class BooleanChoiceField(BooleanField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def formfield(self, **kwargs):
+        from ...actions import BooleanChoiceField
+        kwargs.update(form_class=BooleanChoiceField)
+        return super().formfield(**kwargs)
+
+
 class BrCepField(CharField):
     def __init__(self, *args, **kwargs):
         kwargs.update(mask='00.000-000')
@@ -349,3 +359,8 @@ class Model(models.Model, ModelMixin, metaclass=ModelBase):
             if isinstance(field, models.CharField):
                 return getattr(self, field.name)
         return '{} #{}'.format(self.metaclass().verbose_name, self.pk)
+
+
+    def send_mail(self, to, subject, content, from_email=None):
+        from sloth.api.models import Email
+        Email.objects.send(to, subject, content, from_email)

@@ -191,7 +191,7 @@ function enter(name, value, submit){
         if (!element[0]) element = $(cursor||document).find( "label").filter(function() {return $(this).text().trim().replace('*', '') === name;}).parent().find('input, textarea').not("input[type='checkbox']").first();
         $('input[name=hidden-upload-value]').remove();
         if(element.prop("type")=='file'){
-            $('<input type="hidden" name="hidden-upload-value" value="'+element[0].id+':'+value+'">').appendTo(document.body);
+            $('<input type="hidden" name="hidden-upload-value" value="'+element[0].id+'">').appendTo(document.body);
             return element;
         }
 

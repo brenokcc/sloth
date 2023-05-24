@@ -236,6 +236,19 @@
     color: #CCC;
     top: -8px;
 }
+select[readonly].select2-hidden-accessible + .select2-container {
+    pointer-events: none;
+    touch-action: none;
+}
+
+select[readonly].select2-hidden-accessible + .select2-container .select2-selection {
+    background: #eee;
+    box-shadow: none;
+}
+
+select[readonly].select2-hidden-accessible + .select2-container .select2-selection__arrow, select[readonly].select2-hidden-accessible + .select2-container .select2-selection__clear {
+    display: none;
+}
 .messages{
     position: fixed;
     top: 0;
@@ -401,7 +414,7 @@ textarea{
 	font-size: 16px;
 }
 
-.reloadable-fieldset, .reloadable-queryset{
+.reloadable-fieldset, .reloadable-queryset, .fieldset-group{
     margin-bottom: 10px;
 }
 

@@ -87,6 +87,25 @@ class DecimalField(forms.DecimalField):
         return value
 
 
+class TextField(forms.CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(widget=forms.Textarea())
+        super().__init__(*args, **kwargs)
+
+
+class BooleanChoiceField(forms.ChoiceField):
+    def __init__(self, *args, **kwargs):
+        kwargs.update(widget=forms.Select(), choices=[['', ''], [1, 'Sim'], [0, 'Não']])
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        if value == '':
+            if self.required:
+                raise ValidationError('Selecione uma opção')
+            return None
+        return bool(int(value))
+
+
 class RegionalDateWidget(DateInput):
     input_type = 'date'
 
@@ -177,12 +196,15 @@ class Action(metaclass=ActionMetaclass):
         for field_name in self.fields:
             field = self.fields[field_name]
             if hasattr(field, 'queryset'):
-                if not self.request.user.is_superuser and getattr(field, 'username_lookup', None):
+                if getattr(field, 'username_lookup', None):
                     pks = list(field.queryset.filter(**{field.username_lookup: self.request.user}).values_list('pk', flat=True)[0:2])
                     if len(pks) == 1:
                         field.queryset = field.queryset.model.objects.filter(pk=pks[0])
                         field.initial = pks[0]
-                        field.widget = forms.HiddenInput()
+                        self.initial[field_name] = field.initial
+                        # field.widget = forms.HiddenInput()
+                        field.widget.attrs['class'] = '{} disabled'.format(field.widget.attrs.get('class', ''))
+                        field.widget.attrs['readonly'] = 'readonly'
                 else:
                     field.queryset = field.queryset.contextualize(self.request).apply_role_lookups(self.request.user)
 
@@ -229,14 +251,13 @@ class Action(metaclass=ActionMetaclass):
         if text:
             self.content['danger'].append(text)
 
-    def parameters(self, index):
-        values = None
+    def parameter(self, name, default=None):
         for token in self.request.path.split('/'):
-            if values is not None:
-                values.append((token))
-            if token.lower() == self.get_api_name():
-                values = []
-        return values[index] if values and len(values)>index else None
+            if '=' in token:
+                k, v = token.split('=')
+                if k == name:
+                    return v
+        return default
 
     def objects(self, model_name):
         return apps.get_model(model_name).objects.contextualize(self.request)
@@ -567,7 +588,8 @@ class Action(metaclass=ActionMetaclass):
         if request:  # and not request.user.is_superuser
             checker = PermissionChecker(request, instance, instantiator, getattr(cls, 'Meta', None))
             has_permission = cls.has_permission(checker, request.user)
-            return cls.check_permission(checker, request.user) if has_permission is None else has_permission
+            return has_permission
+            ### return cls.check_permission(checker, request.user) if has_permission is None else has_permission
         return True
 
     def __str__(self):
@@ -789,8 +811,9 @@ class Action(metaclass=ActionMetaclass):
                             setattr(self.instance, name, self.fields[name].clean(value))
         else:
             attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
-        qs = field.queryset if attr is None else attr(field.queryset)
         self.data.update(self.request.GET)
+        qs = field.queryset if attr is None else attr(field.queryset)
+
         total = qs.count()
         qs = qs.search(q=q) if q else qs
         items = [dict(id=value.id, text=str(value), html=value.get_select_display()) for value in qs[0:25]]
@@ -915,6 +938,10 @@ class Action(metaclass=ActionMetaclass):
 
     def apply_role_lookups(self, user):
         return self
+
+    def send_mail(self, to, subject, content, from_email=None):
+        from sloth.api.models import Email
+        Email.objects.send(to, subject, content, from_email)
 
 
 class ActionView(Action):

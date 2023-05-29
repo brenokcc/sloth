@@ -384,22 +384,23 @@ class Dashboards:
             return dict(icons=icons, items=menu)
 
         html = []
-        def append_html(label, item, level=0):
+        def append_html(label, item, level=0, hierarchy=None):
             ident = '\t' * level
             nbsp = '&nbsp;' * level * 3
             html.append('{}<li>'.format(ident))
             icon = '<i class="bi bi-{} menu-item-icon"></i> '.format(icons[label]) if level == 0 else ''
             if 'url' in item:
-                html.append('{}\t<a href="{}">{}{}{}</a>'.format(ident, item['url'], icon, nbsp, item['label']))
+                html.append('{}\t<a class="menu-subitem" data-hierarchy="({})" href="{}">{}{}{}</a>'.format(ident, ', '.join([f"'{text}'" for text in hierarchy]), item['url'], icon, nbsp, item['label']))
             else:
-                html.append('{}\t<a href="javascript:">{}{}{}<i class="bi bi-chevron-down chevron"></i></a>'.format(ident, icon, nbsp, label))
+                html.append('{}\t<a class="menu-item" href="javascript:">{}{}{}<i class="bi bi-chevron-down chevron"></i></a>'.format(ident, icon, nbsp, label))
                 html.append('{}<ul>'.format(ident))
                 for sublabel, subitem in item.items():
-                    append_html(sublabel, subitem, level+1)
+                    hierarchy.insert(0, sublabel)
+                    append_html(sublabel, subitem, level+1, hierarchy)
                 html.append('{}</ul>'.format(ident))
             html.append('{}</li>'.format(ident))
         for label, item in menu.items():
-            append_html(label, item, 0)
+            append_html(label, item, 0, [label])
         return mark_safe('\n'.join(html))
 
     def serialize(self, data):

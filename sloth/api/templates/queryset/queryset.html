@@ -1,5 +1,4 @@
 {% load tags %}
-<div>
 <div class="reloadable-queryset {% if not data.metadata.is_admin%}box{% endif %}" id="{{ data.key }}" data-path="{{ data.path }}">
     <div class="queryset {% if data.metadata.is_admin %}admin-queryset{% endif %}" id="queryset-{{ data.uuid }}">
         {% if data.name %}
@@ -60,7 +59,7 @@
                         url:'{{ data.path|safe }}?{{ request|post_querystring }}',
                         data: data,
                         success:function( html ) {
-                            $('#{{ data.key }}').html($(html).find('#{{ data.key }}').html()).initialize();
+                            $('#{{ data.key }}').html($(html).html()).initialize();
                             $(document.body).removeClass('page-loading');
                         }
                     });
@@ -205,8 +204,9 @@
         </div>
         </div>
     </div>
+    {% if data.metadata.scrollable %}
+        {% include "queryset/scroll.html" %}
+    {% endif %}
 </div>
-{% if data.metadata.scrollable %}
-    {% include "queryset/scroll.html" %}
-{% endif %}
-</div>
+
+

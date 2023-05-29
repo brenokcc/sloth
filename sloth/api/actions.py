@@ -1,5 +1,7 @@
 import os
 import json
+import sys
+
 import onetimepass
 import base64
 import requests
@@ -574,3 +576,18 @@ class Workflow(actions.ActionView):
 
     def has_permission(self, user):
         return user.is_superuser
+
+
+class TestLogger(actions.ActionView):
+    class Meta:
+        verbose_name = 'Log de Teste'
+        modal = True
+        style = 'primary'
+
+    def view(self):
+        command = self.request.GET.get('command')
+        print(command)
+        return command
+
+    def has_permission(self, user):
+        return 'test' in sys.argv

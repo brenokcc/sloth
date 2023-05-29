@@ -11,6 +11,10 @@ from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.contrib.auth.models import User
 from sloth.test.selenium.browser import Browser
 from subprocess import DEVNULL, check_call
+from django.core.servers.basehttp import WSGIServer
+
+
+WSGIServer.handle_error = lambda *args, **kwargs: None
 
 
 class TestStaticFilesHandler(StaticFilesHandler):
@@ -126,17 +130,27 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def save(self, name='state'):
         dbname = settings.DATABASES['default']['NAME']
-        cmd = 'pg_dump -U postgres -d {} --inserts --data-only --no-owner --file={}.sql'.format(dbname, name)
-        check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
+        if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
+            cmd = 'sqlite3 {} ".dump" > {}.sql'.format(dbname, name)
+            os.system(cmd)
+        else:
+            cmd = 'pg_dump -U postgres -d {} --inserts --data-only --no-owner --file={}.sql'.format(dbname, name)
+            check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
     def resume(self, name='state'):
         dbname = settings.DATABASES['default']['NAME']
         cursor = connection.cursor()
-        tables = [m._meta.db_table for c in apps.get_app_configs() for m in c.get_models()]
-        for table in tables:
-            cursor.execute('truncate table {} cascade;'.format(table))
-        cmd = 'psql -U postgres -d {} --file={}.sql'.format(dbname, name)
-        check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
+        if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
+            cmd = 'sqlite3 {} "PRAGMA writable_schema = 1;DELETE FROM sqlite_master;PRAGMA writable_schema = 0;VACUUM;PRAGMA integrity_check;"'.format(dbname)
+            os.system(cmd)
+            cmd = 'cat {}.sql | sqlite3 {}'.format(name, dbname)
+            os.system(cmd)
+        else:
+            tables = [m._meta.db_table for c in apps.get_app_configs() for m in c.get_models()]
+            for table in tables:
+                cursor.execute('truncate table {} cascade;'.format(table))
+            cmd = 'psql -U postgres -d {} --file={}.sql'.format(dbname, name)
+            check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
     def loaddata(self, fixture_path):
         call_command('loaddata', '--skip-checks', fixture_path)

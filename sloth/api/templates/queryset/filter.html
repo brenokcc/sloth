@@ -25,7 +25,7 @@
           ajax: {
             url: function () {return "{{ data.path|start_querystring }}"+$('#form-{{ data.uuid }}').serialize()+'&choices={{ metadata.key }}';},
             dataType: 'json',
-            delay: 250,
+            delay: 3000,
             minimumInputLength: 3,
             data: function (params) {
               return { term: params.term };

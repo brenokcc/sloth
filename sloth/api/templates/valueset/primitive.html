@@ -1,1 +1,5 @@
-{% include 'valueset/value.html' with v=data %}
+{% if data.template %}
+    {% include data.template with value=data.value key=data.key %}
+{% else %}
+    {% include 'valueset/value.html' with v=data %}
+{% endif %}

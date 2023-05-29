@@ -68,7 +68,15 @@ function scroolToElement(element, callback){
         var scrollData = { scrollTop: element.offset().top - $(window).height()/2 };
         if(window['display_fake_mouse']) var scroolSpeed = 1200;
         else var scroolSpeed = 0;
-        $([document.documentElement, document.body]).animate(scrollData, scroolSpeed, 'swing', function (){
+        // $([document.documentElement, document.body]).animate(scrollData, scroolSpeed, 'swing', function (){
+        if($('#modal:visible').length>0){
+            var container = '#modal';
+            var scrollData = { scrollTop: element.offset().top - (window.innerHeight*0.25) + $(container).scrollTop()};
+        } else {
+            var container = 'body';
+            var scrollData = { scrollTop: element.offset().top - (window.innerHeight*0.25)};
+        }
+        $(container).animate(scrollData, scroolSpeed, 'swing', function (){
             if(lastScrooledElement!=element) callback();
             lastScrooledElement = element;
         });
@@ -99,7 +107,7 @@ function click(name, type, index){
         element = $(cursor||document).find('.bi-'+name+':visible').parent();
     }
     else if(tab){
-        element = $(document).find('a.nav-link').filter(function() {return $(this).find('.nav-link-text').text().trim() == name;}).first();
+        element = $(cursor||document).find('a.nav-link').filter(function() {return $(this).find('.nav-link-text').text().trim() == name;}).first();
     } else {
         if (element.length == 0 && (link || button)) element = $(cursor||document).find("button:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
         if (element.length == 0 && (link || button)) element = $(cursor||document).find("a:visible").filter(function() {return $(this).text().replace('Loading...', '').trim() === name;}).first();
@@ -218,13 +226,13 @@ function enter(name, value, submit){
     }
 }
 
-function check(name, radio){
-    lookAt(name);
+function check(name, radio, look){
+    if(look==null) lookAt(name);
     if (radio) tipo = 'radio';
     else tipo = 'checkbox';
     var element = $(cursor||document).find('input[type='+tipo+']');
     if(recursively(element)){
-        return check(name, radio);
+        return check(name, radio, false);
     } else if(element.length>0){
         element.trigger('click');
         return element;
@@ -261,17 +269,20 @@ function choose(name, value, headless){
         if(headless){
             $(element).val(element.find("option:contains(" + value + ")").val());
         } else {
-            element.select2("open");
-            var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
-            $search.val(value);
-            $search.trigger('keyup');
-            var lookup = "option:contains(" + value + ")";
-            function waitValue() {
-                var value = element.find(lookup).val();
-                element.val(value).trigger('change');
-                element.select2('close');
+            function afterScrool() {
+                element.select2("open");
+                var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
+                $search.val(value);
+                $search.trigger('keyup');
+                var lookup = "option:contains(" + value + ")";
+                function waitValue() {
+                    var value = element.find(lookup).val();
+                    element.val(value).trigger('change');
+                    element.select2('close');
+                }
+                setTimeout(waitValue, '2000');
             }
-            setTimeout(waitValue, '2000');
+            return scroolToElement(element, afterScrool);
         }
         return element.parent()[0]
     }

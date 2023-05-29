@@ -52,10 +52,13 @@
 }
 .queryset-title {
     display: inline-block;
+    margin-top: 10px;
 }
 .queryset-action-bar {
     float: right;
     display: inline-block;
+    margin-right: 10px;
+    margin-top: 10px;
 }
 .queryset-data{
     overflow-x:auto;
@@ -128,6 +131,8 @@
 .fieldset-action-bar{
     float: right;
     display: inline-block;
+    margin-right: 10px;
+    margin-top: 10px;
 }
 .fieldet-tab{
     padding-top: 1rem;
@@ -469,7 +474,7 @@ th, label, .fieldset-field-label, .nav-link.active{
 	background-color: white;
 	box-shadow: 0px 16px 32px 0px #001E3C0A;
 	border-radius: 8px;
-	padding: 20px;
+	padding-left: 20px;
 }
 .search-and-filters form, .action-wrapper, .cards-wrapper, .shortcut-wrapper, .fieldset-list, .fieldset-inline-action{
     margin-bottom: 20px;

@@ -1,5 +1,5 @@
 {% load tags %}
-<div class="reloadable-fieldset box" id="{{ data.key }}" data-path="{{ data.path }}">
+<div class="{% if unreloadable %}un{% endif %}reloadable-fieldset box" id="{{ data.key }}" data-path="{{ data.path }}">
 <div id="statistics-{{ data.uuid }}">
 {% if uuid is None or request.GET.uuid is None %}
     {% if data.name %}

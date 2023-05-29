@@ -74,5 +74,9 @@
     {% include "dashboard/modal.html" %}
     {% include "dashboard/bottom.html" %}
   </body>
+  <script>
+    var display_fake_mouse = false;
+    function testlogger(command){return;$.get('/app/dashboard/test_logger/?command='+command);};
+  </script>
 </html>
 {% endif %}

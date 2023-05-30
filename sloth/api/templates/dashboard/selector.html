@@ -1,0 +1,13 @@
+{% for k, item in request.session.session_lookups.items %}
+<div>
+    <div style="width: 300px;float:right;margin:10">
+        <select onchange="$.get('/app/dashboard/set_session_lookup/{{ k }}='+$(this).find('option:selected').val()+'/', function(html){document.location.reload();})">
+            <option value="0">{{ item.label }}...</option>
+            {% for pk, label in item.choices %}
+                <option {% if pk == item.value %}selected{% endif %} value="{{ pk }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="clearfix"></div>
+</div>
+{% endfor %}

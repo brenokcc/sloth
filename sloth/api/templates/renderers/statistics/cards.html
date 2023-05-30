@@ -1,0 +1,24 @@
+{% load tags %}
+<div align="center">
+    <style>
+        .scc-card{
+            width: 200;
+            display: inline-block;
+            padding: 10;
+            margin: 5;
+            border: 0;
+            background-color: white;
+            min-height: 115;
+            vertical-align: middle;
+        }
+        .scc-card .number{
+            font-size: 2rem;
+        }
+    </style>
+    {% for icon, number, text in value %}
+        <div class="scc-card">
+            <div class="number">{{ icon|icontag }} {{ number }}</div>
+            <div class="text">{{ text }}</div>
+        </div>
+    {% endfor %}
+</div>

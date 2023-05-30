@@ -163,6 +163,20 @@ class Dashboard(metaclass=DashboardType):
         if item:
             item.update(hierarchy=hierarchy, menu_icon=icon)
 
+    def session_lookup(self, **kwargs):
+        # del self.request.session['session_lookups']
+        for key, qs in kwargs.items():
+            if 'session_lookups' not in self.request.session:
+                self.request.session['session_lookups'] = {}
+                self.request.session.save()
+            if key not in self.request.session['session_lookups'] :
+                self.request.session['session_lookups'][key] = dict(
+                    choices=[[obj.pk, str(obj)] for obj in qs],
+                    value=None,
+                    label=qs.model.metaclass().verbose_name
+                )
+                self.request.session.save()
+
     def top_menu(self, *items, modal=False, app=None):
         self._load('links', items, modal=modal, app=app)
 
@@ -261,9 +275,10 @@ class Dashboard(metaclass=DashboardType):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
-    @staticmethod
-    def objects(model_name):
-        return apps.get_model(model_name).objects
+    def objects(self, model_name):
+        qs = apps.get_model(model_name).objects.all()
+        qs.request = self.request
+        return qs.apply_role_lookups(self.request.user, self.request.session)
 
     @classmethod
     def get_attr_metadata(cls, lookup):

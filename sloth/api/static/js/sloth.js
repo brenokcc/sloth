@@ -259,7 +259,7 @@ jQuery.fn.extend({
         });
         $('.fieldset-tab').map(function (i, item){var fieldsets=$(this).find('.reloadable-fieldset, .reloadable-queryset'); if(fieldsets.length == 1) fieldsets.find('.queryset-title, .fieldset-title').hide();});
 
-        if(window.testlogger){
+        if(window.testlogger && false){
             function formatValue(value){
                 if(value && value.length==10 && value.indexOf('-')==4){
                     var tokens = value.split('-');

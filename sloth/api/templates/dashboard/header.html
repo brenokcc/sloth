@@ -37,12 +37,13 @@
 
         <div class="collapse navbar-collapse">
           {% include "dashboard/search.html" %}
+          {% include "dashboard/selector.html" %}
           {% include "dashboard/tools.html" %}
           {% include "dashboard/tasks.html" %}
           {% include "dashboard/plus.html" %}
           {% include "dashboard/apps.html" %}
           {% if request.user.is_authenticated %}
-          {% include "dashboard/settings.html" %}
+            {% include "dashboard/settings.html" %}
           {% endif %}
         </div>
 

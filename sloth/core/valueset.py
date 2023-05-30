@@ -254,6 +254,7 @@ class ValueSet(dict):
                         verbose_name = getattr(attr, '__verbose_name__', qs.metadata['verbose_name'])
                         if verbose_name is None:
                             verbose_name = pretty(attr_name)
+                        qs.verbose_name(verbose_name)
                         template = getattr(attr, '__template__', None)
                         template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:

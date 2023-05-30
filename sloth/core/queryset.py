@@ -39,7 +39,7 @@ class QuerySet(models.QuerySet):
             page=1, limit=20, interval='', total=0, ignore=[], only={}, is_admin=False, ordering=[],
             actions=[], attach=[], template=None, attr=None, source=None, aggregations=[], calendar=None,
             global_actions=[], batch_actions=[], inline_actions=[], lookups=[], collapsed=True, compact=False,
-            verbose_name=None, related_field=None, scrollable=False, tree=None
+            verbose_name=None, related_field=None, scrollable=False, tree=None, session_lookups=[], on_demand=False
         )
         if self.model and getattr(self.model.metaclass(), 'autouser', False):
             self.lookups(autouser='pk')
@@ -81,6 +81,11 @@ class QuerySet(models.QuerySet):
             self.metadata['lookups'].append((name, scopes))
         return self
 
+    def session_lookups(self, *names, **scopes):
+        for name in names or ('Usuário',):
+            self.metadata['session_lookups'].append((name, scopes))
+        return self
+
     def lookups(self, name='Usuário', *names, **scopes):
         self.role_lookups(*((name,) + names), **scopes)
         return self
@@ -94,6 +99,11 @@ class QuerySet(models.QuerySet):
         if user.is_authenticated:
             return user.is_superuser or user.roles.contains(*(t[0] for t in self.metadata['lookups']))
         return False
+
+    def on_demand(self):
+        qs = self.clone()
+        qs.metadata['on_demand'] = True
+        return qs
 
     def has_attr_permission(self, user, name):
         if user.is_superuser:
@@ -115,7 +125,8 @@ class QuerySet(models.QuerySet):
             allowed.append('view' if view['name'] == 'self' else view['name'])
         return allowed
 
-    def apply_role_lookups(self, user):
+    def apply_role_lookups(self, user, session=None):
+        qs = None
         if user.is_superuser:
             return self
         else:
@@ -134,10 +145,20 @@ class QuerySet(models.QuerySet):
                                 lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):
-                        return self
+                        qs = self
+            qs = self.filter(reduce(operator.__or__, lookups)) if lookups else self
+        if session and self.metadata['session_lookups']:
+            lookups = []
+            for name, scopes in self.metadata['session_lookups']:
+                if user.roles.contains(name):
+                    for k, v in scopes.items():
+                        if v in session['session_lookups'] and session['session_lookups'][v]['value']:
+                            lookups.append(Q(**{k: session['session_lookups'][v]['value']}))
             if lookups:
-                return self.filter(reduce(operator.__or__, lookups))
-        return self.none() if self.metadata['is_admin'] else self
+                qs = qs.filter(reduce(operator.__or__, lookups))
+        if qs is None:
+            return self.none() if self.metadata['is_admin'] else self
+        return qs
 
     def append(self, *names):
         from sloth.core.valueset import ValueSet
@@ -492,7 +513,7 @@ class QuerySet(models.QuerySet):
                 subset = self.request and self.request.GET.get('subset', 'all') or 'all'
                 data['metadata'].update(
                     search=search, display=display, filters=filters, pagination=pagination,
-                    collapsed=collapsed, subset=subset,
+                    collapsed=collapsed, subset=subset, on_demand=self.metadata['on_demand'],
                     compact=self.metadata['compact'], is_admin=self.metadata['is_admin']# , state=self.dumps()
                 )
                 if calendar:
@@ -840,7 +861,7 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(
                     self.process_request(request).tree_nodes()
                 )
-            component = self.process_request(request).apply_role_lookups(request.user)
+            component = self.process_request(request).apply_role_lookups(request.user, request.session)
             if request.path.startswith('/app/'):
                 raise HtmlReadyResponseException(component.html())
             else:

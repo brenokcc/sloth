@@ -251,13 +251,16 @@ class Action(metaclass=ActionMetaclass):
         if text:
             self.content['danger'].append(text)
 
-    def parameter(self, name, default=None):
+    def parameters(self):
+        data = {}
         for token in self.request.path.split('/'):
             if '=' in token:
                 k, v = token.split('=')
-                if k == name:
-                    return v
-        return default
+                data[k] = int(v) if v.isdigit() else v
+        return data
+
+    def parameter(self, name, default=None):
+        return self.parameters().get(name, default)
 
     def objects(self, model_name):
         return apps.get_model(model_name).objects.contextualize(self.request)

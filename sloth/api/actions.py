@@ -591,3 +591,21 @@ class TestLogger(actions.ActionView):
 
     def has_permission(self, user):
         return 'test' in sys.argv
+
+
+class SetSessionLookup(actions.ActionView):
+
+    def view(self):
+        for k, v in self.parameters().items():
+            if v == 0:
+                self.request.session['session_lookups'][k]['value'] = None
+                self.request.session.save()
+                break
+            for pk, _ in self.request.session['session_lookups'][k]['choices']:
+                if str(pk) == str(v):
+                    self.request.session['session_lookups'][k]['value'] = pk
+                    self.request.session.save()
+        return 'OK'
+
+    def has_permission(self, user):
+        return user.is_authenticated

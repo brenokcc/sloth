@@ -274,7 +274,7 @@ jQuery.fn.extend({
             $(this).find('a.search-menu-item').click(function(){testlogger("self.search_menu('"+$(this).text().trim()+"')")});
             $(this).find('a.btn').click(function(){testlogger("self.click_button('"+$(this).text().trim()+"')")});
             $(this).find('button').click(function(){testlogger("self.click_button('"+$(this).text().replace("Loading...", "").trim()+"')")});
-            $(this).find('input[type=checkbox]').click(function(){testlogger("self.check('"+$(this).parent().find('label').html().trim().replace('*', '')+"')")});
+            $(this).find('input[type=checkbox]').click(function(){testlogger("self.check('"+($(this).parent().find('label').html()||"").trim().replace('*', '')+"')")});
             $(this).find('btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace("bi ", "").replace("bi-", "")+"')")});
         }
         return this;

@@ -266,16 +266,16 @@ jQuery.fn.extend({
                     if(tokens.length==3) return tokens[2]+'/'+tokens[1]+'/'+tokens[0];
                 } return value;
             }
-            $(this).find('input, textarea').not('input[type=checkbox]').blur(function(){testlogger("self.enter('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+formatValue($(this).val())+"')")});
-            $(this).find('select').change(function(){testlogger("self.choose('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+$(this).find('option:selected').html()+"')")});
-            $(this).find('a:not(.btn):not(.nav-link):not(.menu-item):not(.menu-subitem):not(.search-menu-item)').click(function(){testlogger("self.click_link('"+$(this).text().replace("Loading...", "").trim()+"')")});
-            $(this).find('a.nav-link').click(function(){testlogger("self.click_tab('"+$(this).find('.nav-link-text').text().trim()+"')")});
-            $(this).find('a.menu-subitem').click(function(){testlogger("self.click_menu"+$(this).data("hierarchy")+"")});
-            $(this).find('a.search-menu-item').click(function(){testlogger("self.search_menu('"+$(this).text().trim()+"')")});
-            $(this).find('a.btn').click(function(){testlogger("self.click_button('"+$(this).text().trim()+"')")});
-            $(this).find('button').click(function(){testlogger("self.click_button('"+$(this).text().replace("Loading...", "").trim()+"')")});
-            $(this).find('input[type=checkbox]').click(function(){testlogger("self.check('"+($(this).parent().find('label').html()||"").trim().replace('*', '')+"')")});
-            $(this).find('btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace("bi ", "").replace("bi-", "")+"')")});
+//            $(this).find('input, textarea').not('input[type=checkbox]').blur(function(){testlogger("self.enter('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+formatValue($(this).val())+"')")});
+//            $(this).find('select').change(function(){testlogger("self.choose('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+$(this).find('option:selected').html()+"')")});
+//            $(this).find('a:not(.btn):not(.nav-link):not(.menu-item):not(.menu-subitem):not(.search-menu-item)').click(function(){testlogger("self.click_link('"+$(this).text().replace("Loading...", "").trim()+"')")});
+//            $(this).find('a.nav-link').click(function(){testlogger("self.click_tab('"+$(this).find('.nav-link-text').text().trim()+"')")});
+//            $(this).find('a.menu-subitem').click(function(){testlogger("self.click_menu"+$(this).data("hierarchy")+"")});
+//            $(this).find('a.search-menu-item').click(function(){testlogger("self.search_menu('"+$(this).text().trim()+"')")});
+//            $(this).find('a.btn').click(function(){testlogger("self.click_button('"+$(this).text().trim()+"')")});
+//            $(this).find('button').click(function(){testlogger("self.click_button('"+$(this).text().replace("Loading...", "").trim()+"')")});
+//            $(this).find('input[type=checkbox]').click(function(){testlogger("self.check('"+($(this).parent().find('label').html()||"").trim().replace('*', '')+"')")});
+//            $(this).find('btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace("bi ", "").replace("bi-", "")+"')")});
         }
         return this;
     },

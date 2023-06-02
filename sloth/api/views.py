@@ -230,7 +230,10 @@ def dispatcher(request, path):
         else:
             obj = obj.view()
             allowed_attrs = obj.get_allowed_attrs()
-            if not request.user.is_authenticated: raise PermissionDenied()
+            if not request.user.is_authenticated:
+                if request.path.startswith('/app/'):
+                    return HttpResponseRedirect('/')
+                raise PermissionDenied()
     elif token in settings.INSTALLED_APPS or token in ('api', 'auth'):
         app_label, model_name = token, tokens.pop(0)
         obj = apps.get_model(app_label, model_name).objects.view()

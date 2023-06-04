@@ -199,6 +199,9 @@
             </li>
           {% endif %}
         {% endfor %}
+        {% if data.metadata.pagination.pages|length > 4 %}
+        <li>&nbsp;&nbsp;&nbsp;Ir para página <input type="number" style="border:1px solid #dee2e6;height:38;width:48;padding-left:8;" value="{{ data.metadata.pagination.page }}" onkeypress="if(event.which==13){$('#pagination-{{ data.uuid }}').val(this.value);reload{{ data.uuid }}();document.getElementById('pagination-info-{{ data.uuid }}').scrollIntoView();return false;}"></li>
+        {% endif %}
       </ul>
     </nav>
     {% endif %}

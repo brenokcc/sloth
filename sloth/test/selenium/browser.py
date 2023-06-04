@@ -11,12 +11,10 @@ from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import WebDriverException
 
 
-HEADLESS = os.environ.get('HEADLESS') in (None, '1')
-
 
 class Browser(webdriver.Firefox):
-    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=HEADLESS):
-
+    
+    def __init__(self, server_url, options=None, verbose=True, slowly=False, maximize=True, headless=True):
         if not options:
             options = Options()
         if maximize:
@@ -39,12 +37,6 @@ class Browser(webdriver.Firefox):
             self.set_window_position(700, 0)
             self.set_window_size(720, 800)
         self.switch_to.window(self.current_window_handle)
-
-    def slow_down(self):
-        self.slowly = True
-
-    def speed_up(self):
-        self.slowly = False
 
     def wait(self, seconds=1):
         time.sleep(seconds)
@@ -75,7 +67,6 @@ class Browser(webdriver.Firefox):
             self.open('/app/')
 
     def enter(self, name, value, submit=False, count=4):
-
         if callable(value):
             value = value()
         if type(value) == datetime.date:
@@ -153,7 +144,7 @@ class Browser(webdriver.Firefox):
                 self.wait(2)
 
     def see_message(self, text, count=4):
-        self.print('See message {}'.format(text))
+        self.print('See message "{}"'.format(text))
         try:
             self.execute_script("seeMessage('{}')".format(text))
         except WebDriverException as e:
@@ -234,17 +225,16 @@ class Browser(webdriver.Firefox):
                 self.watch(e)
         self.wait()
 
-    def search_menu(self, *texts, count=4):
-        self.print('Searching "{}"'.format('->'.join(texts)))
-        for text in texts:
-            try:
-                self.execute_script("searchMenu('{}')".format(text.strip()))
-            except WebDriverException as e:
-                if count:
-                    self.wait()
-                    self.search_menu(*texts, count=count - 1)
-                else:
-                    self.watch(e)
+    def search_menu(self, text, count=4):
+        self.print('Searching "{}"'.format(text))
+        try:
+            self.execute_script("searchMenu('{}')".format(text.strip()))
+        except WebDriverException as e:
+            if count:
+                self.wait()
+                self.search_menu(text, count=count - 1)
+            else:
+                self.watch(e)
         self.wait()
 
     def click_menu(self, *texts, count=1):

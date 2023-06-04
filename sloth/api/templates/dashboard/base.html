@@ -52,7 +52,10 @@
       <script src="{{ url }}?version={{ dashboard.data.footer.version }}"></script>
     {% endfor %}
     {% block extrahead %} {% endblock %}
-
+    <script>
+      var DISPLAY_FAKE_MOUSE = false;
+      var LOG_TEST_ACTIONS = false;
+    </script>
   </head>
   <body id="{{ request.path|url_slug }}">
     {% include "dashboard/menu.html" with menu=dashboard.data.menu %}
@@ -74,9 +77,5 @@
     {% include "dashboard/modal.html" %}
     {% include "dashboard/bottom.html" %}
   </body>
-  <script>
-    var display_fake_mouse = false;
-    function testlogger(command){return;$.get('/app/dashboard/test_logger/?command='+command);};
-  </script>
 </html>
 {% endif %}

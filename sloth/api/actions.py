@@ -451,9 +451,11 @@ class Signup(actions.ActionView):
         super().submit()
 
     def clean(self):
-        if User.objects.filter(username=self.cleaned_data.get('username')):
+        username = self.cleaned_data.get('username')
+        email = self.cleaned_data.get('email')
+        if username and User.objects.filter(username=username):
             raise actions.ValidationError('Usuário já cadastrado.')
-        if User.objects.filter(email=self.cleaned_data.get('email')):
+        if email and User.objects.filter(email=email):
             raise actions.ValidationError('E-mail já cadastrado.')
         if self.cleaned_data.get('pass1') != self.cleaned_data.get('pass2'):
             raise actions.ValidationError('Senhas não conferem.')

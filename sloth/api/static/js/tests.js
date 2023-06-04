@@ -1,4 +1,31 @@
 var cursor = document;
+var testLoggerIdent = '';
+
+function formatValue(value){
+    if(value && value.length==10 && value.indexOf('-')==4){
+        var tokens = value.split('-');
+        if(tokens.length==3) return tokens[2]+'/'+tokens[1]+'/'+tokens[0];
+    } return value;
+}
+
+function testlogger(command){
+    //$.get('/app/dashboard/test_logger/?command='+testLoggerIdent+command);
+}
+
+function initTestLogger(element){
+    if(!LOG_TEST_ACTIONS) return;
+    $(element).find('.btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace('bi ', '').replace('bi-', '')+"')")});
+    $(element).find('input, textarea').not('input[type=checkbox]').blur(function(){testlogger("self.enter('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+formatValue($(this).val())+"')")});
+    $(element).find('select').change(function(){testlogger("self.choose('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+$(this).find('option:selected').html()+"')")});
+    $(element).find('a:not(.btn):not(.nav-link):not(.menu-item):not(.menu-subitem):not(.search-menu-item)').click(function(){testlogger("self.click_link('"+$(this).text().replace("Loading...", "").trim()+"')")});
+    $(element).find('a.nav-link').click(function(){testlogger("self.click_tab('"+$(this).find('.nav-link-text').text().trim()+"')")});
+    $(element).find('a.menu-subitem').click(function(){testlogger("self.click_menu"+$(this).data("hierarchy")+"")});
+    $(element).find('a.search-menu-item').click(function(){testlogger("self.search_menu('"+$(this).text().trim()+"')")});
+    $(element).find('a.btn').click(function(){var label=$(this).text().trim(); if(label) testlogger("self.click_button('"+label+"')")});
+    $(element).find('button').click(function(){var label=$(this).text().replace("Loading...", "").trim(); if(label) testlogger("self.click_button('"+label+"')")});
+    $(element).find('input[type=checkbox]').click(function(){testlogger("self.check('"+$(this).parent().find('label').html().trim().replace('*', '')+"')")});
+    $(element).find('btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace("bi ", "").replace("bi-", "")+"')")});
+}
 
 function fakeMouse(){
     if($("#fake-cursor").length==0) {
@@ -25,19 +52,29 @@ function fakeType(el, string, index){
       }
 }
 
+function showFakeMouse(force){
+    var top = $(document).getCookie('mouse-top') || 0;
+    var left = $(document).getCookie('mouse-left') || 0;
+    if($('#fake-cursor').length==0) $('body').append(
+        '<img id="fake-cursor" style="display:none;position:absolute;z-index:9999999;top:'+top+';left:'+left+'"/>'
+    );
+    $("#fake-cursor").css('top', top);
+    $("#fake-cursor").css('left', left);
+    if(force || top || left) $("#fake-cursor").attr("src","/static/images/hand.png").show();
+}
 
 function moveMouseTo(lookup, f) {
-    $("#fake-cursor").attr("src","/static/images/hand.png").show();
     var el = $(lookup).first();
     var top = el.first().offset()['top']+el.height()/2;
 	var left = el.first().offset()['left']+el.width()/2;
 	var lastClickedElement = null;
-	window['mouse-top'] = top;
-	window['mouse-left'] = left;
+	$(document).setCookie('mouse-top', top);
+	$(document).setCookie('mouse-left', left);
 	$('#fake-cursor').animate({top:  top, left: left }, 1200, 'swing', function(){
 	    if(lastClickedElement!=el) {
 	        $("#fake-cursor").attr("src","/static/images/click.png");
             setTimeout(f, 500);
+            setTimeout(function(){$("#fake-cursor").attr("src","/static/images/hand.png")}, 500);
         }
 	    lastClickedElement = el;
 	});
@@ -66,7 +103,7 @@ function scroolToElement(element, callback){
     var lastScrooledElement = null;
     if(element.offset() && !isIntoView(element)) {
         var scrollData = { scrollTop: element.offset().top - $(window).height()/2 };
-        if(window['display_fake_mouse']) var scroolSpeed = 1200;
+        if(window['DISPLAY_FAKE_MOUSE']) var scroolSpeed = 1200;
         else var scroolSpeed = 0;
         // $([document.documentElement, document.body]).animate(scrollData, scroolSpeed, 'swing', function (){
         if($('#modal:visible').length>0){
@@ -117,7 +154,8 @@ function click(name, type, index){
     if(recursively(element)){
         return click(name, type);
     } else if(element.length>0){
-        if (window['display_fake_mouse']) {
+        if (window['DISPLAY_FAKE_MOUSE']) {
+            showFakeMouse(true);
             function afterScrool() {
                 function afterMoveMouse(){
                     $(element[index]).trigger('mouseover');
@@ -208,7 +246,7 @@ function enter(name, value, submit){
         } else if(element.length>0) {
             function afterScrool() {
                 element.focus();
-                if (window['display_fake_mouse']) {
+                if (window['DISPLAY_FAKE_MOUSE'] && name != 'search') {
                     fakeType(element, value, 0);
                 } else {
                     element.val(value);
@@ -306,3 +344,7 @@ function wait(ms){
       end = new Date().getTime();
    }
  }
+
+$(document).ready(function() {
+    if(DISPLAY_FAKE_MOUSE) showFakeMouse();
+});

@@ -9,4 +9,5 @@ dist
 geckodriver.log
 django_sloth.egg-info
 bin/server.log
+.steps
 

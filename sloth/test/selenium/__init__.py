@@ -34,10 +34,11 @@ class TestStaticFilesHandler(StaticFilesHandler):
 
 # StaticLiveServerTestCase
 class SeleniumTestCase(LiveServerTestCase):
-    RESUME_FROM_STEP = None
+    FROM_STEP = None
     HEADLESS = True
     EXPLAIN = False
-    FREEZE = None
+    RESTORE = None
+    LOG_ACTION = False
     static_handler = TestStaticFilesHandler
 
     def __init__(self, *args, **kwargs):
@@ -188,12 +189,17 @@ class SeleniumTestCase(LiveServerTestCase):
         self.browser.click_icon(name)
 
     def step(self):
+        if SeleniumTestCase.RESTORE and self.step_file_exists(SeleniumTestCase.RESTORE) and self._execute:
+            print('Creating development database from existing step {}'.format(SeleniumTestCase.RESTORE))
+            self.create_dev_database(self.step_file_exists(SeleniumTestCase.RESTORE))
+            self._execute = 0
+            return False
         if self._step and self._execute:
             self.save()
         self._step += 1
-        if SeleniumTestCase.RESUME_FROM_STEP:
-            if self._step == SeleniumTestCase.RESUME_FROM_STEP:
-                self.restore(self._step)
+        if SeleniumTestCase.FROM_STEP:
+            if self._step == SeleniumTestCase.FROM_STEP:
+                self.load(self._step)
                 self._execute = 2
                 return False
             else:
@@ -223,26 +229,28 @@ class SeleniumTestCase(LiveServerTestCase):
         cls.browser.quit()
         cls.browser.service.stop()
 
-    def create_dev_database(self):
+    def create_dev_database(self, fname=None):
         dbname = settings.DATABASES['default']['NAME']
         if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
             if os.path.exists('db.sqlite3'):
                 os.unlink('db.sqlite3')
-            cmds = [
-                'sqlite3 db.sqlite3 "VACUUM;"',
-                'sqlite3 {} ".dump" | sqlite3 db.sqlite3'.format(dbname),
-            ]
-            for cmd in cmds: os.system(cmd)
+            os.system('sqlite3 db.sqlite3 "VACUUM;"')
+            if fname:
+                os.system('cat {} | sqlite3 db.sqlite3'.format(fname, dbname))
+            else:
+                os.system('sqlite3 {} ".dump" | sqlite3 db.sqlite3'.format(dbname))
         elif 'postgresql' in settings.DATABASES['default']['ENGINE']:
-            cmds = [
-                'dropdb -U postgres --if-exists {}'.format(dbname[5:]),
-                'createdb -U postgres {}'.format(dbname[5:]),
-                'pg_dump -U postgres -d {} | psql -U postgres -q -d {} > /dev/null'.format(dbname, dbname[5:]),
-            ]
-            for cmd in cmds: os.system(cmd)
+            dbname2 = dbname[5:]
+            os.system('dropdb -U postgres --if-exists {}'.format(dbname2))
+            os.system('createdb -U postgres {}'.format(dbname2))
+            if fname:
+                os.system('pg_dump -U postgres --schema-only -d {} | psql -U postgres -q -d {} > /dev/null'.format(dbname, dbname2))
+                os.system('cat {} | psql -U postgres -q -d {} > /dev/null'.format(fname, dbname2))
+            else:
+                os.system('pg_dump -U postgres -d {} | psql -U postgres -q -d {} > /dev/null'.format(dbname, dbname2))
 
     def save(self):
-        if SeleniumTestCase.FREEZE == self._step:
+        if SeleniumTestCase.RESTORE == self._step:
             print('Creating development database from step {}'.format(self._step))
             self.create_dev_database()
             self._execute = 0
@@ -259,10 +267,13 @@ class SeleniumTestCase(LiveServerTestCase):
                 cmd = 'pg_dump -U postgres -d {} --inserts --data-only --no-owner -f {}'.format(dbname, fname)
                 check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
+    def step_file_exists(self, step):
+        fname = '{}.sql'.format(os.path.join('.steps', str(step)))
+        return fname if os.path.exists(fname) else False
 
-    def restore(self, step):
+    def load(self, step):
         fname = '{}.sql'.format(os.path.join('.steps', str(self._step)))
-        print('Restoring step {}'.format(step))
+        print('Loading step {}'.format(step))
         dbname = settings.DATABASES['default']['NAME']
         if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
             cmd = 'sqlite3 {} "PRAGMA writable_schema = 1;delete from sqlite_master where type in (\'table\', \'index\', \'trigger\');PRAGMA writable_schema = 0;VACUUM;PRAGMA integrity_check;"'.format(dbname)

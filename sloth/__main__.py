@@ -23,12 +23,16 @@ TASKS_FILE_CONTENT = '''from sloth.api.tasks import Task
 TEST_FILE_CONTENT = '''from sloth.test import SeleniumTestCase
 
 """
-To watch the tests, run the follwing command:
-    python manage.py test --watch
-To resume the execution from the fourth step for example, run:
-   python manage.py test --watch --step 2
-To create development database from the fourth step for example, run:
-   python manage.py test --freeze 2
+Tu run the tests, execute:
+    python manage.py test
+To run the tests in the browser, execute:
+    python manage.py test --browser
+To resume the execution from the fourth step for example, execute:
+   python manage.py test --browser --from 2
+To create development database from the fourth step for example, execute:
+   python manage.py test --restore 4
+To run the test as a tutorial, execute:
+   python manage.py test --tutorial
 """
 
 class TesteIntegracao(SeleniumTestCase):

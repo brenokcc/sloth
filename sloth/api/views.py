@@ -12,6 +12,7 @@ from django.http import QueryDict
 from django.apps import apps
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from ..core.valueset import ValueSet
+from ..test import SeleniumTestCase
 from ..utils.http import ApiResponse
 from django.contrib.auth import authenticate
 from ..api import OpenApi
@@ -58,6 +59,8 @@ def app(request, path):
             return HttpResponseRedirect('/app/dashboard/change_password/')
     try:
         ctx = dict(dashboard=Dashboards(request))
+        ctx['DISPLAY_FAKE_MOUSE'] = 1 if SeleniumTestCase.EXPLAIN else 0
+        ctx['LOG_TEST_ACTIONS'] = 1 if SeleniumTestCase.LOG_ACTION else 0
         if request.user.is_authenticated and request.path.startswith('/app/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []

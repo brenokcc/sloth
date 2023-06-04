@@ -53,8 +53,8 @@
     {% endfor %}
     {% block extrahead %} {% endblock %}
     <script>
-      var DISPLAY_FAKE_MOUSE = false;
-      var LOG_TEST_ACTIONS = false;
+      var DISPLAY_FAKE_MOUSE = {{ DISPLAY_FAKE_MOUSE }};
+      var LOG_TEST_ACTIONS = {{ LOG_TEST_ACTIONS }};
     </script>
   </head>
   <body id="{{ request.path|url_slug }}">

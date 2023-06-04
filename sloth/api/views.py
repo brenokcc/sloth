@@ -60,7 +60,7 @@ def app(request, path):
     try:
         ctx = dict(dashboard=Dashboards(request))
         ctx['DISPLAY_FAKE_MOUSE'] = 1 if SeleniumTestCase.EXPLAIN else 0
-        ctx['LOG_TEST_ACTIONS'] = 1 if SeleniumTestCase.LOG_ACTION else 0
+        ctx['LOG_TEST_ACTIONS'] = 1 if SeleniumTestCase.LOG_ACTION == 2 else 0
         if request.user.is_authenticated and request.path.startswith('/app/') and not is_ajax(request):
             if 'stack' not in request.session:
                 request.session['stack'] = []

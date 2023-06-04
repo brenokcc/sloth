@@ -39,6 +39,7 @@ class SeleniumTestCase(LiveServerTestCase):
     EXPLAIN = False
     RESTORE = None
     LOG_ACTION = False
+
     static_handler = TestStaticFilesHandler
 
     def __init__(self, *args, **kwargs):
@@ -47,6 +48,7 @@ class SeleniumTestCase(LiveServerTestCase):
         self.current_username = None
         warnings.filterwarnings('ignore')
 
+        self._url = '/app/dashboard/login/'
         self._execute = 1
         self._step = 0
         self._adverb = 0
@@ -115,9 +117,13 @@ class SeleniumTestCase(LiveServerTestCase):
     def wait(self, seconds=1):
         self.browser.wait(seconds)
 
-    def open(self, url):
+    def open(self, url='/app/dashboard/login/'):
         self.say('acesse o sistema')
-        self.browser.open(url)
+        self.browser.open(self._url)
+        self._url = url
+
+    def reload(self):
+        self.browser.open(self._url)
 
     def back(self, seconds=None):
         self.browser.back(seconds)
@@ -208,7 +214,7 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def login(self, username, password):
         self.current_username = username
-        self.open('/app/dashboard/login/')
+        self.open()
         self.enter('Login', username)
         self.enter('Senha', password)
         self.click_button('Acessar')
@@ -220,6 +226,10 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def tearDown(self):
         self.save()
+        if SeleniumTestCase.LOG_ACTION:
+            SeleniumTestCase.LOG_ACTION = 2
+            self.reload()
+            input('Logging the actions in the terminal. Type any key to exit!\n\n')
         return super().tearDown()
 
     @classmethod

@@ -9,7 +9,7 @@ function formatValue(value){
 }
 
 function testlogger(command){
-    //$.get('/app/dashboard/test_logger/?command='+testLoggerIdent+command);
+    if(LOG_TEST_ACTIONS) $.get('/app/dashboard/test_logger/?command='+testLoggerIdent+command);
 }
 
 function initTestLogger(element){

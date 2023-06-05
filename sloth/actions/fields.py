@@ -10,8 +10,10 @@ class QrCodeField(forms.CharField):
 
 class PhotoField(forms.CharField):
     def __init__(self, *args, max_width=200, max_height=200, **kwargs):
-        kwargs.update(widget=inputs.PhotoInput(max_width=max_width, max_height=max_height))
         super().__init__(*args, **kwargs)
+        self.widget.attrs.update(
+            {'data-max-width': self.max_width, 'data-max-height': self.max_height, 'accept': 'image/*', 'capture': ''}
+        )
 
 
 class ModelChoiceField(forms.ModelChoiceField):

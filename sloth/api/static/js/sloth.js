@@ -234,8 +234,9 @@ jQuery.fn.extend({
                     let imageFile = e.target.files[0];
                     var reader = new FileReader();
                     reader.onload = function (e) {
-                        const MAX_WIDTH = 800;
+                        const MAX_WIDTH = $(input).data('max-width') || 800;
                         var img = document.createElement("img");
+                        img.id = input.id+'img';
                         img.onload = function (event) {
                             const ratio = MAX_WIDTH/img.width;
                             var canvas = document.createElement("canvas");
@@ -247,11 +248,16 @@ jQuery.fn.extend({
                             oc.height = img.height * ratio;
                             octx.drawImage(img, 0, 0, oc.width, oc.height);
                             ctx.drawImage(oc, 0, 0, oc.width * ratio, oc.height * ratio, 0, 0, canvas.width, canvas.height);
-                            //document.getElementById("preview").src = dataurl;
                             oc.toBlob(function(blob){
                                 $(input).addClass('resized-image');
                                 $(input).data('blob', blob);
                             });
+                            $('#cotainer'+img.id).remove();
+                            $(img).css('max-width', '200px').css('margin', '20px');
+                            var container = document.createElement("div");
+                            container.id = 'cotainer'+img.id;
+                            $(container).css('text-align', 'center').append(img);
+                            $(input).parent().append(container);
                         }
                         img.src = e.target.result;
                     }

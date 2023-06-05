@@ -1,0 +1,81 @@
+
+<div align="center" style="padding:10">
+<img src="" id="preview_{{ name }}" style="max-height:200px;">
+<img src="" id="output_{{ name }}" style="display:none">
+</div>
+{{ widget }}
+<script>
+	function create_UUID(){
+	    var dt = new Date().getTime();
+	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	        var r = (dt + Math.random()*16)%16 | 0;
+	        dt = Math.floor(dt/16);
+	        return (c=='x' ? r :(r&0x3|0x8)).toString(16);
+	    });
+	    return uuid;
+	}
+	function resizeImage(widget, maxWidth, maxHeight) {
+		setTimeout( function(){
+	    if (window.File && window.FileReader && window.FileList && window.Blob) {
+	        var filesToUploads = widget.files;
+	        var file = filesToUploads[0];
+	        if (file) {
+	            var reader = new FileReader();
+	            reader.onload = function(e) {
+	                document.getElementById('preview_'+widget.name).src = e.target.result;
+	            };
+	            reader.readAsDataURL(file);
+	            var reader = new FileReader();
+	            // Set the image once loaded into file reader
+	            reader.onload = function(e) {
+
+	                var img = document.createElement("img");
+	                img.src = e.target.result;
+
+	                var canvas = document.createElement("canvas");
+	                var ctx = canvas.getContext("2d");
+	                ctx.drawImage(img, 0, 0);
+
+	                var MAX_WIDTH = maxWidth;
+	                var MAX_HEIGHT = maxHeight;
+	                var width = img.width;
+	                var height = img.height;
+
+	                if (width > height) {
+	                    if (width > MAX_WIDTH) {
+	                        height *= MAX_WIDTH / width;
+	                        width = MAX_WIDTH;
+	                    }
+	                } else {
+	                    if (height > MAX_HEIGHT) {
+	                        width *= MAX_HEIGHT / height;
+	                        height = MAX_HEIGHT;
+	                    }
+	                }
+	                canvas.width = width;
+	                canvas.height = height;
+	                var ctx = canvas.getContext("2d");
+	                ctx.drawImage(img, 0, 0, width, height);
+
+	                dataurl = canvas.toDataURL(file.type);
+	                document.getElementById('output_'+widget.name).src = dataurl;
+
+			        var arr = dataurl.split(','),
+			        mime = arr[0].match(/:(.*?);/)[1],
+			        bstr = atob(arr[arr.length - 1]),
+			        n = bstr.length,
+			        u8arr = new Uint8Array(n);
+			        while(n--){u8arr[n] = bstr.charCodeAt(n);}
+				    const dataTransfer = new DataTransfer();
+				    dataTransfer.items.add(new File([u8arr], create_UUID()+'.png', {type:mime}));
+				    widget.files = dataTransfer.files;
+	            }
+	            reader.readAsDataURL(file);
+	        }
+	    } else {
+	        alert('The File APIs are not fully supported in this browser.');
+	    }
+	 }, 1000);
+	}
+
+</script>

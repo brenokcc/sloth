@@ -83,3 +83,16 @@ class QrCodeInput(widgets.TextInput):
         widget = super().render(name, value, attrs=attrs, **kwargs)
         output = render_to_string('inputs/qrcode.html', dict(widget=widget, name=name))
         return mark_safe(output)
+
+
+class PhotoInput(widgets.ClearableFileInput):
+    def __init__(self, *args, max_width=200, max_height=200, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_width = max_width;
+        self.max_height = max_height
+
+    def render(self, name, value, attrs=None, **kwargs):
+        attrs.update(accep='image/*', onchange='resizeImage(this, {}, {})'.format(self.max_width, self.max_height))
+        widget = super().render(name, value, attrs=attrs, **kwargs)
+        output = render_to_string('inputs/photo.html', dict(widget=widget, name=name))
+        return mark_safe(output)

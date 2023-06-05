@@ -8,6 +8,11 @@ class QrCodeField(forms.CharField):
         kwargs.update(widget=inputs.QrCodeInput())
         super().__init__(*args, **kwargs)
 
+class PhotoField(forms.CharField):
+    def __init__(self, *args, max_width=200, max_height=200, **kwargs):
+        kwargs.update(widget=inputs.PhotoInput(max_width=max_width, max_height=max_height))
+        super().__init__(*args, **kwargs)
+
 
 class ModelChoiceField(forms.ModelChoiceField):
     def __init__(self, *args, **kwargs):

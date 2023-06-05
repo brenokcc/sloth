@@ -115,6 +115,19 @@ class ColorField(CharField):
         return field
 
 
+class PhotoField(ImageField):
+    def __init__(self, *args, max_width=200, max_height=200, **kwargs):
+        self.max_width = 200
+        self.max_height = 200
+        super().__init__(*args, **kwargs)
+
+    def formfield(self, **kwargs):
+        from sloth.actions.inputs import PhotoInput
+        field = super().formfield(**kwargs)
+        field.widget = PhotoInput(max_width=self.max_width, max_height=self.max_height)
+        return field
+
+
 class CharField(CharField):
     def __init__(self, *args, max_length=255, **kwargs):
         self.mask = kwargs.pop('mask', None)

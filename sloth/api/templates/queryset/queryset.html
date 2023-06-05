@@ -124,8 +124,10 @@
                 }
                 initializeNode{{ data.uuid }}($('#queryset-{{ data.uuid }}'));
                 $('#queryset-global-actions-{{ data.uuid }}').find('a').click(function(){
-                    var params = $('#form-{{ data.uuid }}').serialize();
-                    this.href = this.href.split('?')[0] + '?' + params + '&global_action=1';
+                    if(!this.href.indexOf('#')>0){
+                        var params = $('#form-{{ data.uuid }}').serialize();
+                        this.href = this.href.split('?')[0] + '?' + params + '&global_action=1';
+                    }
                 });
             </script>
         {% endif %}

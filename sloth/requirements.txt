@@ -9,5 +9,4 @@ onetimepass==1.0.1
 pdfkit==1.0.0
 psycopg2-binary==2.9.5
 django-redis==5.2.0
-
-
+selenium==4.4.3

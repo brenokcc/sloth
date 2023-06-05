@@ -83,4 +83,7 @@ if os.environ.get('POSTGRES_HOST'):
     DATABASES['default']['PORT'] = os.environ.get('DATABASE_PORT', '5432')
 
 
-from .local_settings import *
+try:
+    from .local_settings import *
+except ImportError as e:
+    print('[WARNING] Could not import local_settings.py: {}'.format(e))

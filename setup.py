@@ -10,7 +10,7 @@ os.chdir(root_dir)
 
 setup(
     name='sloth-framework',
-    version='0.1.8',
+    version='0.1.9',
     packages=find_packages(),
     install_requires=requirements,
     extras_require={

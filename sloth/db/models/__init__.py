@@ -115,6 +115,20 @@ class ColorField(CharField):
         return field
 
 
+class PhotoField(ImageField):
+    def __init__(self, *args, max_width=200, max_height=200, **kwargs):
+        self.max_width = max_width
+        self.max_height = max_height
+        super().__init__(*args, **kwargs)
+
+    def formfield(self, **kwargs):
+        field = super().formfield(**kwargs)
+        field.widget.attrs.update(
+            {'data-max-width': self.max_width, 'data-max-height': self.max_height, 'accept': 'image/*', 'capture': ''}
+        )
+        return field
+
+
 class CharField(CharField):
     def __init__(self, *args, max_length=255, **kwargs):
         self.mask = kwargs.pop('mask', None)

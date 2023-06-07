@@ -54,17 +54,7 @@ jQuery.fn.extend({
             $('main').html(html).initialize();
         });
     },
-    ipopup: function(url){
-        var html = '<iframe src="'+url+'" width="100%" height="500px"></iframe>';
-        $('#modal').find('.modal-body').html(html);
-        $('#modal').modal('show');
-        $('#modal').find('.modal-body').css('visibility', 'visible');
-    },
-    popup: function(url, method, data){
-        $('.alert-dismissible').hide();
-        if(url.indexOf('?')>0) url = url+='&modal=1'
-        else url+='?modal=1'
-
+    setUpPopupStack: function(){
         if(window['POPUP_STACK']==null){
             window['POPUP_STACK'] = [];
             window['POPUP_STACK_SELECT2'] = [];
@@ -77,12 +67,29 @@ jQuery.fn.extend({
                     for(k in vals) {$('#'+k).val(vals[k]).trigger('change')}
                 }
                 else $('#modal').find('.modal-body').html('');
+                testLoggerIdent = testLoggerIdent.substring(0, 8-4);
             });
             $('#modal').on('shown.bs.modal', function (e) {
                 $('#modal').responsive();
+                testLoggerIdent += '    ';
                 testlogger("self.look_at_popup_window()");
+                var h2 = $('#modal').find('h2');
+                if(h2.length) testlogger("self.look_at('"+$(h2[0]).text().trim()+"')");
             });
         }
+    },
+    ipopup: function(url){
+        var html = '<iframe src="'+url+'" width="100%" height="500px"></iframe>';
+        $('#modal').setUpPopupStack();
+        $('#modal').find('.modal-body').html(html);
+        $('#modal').modal('show');
+        $('#modal').find('.modal-body').css('visibility', 'visible');
+    },
+    popup: function(url, method, data){
+        $('.alert-dismissible').hide();
+        if(url.indexOf('?')>0) url = url+='&modal=1'
+        else url+='?modal=1'
+        $('#modal').setUpPopupStack();
         if($('#modal').find('.modal-body').html().trim()){
             $('#modal').find('.modal-body').css('visibility', 'hidden');
             $('#modal .modal-body .select2-hidden-accessible').select2("destroy");
@@ -148,9 +155,10 @@ jQuery.fn.extend({
       if (match) return match[2];
     },
     setCookie: function(name, value) {
-        document.cookie = name+"="+value;
+        document.cookie = name+"="+value+"; path=/";
     },
     initialize: function () {
+        initTestLogger(this);
         $(this).find('a.popup').on('click', function(e){
             $(this).popup(this.href);
             e.preventDefault();
@@ -229,8 +237,9 @@ jQuery.fn.extend({
                     let imageFile = e.target.files[0];
                     var reader = new FileReader();
                     reader.onload = function (e) {
-                        const MAX_WIDTH = 800;
+                        const MAX_WIDTH = $(input).data('max-width') || 800;
                         var img = document.createElement("img");
+                        img.id = input.id+'img';
                         img.onload = function (event) {
                             const ratio = MAX_WIDTH/img.width;
                             var canvas = document.createElement("canvas");
@@ -242,11 +251,16 @@ jQuery.fn.extend({
                             oc.height = img.height * ratio;
                             octx.drawImage(img, 0, 0, oc.width, oc.height);
                             ctx.drawImage(oc, 0, 0, oc.width * ratio, oc.height * ratio, 0, 0, canvas.width, canvas.height);
-                            //document.getElementById("preview").src = dataurl;
                             oc.toBlob(function(blob){
                                 $(input).addClass('resized-image');
                                 $(input).data('blob', blob);
                             });
+                            $('#cotainer'+img.id).remove();
+                            $(img).css('max-width', '200px').css('margin', '20px');
+                            var container = document.createElement("div");
+                            container.id = 'cotainer'+img.id;
+                            $(container).css('text-align', 'center').append(img);
+                            $(input).parent().append(container);
                         }
                         img.src = e.target.result;
                     }
@@ -258,25 +272,6 @@ jQuery.fn.extend({
             $(this).closest('.select2-search__field').focus();
         });
         $('.fieldset-tab').map(function (i, item){var fieldsets=$(this).find('.reloadable-fieldset, .reloadable-queryset'); if(fieldsets.length == 1) fieldsets.find('.queryset-title, .fieldset-title').hide();});
-
-        if(window.testlogger && false){
-            function formatValue(value){
-                if(value && value.length==10 && value.indexOf('-')==4){
-                    var tokens = value.split('-');
-                    if(tokens.length==3) return tokens[2]+'/'+tokens[1]+'/'+tokens[0];
-                } return value;
-            }
-//            $(this).find('input, textarea').not('input[type=checkbox]').blur(function(){testlogger("self.enter('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+formatValue($(this).val())+"')")});
-//            $(this).find('select').change(function(){testlogger("self.choose('"+$(this).parent().find('label').html().trim().replace('*', '')+"', '"+$(this).find('option:selected').html()+"')")});
-//            $(this).find('a:not(.btn):not(.nav-link):not(.menu-item):not(.menu-subitem):not(.search-menu-item)').click(function(){testlogger("self.click_link('"+$(this).text().replace("Loading...", "").trim()+"')")});
-//            $(this).find('a.nav-link').click(function(){testlogger("self.click_tab('"+$(this).find('.nav-link-text').text().trim()+"')")});
-//            $(this).find('a.menu-subitem').click(function(){testlogger("self.click_menu"+$(this).data("hierarchy")+"")});
-//            $(this).find('a.search-menu-item').click(function(){testlogger("self.search_menu('"+$(this).text().trim()+"')")});
-//            $(this).find('a.btn').click(function(){testlogger("self.click_button('"+$(this).text().trim()+"')")});
-//            $(this).find('button').click(function(){testlogger("self.click_button('"+$(this).text().replace("Loading...", "").trim()+"')")});
-//            $(this).find('input[type=checkbox]').click(function(){testlogger("self.check('"+($(this).parent().find('label').html()||"").trim().replace('*', '')+"')")});
-//            $(this).find('btn i.bi').click(function(){testlogger("self.click_icon('"+$(this).attr('class').replace("bi ", "").replace("bi-", "")+"')")});
-        }
         return this;
     },
     refresh: function(areas){

@@ -20,6 +20,52 @@ ACTIONS_FILE_CONTENT = '''from sloth import actions
 TASKS_FILE_CONTENT = '''from sloth.api.tasks import Task
 '''
 
+TEST_FILE_CONTENT = '''from sloth.test import SeleniumTestCase
+
+"""
+Tu run the tests, execute:
+    python manage.py test
+To run the tests in the browser, execute:
+    python manage.py test --browser
+To resume the execution from the fourth step for example, execute:
+   python manage.py test --browser --from 2
+To create development database from the fourth step for example, execute:
+   python manage.py test --restore 4
+To run the test as a tutorial, execute:
+   python manage.py test --tutorial
+"""
+
+class TesteIntegracao(SeleniumTestCase):
+
+    def test(self):
+        self.create_superuser('admin', '123')
+
+        if self.step():
+            self.login('admin', '123')
+            self.logout()
+
+        if self.step():
+            self.click_link('Cadastrar-se')
+            with self.look_at_popup_window():
+                self.enter('Usuário', 'user')
+                self.enter('Senha', '123')
+                self.enter('Confirmação', '123')
+                self.click_button('Cadastrar-se')
+            self.login('user', '123')
+            self.logout()
+'''
+
+LOCAL_SETTINGS_FILE_CONTENT = '''_DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': '?',
+        'USER': 'postgres',
+        'PASSWORD': '',
+        'HOST': '127.0.0.1',
+        'PORT': '5432'
+    }
+}'''
+
 DASHBOARD_FILE_CONTENT = '''from sloth.api.dashboard import Dashboard
 from .models import *
 
@@ -144,12 +190,13 @@ def startproject():
         "'django.contrib.admin'",
         "'{}', 'oauth2_provider', 'sloth.api'".format(name)
     ).replace('from pathlib', 'import os\nfrom pathlib')
+    settings_content = settings_content.replace("'db.sqlite3'", "'db.sqlite3', 'TEST': {'NAME': 'test.sqlite3'}")
     settings_append = open(settings.__file__).read().replace('import os', '').replace('# ', '')
     with open(settings_path, 'w') as file:
         file.write('{}{}'.format(settings_content, settings_append))
     local_settings_path = os.path.join(name, 'local_settings.py')
     with open(local_settings_path, 'w') as file:
-        file.write('')
+        file.write(LOCAL_SETTINGS_FILE_CONTENT.replace('?', name))
     urls_path = os.path.join(name, 'urls.py')
     with open(urls_path, 'w') as file:
         file.write(URLS_FILE_CONTENT)
@@ -165,6 +212,9 @@ def startproject():
     dashboard_path = os.path.join(name, 'dashboard.py')
     with open(dashboard_path, 'w') as file:
         file.write(DASHBOARD_FILE_CONTENT)
+    test_path = os.path.join(name, 'tests.py')
+    with open(test_path, 'w') as file:
+        file.write(TEST_FILE_CONTENT)
     workflows_path = os.path.join('.github', 'workflows')
     os.makedirs(workflows_path, exist_ok=True)
     deploy_workflow_path = os.path.join(workflows_path, 'deploy.yml')

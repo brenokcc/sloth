@@ -175,10 +175,11 @@ class ModelMixin(object):
         deleted_role_tuples = role_tuples - role_tuples2
         # print('DELETED: ', deleted_role_tuples)
         for username, email, scope_name, scope_type, scope_key, scope_value in deleted_role_tuples:
-            scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
-            role.objects.filter(
-                user__username=username, name=scope_name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
-            ).delete()
+            if scope_type:
+                scope_type = '{}.{}'.format(scope_type.metaclass().app_label, scope_type.metaclass().model_name)
+                role.objects.filter(
+                    user__username=username, name=scope_name, scope_type=scope_type, scope_key=scope_key, scope_value=scope_value
+                ).delete()
 
     @classmethod
     def get_list_url(cls, prefix='', subset='all'):

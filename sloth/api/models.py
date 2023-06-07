@@ -285,7 +285,7 @@ class PushNotification(models.Model):
 
 class EmailManager(models.Manager):
     def all(self):
-        return self.rows()
+        return self.rows().order_by('-id')
 
     def send(self, to, subject, content, from_email=None):
         to = [to] if isinstance(to, str) else list(to)

@@ -54,17 +54,7 @@ jQuery.fn.extend({
             $('main').html(html).initialize();
         });
     },
-    ipopup: function(url){
-        var html = '<iframe src="'+url+'" width="100%" height="500px"></iframe>';
-        $('#modal').find('.modal-body').html(html);
-        $('#modal').modal('show');
-        $('#modal').find('.modal-body').css('visibility', 'visible');
-    },
-    popup: function(url, method, data){
-        $('.alert-dismissible').hide();
-        if(url.indexOf('?')>0) url = url+='&modal=1'
-        else url+='?modal=1'
-
+    setUpPopupStack: function(){
         if(window['POPUP_STACK']==null){
             window['POPUP_STACK'] = [];
             window['POPUP_STACK_SELECT2'] = [];
@@ -87,6 +77,19 @@ jQuery.fn.extend({
                 if(h2.length) testlogger("self.look_at('"+$(h2[0]).text().trim()+"')");
             });
         }
+    },
+    ipopup: function(url){
+        var html = '<iframe src="'+url+'" width="100%" height="500px"></iframe>';
+        $('#modal').setUpPopupStack();
+        $('#modal').find('.modal-body').html(html);
+        $('#modal').modal('show');
+        $('#modal').find('.modal-body').css('visibility', 'visible');
+    },
+    popup: function(url, method, data){
+        $('.alert-dismissible').hide();
+        if(url.indexOf('?')>0) url = url+='&modal=1'
+        else url+='?modal=1'
+        $('#modal').setUpPopupStack();
         if($('#modal').find('.modal-body').html().trim()){
             $('#modal').find('.modal-body').css('visibility', 'hidden');
             $('#modal .modal-body .select2-hidden-accessible').select2("destroy");

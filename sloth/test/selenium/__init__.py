@@ -118,8 +118,9 @@ class SeleniumTestCase(LiveServerTestCase):
         self.browser.wait(seconds)
 
     def open(self, url='/app/dashboard/login/'):
-        self.say('acesse o sistema')
-        self.browser.open(self._url)
+        if url == '/':
+            self.say('acesse o sistema')
+        self.browser.open(url)
         self._url = url
 
     def reload(self):
@@ -194,14 +195,14 @@ class SeleniumTestCase(LiveServerTestCase):
         self.explain('click_icon', name)
         self.browser.click_icon(name)
 
-    def step(self):
+    def step(self, description=None):
+        if self._step > 1 and self._execute:
+            self.save()
         if SeleniumTestCase.RESTORE and self.step_file_exists(SeleniumTestCase.RESTORE) and self._execute:
             print('Creating development database from existing step {}'.format(SeleniumTestCase.RESTORE))
             self.create_dev_database(self.step_file_exists(SeleniumTestCase.RESTORE))
             self._execute = 0
             return False
-        if self._step and self._execute:
-            self.save()
         self._step += 1
         if SeleniumTestCase.FROM_STEP:
             if self._step == SeleniumTestCase.FROM_STEP:
@@ -209,7 +210,14 @@ class SeleniumTestCase(LiveServerTestCase):
                 self._execute = 2
                 return False
             else:
-                self._execute = 0 if self._execute == 1 else 2
+                self._execute = 2 if self._execute > 1 else 0
+
+        if self._execute:
+            description = 'Executando passo {}{}'.format(self._step, ' ({})'.format(description) if description else '')
+            if SeleniumTestCase.EXPLAIN:
+                self.say(description)
+            else:
+                print(description)
         return self._execute
 
     def login(self, username, password):

@@ -55,7 +55,10 @@ class Browser(webdriver.Firefox):
             self.wait(3)
 
     def open(self, url):
-        self.get("{}{}".format(self.server_url, url))
+        if url.startswith('http'):
+            self.get(url.replace('http://localhost:8000', self.server_url))
+        else:
+            self.get("{}{}".format(self.server_url, url))
 
     def pdb(self):
         breakpoint()

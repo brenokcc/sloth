@@ -512,7 +512,7 @@ class Action(metaclass=ActionMetaclass):
             data.update(fields=form_fields, errors=self.errors)
             return data
         else:
-            data = dict(type='form', errors=self.errors)
+            data = {field_name: self.fields[field_name].initial for field_name in self.fields}
             return data
 
     @lru_cache()

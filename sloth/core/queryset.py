@@ -848,11 +848,11 @@ class QuerySet(models.QuerySet):
         return super().__str__()
 
     # request functions
-    def contextualize(self, request):
+    def contextualize(self, request, uuid=None):
         self.request = request
         if request and request.user.is_superuser and 'autouser' in self.metadata['ignore']:
             self.metadata['ignore'].remove('autouser')
-        if request and self.metadata['uuid'] == request.GET.get('uuid'): #  or (request and request.path.startswith('/api/'))
+        if request and self.metadata['uuid'] in (request.GET.get('uuid'), uuid): #  or (request and request.path.startswith('/api/'))
             if 'choices' in request.GET:
                 raise JsonReadyResponseException(
                     self.process_request(request).choices(request)
@@ -861,7 +861,7 @@ class QuerySet(models.QuerySet):
                 raise JsonReadyResponseException(
                     self.process_request(request).tree_nodes()
                 )
-            component = self.process_request(request).apply_role_lookups(request.user, request.session)
+            component = self.process_request(request, uuid).apply_role_lookups(request.user, request.session)
             if request.path.startswith('/app/'):
                 raise HtmlReadyResponseException(component.html())
             else:

@@ -52,7 +52,7 @@ class ValueSet(dict):
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
             attach=[], append={}, image=None, template=None, primitive=False, verbose_name=None,
-            title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
+            title=None, subtitle=None, status=None, icon=None, only=[], refresh={}, inline_actions=[],
             cards=[], shortcuts=[], collapsed=False, printing=False
         )
         for attr_name in names:
@@ -69,13 +69,6 @@ class ValueSet(dict):
 
     def expand(self):
         return self.collapsed(False)
-
-    def only(self, **names):
-        for name, role in names.items():
-            if name not in self.metadata['only']:
-                self.metadata['only'][name] = []
-            self.metadata['only'][name].append(role)
-        return self
 
     def actions(self, *names):
         self.metadata['actions'] = [to_snake_case(name) for name in names]
@@ -221,20 +214,9 @@ class ValueSet(dict):
         return dict(type='object', properties=schema)
 
     def load(self, wrap=True, detail=False, deep=0):
-        if self.request:
-            if 'only' in self.request.GET:
-                self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',') if hasattr(self.instance, k)}
-                self.request.GET._mutable = True
-                self.request.GET.pop('only')
-                self.request.GET._mutable = False
-
         if self.metadata['names']:
             is_app = self.request and self.request.path.startswith('/app/')
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
-                if self.request and not self.request.user.is_superuser:
-                    if self.metadata['only'] and attr_name in self.metadata['only']:
-                        if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
-                            continue
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
                     attr, value = getattrr(self.instance, attr_name)
@@ -244,7 +226,7 @@ class ValueSet(dict):
                         path = '{}{}/'.format(tokens[0], attr_name)
                         if len(tokens) == 2:
                             path = '{}?{}'.format(path, tokens[1])
-                    if self.request and self.request.META.get('QUERY_STRING') and 'only' not in self.request.META.get('QUERY_STRING'):
+                    if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
                     if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
@@ -258,7 +240,8 @@ class ValueSet(dict):
                         template = getattr(attr, '__template__', None)
                         template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:
-                            qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
+                            source = None if self.request.path.startswith('/app/') else self.metadata['source']
+                            qs = qs.contextualize(self.request, source).apply_role_lookups(self.request.user)
                         if wrap:
                             if template or (self.metadata['primitive'] and deep > 0):
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
@@ -266,7 +249,7 @@ class ValueSet(dict):
                                 data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
                             data.update(name=verbose_name, key=attr_name)
                         else:
-                            if self.metadata['primitive']:  # one-to-many or many-to-many (and deep > 0)
+                            if self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
                                 data = qs.to_list(detail=False)

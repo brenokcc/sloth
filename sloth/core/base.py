@@ -183,7 +183,7 @@ class ModelMixin(object):
 
     @classmethod
     def get_list_url(cls, prefix='', subset='all'):
-        url = '{}/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
+        url = '{}/dashboard/{}/{}/'.format(prefix, cls.metaclass().app_label, cls.metaclass().model_name)
         if subset != 'all':
             url = '{}{}/'.format(url, subset)
         return url

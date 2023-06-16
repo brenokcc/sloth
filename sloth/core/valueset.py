@@ -6,6 +6,7 @@ from functools import lru_cache
 from django.db.models import Model
 from django.template.loader import render_to_string
 from sloth.actions import Action
+from sloth.api.templatetags.tags import is_ajax
 from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
 from sloth.utils import getattrr, serialize, pretty, to_snake_case
@@ -228,7 +229,11 @@ class ValueSet(dict):
                             path = '{}?{}'.format(path, tokens[1])
                     if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
-                    if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
+
+                    assyncronous = getattr(attr, '__assyncronous__', None)
+                    if assyncronous and not is_ajax(self.request):
+                        data = dict(key=attr_name, type='assyncronous', path=path)
+                    elif isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
                         qs.instantiator = self.instance
                         qs.metadata['uuid'] = attr_name

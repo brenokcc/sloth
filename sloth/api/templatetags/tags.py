@@ -21,7 +21,7 @@ def breaklines(text):
 
 @register.filter
 def is_ajax(request):
-    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    return request and request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
 
 @register.filter('format')

@@ -136,9 +136,8 @@ def endpoint(func):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
                 serialized = data.serialize(wrap=wrap)
-                if request.path == '/meta/dashboard/':
-                    dashboard = Dashboards(request)
-                    serialized = dashboard.serialize(serialized)
+                if 0 and request.path == '/meta/dashboard/':
+                    serialized = Dashboards(request).serialize(serialized)
                 # from pprint import pprint; pprint(serialized)
                 return ApiResponse(serialized, safe=False)
             else:
@@ -229,22 +228,27 @@ def dispatcher(request, path):
     if token == 'dashboard':
         obj = Dashboards(request).main()
         if tokens:
+            token = tokens.pop(0)
+            if token in settings.INSTALLED_APPS or token in ('api', 'auth'):
+                app_label, model_name = token, tokens.pop(0)
+                obj = apps.get_model(app_label, model_name).objects.view()
+                if isinstance(obj, QuerySet):
+                    queryset = obj
+                    obj = obj.default_actions().expand().admin()
+                allowed_attrs = obj.get_allowed_attrs()
+                if not tokens and not obj.has_permission(request.user):
+                    raise PermissionDenied()
             allowed_attrs = obj.view().get_allowed_attrs()
+            if token in allowed_attrs:
+                obj = getattr(obj, token)()
+            else:
+                raise  PermissionDenied()
         else:
             obj = obj.view()
             allowed_attrs = obj.get_allowed_attrs()
             if not request.user.is_authenticated: raise PermissionDenied()
-    elif token in settings.INSTALLED_APPS or token in ('api', 'auth'):
-        app_label, model_name = token, tokens.pop(0)
-        obj = apps.get_model(app_label, model_name).objects.view()
-        if isinstance(obj, QuerySet):
-            queryset = obj
-            obj = obj.default_actions().expand().admin()
+    if tokens:
         allowed_attrs = obj.get_allowed_attrs()
-        if not tokens and not obj.has_permission(request.user):
-            raise PermissionDenied()
-    else:
-        raise PermissionDenied()
     for i, token in enumerate(tokens):
         if i == 0:
             allowed_attrs.extend(EXPOSE)
@@ -311,7 +315,8 @@ def dispatcher(request, path):
                     if 'global_action' in request.GET:
                         queryset = obj.process_request(request, uuid=token).apply_role_lookups(request.user)
         allowed_attrs = obj.get_allowed_attrs()
-    obj = obj.contextualize(request).apply_role_lookups(request.user)
+    if hasattr(obj, 'contextualize'):
+        obj = obj.contextualize(request).apply_role_lookups(request.user)
     if request.path.startswith('/api/') and isinstance(obj, QuerySet):
         obj = obj.process_request(request)
     return obj

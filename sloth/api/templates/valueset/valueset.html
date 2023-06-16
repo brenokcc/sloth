@@ -97,6 +97,12 @@
                         {% if item.type == 'statistics' %}
                             {% include 'valueset/fieldset.html' with data=item %}
                         {% endif %}
+                        {% if item.type == 'assyncronous' %}
+                            <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}">
+                                OKKKK
+                            </div>
+                            <script>$(document).refresh(['{{ item.key }}'])</script>
+                        {% endif %}
                         {% if item.type == 'primitive' %}
                             {% if item.template %}
                                 <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}">

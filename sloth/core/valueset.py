@@ -142,7 +142,7 @@ class ValueSet(dict):
             allowed.extend(self.metadata[key])
         for items in self.metadata['append']:
             allowed.extend(items)
-        allowed.extend([name for name in self.metadata['names'].keys() if name.startswith('get_')])
+        allowed.extend([name for name in self.metadata['names'].keys()])
         return allowed
 
     def source(self, name):
@@ -240,7 +240,9 @@ class ValueSet(dict):
                     )
                     if assyncronous:
                         if wrap:
-                            data = dict(key=attr_name, type='assyncronous', path=path)
+                            template = getattr(attr, '__template__', None)
+                            template = 'renderers/{}.html'.format(template) if template else None
+                            data = dict(key=attr_name, type='assyncronous', path=path, template=template)
                         else:
                             data = None
                     elif cachevalue:

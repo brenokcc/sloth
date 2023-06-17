@@ -98,7 +98,9 @@
                             {% include 'valueset/fieldset.html' with data=item %}
                         {% endif %}
                         {% if item.type == 'assyncronous' %}
-                            <div class="reloadable" id="{{ item.key }}async" data-path="{{ item.path }}"></div>
+                            <div class="reloadable" id="{{ item.key }}async" data-path="{{ item.path }}">
+                                {% if item.template %}{% include item.template with value=None %}{% endif %}
+                            </div>
                             <script>$(document).refresh(['{{ item.key }}async'])</script>
                         {% endif %}
                         {% if item.type == 'primitive' %}

@@ -357,7 +357,7 @@ class Dashboards:
                 model_name = model.metaclass().model_name
                 model_verbose_name_plural = model.metaclass().verbose_name_plural
                 icon = getattr(model.metaclass(), 'icon', None)
-                url = '/app/{}/{}/'.format(app_label, model_name)
+                url = '/app/dashboard/{}/{}/'.format(app_label, model_name)
                 add_item = True
                 for item in self.data['search']:
                     add_item = add_item and not item['url'] == url

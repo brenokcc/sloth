@@ -238,17 +238,22 @@ def dispatcher(request, path):
                 allowed_attrs = obj.get_allowed_attrs()
                 if not tokens and not obj.has_permission(request.user):
                     raise PermissionDenied()
-            allowed_attrs = obj.view().get_allowed_attrs()
-            if token in allowed_attrs:
-                obj = getattr(obj, token)()
             else:
-                raise  PermissionDenied()
+                allowed_attrs = obj.view().get_allowed_attrs()
+                if token in allowed_attrs:
+                    if tokens:
+                        obj = getattr(obj, token)()
+                        allowed_attrs = obj.get_allowed_attrs()
+                    else:
+                        obj = obj.attr(token, source=True)
+                elif token in ACTIONS:
+                    tokens.append(token)
+                else:
+                    raise  PermissionDenied()
         else:
             obj = obj.view()
             allowed_attrs = obj.get_allowed_attrs()
             if not request.user.is_authenticated: raise PermissionDenied()
-    if tokens:
-        allowed_attrs = obj.get_allowed_attrs()
     for i, token in enumerate(tokens):
         if i == 0:
             allowed_attrs.extend(EXPOSE)

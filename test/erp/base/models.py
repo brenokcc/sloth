@@ -294,7 +294,7 @@ class Servidor(models.Model):
 
     def get_endereco(self):
         return self.endereco.value_set(
-            'logradouro', ('logradouro', 'numero'), ('municipio', 'municipio__estado')
+            'logradouro', ('logradouro', 'numero'), 'municipio'
         ).actions('InformarEndereco', 'ExcluirEndereco') if self.endereco_id else self.value_set(
             'endereco'
         ).actions('InformarEndereco')

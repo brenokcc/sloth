@@ -3,6 +3,7 @@ import json
 from uuid import uuid1
 import pprint
 from functools import lru_cache
+from django.core.cache import cache
 from django.db.models import Model
 from django.template.loader import render_to_string
 from sloth.actions import Action
@@ -220,7 +221,7 @@ class ValueSet(dict):
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
                     lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
-                    attr, value = getattrr(self.instance, attr_name)
+                    attr = getattr(self.instance, attr_name)
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':
                         tokens = path.split('?')
@@ -230,9 +231,21 @@ class ValueSet(dict):
                     if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
 
-                    assyncronous = getattr(attr, '__assyncronous__', None)
-                    if assyncronous and not is_ajax(self.request):
-                        data = dict(key=attr_name, type='assyncronous', path=path)
+                    assyncronous = getattr(attr, '__assyncronous__', False) and not is_ajax(self.request) and not self.metadata['source']
+                    cachetime = getattr(attr, '__cache__', 0)
+                    cachekey = cachetime and self.request and 'user:{}{}'.format(self.request.user.id, path) or None
+                    cachevalue = cache.get(cachekey) if cachekey else None
+                    value = None if (assyncronous or cachevalue) else (
+                        attr.all() if hasattr(attr, 'all') else (attr() if callable(attr) else attr)
+                    )
+                    if assyncronous:
+                        if wrap:
+                            data = dict(key=attr_name, type='assyncronous', path=path)
+                        else:
+                            data = None
+                    elif cachevalue:
+                        data = cachevalue
+                        # print('CACHED VALUE:', cachekey, data)
                     elif isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
                         qs.instantiator = self.instance
@@ -245,7 +258,7 @@ class ValueSet(dict):
                         template = getattr(attr, '__template__', None)
                         template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:
-                            source = None if self.request.path.startswith('/app/') else self.metadata['source']
+                            source = self.metadata['source'] if self.request.path.startswith('/api/') else None
                             qs = qs.contextualize(self.request, source).apply_role_lookups(self.request.user)
                         if wrap:
                             if template or (self.metadata['primitive'] and deep > 0):
@@ -318,6 +331,9 @@ class ValueSet(dict):
                     # if verbose:
                     #     attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
+                    if cachetime and not assyncronous and not cachevalue:
+                        # print('CACHING VALUE:', cachekey, data, cachetime)
+                        cache.set(cachekey, data, timeout=cachetime)
         elif isinstance(self.instance, Model):
             self['id'] = self.instance.id
             self[self.metadata['model'].__name__.lower()] = str(self.instance)

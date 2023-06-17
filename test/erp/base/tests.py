@@ -82,45 +82,45 @@ class ApiTestCase(ServerTestCase):
         self.create_user('admin', '123', True)
 
         # not authenticated
-        self.get('/api/auth/group/add/', status_code=403)
+        self.get('/api/dashboard/auth/group/add/', status_code=403)
 
         # not authorized
         self.login('user', '123')
-        self.get('/api/auth/group/add/', status_code=401)
-        self.get('/api/base/servidor/1/', status_code=401)
-        self.get('/api/base/servidor/1/get_dados_gerais/', status_code=401)
+        self.get('/api/dashboard/auth/group/add/', status_code=401)
+        self.get('/api/dashboard/base/servidor/1/', status_code=401)
+        self.get('/api/dashboard/base/servidor/1/get_dados_gerais/', status_code=401)
         self.post(
-            '/api/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
+            '/api/dashboard/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
             dict(nome='Emanoel'), status_code=401
         )
         self.post(
-            '/api/base/servidor/1/get_ferias/1-2/alterarferias/',
+            '/api/dashboard/base/servidor/1/get_ferias/1-2/alterarferias/',
             dict(inicio='01/06/2020', fim='01/07/2020'), status_code=401
         )
 
         # authenticated and authorized
         self.login('admin', '123')
 
-        self.get('/api/auth/group/')
-        self.post('/api/auth/group/add/', data=dict(name='Operador'))
-        self.get('/api/auth/group/1/')
-        self.get('/api/auth/group/1/edit/')
-        self.post('/api/auth/group/1/edit/', data=dict(name='Gerente'))
-        self.get('/api/auth/group/1/delete/')
-        # self.post('/api/auth/group/1/delete/')
+        self.get('/api/dashboard/auth/group/')
+        self.post('/api/dashboard/auth/group/add/', data=dict(name='Operador'))
+        self.get('/api/dashboard/auth/group/1/')
+        self.get('/api/dashboard/auth/group/1/edit/')
+        self.post('/api/dashboard/auth/group/1/edit/', data=dict(name='Gerente'))
+        self.get('/api/dashboard/auth/group/1/delete/')
+        # self.post('/api/dashboard/auth/group/1/delete/')
 
-        self.get('/api/base/servidor/')
-        self.get('/api/base/servidor/ativos/')
-        self.post('/api/base/servidor/0-1/inativar_servidores/')
-        self.get('/api/base/servidor/ativos/')
+        self.get('/api/dashboard/base/servidor/')
+        self.get('/api/dashboard/base/servidor/ativos/')
+        self.post('/api/dashboard/base/servidor/0-1/inativar_servidores/')
+        self.get('/api/dashboard/base/servidor/ativos/')
 
-        self.get('/api/base/servidor/1/')
-        self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.post('/api/base/servidor/1/get_dados_gerais/corrigir_nome_servidor_1/', dict(nome='Emanoel'))
-        self.get('/api/base/servidor/1/get_dados_gerais/')
-        self.get('/api/base/servidor/1/get_ferias/')
-        self.post('/api/base/servidor/1/get_ferias/1-2/alterar_ferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
-        self.get('/api/base/servidor/1/get_ferias/')
+        self.get('/api/dashboard/base/servidor/1/')
+        self.get('/api/dashboard/base/servidor/1/get_dados_gerais/')
+        self.post('/api/dashboard/base/servidor/1/get_dados_gerais/corrigir_nome_servidor_1/', dict(nome='Emanoel'))
+        self.get('/api/dashboard/base/servidor/1/get_dados_gerais/')
+        self.get('/api/dashboard/base/servidor/1/get_ferias/')
+        self.post('/api/dashboard/base/servidor/1/get_ferias/1-2/alterar_ferias/', dict(inicio='01/06/2020', fim='01/07/2020'))
+        self.get('/api/dashboard/base/servidor/1/get_ferias/')
 
 
 class Oauth2TestCase(ServerTestCase):
@@ -132,7 +132,7 @@ class Oauth2TestCase(ServerTestCase):
         admin = self.create_user('admin', '123', True)
         self.login('admin', '123')
         data = dict(name='public', description='Publica Data')
-        self.post('/api/scope/add/', data=data)
+        self.post('/api/dashboard/api/scope/add/', data=data)
         client_secret = 'zzGrrKWXFtlVG0baBUKZPRhClmPlrp3TYefnXY3RRlk3hZcPmm4xMF2iCMdG2MvcxTfvWKzEXNsB6bmIzdvSWpuJARBHaifut8tGoVyS7lPUZuiMtfvYr4A9hGNt8aEM'
         data = dict(
             redirect_uris='', client_type='confidential', client_secret=client_secret,
@@ -140,9 +140,9 @@ class Oauth2TestCase(ServerTestCase):
             skip_authorization=True, user=admin.pk, client_id=generate_client_id(),
             default_scopes=[1], available_scopes=[1]
         )
-        self.get('/api/application/')
-        self.post('/api/application/add/', data=data)
-        app = self.get('/api/application/1/')
+        self.get('/api/dashboard/api/application/')
+        self.post('/api/dashboard/api/application/add/', data=data)
+        app = self.get('/api/dashboard/api/application/1/')
         self.logout()
 
         data = dict(
@@ -153,7 +153,7 @@ class Oauth2TestCase(ServerTestCase):
             password='123',
             scope='public'
         )
-        self.get('/api/base/estado/', status_code=403)
+        self.get('/api/dashboard/base/estado/', status_code=403)
         response = self.post('/o/token/', data=data)
         self.authorize(response['access_token'])
-        self.get('/api/base/estado/')
+        self.get('/api/dashboard/base/estado/')

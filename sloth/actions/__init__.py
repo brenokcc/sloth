@@ -669,7 +669,7 @@ class Action(metaclass=ActionMetaclass):
                 has_permission = field.queryset.model().has_add_permission(self.request.user)
                 has_permission = has_permission or field.queryset.model().has_permission(self.request.user)
                 help_text = '<div>{}</div>'.format(field.help_text) if field.help_text else ''
-                link = '<a style="text-decoration:none" class="popup" href="/app/{}/{}/add/">Adicionar</a>'.format(
+                link = '<a style="text-decoration:none" class="popup" href="/app/dashboard/{}/{}/add/">Adicionar</a>'.format(
                     field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
                 )
                 help_text = '<div style="float:right">{}</div>'.format(link) + help_text

@@ -39,7 +39,7 @@
         </div>
         {% endif %}
 
-        {% for action in data.actions.inline %}
+        {% for action in data.metadata.actions.inline %}
             <div style="margin-top:20px">
             {% action action.key data.instantiator action.path %}
             </div>

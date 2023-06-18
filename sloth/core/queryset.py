@@ -504,7 +504,7 @@ class QuerySet(models.QuerySet):
             data = dict(
                 uuid=self.metadata['uuid'], type='queryset', path=path,
                 name=verbose_name, key=self.metadata['uuid'], icon=icon, count=n_pages,
-                actions={}, metadata={}, data=values
+                metadata={}, data=values
             )
             if self.request and self.request.path.startswith('/app/'):
                 data.update(instantiator=self.instantiator)
@@ -515,7 +515,7 @@ class QuerySet(models.QuerySet):
                 collapsed = bool(self.request and self.request.GET.get('collapsed', self.metadata['collapsed']) or 0)
                 subset = self.request and self.request.GET.get('subset', 'all') or 'all'
                 data['metadata'].update(
-                    search=search, display=display, filters=filters, pagination=pagination,
+                    search=search, display=display, filters=filters, actions={}, pagination=pagination,
                     collapsed=collapsed, subset=subset, on_demand=self.metadata['on_demand'],
                     compact=self.metadata['compact'], is_admin=self.metadata['is_admin']# , state=self.dumps()
                 )
@@ -535,7 +535,7 @@ class QuerySet(models.QuerySet):
                 if self.metadata['scrollable']:
                     data['metadata'].update(scrollable=True)
 
-                data['actions'].update(model=[], instance=[], queryset=[], inline=[])
+                data['metadata']['actions'].update(model=[], instance=[], queryset=[], inline=[])
 
                 for view in self.metadata['view']:
                     if view['name'] == 'self':
@@ -550,9 +550,9 @@ class QuerySet(models.QuerySet):
                         modal=view['modal'], path='{}{{id}}/{}'.format((path or '').split('?')[0], view_suffix)
                     )
                     if view_suffix:
-                        data['actions']['instance'].append(item)
+                        data['metadata']['actions']['instance'].append(item)
                     else:
-                        data['actions']['instance'].insert(0, item)
+                        data['metadata']['actions']['instance'].insert(0, item)
 
                 for action_type in ('global_actions', 'actions', 'batch_actions', 'inline_actions'):
                     target = dict(global_actions='model', actions='instance', batch_actions='queryset', inline_actions='inline')[action_type]
@@ -568,7 +568,7 @@ class QuerySet(models.QuerySet):
                             if self.request and self.request.GET.get('subset'):
                                 action_path = '{}{}/'.format(path, self.request.GET.get('subset'))
                             action = form_cls.get_metadata(path, target)
-                            data['actions'][action['target']].append(action)
+                            data['metadata']['actions'][action['target']].append(action)
                 if self.metadata['related_field']:
                     form_cls = self.model.relation_form_cls(self.metadata['related_field'])
                     has_permission = self.request is None or form_cls.check_fake_permission(
@@ -576,13 +576,13 @@ class QuerySet(models.QuerySet):
                     )
                     if has_permission:
                         action = form_cls.get_metadata(path, 'model')
-                        data['actions']['model'].append(action)
-                if data['actions']:
+                        data['metadata']['actions']['model'].append(action)
+                if data['metadata']['actions']:
                     for key in ('model', 'instance', 'queryset', 'inline'):
-                        if not data['actions'][key]:
-                            del data['actions'][key]
+                        if not data['metadata']['actions'][key]:
+                            del data['metadata']['actions'][key]
                 else:
-                    del data['actions']
+                    del data['metadata']['actions']
 
                 template = self.metadata['template']
                 if template is None:

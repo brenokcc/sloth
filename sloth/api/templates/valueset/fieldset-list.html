@@ -8,8 +8,8 @@
         <h5>{{ item.name }}</h5>
     </div>
     <div class="fieldset-action-bar" style="margin-right:18px">
-          {% if item.actions %}
-              {% include "dashboard/actions.html" with uuid=item.uuid target="model" actions=item.actions   %}
+          {% if item.metadata.actions.instance %}
+              {% include "dashboard/actions.html" with uuid=item.uuid target="model" actions=item.metadata.actions.instance %}
           {% endif %}
     </div>
     {% if item.template %}

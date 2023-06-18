@@ -51,9 +51,10 @@ class ValueSet(dict):
         self.path = None
         self.request = None
         self.instance = instance
+        self.auxiliar = False
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append={}, image=None, template=None, primitive=False, verbose_name=None,
+            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only=[], refresh={}, inline_actions=[],
             cards=[], shortcuts=[], collapsed=False, printing=False
         )
@@ -80,21 +81,11 @@ class ValueSet(dict):
         self.metadata['inline_actions'] = [to_snake_case(name) for name in names]
         return self
 
-    def append(self, *names, position='right'):
-        self.metadata['append'][position] = [to_snake_case(name) for name in names]
+    def append(self, *names):
+        self.metadata['append'] = [to_snake_case(name) for name in names]
+        for attr_name in names:
+            self.metadata['names'][attr_name] = 0
         return self
-
-    def top(self, *names):
-        return self.append(*names, position='top')
-
-    def left(self, *names):
-        return self.append(*names, position='left')
-
-    def right(self, *names):
-        return self.append(*names, position='right')
-
-    def bottom(self, *names):
-        return self.append(*names, position='bottom')
 
     def attach(self, *names):
         self.metadata['attach'] = [to_snake_case(name) for name in names]
@@ -138,10 +129,8 @@ class ValueSet(dict):
 
     def get_allowed_attrs(self, recursive=True):
         allowed = []
-        for key in ('actions', 'inline_actions', 'attach'):
+        for key in ('actions', 'inline_actions', 'append', 'attach'):
             allowed.extend(self.metadata[key])
-        for items in self.metadata['append']:
-            allowed.extend(items)
         allowed.extend([name for name in self.metadata['names'].keys()])
         return allowed
 
@@ -311,7 +300,7 @@ class ValueSet(dict):
                         refresh = valueset.refresh_data()
                         collapsed = valueset.metadata['collapsed']
                         data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name,
-                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path, collapsed=collapsed
+                            key=key, refresh=refresh, metadata=dict(actions={}), data=valueset, path=path, collapsed=collapsed
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
                             data.update(instance=valueset.instance)
@@ -320,7 +309,10 @@ class ValueSet(dict):
                                 for form_name in valueset.metadata[action_type]:
                                     form_cls = self.instance.action_form_cls(form_name)
                                     if form_cls.check_fake_permission(self.request, valueset.instance, self.instance):
-                                        data[action_type].append(form_cls.get_metadata(path))
+                                        key = 'instance' if action_type == 'actions' else 'inline'
+                                        if key not in data['metadata']['actions']:
+                                            data['metadata']['actions'][key] = []
+                                        data['metadata']['actions'][key].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:
                                 image = valueset.metadata['image']
@@ -347,6 +339,9 @@ class ValueSet(dict):
                     # if verbose:
                     #     attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
+                    if wrap and width == 0:
+                        self.auxiliar = True
+                        data.update(auxiliary=True)
                     if cachetime and not assyncronous and not cachevalue:
                         # print('CACHING VALUE:', cachekey, data, cachetime)
                         cache.set(cachekey, data, timeout=cachetime)
@@ -392,30 +387,27 @@ class ValueSet(dict):
                         value = [str(obj) for obj in value]
                     output[key] = dict(value=value, template=template, metadata=metadata)
             is_app = self.request and self.request.path.startswith('/app/')
-            output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
+            metadata = dict(actions={}, attach=[])
+            output.update(icon=icon, auxiliar=self.auxiliar, data=self, metadata=metadata)
             for action_type in ('actions', 'inline_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.instance.action_form_cls(form_name)
                     if self.request is None or form_cls.check_fake_permission(
                             request=self.request, instance=self.instance, instantiator=self.instance,
                     ):
-                        output[action_type].append(form_cls.get_metadata(self.path))
+                        key = 'instance' if action_type == 'actions' else 'inline'
+                        if key not in metadata['actions']:
+                            metadata['actions'][key] = []
+                        metadata['actions'][key].append(form_cls.get_metadata(self.path))
+
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    output['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
-            for position, attr_names in self.metadata['append'].items():
-                for attr_name in attr_names:
-                    if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                        template = getattr(getattr(self.instance, attr_name), '__template__', None)
-                        if position not in output['append']:
-                            output['append'][position] = {}
-                        output['append'][position].update(
-                            self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
-                        )
-            for key in ('actions', 'inline_actions', 'attach', 'append'):
-                if not output[key]:
-                    del output[key]
+                    metadata['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
+
+            for key in ('actions', 'attach'):
+                if not metadata[key]:
+                    del metadata[key]
             return output
         else:
             if len(self.metadata['names']) == 1:

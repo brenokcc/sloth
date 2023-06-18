@@ -13,12 +13,12 @@
           </div>
           {% endif %}
           <div class="fieldset-action-bar">
-              {% if data.actions %}
-                  {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.actions   %}
+              {% if data.metadata.actions.instance %}
+                  {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.metadata.actions.instance   %}
               {% endif %}
           </div>
           <div class="fieldset-data toogle-data" id="{{ data.name|slugify }}" style="{% if data.collapsed %}display:none{% endif %}">
-              {% for action in data.inline_actions %}
+              {% for action in data.metadata.actions.inline %}
                 {% action action.key data.instance action.path %}
               {% endfor %}
 

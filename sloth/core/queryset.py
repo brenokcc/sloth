@@ -206,7 +206,7 @@ class QuerySet(models.QuerySet):
     def filter_form_cls(self):
         return self.get_filters(as_form=True)
 
-    def get_filters(self, as_form=False):
+    def get_filters(self, as_form=False, path=None):
         from sloth import actions
         filters = {}
         list_filter = self.get_list_filters()
@@ -246,6 +246,9 @@ class QuerySet(models.QuerySet):
                 if self.request and self.request.GET.get(lookup):
                     value = [self.request.GET.get(f'{lookup}0'), self.request.GET.get(lookup)]
                 filters[key] = dict(key=lookup, name=name, type=filter_type, choices=None, hidden=False, value=value)
+                url = '{}?uuid={}&choices={}'.format(path, path.split('/')[-2], lookup) if path else None
+                if url:
+                    filters[key].update(source=url)
             else:
                 filters[key] = dict(
                     key=lookup, name=name, type=filter_type, choices=None, hidden=False, value=self.request.GET.get(lookup) if self.request else None
@@ -483,7 +486,7 @@ class QuerySet(models.QuerySet):
             icon = getattr(self.model.metaclass(), 'icon', None)
             search = self.get_search()
             display = self.get_display()
-            filters = self.get_filters()
+            filters = self.get_filters(path=path)
             attach = self.get_attach() if self.metadata['attr'] is None else {}
             calendar = self.to_calendar() if self.metadata['calendar'] and not lazy else None
             values = {} if lazy else self.paginate().to_list(wrap=wrap, detail=True)
@@ -574,6 +577,12 @@ class QuerySet(models.QuerySet):
                     if has_permission:
                         action = form_cls.get_metadata(path, 'model')
                         data['actions']['model'].append(action)
+                if data['actions']:
+                    for key in ('model', 'instance', 'queryset', 'inline'):
+                        if not data['actions'][key]:
+                            del data['actions'][key]
+                else:
+                    del data['actions']
 
                 template = self.metadata['template']
                 if template is None:
@@ -771,7 +780,7 @@ class QuerySet(models.QuerySet):
         qs.metadata['inline_actions'] = qs.metadata['inline_actions'].copy()
         if clear:
             qs.metadata['inline_actions'].clear()
-        q.metadata['inline_actions'].extend(
+        qs.metadata['inline_actions'].extend(
             [to_snake_case(name) for name in names if to_snake_case(name) not in qs.metadata['inline_actions']]
         )
         return qs

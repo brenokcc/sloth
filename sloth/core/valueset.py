@@ -6,7 +6,7 @@ from functools import lru_cache
 from django.core.cache import cache
 from django.db.models import Model
 from django.template.loader import render_to_string
-from sloth.actions import Action
+from sloth.actions import Action, ACTIONS
 from sloth.api.templatetags.tags import is_ajax
 from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
@@ -220,8 +220,7 @@ class ValueSet(dict):
             is_app = self.request and self.request.path.startswith('/app/')
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
-                    attr = getattr(self.instance, attr_name)
+
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':
                         tokens = path.split('?')
@@ -231,10 +230,25 @@ class ValueSet(dict):
                     if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
 
-                    assyncronous = getattr(attr, '__assyncronous__', False) and not is_ajax(self.request) and not self.metadata['source']
+                    form_cls = ACTIONS.get(attr_name, None)
+                    if form_cls:
+                        form = form_cls(request=self.request)
+                        form.path = path
+                        if form.is_valid():
+                            pass
+                        data = form.serialize(wrap=wrap)
+                        if self.request.path.startswith('/app/'):
+                            data.update(form=form)
+                        self[attr_name] = data
+                        continue
+
+                    lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
+                    attr = getattr(self.instance, attr_name)
+
                     cachetime = getattr(attr, '__cache__', 0)
                     cachekey = cachetime and self.request and 'user:{}{}'.format(self.request.user.id, path) or None
                     cachevalue = cache.get(cachekey) if cachekey else None
+                    assyncronous = getattr(attr, '__assyncronous__', False) and cachevalue is None and not is_ajax(self.request) and not self.metadata['source']
                     value = None if (assyncronous or cachevalue) else (
                         attr.all() if hasattr(attr, 'all') else (attr() if callable(attr) else attr)
                     )
@@ -399,6 +413,9 @@ class ValueSet(dict):
                         output['append'][position].update(
                             self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
                         )
+            for key in ('actions', 'inline_actions', 'attach', 'append'):
+                if not output[key]:
+                    del output[key]
             return output
         else:
             if len(self.metadata['names']) == 1:

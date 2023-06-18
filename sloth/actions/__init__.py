@@ -744,7 +744,6 @@ class Action(metaclass=ActionMetaclass):
             self.content[position].append(output.contextualize(self.request).html(path=path))
         elif output is not None:
             raise Exception()
-
         if self.request.path.startswith('/app/') and self.response and submit:
             js = '<script>{}</script>'
             display_messages = True

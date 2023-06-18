@@ -240,14 +240,14 @@ def dispatcher(request, path):
                     raise PermissionDenied()
             else:
                 allowed_attrs = obj.view().get_allowed_attrs()
-                if token in allowed_attrs:
+                if token in ACTIONS:
+                    tokens.append(token)
+                elif token in allowed_attrs:
                     if tokens:
                         obj = getattr(obj, token)()
                         allowed_attrs = obj.get_allowed_attrs()
                     else:
                         obj = obj.attr(token, source=True)
-                elif token in ACTIONS:
-                    tokens.append(token)
                 else:
                     raise  PermissionDenied()
         else:

@@ -40,7 +40,9 @@
         {% endif %}
 
         {% for action in data.actions.inline %}
+            <div style="margin-top:20px">
             {% action action.key data.instantiator action.path %}
+            </div>
         {% endfor %}
 
         {% if not print %}

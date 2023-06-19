@@ -9,6 +9,7 @@ from oauth2_provider.generators import generate_client_id
 from sloth.test import ServerTestCase
 from .models import Estado, Municipio, Endereco, Servidor, Ferias, Frequencia
 
+DEBUG = os.path.exists('/Users/breno') and False
 
 def log(data):
     print(json.dumps(data, indent=4, ensure_ascii=False))
@@ -46,7 +47,7 @@ class ModelTestCase(TestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno') and False
+        self.debug = DEBUG
         self.log(Municipio.objects.first().serialize(wrap=True), dumps=False)
         self.log(Municipio.objects.count('estado').serialize())
         self.log(Municipio.objects.all().serialize(wrap=True), dumps=False)
@@ -73,11 +74,36 @@ class ModelTestCase(TestCase):
         self.log(Servidor.objects.sem_endereco().serialize(), dumps=False)
 
 
+class LoginTestCase(ServerTestCase):
+    def test_api(self):
+        self.debug = DEBUG
+        self.create_user('user', '123')
+        response = self.get('/api/dashboard/', status_code=403)
+        self.assertEquals(response['text'], 'Usuário não autenticado')
+        data = dict(username='user', password='123')
+        response = self.post('/api/dashboard/login/', data)
+        self.authorize(response['token'], token_type='Token')
+        response = self.get('/api/dashboard/')
+        response = self.get('/meta/dashboard/logout/')
+        response = self.get('/meta/dashboard/', status_code=403)
+
+    def test_meta(self):
+        self.debug = DEBUG
+        self.create_user('user', '123')
+        response = self.get('/meta/dashboard/', status_code=403)
+        data = dict(username='user', password='123')
+        response = self.post('/meta/dashboard/login/', data)
+        self.authorize(response['token'], token_type='Token')
+        response = self.get('/meta/dashboard/')
+        response = self.get('/meta/dashboard/logout/')
+        response = self.get('/meta/dashboard/', status_code=403)
+
+
 class ApiTestCase(ServerTestCase):
 
     def test(self):
         loaddata()
-        self.debug = os.path.exists('/Users/breno') and False
+        self.debug = DEBUG
         self.create_user('user', '123')
         self.create_user('admin', '123', True)
 
@@ -126,7 +152,7 @@ class ApiTestCase(ServerTestCase):
 class Oauth2TestCase(ServerTestCase):
 
     def test(self):
-        self.debug = os.path.exists('/Users/breno') and False
+        self.debug = DEBUG
         Estado.objects.create(sigla='RN')
         Estado.objects.create(sigla='PB')
         admin = self.create_user('admin', '123', True)

@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 
 from django.views import static
+from oauth2_provider.models import AccessToken
 
 from sloth import threadlocals
 from django.core.cache import cache
@@ -132,7 +133,7 @@ def index(request):
 def endpoint(func):
     def decorate(request, *args, **kwargs):
         try:
-            if is_authenticated(request):
+            if is_authenticated(request) or request.path.endswith('/login/'):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')
                 serialized = data.serialize(wrap=wrap)
@@ -210,6 +211,12 @@ def is_authenticated(request):
                     request.user = req.user
                     request.access_token = req.access_token
                     return True
+            elif authorization.startswith('Token '):
+                access_token = AccessToken.objects.filter(token=token, expires__gt=datetime.now()).first()
+                if access_token:
+                    request.user = access_token.user
+                    request.access_token = access_token
+                    return True
             return False
         else:
             return False
@@ -253,7 +260,8 @@ def dispatcher(request, path):
         else:
             obj = obj.view()
             allowed_attrs = obj.get_allowed_attrs()
-            if not request.user.is_authenticated: raise PermissionDenied()
+            if not request.user.is_authenticated:
+                raise PermissionDenied()
     for i, token in enumerate(tokens):
         if i == 0:
             allowed_attrs.extend(EXPOSE)

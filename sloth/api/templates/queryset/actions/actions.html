@@ -1,1 +1,1 @@
-{% include "dashboard/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id|stringformat:'s' enabled=row.actions %}
+{% include "dashboard/actions.html" with uuid=data.uuid target="instance" actions=data.metadata.actions.instance id=row.id|stringformat:'s' enabled=row.actions %}

@@ -76,8 +76,8 @@ class ServerTestCase(StaticLiveServerTestCase):
             base64.b64encode('{}:{}'.format(username, password).encode()).decode()
         )
 
-    def authorize(self, access_token):
-        self.authorization = '{} {}'.format('Bearer', access_token)
+    def authorize(self, access_token, token_type='Bearer'):
+        self.authorization = '{} {}'.format(token_type, access_token)
 
     def logout(self):
         self.authorization = None

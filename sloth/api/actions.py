@@ -1,17 +1,21 @@
 import os
 import json
 import sys
-
+import uuid
 import onetimepass
 import base64
 import requests
 import io
 import subprocess
+from random import randint
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from oauth2_provider.models import AccessToken
+from datetime import timedelta, datetime
+
 from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings
@@ -201,8 +205,16 @@ class Login(actions.ActionView):
 
     def submit(self):
         if self.user:
-            auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
-            self.redirect('/app/dashboard/')
+            if self.request.path.startswith('/app/'):
+                auth.login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
+                self.redirect('/app/dashboard/')
+            else:
+                expires = datetime.now() + timedelta(minutes=60)
+                access_token = AccessToken.objects.create(
+                    user=self.user, expires=expires,
+                    token='{}{}'.format(uuid.uuid1().hex, ''.join([str(randint(0, 9)) for x in range(1, 30)]))
+                )
+                return dict(token=access_token.token, expires=expires.isoformat())
 
     def has_permission(self, user):
         return True
@@ -271,6 +283,9 @@ class Logout(actions.ActionView):
     def view(self):
         self.request.session.clear()
         auth.logout(self.request)
+        if hasattr(self.request, 'access_token') and self.request.access_token:
+            self.request.access_token.expires = datetime.now()
+            self.request.access_token.save()
         self.redirect('/')
 
     def has_permission(self, user):

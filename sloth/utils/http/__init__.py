@@ -12,8 +12,9 @@ from django.template.loader import render_to_string
 
 
 class ApiResponse(JsonResponse):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data, **kwargs):
+        kwargs.update(safe=False, json_dumps_params={"ensure_ascii": False})
+        super().__init__(data, **kwargs)
         self["Access-Control-Allow-Origin"] = "*"
         self["Access-Control-Allow-Headers"] = "*"
         self["X-Frame-Options"] = "SAMEORIGIN"

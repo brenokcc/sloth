@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import datetime
 import math
 import re
@@ -154,6 +155,10 @@ class Action(metaclass=ActionMetaclass):
         if self.instance is None and self.instances is not None and self.instances.exists():
             self.instance = self.instances.first()
 
+        if self.request.path.startswith('/api/') or self.request.path.startswith('/meta/'):
+            if self.request.body and self.request.body.startswith(b'{') and self.request.body.endswith(b'}'):
+                kwargs['data'] = json.loads(self.request.body)
+
         if self.has_url_posted_data():
             for k in self.request.GET:
                 if k.startswith('post__'):
@@ -162,7 +167,7 @@ class Action(metaclass=ActionMetaclass):
                     kwargs['data'][k.split('__')[-1]] = self.request.GET[k]
 
         if 'data' not in kwargs:
-            if self.get_api_name() in self.request.GET or self.get_api_name() in self.request.POST or self.request.path.startswith('/api/'):
+            if self.get_api_name() in self.request.GET or self.get_api_name() in self.request.POST or not self.request.path.startswith('/app/'):
                 # if self.base_fields or self.requires_confirmation():
                 if self.request.method == 'GET' or self.requires_confirmation():
                     if self.get_method() == 'get':
@@ -512,7 +517,7 @@ class Action(metaclass=ActionMetaclass):
             data.update(fields=form_fields, errors=self.errors)
             return data
         else:
-            data = dict(type='form', errors=self.errors)
+            data = {field_name: self.fields[field_name].initial for field_name in self.fields}
             return data
 
     @lru_cache()
@@ -669,7 +674,7 @@ class Action(metaclass=ActionMetaclass):
                 has_permission = field.queryset.model().has_add_permission(self.request.user)
                 has_permission = has_permission or field.queryset.model().has_permission(self.request.user)
                 help_text = '<div>{}</div>'.format(field.help_text) if field.help_text else ''
-                link = '<a style="text-decoration:none" class="popup" href="/app/{}/{}/add/">Adicionar</a>'.format(
+                link = '<a style="text-decoration:none" class="popup" href="/app/dashboard/{}/{}/add/">Adicionar</a>'.format(
                     field.queryset.model.metaclass().app_label, field.queryset.model.metaclass().model_name
                 )
                 help_text = '<div style="float:right">{}</div>'.format(link) + help_text
@@ -728,8 +733,11 @@ class Action(metaclass=ActionMetaclass):
         from ..core.valueset import ValueSet
         position = 'bottom' if submit else 'center'
         if type(output) == dict:
-            template_name = 'actions/{}.html'.format(self.get_api_name())
-            self.content[position].append(render_to_string([template_name], output, request=self.request))
+            if self.request.path.startswith('/app/'):
+                template_name = 'actions/{}.html'.format(self.get_api_name())
+                self.content[position].append(render_to_string([template_name], output, request=self.request))
+            else:
+                raise JsonReadyResponseException(output)
         elif type(output) == str and output[-5:].split('.')[-1] in FileResponse.CONTENT_TYPES.keys():
             raise ReadyResponseException(FileResponse(output))
         elif type(output) in (str, int, float, Decimal, datetime.date):
@@ -744,7 +752,6 @@ class Action(metaclass=ActionMetaclass):
             self.content[position].append(output.contextualize(self.request).html(path=path))
         elif output is not None:
             raise Exception()
-
         if self.request.path.startswith('/app/') and self.response and submit:
             js = '<script>{}</script>'
             display_messages = True
@@ -839,7 +846,7 @@ class Action(metaclass=ActionMetaclass):
         if url is None:
             url = '..' if getattr(self, 'fields', None) or self.is_modal() else '.'
         self.response.update(type='redirect', url=url)
-        if not self.get_metadata()['ajax']:
+        if self.request.path.startswith('/app') and not self.get_metadata()['ajax']:
             raise ReadyResponseException(HttpResponseRedirect(url))
 
     def run(self, *tasks):
@@ -863,6 +870,7 @@ class Action(metaclass=ActionMetaclass):
         self.redirect()
 
     def process(self):
+        # print(self.request.path, {k:v for k, v in self.data.items() if k not in ['csrfmiddlewaretoken', self.get_metadata()['key']]})
         try:
             return self.check_ouput(self.submit(), True)
         except forms.ValidationError as e:
@@ -878,8 +886,8 @@ class Action(metaclass=ActionMetaclass):
             if isinstance(e, HtmlReadyResponseException):
                 raise e
             traceback.print_exc()
+            message = 'Ocorreu um erro no servidor: {}'.format(e)
             if self.request.path.startswith('/app/'):
-                message = 'Ocorreu um erro no servidor: {}'.format(e)
                 messages.add_message(self.request, messages.WARNING, message)
             self.add_error(None, message)
 
@@ -906,32 +914,6 @@ class Action(metaclass=ActionMetaclass):
 
     def should_display_buttons(self):
         return self.fields or self.submit.__func__ != Action.submit
-
-    # def dumps(self):
-    #     state = dict(instantiator=None, instance=None, instances=None)
-    #     if self.instantiator:
-    #         state['instantiator'] = '{}.{}'.format(
-    #             self.instantiator.metaclass().app_label,
-    #             self.instantiator.metaclass().model_name,
-    #         ), self.instantiator.id
-    #     if self.instance:
-    #         state['instance'] = '{}.{}'.format(
-    #             self.instance.metaclass().app_label,
-    #             self.instance.metaclass().model_name,
-    #         ), self.instance.id
-    #     if self.instances:
-    #         state['instances'] = self.instances.dumps()
-    #     from pprint import pprint;pprint(state)
-    #     return signing.dumps(base64.b64encode(zlib.compress(pickle.dumps(state))).decode())
-    #
-    # def loads(self, s):
-    #     state = pickle.loads(zlib.decompress(base64.b64decode(signing.loads(s).encode())))
-    #     if state['instantiator'] and state['instantiator'][1]:
-    #         self.instantiator = apps.get_model(state['instantiator'][0]).objects.get(pk=state['instantiator'][1])
-    #     if state['instance'] and state['instance'][1]:
-    #         self.instance = apps.get_model(state['instance'][0]).objects.get(pk=state['instance'][1])
-    #     if state['instances']:
-    #         self.instances = QuerySet.loads(state['instances'])
 
     def get_full_path(self):
         return self.path or self.request.get_full_path()

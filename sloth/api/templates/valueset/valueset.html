@@ -1,9 +1,7 @@
 {% load tags %}
 <div class="valueset row clearfix">
-    {% for item in data.append.top.values %}
-        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
-    {% endfor %}
-    <div class="{% if data.append.right %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
+
+    <div class="{% if data.auxiliar %}col-lg-9 col-md-8 col-sm-12{% else %}col{% endif %}">
 
         {% include "dashboard/shortcuts.html" with shortcuts=data.instance.data.shortcuts %}
         {% include "dashboard/cards.html" with cards=data.instance.data.cards %}
@@ -41,23 +39,23 @@
                 {% endif %}
             </div>
             <div class="valueset-action-bar">
-                  {% if data.actions and not print %}
-                      {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.actions   %}
+                  {% if data.metadata.actions.instance and not print %}
+                      {% include "dashboard/actions.html" with uuid=data.uuid target="model" actions=data.metadata.actions.instance %}
                   {% endif %}
             </div>
         </div>
 
         <div class="clearfix"></div>
-        {% for action in data.inline_actions %}
+        {% for action in data.metadata.actions.inline %}
             <div class="fieldset-inline-action">
                 {% action action.key data.instance action.path %}
             </div>
         {% endfor %}
 
         <div class="valueset-attaches">
-            {% if data.attach %}
+            {% if data.metadata.attach %}
             <ul class="nav justify-content-center">
-                {% for item in data.attach %}
+                {% for item in data.metadata.attach %}
                   <li class="nav-item">
                     <a class="nav-link" href="{{ item.path }}">{{ item.name }}</a>
                   </li>
@@ -82,31 +80,8 @@
                     </div>
                 {% else %}
                     {% for name, item in data.data.items %}
-                        {% if item.type == 'fieldset-group' %}
-                            {% include 'valueset/fieldset-group.html' with item=item %}
-                        {% endif %}
-                        {% if item.type == 'fieldset-list' %}
-                            {% include 'valueset/fieldset-list.html' with item=item %}
-                        {% endif %}
-                        {% if item.type == 'fieldset' %}
-                            {% include 'valueset/fieldset.html' with data=item %}
-                        {% endif %}
-                        {% if item.type == 'queryset' %}
-                            {% include 'valueset/fieldset.html' with data=item %}
-                        {% endif %}
-                        {% if item.type == 'statistics' %}
-                            {% include 'valueset/fieldset.html' with data=item %}
-                        {% endif %}
-                        {% if item.type == 'primitive' %}
-                            {% if item.template %}
-                                <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}">
-                                {% include item.template with value=item.value metadata=item.metadata key=item.key %}
-                                </div>
-                            {% else %}
-                                <div class="reloadable-fieldset box responsive-container" id="{{ item.key }}" data-path="{{ item.path }}">
-                                    {% include 'valueset/field.html' with v=item %}
-                                </div>
-                            {% endif %}
+                        {% if not item.auxiliary %}
+                            {% include "valueset/item.html" %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
@@ -114,21 +89,16 @@
             {% endif %}
         {% endif %}
     </div>
-    {% for item in data.append.center.values %}
-        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
-    {% endfor %}
-    {% if data.append.right %}
+
+    {% if data.auxiliar %}
         <div class="col-lg-3 col-md-4 col-sm-12 fieldset-side-panel">
-            {% for name, item in data.append.right.items %}
-                <div class="reloadable-fieldset" id="{{ item.key }}" data-path="{{ item.path }}?compact=1">
-                    {% include 'valueset/fieldset.html' with data=item compact=True %}
-                </div>
+            {% for name, item in data.data.items %}
+                {% if item.auxiliary %}
+                    {% include "valueset/item.html" %}
+                {% endif %}
             {% endfor %}
         </div>
     {% endif %}
-    {% for item in data.append.bottom.values %}
-        <div class="col col-sm-12">{% include 'valueset/value.html' with v=item %}</div>
-    {% endfor %}
 </div>
 
 

@@ -276,7 +276,7 @@ jQuery.fn.extend({
     },
     refresh: function(areas){
         function reloadAreas(){
-            $('.reloadable-fieldset, .reloadable-queryset').map(
+            $('.reloadable-fieldset, .reloadable-queryset, .reloadable').map(
                 function(i, item){
                     var querystring = '';
                     var qsform = $('#form-'+item.id);

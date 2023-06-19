@@ -1,0 +1,9 @@
+{% if value %}
+    <div>
+        {% for value in value %}
+        <span class="badge bg-{{ value.0 }}" style="padding:10px">{{ value.1 }}</span>
+        {% endfor %}
+    </div>
+{% else %}
+    -
+{% endif %}

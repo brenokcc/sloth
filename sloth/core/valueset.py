@@ -3,9 +3,11 @@ import json
 from uuid import uuid1
 import pprint
 from functools import lru_cache
+from django.core.cache import cache
 from django.db.models import Model
 from django.template.loader import render_to_string
-from sloth.actions import Action
+from sloth.actions import Action, ACTIONS
+from sloth.api.templatetags.tags import is_ajax
 from sloth.core.queryset import QuerySet
 from sloth.core.statistics import QuerySetStatistics
 from sloth.utils import getattrr, serialize, pretty, to_snake_case
@@ -49,10 +51,11 @@ class ValueSet(dict):
         self.path = None
         self.request = None
         self.instance = instance
+        self.auxiliar = False
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append={}, image=None, template=None, primitive=False, verbose_name=None,
-            title=None, subtitle=None, status=None, icon=None, only={}, refresh={}, inline_actions=[],
+            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
+            title=None, subtitle=None, status=None, icon=None, only=[], refresh={}, inline_actions=[],
             cards=[], shortcuts=[], collapsed=False, printing=False
         )
         for attr_name in names:
@@ -70,13 +73,6 @@ class ValueSet(dict):
     def expand(self):
         return self.collapsed(False)
 
-    def only(self, **names):
-        for name, role in names.items():
-            if name not in self.metadata['only']:
-                self.metadata['only'][name] = []
-            self.metadata['only'][name].append(role)
-        return self
-
     def actions(self, *names):
         self.metadata['actions'] = [to_snake_case(name) for name in names]
         return self
@@ -85,21 +81,11 @@ class ValueSet(dict):
         self.metadata['inline_actions'] = [to_snake_case(name) for name in names]
         return self
 
-    def append(self, *names, position='right'):
-        self.metadata['append'][position] = [to_snake_case(name) for name in names]
+    def append(self, *names):
+        self.metadata['append'] = [to_snake_case(name) for name in names]
+        for attr_name in names:
+            self.metadata['names'][attr_name] = 0
         return self
-
-    def top(self, *names):
-        return self.append(*names, position='top')
-
-    def left(self, *names):
-        return self.append(*names, position='left')
-
-    def right(self, *names):
-        return self.append(*names, position='right')
-
-    def bottom(self, *names):
-        return self.append(*names, position='bottom')
 
     def attach(self, *names):
         self.metadata['attach'] = [to_snake_case(name) for name in names]
@@ -143,11 +129,9 @@ class ValueSet(dict):
 
     def get_allowed_attrs(self, recursive=True):
         allowed = []
-        for key in ('actions', 'inline_actions', 'attach'):
+        for key in ('actions', 'inline_actions', 'append', 'attach'):
             allowed.extend(self.metadata[key])
-        for items in self.metadata['append']:
-            allowed.extend(items)
-        allowed.extend([name for name in self.metadata['names'].keys() if name.startswith('get_')])
+        allowed.extend([name for name in self.metadata['names'].keys()])
         return allowed
 
     def source(self, name):
@@ -221,32 +205,53 @@ class ValueSet(dict):
         return dict(type='object', properties=schema)
 
     def load(self, wrap=True, detail=False, deep=0):
-        if self.request:
-            if 'only' in self.request.GET:
-                self.metadata['names'] = {k: 100 for k in self.request.GET['only'].split(',') if hasattr(self.instance, k)}
-                self.request.GET._mutable = True
-                self.request.GET.pop('only')
-                self.request.GET._mutable = False
-
         if self.metadata['names']:
             is_app = self.request and self.request.path.startswith('/app/')
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
-                if self.request and not self.request.user.is_superuser:
-                    if self.metadata['only'] and attr_name in self.metadata['only']:
-                        if not self.request.user.roles.contains(*self.metadata['only'][attr_name]):
-                            continue
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
-                    attr, value = getattrr(self.instance, attr_name)
+
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':
                         tokens = path.split('?')
                         path = '{}{}/'.format(tokens[0], attr_name)
                         if len(tokens) == 2:
                             path = '{}?{}'.format(path, tokens[1])
-                    if self.request and self.request.META.get('QUERY_STRING') and 'only' not in self.request.META.get('QUERY_STRING'):
+                    if self.request and self.request.META.get('QUERY_STRING'):
                         path = '{}?{}'.format(path, self.request.META.get('QUERY_STRING').replace('?tab=1', ''))
-                    if isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
+
+                    form_cls = ACTIONS.get(attr_name, None)
+                    if form_cls:
+                        form = form_cls(request=self.request)
+                        form.path = path
+                        if form.is_valid():
+                            pass
+                        data = form.serialize(wrap=wrap)
+                        if self.request.path.startswith('/app/'):
+                            data.update(form=form)
+                        self[attr_name] = data
+                        continue
+
+                    lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
+                    attr = getattr(self.instance, attr_name)
+
+                    cachetime = getattr(attr, '__cache__', 0)
+                    cachekey = cachetime and self.request and 'user:{}{}'.format(self.request.user.id, path) or None
+                    cachevalue = cache.get(cachekey) if cachekey else None
+                    assyncronous = getattr(attr, '__assyncronous__', False) and cachevalue is None and not is_ajax(self.request) and not self.metadata['source']
+                    value = None if (assyncronous or cachevalue) else (
+                        attr.all() if hasattr(attr, 'all') else (attr() if callable(attr) else attr)
+                    )
+                    if assyncronous:
+                        if wrap:
+                            template = getattr(attr, '__template__', None)
+                            template = 'renderers/{}.html'.format(template) if template else None
+                            data = dict(key=attr_name, type='assyncronous', path=path, template=template)
+                        else:
+                            data = None
+                    elif cachevalue:
+                        data = cachevalue
+                        # print('CACHED VALUE:', cachekey, data)
+                    elif isinstance(value, QuerySet) or hasattr(value, '_queryset_class'):  # RelatedManager
                         qs = value if isinstance(value, QuerySet) else value.filter() # ManyRelatedManager
                         qs.instantiator = self.instance
                         qs.metadata['uuid'] = attr_name
@@ -258,7 +263,8 @@ class ValueSet(dict):
                         template = getattr(attr, '__template__', None)
                         template = 'renderers/{}.html'.format(template) if template else None
                         if self.request:
-                            qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
+                            source = self.metadata['source'] if self.request.path.startswith('/api/') else None
+                            qs = qs.contextualize(self.request, source).apply_role_lookups(self.request.user)
                         if wrap:
                             if template or (self.metadata['primitive'] and deep > 0):
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
@@ -266,7 +272,7 @@ class ValueSet(dict):
                                 data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
                             data.update(name=verbose_name, key=attr_name)
                         else:
-                            if self.metadata['primitive']:  # one-to-many or many-to-many (and deep > 0)
+                            if self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
                                 data = qs.to_list(detail=False)
@@ -294,7 +300,7 @@ class ValueSet(dict):
                         refresh = valueset.refresh_data()
                         collapsed = valueset.metadata['collapsed']
                         data = dict(uuid=uuid1().hex, type='fieldset', name=verbose_name,
-                            key=key, refresh=refresh, actions=[], inline_actions=[], data=valueset, path=path, collapsed=collapsed
+                            key=key, refresh=refresh, metadata=dict(actions={}), data=valueset, path=path, collapsed=collapsed
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
                             data.update(instance=valueset.instance)
@@ -303,7 +309,10 @@ class ValueSet(dict):
                                 for form_name in valueset.metadata[action_type]:
                                     form_cls = self.instance.action_form_cls(form_name)
                                     if form_cls.check_fake_permission(self.request, valueset.instance, self.instance):
-                                        data[action_type].append(form_cls.get_metadata(path))
+                                        key = 'instance' if action_type == 'actions' else 'inline'
+                                        if key not in data['metadata']['actions']:
+                                            data['metadata']['actions'][key] = []
+                                        data['metadata']['actions'][key].append(form_cls.get_metadata(path))
                             data.update(path=path)
                             if valueset.metadata['image']:
                                 image = valueset.metadata['image']
@@ -330,6 +339,12 @@ class ValueSet(dict):
                     # if verbose:
                     #     attr_name = verbose_name or pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
                     self[attr_name] = data
+                    if wrap and width == 0:
+                        self.auxiliar = True
+                        data.update(auxiliary=True)
+                    if cachetime and not assyncronous and not cachevalue:
+                        # print('CACHING VALUE:', cachekey, data, cachetime)
+                        cache.set(cachekey, data, timeout=cachetime)
         elif isinstance(self.instance, Model):
             self['id'] = self.instance.id
             self[self.metadata['model'].__name__.lower()] = str(self.instance)
@@ -372,27 +387,27 @@ class ValueSet(dict):
                         value = [str(obj) for obj in value]
                     output[key] = dict(value=value, template=template, metadata=metadata)
             is_app = self.request and self.request.path.startswith('/app/')
-            output.update(icon=icon, data=self, actions=[], inline_actions=[], attach=[], append={})
+            metadata = dict(actions={}, attach=[])
+            output.update(icon=icon, auxiliar=self.auxiliar, data=self, metadata=metadata)
             for action_type in ('actions', 'inline_actions'):
                 for form_name in self.metadata[action_type]:
                     form_cls = self.instance.action_form_cls(form_name)
                     if self.request is None or form_cls.check_fake_permission(
                             request=self.request, instance=self.instance, instantiator=self.instance,
                     ):
-                        output[action_type].append(form_cls.get_metadata(self.path))
+                        key = 'instance' if action_type == 'actions' else 'inline'
+                        if key not in metadata['actions']:
+                            metadata['actions'][key] = []
+                        metadata['actions'][key].append(form_cls.get_metadata(self.path))
+
             for attr_name in self.metadata['attach']:
                 name = getattr(self.instance, attr_name)().metadata['verbose_name'] or pretty(attr_name)
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                    output['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
-            for position, attr_names in self.metadata['append'].items():
-                for attr_name in attr_names:
-                    if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-                        template = getattr(getattr(self.instance, attr_name), '__template__', None)
-                        if position not in output['append']:
-                            output['append'][position] = {}
-                        output['append'][position].update(
-                            self.instance.value_set(attr_name).renderer(template).contextualize(self.request).load(wrap=wrap)
-                        )
+                    metadata['attach'].append(dict(name=name, path='{}{}/'.format(self.path, attr_name)))
+
+            for key in ('actions', 'attach'):
+                if not metadata[key]:
+                    del metadata[key]
             return output
         else:
             if len(self.metadata['names']) == 1:

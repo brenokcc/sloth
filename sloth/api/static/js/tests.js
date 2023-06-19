@@ -220,6 +220,7 @@ function lookAt(text, only_panel){
         lookAt(text, only_panel);
     } else if(element.length>0){
         cursor = element[0];
+        //scroolToElement(cursor, function(){});
         return element[0];
     }
     throw Error('Not found.')

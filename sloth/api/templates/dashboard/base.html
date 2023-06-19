@@ -57,25 +57,15 @@
       var LOG_TEST_ACTIONS = {{ LOG_TEST_ACTIONS }};
     </script>
   </head>
-  <body id="{{ request.path|url_slug }}">
-    {% include "dashboard/menu.html" with menu=dashboard.data.menu %}
-    {% block header %}{% include "dashboard/header.html" %}{% endblock %}
-    {% include "dashboard/links.html" with data=dashboard.data %}
-
-      <main>
 {% endif %}
-
-{% block content %}
-{% endblock %}
-{% include "dashboard/messages.html" %}
-{% if not request|is_ajax %}
-        <script src="/static/js/tests.js"></script>
-      </main>
-    {% block footer %}
-    {% include "dashboard/footer.html" %}
-    {% endblock %}
-    {% include "dashboard/modal.html" %}
-    {% include "dashboard/bottom.html" %}
-  </body>
+  {% block body %}
+    <body>
+      {{ form }}
+      {{ data }}
+    </body>
+  {% endblock %}
+  {% if not request|is_ajax %}
+  {% include "dashboard/modal.html" %}
+  <script src="/static/js/tests.js"></script>
 </html>
 {% endif %}

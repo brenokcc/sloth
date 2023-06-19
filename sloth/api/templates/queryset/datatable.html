@@ -13,7 +13,7 @@
                 {% endfor %}
             </dl>
             <div class="float-end">
-                {% include "dashboard/actions.html" with uuid=data.uuid target="instance" actions=data.actions.instance id=row.id|stringformat:'s' enabled=row.actions  %}
+                {% include "dashboard/actions.html" with uuid=data.uuid target="instance" actions=data.metadata.actions.instance id=row.id|stringformat:'s' enabled=row.actions  %}
             </div>
             <div class="clearfix"></div>
             <hr>
@@ -22,7 +22,7 @@
     <table class="table">
         <thead>
         <tr>
-            {% if data.actions.queryset %}
+            {% if data.metadata.actions.queryset %}
             <th scope="col" width="10px">
                 {% include "queryset/checkbox.html" %}
             </th>
@@ -30,7 +30,7 @@
             {% for label, display in data.metadata.display.items %}
             <th scope="col">{{ display.name }}</th>
             {% endfor %}
-            {% if data.actions.instance and not print %}
+            {% if data.metadata.actions.instance and not print %}
                 <th style="text-align:center" scope="col"></th>
             {% endif %}
         </tr>
@@ -38,7 +38,7 @@
         <tbody>
         {% for row in data.data %}
         <tr>
-            {% if data.actions.queryset %}
+            {% if data.metadata.actions.queryset %}
             <th scope="col" class="align-middle">
                 {% include "queryset/checkbox.html" %}
             </th>
@@ -48,7 +48,7 @@
                 {% include 'valueset/value.html' %}
             </td>
             {% endfor %}
-            {% if data.actions.instance and not print %}
+            {% if data.metadata.actions.instance and not print %}
             <td align="center" class="align-middle instance-actions">
                 {% include "queryset/actions/actions.html" %}
             </td>

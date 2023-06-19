@@ -56,7 +56,7 @@
 
 {% if self.show_form %}
 <form id="{{ self.get_metadata.key|slugify }}" action="{{ self.get_full_path }}" method="{{ self.get_method }}" novalidate="novalidate" class="{% if self.get_metadata.ajax %}form{% endif %} form-{{ self.get_metadata.name|slugify }}" enctype="multipart/form-data">
-    <input type="hidden" name="{{ self.get_metadata.key }}" value="{{ self.dumps }}">
+    <input type="hidden" name="{{ self.get_metadata.key }}" value="">
     {% if self.get_metadata.method == "post" %}
         {% csrf_token %}
     {% endif %}

@@ -1,3 +1,3 @@
-{% if data.actions.queryset %}
+{% if data.metadata.actions.queryset %}
 <input type="checkbox" class="action-checkbox form-check-input" value="{{ row.id|stringformat:'s' }}" onclick="toggleActions{{ data.uuid }}(this)">
 {% endif %}

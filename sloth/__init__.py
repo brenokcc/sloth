@@ -53,12 +53,16 @@ class RoleLookup:
         return False
 
 
-def meta(verbose_name=None, renderer=None, **metadata):
+def meta(verbose_name=None, renderer=None, assyncronous=False, cache=0, **metadata):
     def decorate(func):
         if verbose_name is not None:
             setattr(func, '__verbose_name__', verbose_name)
         if renderer is not None:
             setattr(func, '__template__', renderer)
+        if assyncronous:
+            setattr(func, '__assyncronous__', True)
+        if cache:
+            setattr(func, '__cache__', cache)
         if metadata:
             setattr(func, '__metadata__', metadata)
 

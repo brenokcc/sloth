@@ -1,4 +1,12 @@
 <div>
+    <div>
+        <a class="btn btn-primary" href="/app/dashboard/graph/">dashboard</a>
+        {% for app_label, model_name in models %}
+            <a class="btn btn-primary" href="/app/dashboard/graph/app_label={{ app_label }}/model_name={{ model_name }}/">
+                {{ app_label }}.{{ model_name }}
+            </a>
+        {% endfor %}
+    </div>
     <div id="graph">
       <!-- Target for dynamic svg generation -->
     </div>

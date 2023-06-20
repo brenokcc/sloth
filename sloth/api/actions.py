@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from oauth2_provider.models import AccessToken
 from datetime import timedelta, datetime
-
+from django.apps import apps
 from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings
@@ -602,18 +602,67 @@ class Graph(actions.ActionView):
         style = 'primary'
 
     def view(self):
-        data = '''
-            digraph g{
-                ratio = fill;
-                node [style=filled];
-                n1 [ label = "N1", color="0.650 0.200 1.000"]
-                n2 [ label = "{id}", color="0.650 0.200 1.000" ]
-                n3 [ label = "{id}", color="0.650 0.200 1.000" ]
-                n1 -> n2 [color="0 0 0 "];
-                n1 -> n3 [color="0 0 0 "];
-            }
-        '''.replace('\n', '\t')
-        return dict(data=data)
+        from sloth.core.valueset import ValueSet
+        from sloth.core.queryset import QuerySet
+        from sloth.api.dashboard import Dashboards
+        n0 = 0
+        nodes = {1:'N1', 2:'X', 3:' Y'}
+        edges = [(1, 2), (1, 3)]
+        nodes = {n0: 'dashboard'}
+        edges = []
+        models = [('projetos', 'projeto'), ('projetos', 'perfilvaga'), ('comum', 'pessoafisica')]
+        app_label = self.parameter('app_label')
+        model_name = self.parameter('model_name')
+        if app_label and model_name:
+            cls = apps.get_model(app_label, model_name)
+            n1 = len(nodes)
+            nodes[n1] = f'{app_label}/{model_name}'
+            edges.append((0, n1))
+            nadd = len(nodes)
+            nodes[nadd] = 'add'
+            edges.append((n1, nadd))
+            obj = cls.objects.first() or cls(pk=0)
+            value_set = obj.view()
+            n2 = len(nodes)
+            nodes[n2] = '{id}'
+            edges.append((n1, n2))
+        else:
+            n2 = n0
+            obj = Dashboards(self.request).main()
+            value_set = obj.view()
+        for attr_name in value_set.metadata['names']:
+            n3 = len(nodes)
+            nodes[n3] = attr_name
+            edges.append((n2, n3))
+            attr = getattr(obj, attr_name)()
+            if isinstance(attr, ValueSet):
+                for action_name in attr.metadata['actions']:
+                    n4 = len(nodes)
+                    nodes[n4] = action_name
+                    edges.append((n3, n4))
+            if isinstance(attr, QuerySet):
+                for action_name in attr.metadata['global_actions']:
+                    n5 = len(nodes)
+                    nodes[n5] = action_name
+                    edges.append((n3, n5))
+                if attr.metadata['related_field']:
+                    action_name = 'add'
+                    n6 = len(nodes)
+                    nodes[n6] = action_name
+                    edges.append((n3, n6))
+                if attr.metadata['actions']:
+                    n7 = len(nodes)
+                    nodes[n7] = '{id}'
+                    edges.append((n3, n7))
+                    for action_name in attr.metadata['actions']:
+                        n8 = len(nodes)
+                        nodes[n8] = action_name
+                        edges.append((n7, n8))
+        data = '''digraph g{{ ratio = fill; node [style=filled]; edge[arrowhead="none"]; {} {} }}'''.format(
+            ' '.join(f'{k} [ label = "{v}", color="0.650 0.200 1.000"]' for k, v in nodes.items()),
+            ' '.join(f'{k} -> {v} [color="0 0 0 "];' for k, v in edges)
+        )
+        return dict(data=data, models=models)
 
     def has_permission(self, user):
         return True

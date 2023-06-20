@@ -68,7 +68,7 @@
         {% else %}
             {% if data.data %}
             <div class="valueset-fieldsets">
-                {% if data.data|has_only_primitive_fields %}
+                {% if 0 and data.data|has_only_primitive_fields %}
                     <div class="box responsive-container">
                         {% for name, item in data.data.items %}
                             {% if item.template %}

@@ -60,6 +60,8 @@ def serialize(obj, identifier=False):
             return float(obj)
         elif isinstance(obj, bool):
             return obj
+        elif isinstance(obj, dict):
+            return {k: serialize(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [serialize(o) for o in obj]
         elif isinstance(obj, tuple):

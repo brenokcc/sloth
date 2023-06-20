@@ -595,6 +595,30 @@ class Workflow(actions.ActionView):
         return user.is_superuser
 
 
+class Graph(actions.ActionView):
+    class Meta:
+        verbose_name = 'API Graph'
+        modal = True
+        style = 'primary'
+
+    def view(self):
+        data = '''
+            digraph g{
+                ratio = fill;
+                node [style=filled];
+                n1 [ label = "N1", color="0.650 0.200 1.000"]
+                n2 [ label = "{id}", color="0.650 0.200 1.000" ]
+                n3 [ label = "{id}", color="0.650 0.200 1.000" ]
+                n1 -> n2 [color="0 0 0 "];
+                n1 -> n3 [color="0 0 0 "];
+            }
+        '''.replace('\n', '\t')
+        return dict(data=data)
+
+    def has_permission(self, user):
+        return True
+
+
 class TestLogger(actions.ActionView):
     class Meta:
         verbose_name = 'Log de Teste'

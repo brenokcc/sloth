@@ -1,0 +1,10 @@
+<div>
+    <div id="graph">
+      <!-- Target for dynamic svg generation -->
+    </div>
+    <script src="/static/js/viz.js"></script>
+    <script>
+        var svg = Viz('{{ data|safe }}', "svg");
+        $('#graph').html("<hr>"+svg);
+    </script>
+</div>

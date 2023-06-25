@@ -12,7 +12,7 @@ class PhotoField(forms.CharField):
     def __init__(self, *args, max_width=200, max_height=200, **kwargs):
         super().__init__(*args, **kwargs)
         self.widget.attrs.update(
-            {'data-max-width': self.max_width, 'data-max-height': self.max_height, 'accept': 'image/*', 'capture': ''}
+            {'data-max-width': max_width, 'data-max-height': max_height, 'accept': 'image/*', 'capture': ''}
         )
 
 

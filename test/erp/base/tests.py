@@ -113,15 +113,15 @@ class ApiTestCase(ServerTestCase):
         # not authorized
         self.login('user', '123')
         self.get('/api/dashboard/auth/group/add/', status_code=401)
-        self.get('/api/dashboard/base/servidor/1/', status_code=401)
-        self.get('/api/dashboard/base/servidor/1/get_dados_gerais/', status_code=401)
+        self.get('/api/dashboard/base/servidor/1/', status_code=404)
+        self.get('/api/dashboard/base/servidor/1/get_dados_gerais/', status_code=404)
         self.post(
             '/api/dashboard/base/servidor/1/get_dados_gerais/corrigirnomeservidor/',
-            dict(nome='Emanoel'), status_code=401
+            dict(nome='Emanoel'), status_code=404
         )
         self.post(
             '/api/dashboard/base/servidor/1/get_ferias/1-2/alterarferias/',
-            dict(inicio='01/06/2020', fim='01/07/2020'), status_code=401
+            dict(inicio='01/06/2020', fim='01/07/2020'), status_code=404
         )
 
         # authenticated and authorized

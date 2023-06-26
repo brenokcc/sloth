@@ -803,7 +803,10 @@ class Action(metaclass=ActionMetaclass):
                 value = None
             getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
-        return super().is_valid()
+        is_valid = super().is_valid()
+        if not is_valid and not self.request.path.startswith('/app/'):
+            raise JsonReadyResponseException(dict(errors=self.errors))
+        return is_valid
 
     def choices(self, field_name, q=None):
         field = self.fields[field_name]
@@ -839,13 +842,16 @@ class Action(metaclass=ActionMetaclass):
         level = dict(success=messages.SUCCESS, warning=messages.WARNING, info=messages.INFO)[style]
         if self.request.path.startswith('/app/'):
             messages.add_message(self.request, level, text)
-        else:
+        elif self.request.path.startswith('/meta/'):
             self.response.update(message=dict(text=text, style=style, milleseconds=milleseconds))
+        else:
+            self.response.update(message=text)
 
     def redirect(self, url=None):
         if url is None:
             url = '..' if getattr(self, 'fields', None) or self.is_modal() else '.'
-        self.response.update(type='redirect', url=url)
+        if not self.request.path.startswith('/api/'):
+            self.response.update(type='redirect', url=url)
         if self.request.path.startswith('/app') and not self.get_metadata()['ajax']:
             raise ReadyResponseException(HttpResponseRedirect(url))
 

@@ -19,7 +19,7 @@ from django.contrib.auth import authenticate
 from ..api import OpenApi
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -147,10 +147,12 @@ def endpoint(func):
                 )
         except JsonReadyResponseException as e:
             return ApiResponse(e.data, safe=False)
+        except ObjectDoesNotExist:
+            if request.path.startswith('/api/'):
+                return ApiResponse(dict(message='Objeto não encontrado'), status=404)
+            return ApiResponse(dict(type='message', text='Objeto não encontrado', style='warning'), status=404)
         except PermissionDenied:
-            return ApiResponse(
-                dict(type='message', text='Usuário não autorizado', style='warning'), status=401
-            )
+            return ApiResponse(dict(type='message', text='Usuário não autorizado', style='warning'), status=401)
         except BaseException as e:
             traceback.print_exc()
             return ApiResponse(
@@ -232,19 +234,35 @@ def dispatcher(request, path):
     queryset = None
     tokens = [token for token in path.split('/') if '=' not in token]
     token = tokens.pop(0)
+    installed_apps = [label.split('.')[-1] for label in settings.INSTALLED_APPS]
+    api_app_models = [cls.metaclass().model_name for cls in  apps.get_models() if cls.metaclass().app_label == 'api']
     if token == 'dashboard':
         obj = Dashboards(request).main()
         if tokens:
             token = tokens.pop(0)
-            if token in settings.INSTALLED_APPS or token in ('api', 'auth'):
-                app_label, model_name = token, tokens.pop(0)
+            if token in installed_apps or token in api_app_models:
+                if token in installed_apps:
+                    app_label, model_name = token, tokens.pop(0)
+                else:
+                    app_label, model_name = 'api', token
                 obj = apps.get_model(app_label, model_name).objects.view()
                 if isinstance(obj, QuerySet):
                     queryset = obj
                     obj = obj.default_actions().expand().admin()
                 allowed_attrs = obj.get_allowed_attrs()
-                if not tokens and not obj.has_permission(request.user):
-                    raise PermissionDenied()
+                if tokens:
+                    if len(tokens) == 1 and tokens[0].isdigit():
+                        if request.method.lower() == 'put':
+                            tokens.append('edit')
+                        elif request.method.lower() == 'delete':
+                            tokens.append('delete')
+                else:
+                    if request.method.lower() == 'post':
+                        tokens.append('add')
+                    elif request.method.lower() == 'delete':
+                        tokens.append('delete')
+                    if not obj.has_permission(request.user):
+                        raise PermissionDenied()
             else:
                 allowed_attrs = obj.view().get_allowed_attrs()
                 if token in ACTIONS:
@@ -262,6 +280,8 @@ def dispatcher(request, path):
             allowed_attrs = obj.get_allowed_attrs()
             if not request.user.is_authenticated:
                 raise PermissionDenied()
+    else:
+        raise PermissionDenied()
     for i, token in enumerate(tokens):
         if i == 0:
             allowed_attrs.extend(EXPOSE)
@@ -277,7 +297,7 @@ def dispatcher(request, path):
                 instance = obj
                 instances = None
             else:
-                raise PermissionDenied()
+                raise ObjectDoesNotExist()
         elif '-' in token:
             if isinstance(obj, Dashboard):
                 obj = obj.view()

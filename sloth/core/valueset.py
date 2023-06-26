@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import types
 from uuid import uuid1
 import pprint
 from functools import lru_cache
@@ -456,3 +457,57 @@ class ValueSet(dict):
             template_name, data = 'valueset/valueset.html', serialized
         # pprint.pprint(data)
         return render_to_string(template_name, dict(data=data, print=print), request=self.request)
+
+    def get_api_info(self, url=None):
+        info = {}
+        self.instance.id = 0
+        cls = type(self.instance)
+        url = '{}{{id}}'.format(url) if url else '/api/dashboard'
+        for name in self.metadata['names']:
+            try:
+                attr = getattr(self.instance, name)
+            except BaseException:
+                continue
+            if isinstance(attr, types.MethodType):
+                v = attr()
+                if isinstance(v, ValueSet):
+                    info['{}/{}/'.format(url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
+                    ]
+                    for action in v.metadata['actions']:
+                        forms_cls = cls.action_form_cls(action)
+                        info['{}/{}/{}/'.format(url, name, to_snake_case(action))] = [
+                            ('post', action, 'Execute {}'.format(action), v.get_api_schema(), forms_cls),
+                        ]
+                    if v.has_children():
+                        info.update(v.get_api_info(url=url))
+                elif isinstance(v, QuerySet):
+                    info['{}/{}/'.format(url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, v.filter_form_cls()),
+                    ]
+                    if v.metadata['related_field']:
+                        forms_cls = v.model.relation_form_cls(v.metadata['related_field'])
+                        info['{}/{}/{}/'.format(url, name, 'add')] = [
+                            ('post', 'add', 'Add {}'.format(v.metadata['related_field']), {'type': 'string'}, forms_cls),
+                        ]
+                    for action in v.metadata['global_actions']:
+                        forms_cls = cls.action_form_cls(action)
+                        info['{}/{}/{}/'.format(url, name, to_snake_case(action))] = [
+                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                        ]
+                    for action in v.metadata['actions']:
+                        method = {'edit': 'put', 'delete': 'delete'}
+                        forms_cls = cls.action_form_cls(action)
+                        info['{}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
+                            (method.get(action, 'post'), action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                        ]
+                    for action in v.metadata['batch_actions']:
+                        forms_cls = cls.action_form_cls(action)
+                        info['{}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
+                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+                        ]
+                else:
+                    info['{}/{}/'.format(url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
+                    ]
+        return info

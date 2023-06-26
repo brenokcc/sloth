@@ -1,5 +1,4 @@
 from functools import lru_cache
-import types
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -387,15 +386,14 @@ class ModelMixin(object):
         return self.view().get_allowed_attrs()
 
     @classmethod
-    def get_api_paths(cls, request):
-        instance = cls()
-        instance.id = -1
+    def get_api_info(cls):
+        instance = cls(pk=0)
         instance.init_one_to_one_fields()
         app_label = cls.metaclass().app_label
         if app_label == 'api':
-            url = '/api/{}/'.format(cls.metaclass().model_name)
+            url = '/api/dashboard/{}/'.format(cls.metaclass().model_name)
         else:
-            url = '/api/{}/{}/'.format(app_label, cls.metaclass().model_name)
+            url = '/api/dashboard/{}/{}/'.format(app_label, cls.metaclass().model_name)
         info = dict()
         info[url] = [
             ('get', 'List', 'List objects', {'type': 'string'}, cls.objects.all().filter_form_cls()),
@@ -406,91 +404,8 @@ class ModelMixin(object):
             ('put', 'Edit', 'Edit object', {'type': 'string'}, cls.edit_form_cls()),
             ('delete', 'Delete', 'Delete object', {'type': 'string'}, None),
         ]
-
-        def find_endpoints(valueset):
-            for name in valueset.metadata['names']:
-                try:
-                    attr = getattr(instance, name)
-                except BaseException:
-                    continue
-                if isinstance(attr, types.MethodType):
-                    v = attr()
-                    info['{}{{id}}/{}/'.format(url, name)] = [
-                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
-                    ]
-                    if isinstance(v, ValueSet):
-                        for action in v.metadata['actions']:
-                            forms_cls = cls.action_form_cls(action)
-                            info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
-                                ('post', action, 'Execute {}'.format(action), v.get_api_schema(), forms_cls),
-                            ]
-                        if v.has_children():
-                            find_endpoints(v)
-                    elif isinstance(v, QuerySet):
-                        for action in v.metadata['global_actions']:
-                            forms_cls = cls.action_form_cls(action)
-                            info['{}{{id}}/{}/{}/'.format(url, name, to_snake_case(action))] = [
-                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                            ]
-                        for action in v.metadata['actions']:
-                            forms_cls = cls.action_form_cls(action)
-                            info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                            ]
-                        for action in v.metadata['batch_actions']:
-                            forms_cls = cls.action_form_cls(action)
-                            info['{}{{id}}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                            ]
-
-        find_endpoints(cls().view())
-
-        paths = {}
-        for url, data in info.items():
-            paths[url] = {}
-            for method, summary, description, schema, form_cls in data:
-                body = []
-                params = []
-                if '{id}' in url:
-                    params.append(
-                        {'description': 'Identificador', 'name': 'id', 'in': 'path', 'required': True, 'schema': dict(type='integer')}
-                    )
-                if '{ids}' in url:
-                    params.append(
-                        {'description': 'Identificadores', 'name': 'ids', 'in': 'path', 'required': True, 'schema': dict(type='string')}
-                    )
-                if form_cls:
-                    form = form_cls(request=request)
-                    form.load_fieldsets()
-                    if form_cls.__name__ == 'FilterForm':
-                        params.extend(form.get_api_params())
-                    else:
-                        body = form.get_api_params()
-                paths[url][method] = {
-                    'summary': summary,
-                    'description': description,
-                    'parameters': params,
-                    'requestBody': {
-                        'content': {
-                            'application/x-www-form-urlencoded': {
-                                'schema': {
-                                    'type': 'object',
-                                    'properties': {param['name']: {
-                                        'description': param['description'],
-                                        'type': param['schema']['type']
-                                    } for param in body},
-                                    'required': [param['name'] for param in body if param['required']]
-                                }
-                            }
-                        }
-                    } if body else None,
-                    'responses': {
-                        '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
-                    },
-                    'tags': [app_label],
-                    'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
-                }
-        return paths
+        info.update(instance.view().get_api_info(url))
+        return info
 
     @classmethod
     def metaclass(cls):

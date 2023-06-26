@@ -239,8 +239,8 @@ class QuerySet(models.QuerySet):
                     hidden = lookup == self.metadata['calendar']
                     formfield = field.formfield(label=n, required=False)
                     fkey = '{}__{}'.format(lookup, sublookup)
-                    filters[k] = dict(key=fkey, name=n, type=filter_type, choices=None, hidden=hidden, value=self.request.GET.get(fkey) if self.request else None
-                    )
+                    filters[k] = dict(key=fkey, name=n, type=filter_type, choices=None, hidden=hidden, value=self.request.GET.get(fkey) if self.request else None)
+                    filters[k].update(formfield=formfield) if as_form else None
             elif filter_type == 'choices':
                 value = None
                 if self.request and self.request.GET.get(lookup):
@@ -249,12 +249,12 @@ class QuerySet(models.QuerySet):
                 url = '{}?uuid={}&choices={}'.format(path, path.split('/')[-2], lookup) if path else None
                 if url:
                     filters[key].update(source=url)
+                filters[key].update(formfield=formfield) if as_form else None
             else:
                 filters[key] = dict(
                     key=lookup, name=name, type=filter_type, choices=None, hidden=False, value=self.request.GET.get(lookup) if self.request else None
                 )
-            if as_form:
-                filters[key].update(formfield=formfield)
+                filters[key].update(formfield=formfield) if as_form else None
             if filter_type == 'boolean':
                 filters[key]['value'] = filters[key]['value'] if filters[key]['value'] else None
 

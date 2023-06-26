@@ -24,7 +24,7 @@ function init(url, app, model, scope){
 }
 
 window.onload = function() {
-    init("/api/docs/", 'api', 'user');
+    init("/api/docs/", '', '');
 }
 
 function updateApi(clearModel){
@@ -65,10 +65,12 @@ function loadSelects(selectedApp, selectedModel, selectedScope){
                     var selected = selectedScope == scopes[i] ? 'selected' : '';
                     scopesOptions+='<option '+selected+' value="'+scopes[i]+'">'+data['scopes'][scopes[i]]+'</option>';
                 }
+                if(selectedApp=='') modelsOptions = '<option></option>';
                 var appsHtml = '<div><span class="servers-title">App</span><div class="servers"><label><select id="app" onchange="updateApi(true)" style="width:150px">'+appsOptions+'</select></label></div></div>';
                 var modelsHtml = '<div><span class="servers-title">Models</span><div class="servers"><label><select id="model" onchange="updateApi()" style="width:150px">'+modelsOptions+'</select></label></div></div>';
                 var scopesHtml = '<div><span class="servers-title">Scope</span><div class="servers"><label><select id="scope" onchange="updateApi()" style="width:150px">'+scopesOptions+'</select></label></div></div>';
                 //var buttonHtml = '<button class="btn authorize"><span>Update</span></button>'
+
                 document.getElementsByClassName('auth-wrapper')[0].insertAdjacentHTML('beforebegin', appsHtml+modelsHtml+scopesHtml);
             }
         }

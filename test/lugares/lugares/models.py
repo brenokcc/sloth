@@ -23,7 +23,7 @@ class Pais(models.Model):
         return self.value_set('nome')
 
     def get_estados(self):
-        return self.estado_set.ignore('pais').expand().actions('view', 'edit', 'delete')
+        return self.estado_set.related_field('pais').expand().actions('view', 'edit', 'delete')
 
     @meta('Total de Estados', renderer='badges/primary')
     def get_total_estados(self):

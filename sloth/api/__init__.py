@@ -18,6 +18,7 @@ class OpenApi(dict):
                 {
                     'securitySchemes': {
                         'BasicAuth': {'type': 'http', 'scheme': 'basic'},
+                        'Token': {'type': 'apiKey', 'name': 'Authorization', 'in': 'header'},
                         'OAuth2': {
                             'type': 'oauth2', 'flows': {
                                 'authorizationCode': {
@@ -65,8 +66,12 @@ class OpenApi(dict):
                             self.contribute(app_label, model.get_api_info())
                     self['tags'].append(dict(name=app_label))
         elif self.request.GET.get('app') == '' or not self.request.GET:
+            from sloth.actions import ACTIONS
             from sloth.api.dashboard import Dashboards
+            form_cls = ACTIONS['login']
+            self.contribute('', {'/api/dashboard/login/': [('post', 'Login', 'Login', {'type': 'string'}, form_cls)]})
             self.contribute(selected_app_label, Dashboards(self.request).get_api_info())
+            self.contribute('', {'/api/dashboard/logout/': [('get', 'Logout', 'Logout', {'type': 'string'}, None)]})
 
     def contribute(self, app_label, info):
         paths = {}
@@ -118,6 +123,6 @@ class OpenApi(dict):
                         '200': {'description': 'OK', 'content': {'application/json': {'schema': schema}}}
                     },
                     'tags': [app_label],
-                    'security': [dict(OAuth2=[], BasicAuth=[])]  # , BearerAuth=[], ApiKeyAuth=[]
+                    'security': [dict(OAuth2=[], BasicAuth=[], Token=[])]  # , BearerAuth=[], ApiKeyAuth=[]
                 }
         self['paths'].update(paths)

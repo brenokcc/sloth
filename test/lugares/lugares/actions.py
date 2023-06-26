@@ -1,5 +1,6 @@
 from sloth import actions
 from .models import Cidade
+from . import tasks
 
 
 class AdicionarCidade(actions.Action):
@@ -15,3 +16,12 @@ class FazerAlgumaCoisa(actions.Action):
 
     def submit(self):
         super().submit()
+
+class Contar(actions.ActionView):
+    class Meta:
+        verbose_name = 'Contar'
+        modal = False
+        style = 'primary'
+
+    def view(self):
+        return self.run(tasks.Contar())

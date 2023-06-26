@@ -203,6 +203,7 @@ class ModelMixin(object):
 
                 def has_permission(self, user):
                     return user.is_superuser or self.instance.has_add_permission(user) or self.instance.has_permission(user)
+
             return Add
 
         class Add(form_cls):
@@ -390,19 +391,41 @@ class ModelMixin(object):
         instance = cls(pk=0)
         instance.init_one_to_one_fields()
         app_label = cls.metaclass().app_label
+        verbose_name_plural = cls.metaclass().verbose_name_plural.lower()
         if app_label == 'api':
             url = '/api/dashboard/{}/'.format(cls.metaclass().model_name)
         else:
             url = '/api/dashboard/{}/{}/'.format(app_label, cls.metaclass().model_name)
         info = dict()
+        qs = cls.objects.all()
+        view_api_doc = None
+        add_form_cls = cls.add_form_cls()
+        add_api_doc = add_form_cls.get_api_doc()
+        add_api_doc_detail = add_form_cls.get_api_doc(True)
+        edit_form_cls = cls.edit_form_cls()
+        edit_api_doc = edit_form_cls.get_api_doc()
+        edit_api_doc_detail = edit_form_cls.get_api_doc(True)
+        delete_form_cls = cls.delete_form_cls()
+        delete_api_doc = delete_form_cls.get_api_doc()
+        delete_api_doc_detail = delete_form_cls.get_api_doc(True)
+
+        if view_api_doc is None:
+            view_api_doc = 'Visualiza {}'.format(verbose_name_plural)
+        if add_api_doc is None:
+            add_api_doc = 'Adiciona {}'.format(verbose_name_plural)
+        if edit_api_doc is None:
+            edit_api_doc = 'Edita {}'.format(verbose_name_plural)
+        if delete_api_doc is None:
+            delete_api_doc = 'Exclui {}'.format(verbose_name_plural)
+
         info[url] = [
-            ('get', 'List', 'List objects', {'type': 'string'}, cls.objects.all().filter_form_cls()),
-            ('post', 'Add', 'Add object', {'type': 'string'}, cls.add_form_cls())
+            ('get', qs.get_api_doc(), qs.get_api_doc(True), {'type': 'string'}, qs.filter_form_cls()),
+            ('post', add_api_doc, add_api_doc_detail, {'type': 'string'}, add_form_cls)
         ]
         info['{}{{id}}/'.format(url)] = [
-            ('get', 'View', 'View object', instance.view().get_api_schema(), None),
-            ('put', 'Edit', 'Edit object', {'type': 'string'}, cls.edit_form_cls()),
-            ('delete', 'Delete', 'Delete object', {'type': 'string'}, None),
+            ('get', view_api_doc, view_api_doc, instance.view().get_api_schema(), None),
+            ('put', edit_api_doc, edit_api_doc_detail, {'type': 'string'}, edit_form_cls),
+            ('delete', delete_api_doc, delete_api_doc_detail, {'type': 'string'}, None),
         ]
         info.update(instance.view().get_api_info(url))
         return info

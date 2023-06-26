@@ -1038,3 +1038,45 @@ class QuerySet(models.QuerySet):
         kwargs = {f.name: None for f in self.model._meta.fields}
         self.__log__('delete', **kwargs)
         super().delete()
+
+    def get_api_doc(self, detail=False):
+        doc = []
+        if detail:
+            display = [item['name'].lower() for item in self.get_display().values()]
+            doc.append('Exibe {}.'.format(', '.join(display))) if display else None
+            search = [item['name'].lower() for item in self.get_search().values()]
+            doc.append('Permite buscar por {}.'.format(', '.join(search))) if search else None
+            filters = [item['name'].lower() for item in self.get_filters().values()]
+            doc.append('Os registros podem ser filtrados por {}.'.format(', '.join(filters))) if filters else None
+            doc.append('São exibidos {} registros por vez.'.format(self.metadata['limit']))
+        else:
+            doc.append('Lista {}'.format(self.model.metaclass().verbose_name_plural.lower()))
+        return ' '.join(doc)
+
+    def get_api_info(self, url):
+        info = {}
+        info[url] = [
+            ('get', 'list', 'List', {'type': 'string'}, self.filter_form_cls()),
+        ]
+        if self.metadata['related_field']:
+            forms_cls = self.model.relation_form_cls(self.metadata['related_field'])
+            info['{}/{}/'.format(url, 'add')] = [
+                ('post', 'add', 'Add {}'.format(self.metadata['related_field']), {'type': 'string'}, forms_cls),
+            ]
+        for action in self.metadata['global_actions']:
+            forms_cls = self.model.action_form_cls(action)
+            info['{}/{}/'.format(url, to_snake_case(action))] = [
+                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+            ]
+        for action in self.metadata['actions']:
+            method = {'edit': 'put', 'delete': 'delete'}
+            forms_cls = self.model.action_form_cls(action)
+            info['{}/{{ids}}/{}/'.format(url, to_snake_case(action))] = [
+                (method.get(action, 'post'), action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+            ]
+        for action in self.metadata['batch_actions']:
+            forms_cls = self.model.action_form_cls(action)
+            info['{}/{{ids}}/{}/'.format(url, to_snake_case(action))] = [
+                ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
+            ]
+        return info

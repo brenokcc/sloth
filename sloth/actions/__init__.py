@@ -226,6 +226,15 @@ class Action(metaclass=ActionMetaclass):
                 widget=forms.HiddenInput()
             )
 
+    @classmethod
+    def get_api_doc(cls, detail=False):
+        if detail and cls.base_fields:
+            doc = []
+            field_names = [field.label.lower() for field in cls.base_fields.values()]
+            doc.append('Requer as seguintes informações: {}.'.format(', '.join(field_names)))
+            return ' '.join(doc)
+        return None
+
     def render(self, template_name, **context):
         return HttpResponse(render_to_string([template_name], context, request=self.request))
 
@@ -861,7 +870,7 @@ class Action(metaclass=ActionMetaclass):
         if len(tasks) > 1:
             self.redirect()
         else:
-            self.redirect('/app/api/task/{}/'.format(task.task_id))
+            self.redirect('/app/dashboard/api/task/{}/'.format(task.task_id))
 
     def submit(self):
         if self.instances:

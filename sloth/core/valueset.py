@@ -466,10 +466,16 @@ class ValueSet(dict):
         for name in self.metadata['names']:
             try:
                 attr = getattr(self.instance, name)
-            except BaseException:
+            except Exception:
                 continue
             if isinstance(attr, types.MethodType):
-                v = attr()
+                try:
+                    v = attr()
+                except Exception as e:
+                    if ' has no 'in str(e):
+                        v = self.instance.metaclass().get_field(str(e.__class__).split('.')[-2]).related_model(pk=0)
+                    else:
+                        raise e
                 if isinstance(v, ValueSet):
                     info['{}/{}/'.format(url, name)] = [
                         ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
@@ -482,30 +488,7 @@ class ValueSet(dict):
                     if v.has_children():
                         info.update(v.get_api_info(url=url))
                 elif isinstance(v, QuerySet):
-                    info['{}/{}/'.format(url, name)] = [
-                        ('get', name, 'View {}'.format(name), {'type': 'string'}, v.filter_form_cls()),
-                    ]
-                    if v.metadata['related_field']:
-                        forms_cls = v.model.relation_form_cls(v.metadata['related_field'])
-                        info['{}/{}/{}/'.format(url, name, 'add')] = [
-                            ('post', 'add', 'Add {}'.format(v.metadata['related_field']), {'type': 'string'}, forms_cls),
-                        ]
-                    for action in v.metadata['global_actions']:
-                        forms_cls = cls.action_form_cls(action)
-                        info['{}/{}/{}/'.format(url, name, to_snake_case(action))] = [
-                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                        ]
-                    for action in v.metadata['actions']:
-                        method = {'edit': 'put', 'delete': 'delete'}
-                        forms_cls = cls.action_form_cls(action)
-                        info['{}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                            (method.get(action, 'post'), action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                        ]
-                    for action in v.metadata['batch_actions']:
-                        forms_cls = cls.action_form_cls(action)
-                        info['{}/{}/{{ids}}/{}/'.format(url, name, to_snake_case(action))] = [
-                            ('post', action, 'Execute {}'.format(action), {'type': 'string'}, forms_cls),
-                        ]
+                    info.update(v.get_api_info(url='{}/{}'.format(url, name)))
                 else:
                     info['{}/{}/'.format(url, name)] = [
                         ('get', name, 'View {}'.format(name), {'type': 'string'}, None),

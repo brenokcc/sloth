@@ -97,15 +97,17 @@ class ModelMixin(object):
 
     ### VISUALIZATION ###
 
+    def fieldset(self):
+        return self.value_set(*[field.name for field in self.metaclass().fields]).verbose_name('Dados Gerais')
+
     def value_set(self, *names):
         return ValueSet(self, names)
 
-    def view(self, *names):
-        names = names or [field.name for field in self.metaclass().fields]
-        return self.value_set(*names)
+    def view(self):
+        return self.value_set('fieldset')
 
     def serialize(self, wrap=True):
-        return self.view().serialize(wrap=wrap)
+        return (self.view() if wrap else self.fieldset()).serialize(wrap=wrap)
 
     def get_select_display(self):
         select_fields = getattr(type(self).metaclass(), 'select_fields', None)

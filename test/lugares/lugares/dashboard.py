@@ -25,14 +25,14 @@ class AppDashboard(Dashboard):
     def get_estados(self):
         return self.objects('lugares.estado')
 
-    @meta('Indicadores', renderer='statistics/cards', assyncronous=False, cache=15)
+    @meta('Indicadores', renderer='statistics/cards', assyncronous=True, cache=15)
     def get_indicadores(self):
-        time.sleep(0)
+        time.sleep(3)
         return [
             ('map', self.objects('lugares.estado').count(), 'Total de Estados'),
             ('pin-map', self.objects('lugares.cidade').count(), 'Total de Cidades'),
         ]
 
     def get_total_estados(self):
-        time.sleep(0)
+        time.sleep(3)
         return self.objects('lugares.estado').count()

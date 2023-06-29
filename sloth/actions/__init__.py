@@ -758,7 +758,7 @@ class Action(metaclass=ActionMetaclass):
                 path = '{}{}/'.format(self.request.path, 'submit') if self.request.POST else None
             else:
                 path = '{}{}/'.format(self.request.path, 'view')
-            self.content[position].append(output.contextualize(self.request).html(path=path))
+            self.content[position].append(output.readonly().contextualize(self.request).html(path=path))
         elif output is not None:
             raise Exception()
         if self.request.path.startswith('/app/') and self.response and submit:

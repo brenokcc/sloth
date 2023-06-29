@@ -310,9 +310,9 @@ function choose(name, value, headless){
         } else {
             function afterScrool() {
                 element.select2("open");
-                var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
-                $search.val(value);
-                $search.trigger('keyup');
+                //var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
+                //$search.val(value);
+                //$search.trigger('keyup');
                 var lookup = "option:contains(" + value + ")";
                 function waitValue() {
                     var value = element.find(lookup).val();

@@ -55,9 +55,9 @@ class ValueSet(dict):
         self.auxiliar = False
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
+            attach=[], append=[], image=None, template=None, primitive=True, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only=[], refresh={}, inline_actions=[],
-            cards=[], shortcuts=[], collapsed=False, printing=False
+            cards=[], shortcuts=[], collapsed=False, printing=False, readonly=False
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -73,6 +73,10 @@ class ValueSet(dict):
 
     def expand(self):
         return self.collapsed(False)
+
+    def readonly(self):
+        self.metadata['readonly'] = True
+        return self
 
     def actions(self, *names):
         self.metadata['actions'] = [to_snake_case(name) for name in names]
@@ -267,17 +271,20 @@ class ValueSet(dict):
                             source = self.metadata['source'] if self.request.path.startswith('/api/') else None
                             qs = qs.contextualize(self.request, source).apply_role_lookups(self.request.user)
                         if wrap:
-                            if template or (self.metadata['primitive'] and deep > 0):
+                            if template or (self and self.metadata['primitive'] and deep > 0):
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
+                                self.metadata['primitive'] = False
                                 data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
                             data.update(name=verbose_name, key=attr_name)
                         else:
-                            if self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
+                            if self and self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
+                                self.metadata['primitive'] = False
                                 data = qs.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
+                        self.metadata['primitive'] = False
                         statistics = value
                         verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'])
                         if verbose_name is None:
@@ -286,6 +293,7 @@ class ValueSet(dict):
                         data = statistics.serialize(path=path, wrap=wrap, lazy=lazy)
                         data.update(name=verbose_name, key=attr_name) if wrap else None
                     elif isinstance(value, ValueSet):
+                        self.metadata['primitive'] = False
                         valueset = value
                         verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'])
                         if verbose_name is None:
@@ -305,7 +313,7 @@ class ValueSet(dict):
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
                             data.update(instance=valueset.instance)
-                        if wrap:
+                        if wrap and not self.metadata['readonly']:
                             for action_type in ('actions', 'inline_actions'):
                                 for form_name in valueset.metadata[action_type]:
                                     form_cls = self.instance.action_form_cls(form_name)
@@ -328,7 +336,6 @@ class ValueSet(dict):
                         path = '{}{}/'.format(self.path, attr_name)
                         data = value
                         verbose_name = pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
-                        self.metadata['primitive'] = True
                         if not is_app:
                             data = serialize(data)
                         if wrap or detail:

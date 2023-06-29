@@ -226,6 +226,15 @@ class Action(metaclass=ActionMetaclass):
                 widget=forms.HiddenInput()
             )
 
+    @classmethod
+    def get_api_doc(cls, detail=False):
+        if detail and cls.base_fields:
+            doc = []
+            field_names = [field.label.lower() for field in cls.base_fields.values()]
+            doc.append('Requer as seguintes informações: {}.'.format(', '.join(field_names)))
+            return ' '.join(doc)
+        return None
+
     def render(self, template_name, **context):
         return HttpResponse(render_to_string([template_name], context, request=self.request))
 
@@ -749,7 +758,7 @@ class Action(metaclass=ActionMetaclass):
                 path = '{}{}/'.format(self.request.path, 'submit') if self.request.POST else None
             else:
                 path = '{}{}/'.format(self.request.path, 'view')
-            self.content[position].append(output.contextualize(self.request).html(path=path))
+            self.content[position].append(output.readonly().contextualize(self.request).html(path=path))
         elif output is not None:
             raise Exception()
         if self.request.path.startswith('/app/') and self.response and submit:
@@ -803,7 +812,10 @@ class Action(metaclass=ActionMetaclass):
                 value = None
             getattr(self, 'on_{}_change'.format(field_name))(value)
             raise JsonReadyResponseException(self.on_change_data)
-        return super().is_valid()
+        is_valid = super().is_valid()
+        if not is_valid and not self.request.path.startswith('/app/'):
+            raise JsonReadyResponseException(dict(errors=self.errors))
+        return is_valid
 
     def choices(self, field_name, q=None):
         field = self.fields[field_name]
@@ -839,13 +851,16 @@ class Action(metaclass=ActionMetaclass):
         level = dict(success=messages.SUCCESS, warning=messages.WARNING, info=messages.INFO)[style]
         if self.request.path.startswith('/app/'):
             messages.add_message(self.request, level, text)
-        else:
+        elif self.request.path.startswith('/meta/'):
             self.response.update(message=dict(text=text, style=style, milleseconds=milleseconds))
+        else:
+            self.response.update(message=text)
 
     def redirect(self, url=None):
         if url is None:
             url = '..' if getattr(self, 'fields', None) or self.is_modal() else '.'
-        self.response.update(type='redirect', url=url)
+        if not self.request.path.startswith('/api/'):
+            self.response.update(type='redirect', url=url)
         if self.request.path.startswith('/app') and not self.get_metadata()['ajax']:
             raise ReadyResponseException(HttpResponseRedirect(url))
 
@@ -855,7 +870,7 @@ class Action(metaclass=ActionMetaclass):
         if len(tasks) > 1:
             self.redirect()
         else:
-            self.redirect('/app/api/task/{}/'.format(task.task_id))
+            self.redirect('/app/dashboard/api/task/{}/'.format(task.task_id))
 
     def submit(self):
         if self.instances:

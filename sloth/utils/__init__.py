@@ -51,7 +51,7 @@ def serialize(obj, identifier=False):
         if isinstance(obj, str):
             return obj
         elif isinstance(obj, bool):
-            return 'Sim' if obj else 'Não'
+            return obj
         elif isinstance(obj, datetime.datetime):
             return obj.strftime('%d/%m/%Y %H:%M')
         elif isinstance(obj, datetime.date):
@@ -60,6 +60,8 @@ def serialize(obj, identifier=False):
             return float(obj)
         elif isinstance(obj, bool):
             return obj
+        elif isinstance(obj, dict):
+            return {k: serialize(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [serialize(o) for o in obj]
         elif isinstance(obj, tuple):

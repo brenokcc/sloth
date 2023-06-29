@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import types
 from uuid import uuid1
 import pprint
 from functools import lru_cache
@@ -54,9 +55,9 @@ class ValueSet(dict):
         self.auxiliar = False
         self.metadata = dict(
             model=type(instance), names={}, metadata=[], actions=[], type=None, attr=None, source=None,
-            attach=[], append=[], image=None, template=None, primitive=False, verbose_name=None,
+            attach=[], append=[], image=None, template=None, primitive=True, verbose_name=None,
             title=None, subtitle=None, status=None, icon=None, only=[], refresh={}, inline_actions=[],
-            cards=[], shortcuts=[], collapsed=False, printing=False
+            cards=[], shortcuts=[], collapsed=False, printing=False, readonly=False
         )
         for attr_name in names:
             if isinstance(attr_name, tuple):
@@ -72,6 +73,10 @@ class ValueSet(dict):
 
     def expand(self):
         return self.collapsed(False)
+
+    def readonly(self):
+        self.metadata['readonly'] = True
+        return self
 
     def actions(self, *names):
         self.metadata['actions'] = [to_snake_case(name) for name in names]
@@ -266,17 +271,20 @@ class ValueSet(dict):
                             source = self.metadata['source'] if self.request.path.startswith('/api/') else None
                             qs = qs.contextualize(self.request, source).apply_role_lookups(self.request.user)
                         if wrap:
-                            if template or (self.metadata['primitive'] and deep > 0):
+                            if template or (self and self.metadata['primitive'] and deep > 0):
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
+                                self.metadata['primitive'] = False
                                 data = qs.serialize(path=path, wrap=wrap, lazy=lazy)
                             data.update(name=verbose_name, key=attr_name)
                         else:
-                            if self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
+                            if self and self.metadata['primitive'] and deep > 0:  # one-to-many or many-to-many (and deep > 0)
                                 data = dict(value=serialize(qs), width=width, type='primitive', path=path, template=template)
                             else:
+                                self.metadata['primitive'] = False
                                 data = qs.to_list(detail=False)
                     elif isinstance(value, QuerySetStatistics):
+                        self.metadata['primitive'] = False
                         statistics = value
                         verbose_name = getattr(attr, '__verbose_name__', statistics.metadata['verbose_name'])
                         if verbose_name is None:
@@ -285,6 +293,7 @@ class ValueSet(dict):
                         data = statistics.serialize(path=path, wrap=wrap, lazy=lazy)
                         data.update(name=verbose_name, key=attr_name) if wrap else None
                     elif isinstance(value, ValueSet):
+                        self.metadata['primitive'] = False
                         valueset = value
                         verbose_name = getattr(attr, '__verbose_name__', valueset.metadata['verbose_name'])
                         if verbose_name is None:
@@ -304,7 +313,7 @@ class ValueSet(dict):
                         ) if wrap else valueset
                         if self.request and self.request.path.startswith('/app/'):
                             data.update(instance=valueset.instance)
-                        if wrap:
+                        if wrap and not self.metadata['readonly']:
                             for action_type in ('actions', 'inline_actions'):
                                 for form_name in valueset.metadata[action_type]:
                                     form_cls = self.instance.action_form_cls(form_name)
@@ -327,7 +336,6 @@ class ValueSet(dict):
                         path = '{}{}/'.format(self.path, attr_name)
                         data = value
                         verbose_name = pretty(self.metadata['model'].get_attr_metadata(attr_name)[0])
-                        self.metadata['primitive'] = True
                         if not is_app:
                             data = serialize(data)
                         if wrap or detail:
@@ -456,3 +464,40 @@ class ValueSet(dict):
             template_name, data = 'valueset/valueset.html', serialized
         # pprint.pprint(data)
         return render_to_string(template_name, dict(data=data, print=print), request=self.request)
+
+    def get_api_info(self, url=None):
+        info = {}
+        self.instance.id = 0
+        cls = type(self.instance)
+        obj_url = '{}{{id}}'.format(url) if url else '/api/dashboard'
+        for name in self.metadata['names']:
+            try:
+                attr = getattr(self.instance, name)
+            except Exception:
+                continue
+            if isinstance(attr, types.MethodType):
+                try:
+                    v = attr()
+                except Exception as e:
+                    if ' has no 'in str(e):
+                        v = self.instance.metaclass().get_field(str(e.__class__).split('.')[-2]).related_model(pk=0)
+                    else:
+                        raise e
+                if isinstance(v, ValueSet):
+                    info['{}/{}/'.format(obj_url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
+                    ]
+                    for action in v.metadata['actions']:
+                        forms_cls = cls.action_form_cls(action)
+                        info['{}/{}/{}/'.format(obj_url, name, to_snake_case(action))] = [
+                            ('post', action, 'Execute {}'.format(action), v.get_api_schema(), forms_cls),
+                        ]
+                    if v.has_children():
+                        info.update(v.get_api_info(url=url))
+                elif isinstance(v, QuerySet):
+                    info.update(v.get_api_info(url='{}/{}/'.format(obj_url, name)))
+                else:
+                    info['{}/{}/'.format(obj_url, name)] = [
+                        ('get', name, 'View {}'.format(name), {'type': 'string'}, None),
+                    ]
+        return info

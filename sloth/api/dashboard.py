@@ -348,6 +348,14 @@ class Dashboards:
             if dashboard.view.__func__ != Dashboard.view:
                 return dashboard
 
+    def get_api_info(self):
+        info = {}
+        info['/api/dashboard/'] = [
+            ('get', 'dashboard', 'View dashboard', {'type': 'string'}, None),
+        ]
+        info.update(self.main().view().get_api_info())
+        return info
+
     def superuser(self):
         from django.apps import apps
         from .. import PROXIED_MODELS

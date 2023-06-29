@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from oauth2_provider.models import AccessToken
 from datetime import timedelta, datetime
-
+from django.apps import apps
 from sloth import actions, meta
 from django.contrib import auth
 from django.conf import settings

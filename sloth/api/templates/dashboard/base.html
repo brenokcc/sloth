@@ -53,8 +53,9 @@
     {% endfor %}
     {% block extrahead %} {% endblock %}
     <script>
-      var DISPLAY_FAKE_MOUSE = {{ DISPLAY_FAKE_MOUSE }};
-      var LOG_TEST_ACTIONS = {{ LOG_TEST_ACTIONS }};
+      const DISPLAY_FAKE_MOUSE = {{ DISPLAY_FAKE_MOUSE }};
+      const LOG_TEST_ACTIONS = {{ LOG_TEST_ACTIONS }};
+      const CSRF_TOKEN = "{{ csrf_token }}";
     </script>
   </head>
 {% endif %}

@@ -943,6 +943,14 @@ class Action(metaclass=ActionMetaclass):
         from sloth.api.models import Email
         Email.objects.send(to, subject, content, from_email)
 
+    @classmethod
+    def has_custom_view_method(cls):
+        return not cls.view == Action.view
+
+    @classmethod
+    def has_custom_submit_method(cls):
+        return not cls.submit == Action.submit
+
 
 class ActionView(Action):
     pass

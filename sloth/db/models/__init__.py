@@ -285,7 +285,8 @@ class Decimal3Field(models.DecimalField):
 
 
 class Manager(QuerySet):
-    pass
+    def queryset(self):
+        return self
 
 
 class ModelBase(base.ModelBase):

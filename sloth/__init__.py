@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import options
 from django.db.models import manager
 from django.db.models.base import ModelBase
-
+from django.db.utils import ProgrammingError
 from sloth.core.base import ModelMixin
 from sloth.core.queryset import QuerySet
 from sloth.core.validation import validate_model
@@ -82,7 +82,10 @@ def initialize():
             except BaseException as e:
                 raise e
     for model in apps.get_models():
-        validate_model(model)
+        try:
+            validate_model(model)
+        except ProgrammingError:
+            pass
 
 
 class BaseManager(manager.BaseManager):

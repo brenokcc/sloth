@@ -276,7 +276,7 @@ class Dashboard(metaclass=DashboardType):
         return attr is None or attr(user)
 
     def objects(self, model_name):
-        qs = apps.get_model(model_name).objects
+        qs = apps.get_model(model_name).objects.queryset()
         qs.request = self.request
         return qs.apply_role_lookups(self.request.user, self.request.session)
 

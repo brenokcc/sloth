@@ -4,6 +4,13 @@ jQuery.expr[':'].icontains = function(a, i, m) {
 };
 jQuery.fn.extend({
     request: function(url, method, data, callback, formcallback){
+        if(data==null) data = {};
+        if(method.toUpperCase() == 'POST' && ! (data instanceof FormData)){
+            if(data['csrfmiddlewaretoken']==null) data['csrfmiddlewaretoken'] = CSRF_TOKEN;
+            var form_data = new FormData();
+            for( var key in data ) form_data.append(key, data[key]);
+            data = form_data;
+        }
         var xhr = $.ajax({
             dataType:'binary',
             type: method,
@@ -221,7 +228,7 @@ jQuery.fn.extend({
             }
             if(url==null) ajax = null;
             $(this).select2(
-                {ajax: {delay: 3000}, width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax,
+                {ajax: {delay: 3000}, width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax, dropdownParent: $('#modal').find(this).length > 0 ? $('#modal') : $('body'),
                 templateResult: function(item){return item.html ? $(item.html) : item.text}}
             ).on("select2:open", function (e) { });
         });
@@ -268,9 +275,7 @@ jQuery.fn.extend({
                 }
             });
         });
-        $(document).on('select2:open', () => {
-            $(this).closest('.select2-search__field').focus();
-        });
+        $(document).on('select2:open', (e) => {const selectId = e.target.id; $(".select2-search__field[aria-controls='select2-" + selectId + "-results']").each(function (key, value){value.focus();})});
         $('.fieldset-tab').map(function (i, item){var fieldsets=$(this).find('.reloadable-fieldset, .reloadable-queryset'); if(fieldsets.length == 1) fieldsets.find('.queryset-title, .fieldset-title').hide();});
         return this;
     },

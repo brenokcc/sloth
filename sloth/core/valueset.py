@@ -226,14 +226,15 @@ class ValueSet(dict):
 
                     form_cls = ACTIONS.get(attr_name, None)
                     if form_cls:
-                        form = form_cls(request=self.request)
-                        form.path = path
-                        if form.is_valid():
-                            pass
-                        data = form.serialize(wrap=wrap)
-                        if self.request.path.startswith('/app/'):
-                            data.update(form=form)
-                        self[attr_name] = data
+                        if form_cls.check_fake_permission(request=self.request, instantiator=self.instance):
+                            form = form_cls(request=self.request)
+                            form.path = path
+                            if form.is_valid():
+                                pass
+                            data = form.serialize(wrap=wrap)
+                            if self.request.path.startswith('/app/'):
+                                data.update(form=form)
+                            self[attr_name] = data
                         continue
 
                     lazy = (wrap and (deep > 1 or (deep > 0 and i > 0)) and self.metadata['template'] is None) and not self.metadata['printing']
@@ -470,10 +471,23 @@ class ValueSet(dict):
         self.instance.id = 0
         cls = type(self.instance)
         obj_url = '{}{{id}}'.format(url) if url else '/api/dashboard'
+        for action in self.metadata['actions']:
+            forms_cls = cls.action_form_cls(action)
+            info['{}/{}/'.format(obj_url, to_snake_case(action))] = [
+                ('post', action, 'Execute {}'.format(action), self.get_api_schema(), forms_cls),
+            ]
         for name in self.metadata['names']:
             try:
                 attr = getattr(self.instance, name)
             except Exception:
+                if name in ACTIONS:
+                    form_cls = ACTIONS[name]
+                    key = '{}/{}/'.format(obj_url, name)
+                    info[key] = []
+                    if form_cls.has_custom_view_method():
+                        info[key].append(('get', form_cls.__doc__ or name, '{}'.format(name), {'type': 'string'}, None))
+                    if form_cls.has_custom_submit_method():
+                        info[key].append(('post', form_cls.__doc__ or name, '{}'.format(name), {'type': 'string'}, form_cls))
                 continue
             if isinstance(attr, types.MethodType):
                 try:

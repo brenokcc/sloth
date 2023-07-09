@@ -1,5 +1,5 @@
 from django import forms
-
+from django.apps import apps
 from . import inputs
 
 
@@ -17,9 +17,11 @@ class PhotoField(forms.CharField):
 
 
 class ModelChoiceField(forms.ModelChoiceField):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, queryset, *args, **kwargs):
+        if isinstance(queryset, str):
+            queryset = apps.get_model(queryset).objects
         self.username_lookup = kwargs.pop('username_lookup', None)
-        super().__init__(*args, **kwargs)
+        super().__init__(queryset, *args, **kwargs)
 
 
 class TextField(forms.CharField):

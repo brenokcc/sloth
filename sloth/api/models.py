@@ -144,9 +144,7 @@ class Role(models.Model):
 
     def __str__(self):
         if self.scope_key and self.scope_value:
-            return '{}::{}::{}'.format(
-                self.name, self.scope_key, self.scope_value
-            )
+            return '{} - {}'.format(self.name, self.get_scope_value())
         else:
             return '{}'.format(self.name)
 

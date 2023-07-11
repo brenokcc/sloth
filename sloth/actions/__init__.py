@@ -652,7 +652,10 @@ class Action(metaclass=ActionMetaclass):
                     if isinstance(initial, int):
                         pks.append(initial)
                     else:
-                        pks.extend([obj.pk for obj in initial])
+                        if isinstance(initial[0], int):
+                            pks.extend([pk for pk in initial])
+                        else:
+                            pks.extend([obj.pk for obj in initial])
                 if self.data:
                     pks = [pk for pk in self.data.getlist(name) if pk]
                 if getattr(field, 'picker', None) is None:
@@ -835,7 +838,7 @@ class Action(metaclass=ActionMetaclass):
             attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
         self.data.update(self.request.GET)
         qs = field.queryset if attr is None else attr(field.queryset)
-
+        qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
         total = qs.count()
         qs = qs.search(q=q) if q else qs
         items = [dict(id=value.id, text=str(value), html=value.get_select_display()) for value in qs[0:25]]

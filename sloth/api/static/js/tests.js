@@ -309,17 +309,24 @@ function choose(name, value, headless){
             $(element).val(element.find("option:contains(" + value + ")").val());
         } else {
             function afterScrool() {
-                element.select2("open");
-                var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
-                $search.val(value);
-                $search.trigger('keyup');
-                var lookup = "option:contains(" + value + ")";
-                function waitValue() {
-                    var value = element.find(lookup).val();
-                    element.val(value).trigger('change');
-                    element.select2('close');
+                var tokens = value.split(',');
+                var values = [];
+                function selectValue(i){
+                    element.select2("open");
+                    var $search = element.data('select2').dropdown.$search || element.data('select2').selection.$search;
+                    $search.val(tokens[i]);
+                    $search.trigger('keyup');
+                    var lookup = "option:contains(" + tokens[i] + ")";
+                    function waitValue() {
+                        var value = element.find(lookup).val();
+                        values.push(value);
+                        element.val(values).trigger('change');
+                        element.select2('close');
+                    }
+                    setTimeout(waitValue, '1500');
                 }
-                setTimeout(waitValue, '2000');
+                selectValue(0)
+                if(tokens.length==2) setTimeout(function(){selectValue(1)}, 1500);
             }
             return scroolToElement(element, afterScrool);
         }

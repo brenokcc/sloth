@@ -310,6 +310,9 @@ dl dl {
 textarea{
     width: 100%;
 }
+.form fieldset{
+    padding-top: 10px;
+}
 .form-display{
     margin-bottom: 10;
 }

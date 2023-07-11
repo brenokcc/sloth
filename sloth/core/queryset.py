@@ -145,7 +145,8 @@ class QuerySet(models.QuerySet):
                                 lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):
-                        qs = self
+                        lookups = []
+                        break
             qs = self.filter(reduce(operator.__or__, lookups)) if lookups else self
         if session and self.metadata['session_lookups']:
             lookups = []
@@ -344,7 +345,7 @@ class QuerySet(models.QuerySet):
             items.extend([dict(id=value.id, text=str(value)) for value in qs[0:25]])
         else:
             total = ids.count()
-            items.extend([dict(id=value, text=str(value)) for value in values])
+            items.extend([dict(id=k, text=str(v)) for k, v in field.choices])
         return dict(
             total=total, page=1, pages=math.ceil((1.0 * total) / 25),
             q=q, items=items

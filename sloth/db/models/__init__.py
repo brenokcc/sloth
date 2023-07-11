@@ -204,6 +204,7 @@ class ForeignKey(ForeignKey):
         self.picker = kwargs.pop('picker', None)
         self.addable = kwargs.pop('addable', False)
         self.username_lookup = kwargs.pop('username_lookup', None)
+        self.lookups = kwargs.pop('lookups', None)
         super().__init__(to=to, on_delete=on_delete, **kwargs)
 
     def formfield(self, **kwargs):
@@ -213,6 +214,8 @@ class ForeignKey(ForeignKey):
             field.picker = self.picker
         if self.username_lookup:
             field.username_lookup = self.username_lookup
+        if self.lookups:
+            field.lookups = self.lookups
         return field
 
 

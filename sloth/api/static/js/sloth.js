@@ -107,11 +107,6 @@ jQuery.fn.extend({
         }
         $(this).request(url, method || 'GET', data || {}, function(html){
             $('#modal').find('.modal-body').html(html).initialize();
-            if($('.modal-body input[type=text]:first').length > 0){
-                window.setTimeout(function () {
-                    //$('.modal-body').find('input[type=text], input[type=number]').first().focus();
-                }, 200);
-            }
             $('#modal').modal('show');
             $('#modal').find('.modal-body').css('visibility', 'visible');
         });
@@ -228,7 +223,7 @@ jQuery.fn.extend({
             }
             if(url==null) ajax = null;
             $(this).select2(
-                {ajax: {delay: 3000}, width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax, dropdownParent: $('#modal').find(this).length > 0 ? $('#modal') : $('body'),
+                {ajax: {delay: 3000}, width: '100%', language: 'pt-BR', allowClear: true, placeholder: '', ajax:ajax, dropdownParent: $('body'),
                 templateResult: function(item){return item.html ? $(item.html) : item.text}}
             ).on("select2:open", function (e) { });
         });
@@ -296,7 +291,7 @@ jQuery.fn.extend({
                     return {id: item.id, url: url}
                 }
             ).get();
-        } setTimeout(reloadAreas, 1000);
+        } setTimeout(reloadAreas, 500);
     },
     dynamic: function(name, initial){
         var form = $(this);

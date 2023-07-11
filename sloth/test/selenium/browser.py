@@ -43,7 +43,10 @@ class Browser(webdriver.Firefox):
 
     def watch(self, e):
         self.save_screenshot('/tmp/test.png')
-        raise e
+        if self.headless:
+            raise e
+        else:
+            breakpoint()
 
     def print(self, message):
         if self.verbose:
@@ -99,8 +102,10 @@ class Browser(webdriver.Firefox):
         try:
             headless = 'false'
             self.execute_script("choose('{}', '{}', {})".format(name, value, headless))
-            self.wait(2)
-            self.execute_script("validateChooseVal('{}', '{}')".format(name, value))
+            tokens = value.split(',')
+            self.wait(2 * len(tokens))
+            if len(tokens) == 1:
+             self.execute_script("validateChooseVal('{}', '{}')".format(name, value))
         except WebDriverException as e:
             if count:
                 self.wait()

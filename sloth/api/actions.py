@@ -133,6 +133,8 @@ class Login(actions.ActionView):
         return cache.get('login', {}).get('logo')
 
     def view(self):
+        if self.request.user.is_authenticated:
+            self.redirect('/app/dashboard/')
         if 'o' in self.request.GET:
             provider = settings.OAUTH2_AUTHENTICATORS[self.request.GET['o'].upper()]
             authorize_url = '{}?response_type=code&client_id={}&redirect_uri={}'.format(
@@ -162,6 +164,8 @@ class Login(actions.ActionView):
                 response = requests.get(provider['USER_DATA_URL'], data={'scope': data.get('scope')}, headers=headers)
             if response.status_code == 200:
                 data = json.loads(response.text)
+                if 'USER_DATA_MIDDLEWARE' in provider:
+                    provider['USER_DATA_MIDDLEWARE'](data)
                 username = data[provider['USER_DATA']['USERNAME']]
                 user = User.objects.filter(username=username).first()
                 if user is None and provider.get('USER_AUTO_CREATE'):

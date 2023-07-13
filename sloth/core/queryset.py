@@ -420,6 +420,9 @@ class QuerySet(models.QuerySet):
 
     # serialization function
 
+    def list(self):
+        return [str(obj) for obj in self]
+
     def to_list(self, wrap=False, detail=True):
         data = []
         for obj in self:

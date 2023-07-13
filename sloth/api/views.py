@@ -133,6 +133,8 @@ def index(request):
 def endpoint(func):
     def decorate(request, *args, **kwargs):
         try:
+            if request.method == 'OPTIONS':
+                return ApiResponse({})
             if is_authenticated(request) or request.path.endswith('/login/'):
                 data = func(request, *args, **kwargs)
                 wrap = request.path.startswith('/meta')

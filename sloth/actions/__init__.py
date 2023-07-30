@@ -277,7 +277,7 @@ class Action(metaclass=ActionMetaclass):
         return self.parameters().get(name, default)
 
     def objects(self, model_name):
-        return apps.get_model(model_name).objects.contextualize(self.request)
+        return apps.get_model(model_name).objects.queryset().contextualize(self.request).apply_role_lookups(self.request.user)
 
     def clear(self):
         self.show_form = False

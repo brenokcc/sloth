@@ -42,7 +42,7 @@
                 $('#fieldset-group-{{ item.uuid }}').find('.nav-link.'+tab).find('.spinner-border').removeClass('d-none');
                 $.ajax({
                     url:path,
-                    data:{tab:1},
+                    //data:{tab:1},
                     success:function( html ) {
                         $('#fieldset-group-{{ item.uuid }}-tab').html(html).initialize();
                         if(['fieldset', 'queryset', 'statistics'].indexOf(type)>-1) hideTitles{{ item.uuid }}();

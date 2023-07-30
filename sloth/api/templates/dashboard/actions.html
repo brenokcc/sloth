@@ -53,7 +53,7 @@
                title="{{ action.submit }}"
                class="action-button btn btn-outline-{{ action.style }} {{ target }} {% if target == 'queryset' %}disabled{% endif %} {% if action.modal %}popup{% endif %}">
                 &nbsp;{{ action.icon|icontag }}
-                {% if target != 'instance' or not action.icon %}{{ action.submit }}{% endif %}&nbsp;
+                {% if 1 or target != 'instance' or not action.icon %}{{ action.submit }}{% endif %}&nbsp;
             </a>
             {% endif %}
         {% endfor %}

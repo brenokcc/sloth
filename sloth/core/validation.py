@@ -27,7 +27,7 @@ def validate_valueset(valueset, method='view'):
             try:
                 attr = getattr(valueset.instance, name)
             except AttributeError as e:
-                if type(e) == AttributeError:
+                if type(e) == AttributeError and name not in ACTIONS:
                     warning('The meta attribute "{}" used in the method {}() of class {} does not exist.'.format(
                          bold(name), bold(method), bold(type(valueset.instance).__name__))
                     )

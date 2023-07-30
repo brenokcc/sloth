@@ -249,11 +249,19 @@ class SeleniumTestCase(LiveServerTestCase):
         cls.browser.service.stop()
 
     def postgres_parameters(self):
-        dbhost = settings.DATABASES['default']['HOST']
         dbuser = settings.DATABASES['default']['USER']
         dbport = settings.DATABASES['default']['PORT']
-        dbparam = '-U {} -h {} -p {}'.format(dbuser, dbhost, dbport)
-        return dbparam
+        dbhost = settings.DATABASES['default']['HOST']
+        
+        dbparams = ''
+        if (dbuser):
+            dbparams += f' -U {dbuser}'
+        if (dbhost):
+            dbparams += f' -h {dbhost}'
+        if (dbport):
+            dbparams += f' -p {dbport}'
+
+        return dbparams
 
     def create_dev_database(self, fname=None):
         dbname = settings.DATABASES['default']['NAME']

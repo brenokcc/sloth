@@ -255,11 +255,11 @@ class SeleniumTestCase(LiveServerTestCase):
         
         dbparams = ''
         if (dbuser):
-            dbparams += f' -U {dbuser}'
+            dbparams += ' -U {}'.format(dbuser)
         if (dbhost):
-            dbparams += f' -h {dbhost}'
+            dbparams += ' -h {}'.format(dbhost)
         if (dbport):
-            dbparams += f' -p {dbport}'
+            dbparams += ' -p {}'.format(dbport)
 
         return dbparams
 

@@ -248,6 +248,13 @@ class SeleniumTestCase(LiveServerTestCase):
         cls.browser.quit()
         cls.browser.service.stop()
 
+    def postgres_parameters(self):
+        dbhost = settings.DATABASES['default']['HOST']
+        dbuser = settings.DATABASES['default']['USER']
+        dbport = settings.DATABASES['default']['PORT']
+        dbparam = '-U {} -h {} -p {}'.format(dbuser, dbhost, dbport)
+        return dbparam
+
     def create_dev_database(self, fname=None):
         dbname = settings.DATABASES['default']['NAME']
         if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
@@ -259,14 +266,15 @@ class SeleniumTestCase(LiveServerTestCase):
             else:
                 os.system('sqlite3 {} ".dump" | sqlite3 db.sqlite3'.format(dbname))
         elif 'postgresql' in settings.DATABASES['default']['ENGINE']:
+            dbparam = self.postgres_parameters()
             dbname2 = dbname[5:]
-            os.system('dropdb -U postgres --if-exists {}'.format(dbname2))
-            os.system('createdb -U postgres {}'.format(dbname2))
+            os.system('dropdb {} --if-exists {}'.format(dbparam, dbname2))
+            os.system('createdb {} {}'.format(dbparam, dbname2))
             if fname:
-                os.system('pg_dump -U postgres --schema-only -d {} | psql -U postgres -q -d {} > /dev/null'.format(dbname, dbname2))
-                os.system('cat {} | psql -U postgres -q -d {} > /dev/null'.format(fname, dbname2))
+                os.system('pg_dump {} --schema-only -d {} | psql {} -q -d {} > /dev/null'.format(dbparam, dbname, dbparam, dbname2))
+                os.system('cat {} | psql {} -q -d {} > /dev/null'.format(fname, dbparam, dbname2))
             else:
-                os.system('pg_dump -U postgres -d {} | psql -U postgres -q -d {} > /dev/null'.format(dbname, dbname2))
+                os.system('pg_dump {} -d {} | psql {} -q -d {} > /dev/null'.format(dbparam, dbname, dbparam, dbname2))
 
     def save(self):
         if SeleniumTestCase.RESTORE == self._step:
@@ -283,7 +291,9 @@ class SeleniumTestCase(LiveServerTestCase):
                 if 'memory' not in cmd:
                     os.system(cmd)
             elif 'postgresql' in settings.DATABASES['default']['ENGINE']:
-                cmd = 'pg_dump -U postgres -d {} --inserts --data-only --no-owner -f {}'.format(dbname, fname)
+                cmd = 'pg_dump {} -d {} --inserts --data-only --no-owner -f {}'.format(
+                    self.postgres_parameters(), dbname, fname
+                )
                 check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
     def step_file_exists(self, step):
@@ -304,7 +314,7 @@ class SeleniumTestCase(LiveServerTestCase):
             tables = [m._meta.db_table for c in apps.get_app_configs() for m in c.get_models()]
             for table in tables:
                 cursor.execute('truncate table {} cascade;'.format(table))
-            cmd = 'psql -U postgres -d {} --file={}'.format(dbname, fname)
+            cmd = 'psql {} -d {} --file={}'.format(self.postgres_parameters(), dbname, fname)
             check_call(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
     def loaddata(self, fixture_path):

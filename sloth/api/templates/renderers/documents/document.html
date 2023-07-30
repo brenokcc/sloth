@@ -1,1 +1,5 @@
-<iframe src="{{ value }}" width="100%" height="500px"></iframe>
+{% if value %}
+    <iframe src="{{ value }}" width="100%" height="500px"></iframe>
+{% else %}
+    -
+{% endif %}

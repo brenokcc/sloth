@@ -161,7 +161,9 @@ class Dashboard(metaclass=DashboardType):
     def menu(self, *items, app=None, hierarchy=None, icon=None):
         item = self._load('menu', items, app=app)
         if item:
-            item.update(hierarchy=hierarchy, menu_icon=icon)
+            tokens = hierarchy.split('::')
+            item['label'] = tokens[-1]
+            item.update(hierarchy='::'.join(tokens[0:-1]), menu_icon=icon)
 
     def session_lookup(self, **kwargs):
         # del self.request.session['session_lookups']

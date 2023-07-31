@@ -214,7 +214,6 @@ class ValueSet(dict):
             is_app = self.request and self.request.path.startswith('/app/')
             for i, (attr_name, width) in enumerate(self.metadata['names'].items()):
                 if self.request is None or self.instance.has_attr_permission(self.request.user, attr_name):
-
                     path = self.path
                     if path and self.metadata['attr'] is None and attr_name != 'all':
                         tokens = path.split('?')

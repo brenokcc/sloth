@@ -277,8 +277,10 @@ class Dashboard(metaclass=DashboardType):
         attr = getattr(self, 'has_{}_permission'.format(name), None)
         return attr is None or attr(user)
 
-    def objects(self, model_name):
+    def objects(self, model_name, subset=None):
         qs = apps.get_model(model_name).objects.queryset()
+        if subset:
+            qs = getattr(qs, subset)()
         qs.request = self.request
         return qs.apply_role_lookups(self.request.user, self.request.session)
 

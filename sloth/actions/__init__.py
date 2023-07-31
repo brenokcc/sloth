@@ -211,7 +211,7 @@ class Action(metaclass=ActionMetaclass):
                         field.widget.attrs['class'] = '{} disabled'.format(field.widget.attrs.get('class', ''))
                         field.widget.attrs['readonly'] = 'readonly'
                 else:
-                    field.queryset = field.queryset.contextualize(self.request).apply_role_lookups(self.request.user)
+                    field.queryset = field.queryset#.contextualize(self.request).apply_role_lookups(self.request.user)
 
         self.response = {}
         self.fieldsets = {}
@@ -838,7 +838,7 @@ class Action(metaclass=ActionMetaclass):
             attr = getattr(self, 'get_{}_queryset'.format(field_name), None)
         self.data.update(self.request.GET)
         qs = field.queryset if attr is None else attr(field.queryset)
-        qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
+        # qs = qs.contextualize(self.request).apply_role_lookups(self.request.user)
         total = qs.count()
         qs = qs.search(q=q) if q else qs
         items = [dict(id=value.id, text=str(value), html=value.get_select_display()) for value in qs[0:25]]

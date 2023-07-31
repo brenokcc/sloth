@@ -137,17 +137,21 @@ class QuerySet(models.QuerySet):
             lookups = []
             for name, scopes in self.metadata['lookups']:
                 if scopes:
-                    for scope_value_attr, scope_key in scopes.items():
-                        if scope_key == 'username':
-                            lookups.append(Q(**{scope_value_attr: user.username}))
-                        else:
-                            for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
-                                lookups.append(Q(**{scope_value_attr: scope_value}))
+                    if user.roles.contains(name):
+                        for scope_value_attr, scope_key in scopes.items():
+                            if scope_key == 'username':
+                                lookups.append(Q(**{scope_value_attr: user.username}))
+                            else:
+                                for scope_value in user.roles.filter(active=True, name=name, scope_key=scope_key).values_list('scope_value', flat=True):
+                                    lookups.append(Q(**{scope_value_attr: scope_value}))
                 else:
                     if user.roles.contains(name):
-                        lookups = []
+                        lookups = None
                         break
-            qs = self.filter(reduce(operator.__or__, lookups)) if lookups else self
+            if lookups is None:
+                qs = self
+            else:
+                qs = self.filter(reduce(operator.__or__, lookups)) if lookups else self.filter(pk=0)
         if session and self.metadata['session_lookups']:
             lookups = []
             for name, scopes in self.metadata['session_lookups']:

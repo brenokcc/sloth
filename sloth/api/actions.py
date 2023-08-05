@@ -505,8 +505,12 @@ class ResetPassword(actions.ActionView):
         )
 
     def submit(self):
+        code = self.encrypt(dict(email=self.cleaned_data['email'], password=self.cleaned_data['pass1']))
+        url = 'http://localhost:8000/app/dashboard/confirm_password/?code={}'.format(code)
+        content = 'Acesse o link a seguir para confirmar a alteração de sua senha: {}'.format(url)
         self.clear()
-        self.info('xxxx')
+        self.objects('api.email').send(self.cleaned_data['email'], 'Alteração de Senha', content, request=self.request)
+        self.info('Acesse seu e-mail e confirme a alteração da senha clicando no link enviado.')
 
     def has_permission(self, user):
         return not user.is_authenticated
@@ -517,6 +521,22 @@ class ResetPassword(actions.ActionView):
         if self.cleaned_data.get('pass1') != self.cleaned_data.get('pass2'):
             raise actions.ValidationError('Senhas não conferem.')
         return self.cleaned_data
+
+
+class ConfirmPassword(actions.ActionView):
+    class Meta:
+        verbose_name = 'Confirmar Senha'
+
+    def view(self):
+        dados = self.decrypt(self.request.GET['code'])
+        user = self.objects('api.user').get(email=dados['email'])
+        user.set_password(dados['password'])
+        user.save()
+        self.message('Alteração de senha confirmada com sucesso. Acesse o sistema com a nova senha.')
+        self.redirect('/')
+
+    def has_permission(self, user):
+        return True
 
 
 class ExportCsv(actions.Action):

@@ -7,7 +7,7 @@ import traceback
 from copy import deepcopy
 from decimal import Decimal
 from functools import lru_cache
-
+from django.core import signing
 from django.apps import apps
 from django.contrib import messages
 from django.db import transaction
@@ -225,6 +225,12 @@ class Action(metaclass=ActionMetaclass):
                 label='', initial='on', required=False, help_text=help_text,
                 widget=forms.HiddenInput()
             )
+
+    def encrypt(self, obj):
+        return signing.dumps(obj)
+
+    def decrypt(self, text):
+        return signing.loads(text)
 
     @classmethod
     def get_api_doc(cls, detail=False):

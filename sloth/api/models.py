@@ -285,9 +285,14 @@ class EmailManager(models.Manager):
     def all(self):
         return self.rows().order_by('-id')
 
-    def send(self, to, subject, content, from_email=None):
+    def send(self, to, subject, content, from_email=None, request=None):
         to = [to] if isinstance(to, str) else list(to)
-        return self.create(from_email=from_email or 'no-replay@mail.com', to=', '.join(to), subject=subject, content=content)
+        if request:
+            url = '{}://{}'.format(self.request.scheme, self.request.get_host())
+            content = content.replace('http://localhost:8000', url)
+        email = self.create(from_email=from_email or 'no-reply@mail.com', to=', '.join(to), subject=subject, content=content)
+        if settings.DEBUG or 'test' in sys.argv:
+            email.debug()
 
 
 class Email(models.Model):
@@ -321,6 +326,16 @@ class Email(models.Model):
         if settings.DEBUG or 'test' in sys.argv or msg.send(fail_silently=True):
             self.sent_at = datetime.now()
         super().save(*args, **kwargs)
+
+    def debug(self):
+        l = []
+        l.append('-------------- E-MAIL --------------')
+        l.append('TO: {}'.format(self.to))
+        l.append('SUBJECT: {}'.format(self.subject))
+        l.append(self.content)
+        l.append('------------------------------------')
+        print('\n'.join(l))
+
 
 
 setattr(AnonymousUser, 'roles', Role.objects.none())
